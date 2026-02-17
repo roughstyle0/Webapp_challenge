@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>朝礼スピーチ・ネタ帳ルーレット - Morning Booster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: 親しみやすさと元気さを演出するフォント -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #FFFBEB; /* warm yellow tint */
+            background-image: radial-gradient(#FCD34D 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* ルーレット回転時のブラー効果 */
+        .blur-effect {
+            filter: blur(2px);
+            opacity: 0.7;
+        }
+
+        /* 結果表示時のポップアニメーション */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* キラキラエフェクト */
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+        }
+        .sparkle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #F59E0B;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: sparkle 0.8s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 text-slate-800">
+
+    <!-- Header Section -->
+    <header class="text-center mb-6">
+        <div class="inline-flex items-center justify-center bg-orange-100 text-orange-600 px-4 py-1 rounded-full text-sm font-bold mb-2 shadow-sm">
+            <i data-lucide="sun" class="w-4 h-4 mr-2"></i> Good Morning!
+        </div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-orange-500 drop-shadow-sm tracking-tight">
+            朝礼ネタ帳<br><span class="text-slate-700 text-2xl">ルーレット</span>
+        </h1>
+        <p class="text-slate-500 mt-2 text-sm font-medium">今日のチームを元気にする話題、選びました。</p>
+    </header>
+
+    <!-- Main Card Area -->
+    <main class="w-full max-w-md relative">
+        <!-- Decoration Circles -->
+        <div class="absolute -top-6 -left-6 w-16 h-16 bg-yellow-300 rounded-full opacity-50 blur-xl animate-pulse"></div>
+        <div class="absolute -bottom-6 -right-6 w-20 h-20 bg-orange-300 rounded-full opacity-50 blur-xl animate-pulse delay-700"></div>
+
+        <div id="card-container" class="bg-white rounded-3xl shadow-xl border-b-8 border-orange-200 overflow-hidden relative transition-all duration-300 transform hover:scale-[1.01]">
+            
+            <!-- Category Tag (Dynamic) -->
+            <div class="absolute top-0 right-0 bg-yellow-400 text-white text-xs font-bold px-3 py-1 rounded-bl-xl z-10" id="category-badge">
+                Ready?
+            </div>
+
+            <div class="p-8 text-center flex flex-col items-center min-h-[320px] justify-center">
+                
+                <!-- Icon Placeholder -->
+                <div id="topic-icon" class="mb-4 text-orange-400 transition-all duration-300">
+                    <i data-lucide="coffee" class="w-12 h-12"></i>
+                </div>
+
+                <!-- Topic Display -->
+                <h2 id="topic-display" class="text-2xl md:text-3xl font-bold text-slate-800 mb-6 leading-tight min-h-[4rem] flex items-center justify-center">
+                    「ネタを引く」を<br>押してスタート！
+                </h2>
+
+                <!-- Hint Area (Hidden initially) -->
+                <div id="hint-container" class="w-full bg-orange-50 rounded-xl p-4 border border-orange-100 opacity-50 transition-all duration-500">
+                    <div class="flex items-center justify-center text-orange-400 text-xs font-bold uppercase tracking-wider mb-1">
+                        <i data-lucide="lightbulb" class="w-3 h-3 mr-1"></i> Hint
+                    </div>
+                    <p id="hint-text" class="text-sm text-slate-600 leading-relaxed font-medium">
+                        今日の朝礼で何を話すか、運に任せてみませんか？
+                    </p>
+                </div>
+            </div>
+
+            <!-- Progress Bar (Decoration) -->
+            <div class="h-1 w-full bg-slate-100">
+                <div id="progress-bar" class="h-full bg-orange-400 w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Controls -->
+    <div class="mt-8 text-center relative z-10">
+        <button id="spin-btn" class="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-orange-500 font-lg rounded-full shadow-lg hover:bg-orange-600 hover:shadow-orange-300/50 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-orange-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
+            <span class="mr-2 group-hover:animate-spin"><i data-lucide="refresh-cw" class="w-5 h-5"></i></span>
+            今日のネタを引く
+        </button>
+        <p class="mt-4 text-xs text-slate-400">※ ポジティブな話題のみを厳選しています</p>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // 1. Data Source (20 Topics)
+        const topics = [
+            { category: "感謝", icon: "heart", text: "最近感謝したスタッフ", hint: "「○○さんがゴミを拾ってくれた」「笑顔で挨拶してくれた」など、些細なことでOK！具体名が出ると場の空気が温まります。" },
+            { category: "お客様", icon: "smile", text: "お客様からの嬉しい言葉", hint: "最近頂いた「ありがとう」や褒め言葉を共有しましょう。自分への言葉でなくても、店全体への評価でも構いません。" },
+            { category: "商品", icon: "shopping-bag", text: "今月の『推し』商品", hint: "売れ筋だけでなく、あなたが個人的に「これはいい！」と思う商品の魅力を、自分の言葉で熱く語ってください。" },
+            { category: "成長", icon: "trending-up", text: "失敗から学んだこと", hint: "完璧なリーダーである必要はありません。最近の小さな失敗と、そこから得た気づきを話すことで、心理的安全性が高まります。" },
+            { category: "情報", icon: "newspaper", text: "最近のトレンドニュース", hint: "業界に関連するニュースや、世間で流行っていることを一つ紹介し、自分たちの仕事にどう活かせるか繋げましょう。" },
+            { category: "健康", icon: "activity", text: "元気が出る健康法", hint: "睡眠、食事、ストレッチなど、あなたが実践している「疲れを取るコツ」をシェア。スタッフの体調管理への気遣いも示せます。" },
+            { category: "目標", icon: "target", text: "今週の小さな目標", hint: "大きな売上目標ではなく、「毎日3回スタッフを褒める」「バックヤードを綺麗に保つ」など、個人的かつ具体的な目標を宣言しましょう。" },
+            { category: "チーム", icon: "users", text: "このチームの好きなところ", hint: "「連携が早い」「笑い声が多い」など、今のチームの強みを言語化して伝えてください。帰属意識が高まります。" },
+            { category: "発見", icon: "search", text: "最近見つけた「良い仕事」", hint: "他店や他業種のお店を利用して「これいいな！」と思ったサービスや工夫について話してみましょう。" },
+            { category: "季節", icon: "sun", text: "季節の変わり目と体調", hint: "気候の変化に触れつつ、スタッフへの労いの言葉をかけるチャンスです。無理せず働こう、というメッセージを。" },
+            { category: "称賛", icon: "thumbs-up", text: "昨日一番輝いていた人", hint: "昨日のシフトで頑張っていた人を一人ピックアップして、みんなの前で具体的に褒め称えましょう。" },
+            { category: "基本", icon: "check-circle", text: "初心に帰る：挨拶について", hint: "なぜ挨拶が大切なのか、あなた自身の経験談（挨拶で救われたことなど）を交えて話すと説得力が増します。" },
+            { category: "効率", icon: "clock", text: "時短テクニックの共有", hint: "業務の中で見つけた小さな効率化の工夫や、優先順位の付け方についてアドバイスしてみましょう。" },
+            { category: "未来", icon: "flag", text: "1年後の私たちの姿", hint: "少し先の未来についてポジティブな妄想を語りましょう。「こんなお店になっていたら最高だよね」というビジョン共有。" },
+            { category: "休息", icon: "coffee", text: "休日のリフレッシュ方法", hint: "仕事以外の時間をどう楽しんでいるか。プライベートな一面を見せることで、親近感が湧きます。" },
+            { category: "知識", icon: "book-open", text: "最近学んだ豆知識", hint: "仕事に関係なくてもOK。「へぇ〜」と思える雑学は、スタッフとの会話のきっかけになります。" },
+            { category: "改善", icon: "tool", text: "ピンチをチャンスに変える", hint: "クレームやトラブルをどう乗り越えたか、あるいはどう乗り越えるか。前向きな解決思考を共有しましょう。" },
+            { category: "準備", icon: "briefcase", text: "事前の準備の大切さ", hint: "「段取り八分」と言いますが、良い仕事をするために準備しているルーティンがあれば教えてください。" },
+            { category: "笑顔", icon: "smile-plus", text: "笑顔を作るスイッチ", hint: "辛い時でも笑顔になるために意識していることや、モチベーションを上げる音楽・言葉などを紹介。" },
+            { category: "感謝", icon: "gift", text: "家族や友人への感謝", hint: "仕事を支えてくれている周りの人への感謝を語ることで、スタッフにも「周りを大切にしよう」という気持ちが伝わります。" }
+        ];
+
+        // 2. DOM Elements
+        const displayEl = document.getElementById('topic-display');
+        const hintTextEl = document.getElementById('hint-text');
+        const hintContainer = document.getElementById('hint-container');
+        const btn = document.getElementById('spin-btn');
+        const categoryBadge = document.getElementById('category-badge');
+        const iconContainer = document.getElementById('topic-icon');
+        const progressBar = document.getElementById('progress-bar');
+        const cardContainer = document.getElementById('card-container');
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // 3. Logic: Roulette Spin
+        let isSpinning = false;
+
+        btn.addEventListener('click', () => {
+            if (isSpinning) return;
+            startRoulette();
+        });
+
+        function startRoulette() {
+            isSpinning = true;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="mr-2 animate-spin"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span> 抽選中...`;
+            
+            // Visual Reset
+            hintContainer.style.opacity = '0';
+            displayEl.classList.remove('animate-pop');
+            displayEl.classList.add('blur-effect');
+            progressBar.style.width = '0%';
+            
+            let counter = 0;
+            const totalSpins = 15; // How many shuffles before stop
+            let speed = 50; // Initial speed
+
+            // Recursive function for variable speed spinning
+            const spin = () => {
+                // Random intermediate display
+                const tempTopic = topics[Math.floor(Math.random() * topics.length)];
+                displayEl.textContent = tempTopic.text;
+                categoryBadge.textContent = tempTopic.category;
+                categoryBadge.className = `absolute top-0 right-0 bg-gray-300 text-white text-xs font-bold px-3 py-1 rounded-bl-xl z-10`;
+                
+                // Update Icon
+                iconContainer.innerHTML = `<i data-lucide="${tempTopic.icon}" class="w-12 h-12"></i>`;
+                lucide.createIcons();
+
+                counter++;
+
+                if (counter < totalSpins) {
+                    // Slow down gradually
+                    speed += 15;
+                    setTimeout(spin, speed);
+                    // Progress bar visual
+                    progressBar.style.width = `${(counter / totalSpins) * 100}%`;
+                } else {
+                    finalizeSelection();
+                }
+            };
+
+            spin();
+        }
+
+        function finalizeSelection() {
+            // Pick Winner
+            const winner = topics[Math.floor(Math.random() * topics.length)];
+
+            // Update UI
+            displayEl.textContent = winner.text;
+            displayEl.classList.remove('blur-effect');
+            displayEl.classList.add('animate-pop'); // Trigger pop animation
+            
+            hintTextEl.textContent = winner.hint;
+            hintContainer.style.opacity = '1';
+            
+            // Category Color Logic
+            const colors = ['bg-red-400', 'bg-blue-400', 'bg-green-400', 'bg-purple-400', 'bg-pink-400', 'bg-orange-400'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            categoryBadge.className = `absolute top-0 right-0 ${randomColor} text-white text-xs font-bold px-3 py-1 rounded-bl-xl z-10 shadow-sm`;
+            categoryBadge.textContent = winner.category;
+
+            // Icon Update
+            iconContainer.innerHTML = `<i data-lucide="${winner.icon}" class="w-12 h-12 animate-bounce"></i>`;
+            iconContainer.className = `mb-4 text-${randomColor.replace('bg-', '')} transition-all duration-300`;
+            lucide.createIcons();
+
+            // Progress bar full
+            progressBar.style.width = '100%';
+
+            // Sparkle Effect
+            createSparkles();
+
+            // Reset Button
+            isSpinning = false;
+            btn.disabled = false;
+            btn.innerHTML = `<span class="mr-2 group-hover:animate-spin"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span> もう一度引く`;
+        }
+
+        function createSparkles() {
+            const rect = cardContainer.getBoundingClientRect();
+            for (let i = 0; i < 5; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle');
+                // Random position around the card center
+                const left = 50 + (Math.random() * 60 - 30);
+                const top = 50 + (Math.random() * 60 - 30);
+                sparkle.style.left = `${left}%`;
+                sparkle.style.top = `${top}%`;
+                cardContainer.appendChild(sparkle);
+
+                // Remove after animation
+                setTimeout(() => sparkle.remove(), 800);
+            }
+        }
+    </script>
+</body>
+</html>
