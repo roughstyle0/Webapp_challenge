@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>小売店専用：魔法の割引電卓</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <meta name="theme-color" content="#111827" />
+  <style>
+    /* 片手操作 & 誤タップ防止のための微調整 */
+    :root { --tap: 0.02s; }
+    button { touch-action: manipulation; }
+    .btn {
+      transition: transform var(--tap) ease, filter 120ms ease;
+    }
+    .btn:active { transform: scale(0.98); }
+    .safe-shadow { box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+    /* 視認性：数字の等幅表示で桁がブレない */
+    .tabular { font-variant-numeric: tabular-nums; }
+    /* iOSでの入力カーソル等が邪魔にならないよう、入力は実質ディスプレイ扱い */
+    input[readonly] { caret-color: transparent; }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-white min-h-dvh">
+  <div class="max-w-md mx-auto px-4 py-4 pb-6">
+    <!-- Header -->
+    <header class="flex items-start justify-between gap-3 mb-3">
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight">魔法の割引電卓</h1>
+        <p class="text-slate-300 text-sm leading-snug mt-1">
+          価格を入力 → 割引ボタンで即答（<span class="font-semibold text-white">税込10%</span>まで一発）
+        </p>
+      </div>
+      <button id="btnReset"
+        class="btn shrink-0 rounded-xl bg-white text-slate-900 font-bold px-3 py-2 border-2 border-white/0 hover:brightness-95 active:brightness-90"
+        aria-label="リセット">
+        AC
+      </button>
+    </header>
+
+    <!-- Discount Buttons (押しやすい上部) -->
+    <section class="sticky top-0 z-20 bg-slate-950/90 backdrop-blur border-b border-white/10 py-3 -mx-4 px-4">
+      <div class="grid grid-cols-4 gap-2">
+        <button data-off="10"
+          class="btn rounded-2xl py-3 font-extrabold bg-emerald-400 text-slate-950 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+          aria-label="10パーセントオフ">
+          10%OFF
+        </button>
+        <button data-off="20"
+          class="btn rounded-2xl py-3 font-extrabold bg-emerald-400 text-slate-950 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+          aria-label="20パーセントオフ">
+          20%OFF
+        </button>
+        <button data-off="30"
+          class="btn rounded-2xl py-3 font-extrabold bg-emerald-400 text-slate-950 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+          aria-label="30パーセントオフ">
+          30%OFF
+        </button>
+        <button data-off="50"
+          class="btn rounded-2xl py-3 font-extrabold bg-amber-300 text-slate-950 focus:outline-none focus:ring-4 focus:ring-amber-200"
+          aria-label="50パーセントオフ">
+          50%OFF
+        </button>
+      </div>
+      <p id="hint" class="text-xs text-slate-300 mt-2">
+        ヒント：割引ボタンは「最後に押した割引率」を保持します（連続計算が速い）。
+      </p>
+    </section>
+
+    <!-- Display -->
+    <section class="mt-4">
+      <div class="safe-shadow rounded-2xl border border-white/10 bg-slate-900 p-4">
+        <label class="block text-xs text-slate-300 mb-2">入力（元値）</label>
+        <div class="flex items-center gap-2">
+          <div class="text-slate-300 font-bold">¥</div>
+          <input id="priceInput" readonly
+            class="tabular w-full bg-transparent text-3xl sm:text-4xl font-extrabold outline-none placeholder:text-slate-600"
+            placeholder="0"
+            inputmode="numeric"
+            aria-label="価格入力（読み取り専用。下の数字キーで入力）" />
+          <button id="btnBack"
+            class="btn rounded-xl bg-slate-800 border border-white/10 px-3 py-2 font-bold text-slate-100 focus:outline-none focus:ring-4 focus:ring-white/20"
+            aria-label="1文字削除">
+            ⌫
+          </button>
+        </div>
+
+        <!-- Error / status -->
+        <div class="mt-3">
+          <p id="msg" class="text-sm text-rose-300 hidden"></p>
+        </div>
+
+        <!-- Result -->
+        <div class="mt-4 grid gap-3">
+          <!-- 税込を強調 -->
+          <div class="rounded-2xl bg-white text-slate-950 p-4 border-2 border-white">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <p class="text-xs font-bold tracking-wide text-slate-600">割引後（税込10%）</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">お客様の支払金額</p>
+              </div>
+              <div class="text-xs font-extrabold text-slate-700 bg-slate-100 rounded-full px-2 py-1">
+                <span id="badgeOff">--%OFF</span>
+              </div>
+            </div>
+            <div class="mt-2 tabular text-4xl sm:text-5xl font-extrabold" id="afterTax">¥0</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-slate-900 border border-white/10 p-4">
+              <p class="text-xs font-bold text-slate-300">元値</p>
+              <div class="mt-2 tabular text-2xl font-extrabold" id="original">¥0</div>
+            </div>
+            <div class="rounded-2xl bg-slate-900 border border-white/10 p-4">
+              <p class="text-xs font-bold text-slate-300">お得（値引き）</p>
+              <div class="mt-2 tabular text-2xl font-extrabold" id="saved">¥0</div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-slate-900 border border-white/10 p-4">
+            <p class="text-xs font-bold text-slate-300">内訳</p>
+            <div class="mt-2 text-sm text-slate-200 leading-relaxed">
+              <div class="flex items-center justify-between">
+                <span>割引後（税抜）</span>
+                <span class="tabular font-bold" id="afterNoTax">¥0</span>
+              </div>
+              <div class="flex items-center justify-between mt-1">
+                <span>消費税（10%）</span>
+                <span class="tabular font-bold" id="tax">¥0</span>
+              </div>
+              <div class="h-px bg-white/10 my-2"></div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold">税込合計</span>
+                <span class="tabular font-extrabold" id="afterTaxSmall">¥0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Keypad -->
+    <section class="mt-4">
+      <div class="rounded-2xl bg-slate-900 border border-white/10 p-3 safe-shadow">
+        <div class="grid grid-cols-4 gap-2">
+          <!-- 1st row -->
+          <button data-key="7" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">7</button>
+          <button data-key="8" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">8</button>
+          <button data-key="9" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">9</button>
+          <button id="btn00" class="btn rounded-2xl py-5 text-xl font-extrabold bg-slate-800 text-white border border-white/10 focus:outline-none focus:ring-4 focus:ring-white/20">00</button>
+
+          <!-- 2nd row -->
+          <button data-key="4" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">4</button>
+          <button data-key="5" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">5</button>
+          <button data-key="6" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">6</button>
+          <button id="btnQuick100" class="btn rounded-2xl py-5 text-sm font-extrabold bg-slate-800 text-white border border-white/10 focus:outline-none focus:ring-4 focus:ring-white/20">
+            +100
+          </button>
+
+          <!-- 3rd row -->
+          <button data-key="1" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">1</button>
+          <button data-key="2" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">2</button>
+          <button data-key="3" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30">3</button>
+          <button id="btnQuick1000" class="btn rounded-2xl py-5 text-sm font-extrabold bg-slate-800 text-white border border-white/10 focus:outline-none focus:ring-4 focus:ring-white/20">
+            +1000
+          </button>
+
+          <!-- 4th row -->
+          <!-- ★修正点：data-key="0" を追加 -->
+          <button id="btnZero" data-key="0" class="btnKey btn rounded-2xl py-5 text-2xl font-extrabold bg-white text-slate-950 focus:outline-none focus:ring-4 focus:ring-white/30 col-span-2">0</button>
+          <button id="btnClear" class="btn rounded-2xl py-5 text-xl font-extrabold bg-rose-500 text-white focus:outline-none focus:ring-4 focus:ring-rose-200">C</button>
+          <button id="btnApply"
+            class="btn rounded-2xl py-5 text-base font-extrabold bg-indigo-400 text-slate-950 focus:outline-none focus:ring-4 focus:ring-indigo-200">
+            計算
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-300 mt-3 leading-relaxed">
+          ・数字キーで元値を入力（小数は不要想定）<br />
+          ・割引ボタンを押すと即計算（または「計算」）<br />
+          ・<span class="font-bold text-white">税込</span>が大きく出ます
+        </p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-5 text-center text-xs text-slate-500">
+      片手操作向け / 誤タップ防止 / ユニバーサルデザイン（高コントラスト）
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      // ====== State ======
+      const state = {
+        raw: "",            // 数字文字列（円）
+        off: null,          // 割引率（10,20,30,50）
+        lastComputedOff: null
+      };
+
+      // ====== Elements ======
+      const $ = (id) => document.getElementById(id);
+
+      const priceInput = $("priceInput");
+      const msg = $("msg");
+
+      const original = $("original");
+      const afterTax = $("afterTax");
+      const saved = $("saved");
+      const badgeOff = $("badgeOff");
+      const afterNoTax = $("afterNoTax");
+      const tax = $("tax");
+      const afterTaxSmall = $("afterTaxSmall");
+
+      const btnReset = $("btnReset");
+      const btnBack = $("btnBack");
+      const btnClear = $("btnClear");
+      const btnApply = $("btnApply");
+      const btn00 = $("btn00");
+      const btnQuick100 = $("btnQuick100");
+      const btnQuick1000 = $("btnQuick1000");
+
+      const discountButtons = Array.from(document.querySelectorAll("button[data-off]"));
+      const keyButtons = Array.from(document.querySelectorAll(".btnKey"));
+
+      // ====== Utils ======
+      const clampLen = (s, max) => (s.length > max ? s.slice(0, max) : s);
+
+      const formatYen = (n) => {
+        // n is integer >=0
+        const s = String(n);
+        const withComma = s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return "¥" + withComma;
+      };
+
+      const showMsg = (text) => {
+        if (!text) {
+          msg.classList.add("hidden");
+          msg.textContent = "";
+          return;
+        }
+        msg.textContent = text;
+        msg.classList.remove("hidden");
+      };
+
+      const parsePrice = () => {
+        if (!state.raw) return 0;
+        // 先頭ゼロを潰す（ただし "0" は残す）
+        const normalized = state.raw.replace(/^0+(?=\d)/, "");
+        const n = Number(normalized);
+        if (!Number.isFinite(n) || n < 0) return NaN;
+        // 円は整数運用
+        return Math.floor(n);
+      };
+
+      const setInputFromState = () => {
+        const n = parsePrice();
+        if (Number.isNaN(n)) {
+          priceInput.value = state.raw;
+          return;
+        }
+        if (!state.raw) {
+          priceInput.value = "";
+          priceInput.placeholder = "0";
+        } else {
+          priceInput.value = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+      };
+
+      const setDiscountActiveUI = () => {
+        const off = state.off;
+        discountButtons.forEach(btn => {
+          const isActive = Number(btn.dataset.off) === off;
+          btn.classList.toggle("ring-4", isActive);
+          btn.classList.toggle("ring-white/60", isActive);
+          btn.classList.toggle("brightness-95", isActive);
+        });
+        badgeOff.textContent = (off ?? "--") + "%OFF";
+      };
+
+      const computeAndRender = (triggeredByDiscount = false) => {
+        const price = parsePrice();
+
+        if (Number.isNaN(price)) {
+          showMsg("入力が不正です。リセット（AC）でやり直してください。");
+          return;
+        }
+        if (price <= 0) {
+          // 0円は結果をクリアしてユーザーにわかりやすく
+          renderResult(0, 0, 0, 0, 0);
+          if (triggeredByDiscount) showMsg("価格を入力してから割引を押してください。");
+          else showMsg("");
+          return;
+        }
+        if (state.off == null) {
+          showMsg("割引率を選んでください（10/20/30/50%）。");
+          return;
+        }
+        showMsg("");
+
+        const offRate = state.off / 100;
+        const afterNoTaxVal = Math.round(price * (1 - offRate));  // 税抜の割引後（四捨五入）
+        const taxVal = Math.round(afterNoTaxVal * 0.10);          // 消費税10%（四捨五入）
+        const afterTaxVal = afterNoTaxVal + taxVal;
+        const savedVal = price - afterNoTaxVal;
+
+        state.lastComputedOff = state.off;
+
+        renderResult(price, afterTaxVal, savedVal, afterNoTaxVal, taxVal);
+      };
+
+      const renderResult = (price, afterTaxVal, savedVal, afterNoTaxVal, taxVal) => {
+        original.textContent = formatYen(price);
+        afterTax.textContent = formatYen(afterTaxVal);
+        afterTaxSmall.textContent = formatYen(afterTaxVal);
+        saved.textContent = formatYen(savedVal);
+        afterNoTax.textContent = formatYen(afterNoTaxVal);
+        tax.textContent = formatYen(taxVal);
+      };
+
+      const resetAll = () => {
+        state.raw = "";
+        state.off = null;
+        state.lastComputedOff = null;
+        setInputFromState();
+        setDiscountActiveUI();
+        showMsg("");
+        renderResult(0, 0, 0, 0, 0);
+      };
+
+      const clearInputOnly = () => {
+        state.raw = "";
+        setInputFromState();
+        showMsg("");
+        // 割引率は保持（連続利用が早い）
+        if (state.off != null) computeAndRender(false);
+        else renderResult(0, 0, 0, 0, 0);
+      };
+
+      const backspace = () => {
+        if (!state.raw) return;
+        state.raw = state.raw.slice(0, -1);
+        setInputFromState();
+        showMsg("");
+        if (state.off != null) computeAndRender(false);
+        else renderResult(parsePrice(), 0, 0, 0, 0);
+      };
+
+      const appendDigit = (d) => {
+        // 最大桁数（過剰入力で壊れない）
+        // 例：9,999,999,999（10桁）まで
+        const next = clampLen((state.raw || "") + d, 10);
+        state.raw = next;
+        setInputFromState();
+        // 割引が選ばれていれば即更新（店頭はスピード命）
+        if (state.off != null) computeAndRender(false);
+        else renderResult(parsePrice(), 0, 0, 0, 0);
+      };
+
+      const addQuick = (delta) => {
+        const base = parsePrice();
+        if (Number.isNaN(base)) {
+          showMsg("入力が不正です。ACでやり直してください。");
+          return;
+        }
+        const next = base + delta;
+        state.raw = String(Math.max(0, next));
+        setInputFromState();
+        if (state.off != null) computeAndRender(false);
+        else renderResult(parsePrice(), 0, 0, 0, 0);
+      };
+
+      // ====== Events ======
+      keyButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const digit = btn.dataset.key;
+          if (digit == null) return;
+          appendDigit(digit);
+        });
+      });
+
+      btn00.addEventListener("click", () => appendDigit("00"));
+      btnQuick100.addEventListener("click", () => addQuick(100));
+      btnQuick1000.addEventListener("click", () => addQuick(1000));
+
+      btnReset.addEventListener("click", resetAll);
+      btnClear.addEventListener("click", clearInputOnly);
+      btnBack.addEventListener("click", backspace);
+
+      btnApply.addEventListener("click", () => computeAndRender(false));
+
+      discountButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const off = Number(btn.dataset.off);
+          state.off = Number.isFinite(off) ? off : null;
+          setDiscountActiveUI();
+          computeAndRender(true);
+        });
+      });
+
+      // 物理キーボード対応（現場の端末で便利）
+      // 入力欄はreadonlyだが、キーボードでも使えると強い。
+      window.addEventListener("keydown", (e) => {
+        if (e.key >= "0" && e.key <= "9") {
+          appendDigit(e.key);
+          return;
+        }
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          backspace();
+          return;
+        }
+        if (e.key === "Escape") {
+          resetAll();
+          return;
+        }
+        if (e.key === "Enter") {
+          computeAndRender(false);
+          return;
+        }
+      }, { passive: false });
+
+      // 初期描画
+      resetAll();
+    })();
+  </script>
+</body>
+</html>
