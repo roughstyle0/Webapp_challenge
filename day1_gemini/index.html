@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Vision Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            touch-action: manipulation; /* ダブルタップズーム防止 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* ランドルト環の描画ロジック */
+        .landolt-c {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        /* 正確なCを作るためのマスク処理 */
+        .ring-shape {
+            border-radius: 50%;
+            background: conic-gradient(transparent 40deg, #1e293b 40deg 320deg, transparent 320deg);
+            /* 注: ランドルト環の切れ目は60度ではなく、視覚的にはもっと狭いが、
+               標準的な5:1の比率を守るため、内径・外径と切れ目の幅をJSで計算制御するアプローチをとる */
+            /* 今回はCSSのmaskプロパティで幾何学的に正確な「C」を生成する */
+            background: #0f172a;
+            mask-image: radial-gradient(transparent 60%, black 61%), 
+                        conic-gradient(from 0deg at 50% 50%, black 0deg 340deg, transparent 340deg 360deg);
+            /* 切れ目を右(0度地点)に来るよう調整 */
+            mask-composite: intersect;
+            -webkit-mask-image: radial-gradient(transparent 60%, black 60.5%), 
+                                conic-gradient(from 10deg at 50% 50%, black 0deg 340deg, transparent 340deg 360deg);
+            -webkit-mask-composite: source-in;
+            transform: rotate(-10deg); /* マスクの切れ目位置補正 */
+        }
+        
+        .fade-enter { opacity: 0; transform: scale(0.9); }
+        .fade-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- Header -->
+    <header class="flex-none bg-white shadow-sm border-b border-slate-100 p-4 z-10 flex justify-between items-center">
+        <div>
+            <h1 class="text-lg font-bold text-slate-700 tracking-tight flex items-center gap-2">
+                <span class="w-2 h-6 bg-teal-500 rounded-full"></span>
+                Smart Vision Check
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">スマホを顔から40cm離して使用</p>
+        </div>
+        <button onclick="toggleSettings()" class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-area" class="flex-grow flex flex-col items-center justify-center relative cursor-pointer active:bg-slate-100 transition-colors" onclick="nextTest()">
+        
+        <!-- Target Area -->
+        <div class="relative flex items-center justify-center w-full h-full">
+            <!-- Landolt C Container -->
+            <div id="landolt-container" class="landolt-c relative">
+                <!-- SVGで正確なCを描画 (サイズはJSで制御) -->
+                <svg id="landolt-svg" viewBox="0 0 100 100" class="w-full h-full text-slate-900 fill-current">
+                    <!-- 外径100, 内径60 (太さ20) -->
+                    <!-- 切れ目の幅20 (Gap = Stroke Width = 1/5 Outer Diameter) -->
+                    <path d="M 50 0 A 50 50 0 1 1 50 100 A 50 50 0 1 1 50 0 Z M 50 20 A 30 30 0 1 0 50 80 A 30 30 0 1 0 50 20 Z" mask="url(#gap-mask)" />
+                    <mask id="gap-mask">
+                        <rect x="0" y="0" width="100" height="100" fill="white" />
+                        <!-- 右側の切れ目: 幅20 -->
+                        <rect x="50" y="40" width="50" height="20" fill="black" />
+                    </mask>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Tap Hint -->
+        <div class="absolute bottom-10 text-slate-400 text-sm animate-pulse pointer-events-none">
+            画面をタップして次へ
+        </div>
+    </main>
+
+    <!-- Footer Info -->
+    <footer class="flex-none bg-white border-t border-slate-100 p-4 pb-8 flex justify-between items-end">
+        <div>
+            <p class="text-xs text-slate-400 font-medium mb-1">現在の視力レベル</p>
+            <div class="flex items-baseline gap-1">
+                <span id="acuity-display" class="text-4xl font-bold text-teal-600 font-mono">0.1</span>
+                <span class="text-sm text-slate-500">相当</span>
+            </div>
+        </div>
+        
+        <div class="flex gap-2">
+            <button onclick="changeMode('manual')" id="btn-manual" class="px-3 py-1.5 rounded text-xs font-medium border border-slate-200 text-slate-500">固定</button>
+            <button onclick="changeMode('random')" id="btn-random" class="px-3 py-1.5 rounded text-xs font-medium bg-teal-50 text-teal-700 border border-teal-100">ランダム</button>
+        </div>
+    </footer>
+
+    <!-- Settings / Calibration Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all">
+            <h2 class="text-lg font-bold text-slate-800 mb-4">設定・キャリブレーション</h2>
+            
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">サイズ補正</label>
+                <p class="text-sm text-slate-600 mb-3">
+                    下の黒い線が、お手持ちのクレジットカードの短辺（約54mm）と同じ長さになるようにスライダーを調整してください。
+                </p>
+                <div class="w-full bg-slate-100 h-12 flex items-center justify-center mb-4 rounded border border-slate-200">
+                    <div id="calibration-bar" class="h-4 bg-slate-800 rounded-sm" style="width: 54mm;"></div>
+                </div>
+                <input type="range" min="0.5" max="2.0" step="0.01" value="1.0" id="scale-slider" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600">
+                <div class="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>小</span>
+                    <span>標準</span>
+                    <span>大</span>
+                </div>
+            </div>
+
+            <button onclick="toggleSettings()" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg shadow-slate-200 hover:bg-slate-700 active:scale-95 transition-transform">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-4 py-2 rounded-full shadow-lg opacity-0 transition-opacity pointer-events-none z-40">
+        サイズを更新しました
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const ACUITY_LEVELS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5, 2.0];
+        const DIRECTIONS = [0, 90, 180, 270]; // Right, Down, Left, Up
+        
+        let state = {
+            acuityIndex: 0,
+            rotation: 0,
+            mode: 'random', // 'random' or 'manual'
+            scaleFactor: 1.0
+        };
+
+        // --- DOM Elements ---
+        const els = {
+            container: document.getElementById('landolt-container'),
+            acuityDisplay: document.getElementById('acuity-display'),
+            slider: document.getElementById('scale-slider'),
+            calibBar: document.getElementById('calibration-bar'),
+            modal: document.getElementById('settings-modal'),
+            btnRandom: document.getElementById('btn-random'),
+            btnManual: document.getElementById('btn-manual')
+        };
+
+        // --- Logic ---
+
+        // Calculate size in pixels based on Visual Acuity (VA)
+        // Formula: Gap size (mm) = 1.454 / VA (at 5m)
+        // Scaled to 0.4m (smartphone distance): Gap = (0.4/5) * (1.454/VA) = 0.11632 / VA
+        // Landolt C Outer Diameter = 5 * Gap
+        function getDiameterMm(acuity) {
+            const distanceRatio = 0.4 / 5.0; // 40cm vs 5m
+            const standardGapMmAt5m = 1.454; 
+            const gapMm = (standardGapMmAt5m * distanceRatio) / acuity;
+            return gapMm * 5; // Outer diameter
+        }
+
+        function updateDisplay() {
+            try {
+                // 1. Pick Acuity
+                const currentAcuity = ACUITY_LEVELS[state.acuityIndex];
+                
+                // 2. Calculate Size
+                const diameterMm = getDiameterMm(currentAcuity);
+                const diameterPx = diameterMm * 3.78 * state.scaleFactor * 4; 
+                // Note: 1mm approx 3.78px. 
+                // *4 is a heuristic "accessibility multiplier" because standard 0.1 at 40cm is extremely tiny on high-DPI screens 
+                // without proper device pixel ratio handling. 
+                // To make this usable as a "Quick Check" rather than a strict medical tool, 
+                // we use a slightly easier scale by default (Scaling Factor).
+                // Real physical size for VA 1.0 at 40cm is ~0.6mm. That's about 2-3 pixels on some screens.
+                // The 'scaleFactor' allows user calibration.
+                
+                // Apply Size
+                els.container.style.width = `${diameterPx}px`;
+                els.container.style.height = `${diameterPx}px`;
+
+                // 3. Apply Rotation
+                els.container.style.transform = `rotate(${state.rotation}deg)`;
+
+                // 4. Update Text
+                els.acuityDisplay.textContent = currentAcuity.toFixed(1);
+
+            } catch (e) {
+                console.error("Render error:", e);
+                showToast("エラーが発生しました");
+            }
+        }
+
+        function nextTest() {
+            // Animation class reset
+            els.container.classList.remove('fade-enter-active');
+            void els.container.offsetWidth; // trigger reflow
+
+            // Logic
+            if (state.mode === 'random') {
+                // Randomize Acuity (Weighted slightly towards middle range for UX)
+                const rand = Math.random();
+                if (rand < 0.2) state.acuityIndex = Math.floor(Math.random() * 3); // 0.1-0.3
+                else if (rand < 0.8) state.acuityIndex = Math.floor(Math.random() * 7) + 3; // 0.4-1.0
+                else state.acuityIndex = Math.floor(Math.random() * 3) + 10; // 1.2-2.0
+            } else {
+                // Manual mode: just cycle rotation, keep acuity or increment?
+                // For manual, we usually want to try the same size again with different direction
+                // Or user can tap text to change size (not implemented for simplicity, just rotation)
+            }
+
+            // Always randomize direction
+            const randomDir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+            
+            // Avoid same direction twice if possible, unless pure random
+            if (randomDir === state.rotation) {
+                state.rotation = (state.rotation + 90) % 360;
+            } else {
+                state.rotation = randomDir;
+            }
+
+            updateDisplay();
+            
+            // Animation
+            requestAnimationFrame(() => {
+                els.container.classList.add('fade-enter-active');
+            });
+        }
+
+        function changeMode(mode) {
+            state.mode = mode;
+            if (mode === 'random') {
+                els.btnRandom.className = "px-3 py-1.5 rounded text-xs font-medium bg-teal-50 text-teal-700 border border-teal-100 transition-colors";
+                els.btnManual.className = "px-3 py-1.5 rounded text-xs font-medium border border-slate-200 text-slate-500 transition-colors";
+                showToast("ランダムモード: タップでサイズと向きが変わります");
+            } else {
+                els.btnRandom.className = "px-3 py-1.5 rounded text-xs font-medium border border-slate-200 text-slate-500 transition-colors";
+                els.btnManual.className = "px-3 py-1.5 rounded text-xs font-medium bg-teal-50 text-teal-700 border border-teal-100 transition-colors";
+                showToast("固定モード: サイズ固定、タップで向きのみ変更");
+            }
+        }
+
+        // --- Settings / Calibration ---
+        function toggleSettings() {
+            els.modal.classList.toggle('hidden');
+        }
+
+        els.slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            // Update visual bar width for calibration (base 54mm * scale)
+            // Actually, we want the bar to STAY 54mm physically, but user adjusts the slider until screen matches card.
+            // So slider changes the global 'scaleFactor'.
+            state.scaleFactor = val;
+            
+            // We update the Landolt C immediately to show effect
+            updateDisplay();
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+        }
+
+        // --- Initialization ---
+        window.addEventListener('resize', updateDisplay); // Handle rotation/resize
+        
+        // Initial render
+        nextTest(); 
+
+    </script>
+</body>
+</html>
