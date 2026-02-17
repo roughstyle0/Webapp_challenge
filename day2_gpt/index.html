@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>朝礼スピーチ・ネタ帳ルーレット</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #fef08a, #fdba74, #fb923c);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+
+  <div class="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-8 max-w-2xl w-full text-center border-4 border-orange-300">
+    
+    <h1 class="text-3xl md:text-4xl font-extrabold text-orange-600 mb-6">
+      ☀ 朝礼スピーチ・ネタ帳ルーレット
+    </h1>
+
+    <div id="topicArea" class="mb-6">
+      <p class="text-gray-500 text-sm mb-2">今日のお題</p>
+      <h2 id="topic" class="text-2xl md:text-3xl font-bold text-gray-800 min-h-[80px] flex items-center justify-center">
+        「ネタを引く」を押してください
+      </h2>
+      <p id="hint" class="text-sm text-gray-600 mt-4 min-h-[50px]">
+      </p>
+    </div>
+
+    <button id="drawBtn"
+      class="bg-orange-500 hover:bg-orange-600 active:scale-95 transition transform duration-150 text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg">
+      🎯 ネタを引く
+    </button>
+
+    <p id="errorMsg" class="text-red-500 text-sm mt-4 hidden">
+      エラーが発生しました。再度お試しください。
+    </p>
+
+  </div>
+
+  <script>
+    const topics = [
+      { title: "最近感謝したスタッフ", hint: "具体的な行動を挙げて、なぜ感謝したのかを共有しましょう。" },
+      { title: "お客様から頂いた嬉しい言葉", hint: "その言葉がチームにどんな影響を与えたかを伝えましょう。" },
+      { title: "今月の注力商品について", hint: "お客様にとってのメリットを中心に話すと効果的です。" },
+      { title: "失敗から学んだこと", hint: "失敗→学び→次の行動、の順で話すと前向きになります。" },
+      { title: "最近のトレンドニュース", hint: "店舗や業務にどう活かせるかを結びつけましょう。" },
+      { title: "チームワークの大切さ", hint: "実際のエピソードを交えると説得力が増します。" },
+      { title: "昨日の小さな成功体験", hint: "小さな成功を称えることで雰囲気が明るくなります。" },
+      { title: "今月の個人目標", hint: "数値や具体的な行動を含めると明確になります。" },
+      { title: "お客様目線で考える大切さ", hint: "実際の接客シーンを想像して話してみましょう。" },
+      { title: "最近挑戦したこと", hint: "挑戦した理由と得られた気づきを共有しましょう。" },
+      { title: "時間管理のコツ", hint: "自分が実践している具体的な方法を紹介しましょう。" },
+      { title: "チームで乗り越えた出来事", hint: "感謝と称賛を必ず添えましょう。" },
+      { title: "健康管理の重要性", hint: "朝礼だからこそ、前向きなメッセージで。" },
+      { title: "笑顔の力", hint: "笑顔が与える影響を具体例で伝えましょう。" },
+      { title: "お客様満足度を高める工夫", hint: "すぐ実践できる一言を添えると効果的です。" },
+      { title: "新人スタッフへのエール", hint: "安心感を与える言葉を選びましょう。" },
+      { title: "最近読んだ本や記事の学び", hint: "業務との関連性を意識しましょう。" },
+      { title: "クレーム対応から学んだこと", hint: "改善点と前向きな学びを強調しましょう。" },
+      { title: "店舗の強みについて", hint: "他店にはない魅力を再確認しましょう。" },
+      { title: "今日一日のテーマ宣言", hint: "短く、力強くまとめるのがポイントです。" }
+    ];
+
+    const topicEl = document.getElementById("topic");
+    const hintEl = document.getElementById("hint");
+    const drawBtn = document.getElementById("drawBtn");
+    const errorMsg = document.getElementById("errorMsg");
+
+    let lastIndex = -1;
+    let isAnimating = false;
+
+    function drawTopic() {
+      if (isAnimating) return;
+
+      try {
+        if (!Array.isArray(topics) || topics.length === 0) {
+          throw new Error("ネタデータが存在しません");
+        }
+
+        isAnimating = true;
+        drawBtn.disabled = true;
+        drawBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+        let count = 0;
+        const spinInterval = setInterval(() => {
+          const randomIndex = Math.floor(Math.random() * topics.length);
+          topicEl.textContent = topics[randomIndex].title;
+          hintEl.textContent = "ヒントを準備中...";
+          count++;
+
+          if (count > 15) {
+            clearInterval(spinInterval);
+
+            let finalIndex;
+            do {
+              finalIndex = Math.floor(Math.random() * topics.length);
+            } while (finalIndex === lastIndex && topics.length > 1);
+
+            lastIndex = finalIndex;
+
+            topicEl.textContent = topics[finalIndex].title;
+            hintEl.textContent = "💡 ワンポイント: " + topics[finalIndex].hint;
+
+            drawBtn.disabled = false;
+            drawBtn.classList.remove("opacity-50", "cursor-not-allowed");
+            isAnimating = false;
+          }
+        }, 80);
+
+        errorMsg.classList.add("hidden");
+
+      } catch (error) {
+        console.error(error);
+        errorMsg.classList.remove("hidden");
+        drawBtn.disabled = false;
+        isAnimating = false;
+      }
+    }
+
+    drawBtn.addEventListener("click", drawTopic);
+  </script>
+
+</body>
+</html>
