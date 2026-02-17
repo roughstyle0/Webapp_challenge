@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>簡易視力検査（ランドルト環）</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* 画面タップでも誤操作しにくい */
+    html, body { height: 100%; }
+    body { -webkit-tap-highlight-color: transparent; }
+
+    /* ランドルト環: CSSだけで描画（画像なし） */
+    .ring {
+      /* size, thickness, gap は JS から上書き */
+      --size: 220px;
+      --thickness: 30px;
+      --gap: 40deg; /* 切れ目角度 */
+      --rot: 0deg;
+
+      width: var(--size);
+      height: var(--size);
+      border-radius: 9999px;
+      background:
+        conic-gradient(
+          from calc(var(--rot) - (var(--gap) / 2)),
+          transparent 0 var(--gap),
+          #111827 var(--gap) 360deg
+        );
+      /* 内側をくり抜いてリングにする */
+      -webkit-mask: radial-gradient(closest-side,
+        transparent calc(50% - var(--thickness)),
+        #000 calc(50% - var(--thickness) + 0.5px)
+      );
+      mask: radial-gradient(closest-side,
+        transparent calc(50% - var(--thickness)),
+        #000 calc(50% - var(--thickness) + 0.5px)
+      );
+
+      filter: drop-shadow(0 10px 18px rgba(17, 24, 39, 0.12));
+      will-change: transform;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+    .ring:active {
+      transform: scale(0.98);
+      filter: drop-shadow(0 6px 12px rgba(17, 24, 39, 0.10));
+    }
+
+    /* アクセシビリティ: モーションを減らす設定 */
+    @media (prefers-reduced-motion: reduce) {
+      .ring { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="min-h-full bg-white text-slate-800">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="px-5 pt-6 pb-3 sm:px-8">
+      <div class="mx-auto max-w-3xl">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
+              簡易視力チェック（ランドルト環）
+            </h1>
+            <p class="mt-1 text-sm text-slate-500 leading-relaxed">
+              画面をタップ（または「次へ」）で向きと大きさがランダムに切り替わります。<br class="hidden sm:block"/>
+              ※医療用途ではありません。目の疲れを感じたら休憩してください。
+            </p>
+          </div>
+
+          <button id="btnHelp" class="shrink-0 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 active:scale-[0.99]">
+            <span class="inline-block h-2 w-2 rounded-full bg-sky-500"></span>
+            使い方
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 px-5 pb-6 sm:px-8">
+      <div class="mx-auto max-w-3xl">
+        <!-- Card -->
+        <section class="rounded-3xl border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] overflow-hidden">
+          <div class="px-5 pt-5 pb-4 sm:px-7 sm:pt-6 sm:pb-5 border-b border-slate-100 bg-gradient-to-b from-slate-50/70 to-white">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" class="h-5 w-5 text-sky-600" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-900">現在の表示</p>
+                  <p class="text-xs text-slate-500">向きとサイズがランダム表示されます</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                  <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                  視力相当 <span id="acuityLabel" class="font-semibold text-slate-900">—</span>
+                </span>
+                <span id="distanceHint" class="hidden sm:inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500">
+                  推奨: 端末を約40cm
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tap area -->
+          <div id="tapArea" class="relative px-5 py-10 sm:px-7 sm:py-14 bg-white select-none">
+            <div class="flex flex-col items-center justify-center gap-6">
+              <div class="text-center">
+                <p class="text-sm text-slate-600">
+                  画面中央の「C」の切れ目はどこ？（上/下/左/右）
+                </p>
+                <p id="hintText" class="mt-1 text-xs text-slate-400">
+                  タップで次の問題へ。迷ったら明るい場所で。
+                </p>
+              </div>
+
+              <div class="relative">
+                <div id="ring" class="ring" role="img" aria-label="ランドルト環"></div>
+
+                <!-- small badge -->
+                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2">
+                  <span id="miniBadge" class="inline-flex items-center gap-2 rounded-full bg-slate-900/90 px-3 py-1 text-xs text-white shadow-sm">
+                    視力相当 <span class="font-semibold" id="acuityLabel2">—</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Controls -->
+              <div class="w-full max-w-md">
+                <div class="grid grid-cols-2 gap-3">
+                  <button id="btnNext" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-sky-200">
+                    次へ（ランダム）
+                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M5 12h12"></path>
+                      <path d="M13 6l6 6-6 6"></path>
+                    </svg>
+                  </button>
+
+                  <button id="btnReset" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-slate-200">
+                    リセット
+                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 0 1 15-6l2 2"></path>
+                      <path d="M21 12a9 9 0 0 1-15 6l-2-2"></path>
+                      <path d="M17 8h4V4"></path>
+                      <path d="M7 16H3v4"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Optional calibration -->
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-slate-900">サイズ補正（任意）</p>
+                      <p class="mt-1 text-xs text-slate-500 leading-relaxed">
+                        端末や距離で見え方が変わります。<br/>
+                        「ちょっと大きい/小さい」と感じたら補正してください。
+                      </p>
+                    </div>
+                    <span id="calibBadge" class="shrink-0 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                      補正 <span class="ml-1 font-semibold text-slate-900" id="calibValue">0%</span>
+                    </span>
+                  </div>
+
+                  <div class="mt-3 flex items-center gap-3">
+                    <button id="btnSmaller" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-slate-200">
+                      小さく
+                    </button>
+                    <input id="calibRange" type="range" min="-20" max="20" value="0" step="1"
+                      class="w-full accent-sky-600" aria-label="サイズ補正スライダー"/>
+                    <button id="btnBigger" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 active:scale-[0.99] focus:outline-none focus:ring-4 focus:ring-slate-200">
+                      大きく
+                    </button>
+                  </div>
+
+                  <p id="calibWarn" class="mt-2 text-xs text-slate-400">
+                    ※補正はこの端末の中だけに保存されます（オフライン / localStorage）。
+                  </p>
+                </div>
+
+                <p id="errorText" class="mt-3 text-sm text-rose-600 hidden"></p>
+              </div>
+            </div>
+
+            <!-- Tap overlay hint -->
+            <div class="pointer-events-none absolute inset-0 flex items-end justify-center p-5">
+              <div class="pointer-events-none inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 text-xs text-slate-500 shadow-sm ring-1 ring-slate-200 backdrop-blur">
+                どこでもタップで次へ
+                <span class="inline-block h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer strip -->
+          <div class="px-5 py-4 sm:px-7 bg-slate-50/70 border-t border-slate-100">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-xs text-slate-500">
+                ランダム出題 / 目安表示：<span class="font-medium text-slate-700">0.1〜1.0</span> 相当
+              </p>
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="inline-flex items-center gap-1">
+                  <span class="h-2 w-2 rounded-full bg-slate-300"></span> 画面タップ
+                </span>
+                <span class="inline-flex items-center gap-1">
+                  <span class="h-2 w-2 rounded-full bg-sky-500"></span> 次へボタン
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="mt-6 text-center text-xs text-slate-400 leading-relaxed">
+          <p>このアプリは簡易チェック用です。正確な視力測定は眼科や検査機関をご利用ください。</p>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-900/30"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-5">
+      <div class="w-full max-w-lg rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 overflow-hidden">
+        <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-900">使い方</h2>
+              <p class="mt-1 text-sm text-slate-500">スマホで気軽にチェックするためのガイドです。</p>
+            </div>
+            <button id="btnClose" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              閉じる
+            </button>
+          </div>
+        </div>
+        <div class="px-6 py-5 text-sm text-slate-700 space-y-3">
+          <ol class="list-decimal pl-5 space-y-2">
+            <li>端末を顔から <span class="font-semibold">約40cm</span> 程度に保ちます。</li>
+            <li>中央の「C」の <span class="font-semibold">切れ目の方向</span>（上/下/左/右）を確認します。</li>
+            <li>画面をタップ（または「次へ」）で次のランドルト環へ。</li>
+            <li>表示される「視力相当」は <span class="font-semibold">目安</span> です（端末・距離で変動）。</li>
+          </ol>
+          <div class="rounded-2xl bg-sky-50 border border-sky-100 p-4 text-sky-900">
+            <p class="font-semibold">コツ</p>
+            <ul class="mt-2 list-disc pl-5 space-y-1 text-sky-900/90">
+              <li>明るい場所で</li>
+              <li>画面の明るさを上げる</li>
+              <li>目が疲れたら休憩する</li>
+            </ul>
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-xs text-slate-500">Escキーでも閉じられます</span>
+          <button id="btnStart" class="rounded-2xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-200">
+            はじめる
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      // ===== Utilities =====
+      const $ = (id) => document.getElementById(id);
+      const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+      const randItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      const safeSetText = (el, text) => { if (el) el.textContent = String(text ?? ""); };
+
+      // ===== Elements =====
+      const ringEl = $("ring");
+      const tapArea = $("tapArea");
+      const btnNext = $("btnNext");
+      const btnReset = $("btnReset");
+      const errorText = $("errorText");
+      const acuityLabel = $("acuityLabel");
+      const acuityLabel2 = $("acuityLabel2");
+
+      const btnHelp = $("btnHelp");
+      const modal = $("modal");
+      const btnClose = $("btnClose");
+      const btnStart = $("btnStart");
+
+      const calibRange = $("calibRange");
+      const calibValue = $("calibValue");
+      const btnSmaller = $("btnSmaller");
+      const btnBigger = $("btnBigger");
+
+      // ===== Vision size mapping (目安) =====
+      // ※実際の視力検査は距離・表示サイズ（mm）・視角が必要。
+      // ここでは「それっぽい段階」として 0.1〜1.0 を10段階で提示。
+      const steps = [
+        { acuity: 0.1, size: 280 },
+        { acuity: 0.2, size: 240 },
+        { acuity: 0.3, size: 210 },
+        { acuity: 0.4, size: 190 },
+        { acuity: 0.5, size: 170 },
+        { acuity: 0.6, size: 155 },
+        { acuity: 0.7, size: 140 },
+        { acuity: 0.8, size: 128 },
+        { acuity: 0.9, size: 118 },
+        { acuity: 1.0, size: 110 },
+      ];
+
+      // 向き：切れ目方向（上/右/下/左）
+      const directions = [
+        { name: "上", rot: 270 }, // conic-gradientの仕様上、回転を合わせる
+        { name: "右", rot: 0 },
+        { name: "下", rot: 90 },
+        { name: "左", rot: 180 },
+      ];
+
+      // ===== Calibration (persisted) =====
+      const LS_KEY = "landolt_calibration_percent_v1";
+      const loadCalib = () => {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          const n = Number(raw);
+          return Number.isFinite(n) ? clamp(n, -20, 20) : 0;
+        } catch {
+          return 0;
+        }
+      };
+      const saveCalib = (val) => {
+        try { localStorage.setItem(LS_KEY, String(val)); } catch {}
+      };
+
+      let calibPercent = loadCalib();
+      if (calibRange) calibRange.value = String(calibPercent);
+
+      const applyCalibUI = () => {
+        safeSetText(calibValue, `${calibPercent}%`);
+      };
+
+      // ===== State =====
+      let current = {
+        step: steps[0],
+        dir: directions[0],
+      };
+
+      const clearError = () => {
+        if (!errorText) return;
+        errorText.classList.add("hidden");
+        errorText.textContent = "";
+      };
+
+      const showError = (msg) => {
+        if (!errorText) return;
+        errorText.textContent = msg;
+        errorText.classList.remove("hidden");
+      };
+
+      const setRing = ({ step, dir }) => {
+        if (!ringEl) return;
+
+        // 補正（%）を反映
+        const size = Math.round(step.size * (1 + calibPercent / 100));
+        const thickness = Math.max(10, Math.round(size * 0.14)); // 見た目のバランス
+        const gap = 42; // 切れ目の角度（固定で判別しやすく）
+
+        ringEl.style.setProperty("--size", `${size}px`);
+        ringEl.style.setProperty("--thickness", `${thickness}px`);
+        ringEl.style.setProperty("--gap", `${gap}deg`);
+        ringEl.style.setProperty("--rot", `${dir.rot}deg`);
+
+        const label = step.acuity.toFixed(1);
+        safeSetText(acuityLabel, label);
+        safeSetText(acuityLabel2, label);
+
+        // aria
+        ringEl.setAttribute("aria-label", `ランドルト環。切れ目は${dir.name}。視力相当${label}`);
+      };
+
+      const nextRandom = () => {
+        clearError();
+        try {
+          const step = randItem(steps);
+          const dir = randItem(directions);
+          current = { step, dir };
+          setRing(current);
+        } catch (e) {
+          console.error(e);
+          showError("表示の更新に失敗しました。再読み込みしてお試しください。");
+        }
+      };
+
+      const reset = () => {
+        clearError();
+        try {
+          calibPercent = 0;
+          saveCalib(calibPercent);
+          if (calibRange) calibRange.value = "0";
+          applyCalibUI();
+          current = { step: steps[0], dir: directions[1] };
+          setRing(current);
+        } catch (e) {
+          console.error(e);
+          showError("リセットに失敗しました。");
+        }
+      };
+
+      // ===== Events =====
+      const onTapNext = (ev) => {
+        // rangeやボタン操作中のタップで誤発火しないようにする
+        const t = ev?.target;
+        const tag = (t && t.tagName) ? t.tagName.toLowerCase() : "";
+        if (tag === "button" || tag === "input" || tag === "svg" || tag === "path") return;
+        nextRandom();
+      };
+
+      tapArea?.addEventListener("click", onTapNext);
+      btnNext?.addEventListener("click", () => nextRandom());
+      ringEl?.addEventListener("click", () => nextRandom());
+      btnReset?.addEventListener("click", () => reset());
+
+      // Calibration controls
+      const setCalib = (val) => {
+        calibPercent = clamp(Math.round(val), -20, 20);
+        saveCalib(calibPercent);
+        applyCalibUI();
+        setRing(current);
+      };
+
+      calibRange?.addEventListener("input", (e) => setCalib(Number(e.target.value)));
+      btnSmaller?.addEventListener("click", () => setCalib(calibPercent - 2));
+      btnBigger?.addEventListener("click", () => setCalib(calibPercent + 2));
+
+      // Modal
+      const openModal = () => { modal?.classList.remove("hidden"); };
+      const closeModal = () => { modal?.classList.add("hidden"); };
+
+      btnHelp?.addEventListener("click", openModal);
+      btnClose?.addEventListener("click", closeModal);
+      btnStart?.addEventListener("click", () => { closeModal(); nextRandom(); });
+
+      // overlay click close
+      modal?.addEventListener("click", (e) => {
+        if (e.target === modal || e.target === modal.firstElementChild) closeModal();
+      });
+
+      // Esc close
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) closeModal();
+      });
+
+      // ===== Init =====
+      applyCalibUI();
+      // 初期表示（ランダムにしない：最初は安定）
+      setRing(current);
+    })();
+  </script>
+</body>
+</html>
