@@ -6,7 +6,6 @@
   <title>レンズの厚み（薄さ）比較シミュレーター｜眼鏡店向け</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* ほんの少しだけ“アプリ感”を上げるための細部 */
     .soft-shadow { box-shadow: 0 10px 30px rgba(0,0,0,.06); }
     .ring-soft { box-shadow: 0 0 0 1px rgba(15,23,42,.08) inset; }
     .grid-dot {
@@ -14,11 +13,9 @@
       background-size: 14px 14px;
       background-position: 0 0;
     }
-    /* iOSのrange見た目を安定 */
     input[type="range"] { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; background: rgba(15,23,42,.12); outline: none; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 999px; background: white; border: 1px solid rgba(15,23,42,.18); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
     input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 999px; background: white; border: 1px solid rgba(15,23,42,.18); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
-    /* アニメーション */
     .smooth { transition: all .22s ease; }
     .mono-num { font-variant-numeric: tabular-nums; }
   </style>
@@ -64,14 +61,15 @@
         <!-- SPH -->
         <div class="mt-5">
           <label class="flex items-end justify-between gap-3">
-            <span class="text-sm font-medium text-slate-700">度数（SPH / 近視のマイナス）</span>
+            <span class="text-sm font-medium text-slate-700">度数（SPH）</span>
             <span class="mono-num text-sm font-semibold text-slate-900" id="sphBadge">-4.00 D</span>
           </label>
 
           <div class="mt-3 grid gap-3">
-            <input id="sphRange" type="range" min="-10" max="-2" step="0.25" value="-4" aria-label="度数スライダー">
+            <!-- +度数対応: -10.00 ～ +8.00 -->
+            <input id="sphRange" type="range" min="-10" max="8" step="0.25" value="-4" aria-label="度数スライダー">
             <div class="flex items-center justify-between text-xs text-slate-500 mono-num">
-              <span>-10.00</span><span>-8.00</span><span>-6.00</span><span>-4.00</span><span>-2.00</span>
+              <span>-10.00</span><span>-6.00</span><span>-2.00</span><span>+2.00</span><span>+8.00</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -79,7 +77,7 @@
                 <label for="sphSelect" class="block text-xs font-medium text-slate-600">セレクトで選ぶ</label>
                 <select id="sphSelect" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-slate-200 smooth">
                 </select>
-                <p class="mt-2 text-xs text-slate-500">※-2.00〜-10.00 を 0.25D 刻み</p>
+                <p class="mt-2 text-xs text-slate-500">※-10.00〜+8.00 を 0.25D 刻み（0.00は除外）</p>
               </div>
 
               <div class="rounded-xl bg-slate-50 p-3 ring-soft">
@@ -96,15 +94,11 @@
         <div class="mt-6">
           <div class="flex items-end justify-between gap-3">
             <label class="text-sm font-medium text-slate-700" for="idxSelect">屈折率（レンズの薄さ）</label>
-            <span class="text-xs text-slate-500">薄さの目安：<span id="idxLabel" class="font-semibold text-slate-700">1.67 薄型</span></span>
+            <span class="text-xs text-slate-500">薄さの目安：<span id="idxLabel" class="font-semibold text-slate-700">—</span></span>
           </div>
 
           <div class="mt-3 grid gap-3">
-            <select id="idxSelect" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-slate-200 smooth">
-              <option value="1.60" data-name="標準">1.60（標準）</option>
-              <option value="1.67" data-name="薄型" selected>1.67（薄型）</option>
-              <option value="1.74" data-name="超薄型">1.74（超薄型）</option>
-            </select>
+            <select id="idxSelect" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-slate-200 smooth"></select>
 
             <div class="rounded-xl bg-slate-50 p-3 ring-soft">
               <div class="flex items-center justify-between">
@@ -113,9 +107,7 @@
                   コピー
                 </button>
               </div>
-              <p id="talkText" class="mt-2 text-sm text-slate-700 leading-relaxed">
-                —
-              </p>
+              <p id="talkText" class="mt-2 text-sm text-slate-700 leading-relaxed">—</p>
             </div>
           </div>
         </div>
@@ -140,7 +132,7 @@
           <h2 class="text-base font-semibold">見た目で比較（断面イメージ）</h2>
           <div class="flex items-center gap-2">
             <button id="btnToggleCompare" class="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 smooth">
-              3種類を同時比較
+              5種類を同時比較
             </button>
           </div>
         </div>
@@ -153,7 +145,7 @@
                 <span class="mx-2 text-slate-300">|</span>
                 屈折率 <span id="readIdx">1.67</span>
               </div>
-              <div class="mt-1 text-xs text-slate-500">“端の厚み” のイメージ（中心厚は一定扱い）</div>
+              <div class="mt-1 text-xs text-slate-500" id="posHint">—</div>
             </div>
 
             <div class="flex items-center gap-2">
@@ -172,12 +164,11 @@
             <div class="rounded-2xl bg-slate-50 p-4 ring-soft grid-dot">
               <div class="flex items-center justify-between">
                 <div class="text-xs font-semibold text-slate-700">断面イメージ</div>
-                <div class="text-xs text-slate-500 mono-num" id="thicknessReadout">端の厚み目安：—</div>
+                <div class="text-xs text-slate-500 mono-num" id="thicknessReadout">—</div>
               </div>
 
               <div class="mt-3 flex items-center justify-center">
                 <svg id="lensSvg" width="360" height="200" viewBox="0 0 360 200" class="max-w-full">
-                  <!-- 背景ガイド -->
                   <defs>
                     <linearGradient id="glassGrad" x1="0" x2="0" y1="0" y2="1">
                       <stop offset="0" stop-color="rgba(255,255,255,0.85)" />
@@ -193,22 +184,19 @@
                     <line x1="180" y1="30" x2="180" y2="170" stroke="rgba(15,23,42,0.10)" stroke-width="2" stroke-dasharray="6 6" />
                   </g>
 
-                  <!-- レンズ本体 -->
                   <path id="lensPath" d="" fill="url(#glassGrad)" stroke="rgba(15,23,42,0.35)" stroke-width="2" filter="url(#soft)"></path>
 
-                  <!-- ラベル -->
                   <g id="labelGroup" class="mono-num">
-                    <rect x="24" y="18" rx="10" ry="10" width="170" height="28" fill="rgba(255,255,255,0.85)" stroke="rgba(15,23,42,0.12)"/>
+                    <rect x="24" y="18" rx="10" ry="10" width="210" height="28" fill="rgba(255,255,255,0.85)" stroke="rgba(15,23,42,0.12)"/>
                     <text id="lensLabel" x="38" y="37" font-size="12" fill="rgba(15,23,42,0.75)">—</text>
                   </g>
                 </svg>
               </div>
 
-              <!-- Legend -->
               <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
                 <div class="flex items-center gap-2">
                   <span class="inline-block h-2.5 w-2.5 rounded-full bg-slate-900/70"></span>
-                  <span>端が厚いほど、外側のふくらみが大きく表示されます</span>
+                  <span id="legendText">—</span>
                 </div>
                 <div class="text-slate-500">※表示は相対</div>
               </div>
@@ -222,19 +210,18 @@
                   <p class="text-xs text-slate-500">右ほど薄い</p>
                 </div>
 
-                <div id="compareGrid" class="mt-4 grid gap-3 sm:grid-cols-3"></div>
+                <div id="compareGrid" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Quick tips -->
         <div class="mt-5 rounded-2xl bg-slate-900 p-4 text-white">
           <p class="text-sm font-semibold">接客での使い方</p>
           <ul class="mt-2 space-y-1 text-sm text-white/90">
             <li>・まず度数（SPH）を合わせて、屈折率を切り替えて見せる</li>
-            <li>・「3種類を同時比較」で、差が出る瞬間を見せる</li>
-            <li>・最後に「この条件を共有」でお客様にURL送付（自宅で再確認できます）</li>
+            <li>・「同時比較」で差が出る瞬間を見せる（特に強度数）</li>
+            <li>・最後に「この条件を共有」でURL送付（自宅で再確認できます）</li>
           </ul>
         </div>
       </section>
@@ -251,15 +238,18 @@
     // -----------------------------
     const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
     const roundTo = (v, step) => Math.round(v / step) * step;
+    const $ = (id) => document.getElementById(id);
 
     const fmtDiopter = (v) => {
       const n = Number(v);
       if (!Number.isFinite(n)) return "—";
-      const s = n.toFixed(2);
-      return (n > 0 ? "+" : "") + s;
+      const s = Math.abs(n).toFixed(2);
+      if (n > 0) return "+" + s;
+      if (n < 0) return "-" + s;
+      return "0.00";
     };
 
-    const $ = (id) => document.getElementById(id);
+    const toIdxKey = (v) => Number(v).toFixed(2); // "1.60" のように必ず揃える
 
     const showToast = (msg = "コピーしました") => {
       const t = $("toast");
@@ -275,7 +265,6 @@
         showToast("コピーしました");
         return true;
       } catch (e) {
-        // フォールバック：選択してコピーを促す
         const ta = document.createElement("textarea");
         ta.value = text;
         ta.setAttribute("readonly", "");
@@ -301,17 +290,23 @@
     // -----------------------------
     const DEFAULT = {
       sph: -4.00,
-      idx: 1.67,
+      idx: "1.67",
       memo: "",
-      scaleBoost: 1.00, // 見やすさ調整（表示倍率）
+      scaleBoost: 1.00,
       compare: false,
     };
 
+    // ✅ 修正ポイント①：キーを必ず "1.60" 形式の文字列で統一（JSの 1.60 → "1.6" 問題を回避）
+    // thinFactor: 数値が小さいほど薄く表示（相対）
     const IDX_META = {
-      1.60: { name: "標準", thinFactor: 1.00 },
-      1.67: { name: "薄型", thinFactor: 0.85 },
-      1.74: { name: "超薄型", thinFactor: 0.72 },
+      "1.50": { name: "超標準", thinFactor: 1.12 },
+      "1.60": { name: "標準",   thinFactor: 1.00 },
+      "1.67": { name: "薄型",   thinFactor: 0.86 },
+      "1.74": { name: "超薄型", thinFactor: 0.74 },
+      "1.76": { name: "極薄",   thinFactor: 0.71 },
     };
+
+    const IDX_ORDER = ["1.50","1.60","1.67","1.74","1.76"];
 
     const S = { ...DEFAULT };
 
@@ -328,6 +323,8 @@
     const readSph = $("readSph");
     const readIdx = $("readIdx");
     const thicknessReadout = $("thicknessReadout");
+    const posHint = $("posHint");
+    const legendText = $("legendText");
 
     const warnBox = $("warnBox");
     const warnText = $("warnText");
@@ -346,157 +343,219 @@
     const talkText = $("talkText");
 
     // -----------------------------
-    // Build select options for SPH
+    // Build select options
     // -----------------------------
     function buildSphOptions() {
-      const min = -10.00, max = -2.00, step = 0.25;
+      // -10.00 ～ +8.00 / 0.25 step, 0.00 は除外
+      const min = -10.00, max = 8.00, step = 0.25;
       const opts = [];
       for (let v = max; v >= min; v = Math.round((v - step) * 100) / 100) {
+        if (Math.abs(v) < 0.001) continue; // 0.00除外（接客でほぼ不要＆誤解防止）
         opts.push(v);
       }
       sphSelect.innerHTML = opts.map(v => `<option value="${v.toFixed(2)}">${fmtDiopter(v)} D</option>`).join("");
     }
 
+    function buildIdxOptions() {
+      idxSelect.innerHTML = IDX_ORDER.map(k => {
+        const m = IDX_META[k];
+        return `<option value="${k}">${k}（${m.name}）</option>`;
+      }).join("");
+    }
+
     // -----------------------------
     // Relative thickness model (not real optics)
-    // - stronger minus => thicker edge
-    // - higher index => thinner (multiply by thinFactor)
     // -----------------------------
-    function calcEdgeThicknessScore(sph, idx) {
-      const abs = Math.abs(sph); // 2..10
-      const meta = IDX_META[idx] || IDX_META[1.67];
-      // Base curve: emphasize higher powers a bit more than linear
-      const base = Math.pow((abs - 2) / (10 - 2), 1.15); // 0..1
-      const withMin = 0.18 + base * 0.82; // keep visible at low power
-      const score = withMin * meta.thinFactor;
-      return clamp(score, 0.10, 1.00);
+    function calcThicknessScore(sph, idxKey) {
+      // abs: 0..10 くらい（0は除外）
+      const abs = Math.abs(Number(sph));
+      const meta = IDX_META[idxKey] || IDX_META["1.60"];
+
+      // 強度数ほど差が見えやすいようにカーブ強め
+      const norm = clamp((abs - 1) / (10 - 1), 0, 1); // 0..1 (abs=1で0)
+      const base = Math.pow(norm, 1.18);              // 0..1
+      const withMin = 0.18 + base * 0.82;             // 0.18..1.00
+
+      const score = withMin * meta.thinFactor;        // 屈折率で薄く
+      return clamp(score, 0.10, 1.25);
     }
 
-    // Map thickness score to a “visual bulge” (px in SVG coords)
     function scoreToBulge(score) {
-      // score 0.10..1.00 -> bulge 10..58 (then scaleBoost)
-      const b = 10 + (score - 0.10) / (1.00 - 0.10) * (58 - 10);
-      return b * S.scaleBoost;
+      // 0.10..1.25 → 10..66 の表示量（scaleBoostで調整）
+      const b = 10 + (score - 0.10) / (1.25 - 0.10) * (66 - 10);
+      return clamp(b, 8, 90) * S.scaleBoost;
     }
 
-    // Build lens cross-section path
-    // We'll draw a symmetric shape around centerline with thicker edges by increasing outer curvature.
-    function buildLensPath(bulge) {
+    // -----------------------------
+    // SVG path builder
+    // 近視(マイナス): 端が厚い（外側がふくらむ）
+    // 遠視(プラス): 中心が厚い（中心がふくらむ）
+    // -----------------------------
+    function buildLensPathForMinus(edgeBulge) {
       const cx = 180, top = 55, bottom = 155;
       const left = 55, right = 305;
       const midY = (top + bottom) / 2;
 
-      // "bulge" affects how far outward the edges swell
-      const out = clamp(bulge, 8, 85);
-
-      // Control points to make a concave-ish lens center and thick edges
-      // (Not physically correct — just visually intuitive)
+      const out = clamp(edgeBulge, 8, 90);
       const c1x = cx - 70, c2x = cx + 70;
 
-      // Top curve: from left to right
-      const d = [
+      return [
         `M ${left} ${midY}`,
-        // upper-left edge
         `C ${left} ${midY - out} ${c1x} ${top} ${cx} ${top + 8}`,
-        // upper-right edge
         `C ${c2x} ${top} ${right} ${midY - out} ${right} ${midY}`,
-        // lower-right edge
         `C ${right} ${midY + out} ${c2x} ${bottom} ${cx} ${bottom - 8}`,
-        // lower-left edge
         `C ${c1x} ${bottom} ${left} ${midY + out} ${left} ${midY}`,
         "Z"
       ].join(" ");
-      return d;
+    }
+
+    function buildLensPathForPlus(centerBulge) {
+      // 中心が厚い＝中央がふくらむ（端は比較的薄い）
+      const cx = 180, top = 60, bottom = 150;
+      const left = 60, right = 300;
+      const midY = (top + bottom) / 2;
+
+      const c = clamp(centerBulge, 8, 90);
+      const edge = 10; // 端は薄めに固定（見た目の分かりやすさ優先）
+
+      // 中央で上にせり出す（top - c）、下も同様
+      const peakTopY = top - c * 0.55;
+      const peakBotY = bottom + c * 0.55;
+
+      const c1x = cx - 80, c2x = cx + 80;
+
+      return [
+        `M ${left} ${midY}`,
+        // 上側：端は薄く、中央が厚い
+        `C ${left} ${midY - edge} ${c1x} ${peakTopY} ${cx} ${top + 6}`,
+        `C ${c2x} ${peakTopY} ${right} ${midY - edge} ${right} ${midY}`,
+        // 下側
+        `C ${right} ${midY + edge} ${c2x} ${peakBotY} ${cx} ${bottom - 6}`,
+        `C ${c1x} ${peakBotY} ${left} ${midY + edge} ${left} ${midY}`,
+        "Z"
+      ].join(" ");
+    }
+
+    // -----------------------------
+    // Text helpers
+    // -----------------------------
+    function getThicknessPositionHint(sph) {
+      if (sph < 0) return "“端が厚く”なる近視（−）のイメージ（中心厚は一定扱い）";
+      return "“中心が厚く”なる遠視（＋）のイメージ（端厚は薄め扱い）";
+    }
+
+    function getLegend(sph) {
+      if (sph < 0) return "近視（−）：端のふくらみが大きいほど“端が厚い”表示";
+      return "遠視（＋）：中心のふくらみが大きいほど“中心が厚い”表示";
     }
 
     function updateTalkText() {
-      const idx = Number(S.idx).toFixed(2);
-      const name = (IDX_META[idx]?.name) || "—";
-      const sph = fmtDiopter(S.sph);
-      const rel = (calcEdgeThicknessScore(S.sph, idx) / calcEdgeThicknessScore(S.sph, 1.60) * 100);
-      const relPct = clamp(rel, 55, 100).toFixed(0); // 1.74あたりが55%程度になる想定
+      const idxKey = toIdxKey(S.idx);
+      const meta = IDX_META[idxKey] || IDX_META["1.60"];
+      const sph = Number(S.sph);
+
+      const base = calcThicknessScore(sph, "1.60");
+      const cur = calcThicknessScore(sph, idxKey);
+      const relPct = (cur / base) * 100;
+
+      const where = sph < 0 ? "端の厚み" : "中心の厚み";
       const memoPart = S.memo.trim() ? `（メモ：${S.memo.trim()}）` : "";
 
       talkText.textContent =
-        `度数 ${sph}D の場合、屈折率 ${idx}（${name}）は、標準(1.60)に比べて端の厚みイメージが約 ${relPct}% になります。` +
-        ` 見た目の「厚い/薄い」の差を掴むための相対表示です。${memoPart}`;
+        `度数 ${fmtDiopter(sph)}D の場合、屈折率 ${idxKey}（${meta.name}）は、標準(1.60)に比べて${where}イメージが約 ${relPct.toFixed(0)}% になります。` +
+        `（相対表示）${memoPart}`;
     }
 
+    // -----------------------------
+    // Validation
+    // -----------------------------
     function validateState() {
       const sph = Number(S.sph);
-      const idx = Number(S.idx);
+      const idxKey = toIdxKey(S.idx);
 
-      const okSph = Number.isFinite(sph) && sph <= -2 && sph >= -10;
-      const okIdx = Number.isFinite(idx) && [1.60, 1.67, 1.74].includes(Number(idx.toFixed(2)));
+      const okSph = Number.isFinite(sph) && sph >= -10 && sph <= 8 && Math.abs(sph) > 0.001;
+      const okIdx = !!IDX_META[idxKey];
 
       if (!okSph || !okIdx) {
         warnBox.classList.remove("hidden");
         warnText.textContent = !okSph
-          ? "度数（SPH）が範囲外です（-2.00〜-10.00）。"
-          : "屈折率が不正です（1.60 / 1.67 / 1.74）。";
+          ? "度数（SPH）が範囲外です（-10.00〜+8.00、0.00は除外）。"
+          : "屈折率が不正です。";
         return false;
       }
       warnBox.classList.add("hidden");
       return true;
     }
 
+    // -----------------------------
+    // Rendering
+    // -----------------------------
     function renderSingle() {
       if (!validateState()) return;
 
-      const idx = Number(S.idx).toFixed(2);
       const sph = Number(S.sph);
+      const idxKey = toIdxKey(S.idx);
+      const meta = IDX_META[idxKey] || IDX_META["1.60"];
 
       sphBadge.textContent = `${fmtDiopter(sph)} D`;
       readSph.textContent = fmtDiopter(sph);
-      readIdx.textContent = idx;
-      idxLabel.textContent = `${idx} ${IDX_META[idx]?.name || ""}`.trim();
+      readIdx.textContent = idxKey;
+      idxLabel.textContent = `${idxKey} ${meta.name}`.trim();
 
-      const score = calcEdgeThicknessScore(sph, idx);
+      posHint.textContent = getThicknessPositionHint(sph);
+      legendText.textContent = getLegend(sph);
+
+      const score = calcThicknessScore(sph, idxKey);
       const bulge = scoreToBulge(score);
-      lensPath.setAttribute("d", buildLensPath(bulge));
 
-      // “端の厚み目安”は相対スコアを擬似mmに変換（説明用途のため丸め）
-      const pseudoMm = (2.2 + score * 5.8); // だいたい 2.8〜8.0mm っぽいレンジ
-      thicknessReadout.textContent = `端の厚み目安：${pseudoMm.toFixed(1)} mm（相対）`;
+      // +/−で断面表示を切替
+      const path = (sph < 0) ? buildLensPathForMinus(bulge) : buildLensPathForPlus(bulge);
+      lensPath.setAttribute("d", path);
 
-      lensLabel.textContent = `SPH ${fmtDiopter(sph)}D  /  屈折率 ${idx}`;
+      // 擬似mm表示（位置に合わせて文言変更）
+      const pseudoMm = (2.0 + score * 6.2); // ざっくり 2〜10mmレンジ
+      const where = sph < 0 ? "端" : "中心";
+      thicknessReadout.textContent = `${where}の厚み目安：${pseudoMm.toFixed(1)} mm（相対）`;
+
+      lensLabel.textContent = `SPH ${fmtDiopter(sph)}D  /  屈折率 ${idxKey}`;
 
       updateTalkText();
-      updateShareButtonVisibility();
     }
 
     function renderCompare() {
       compareGrid.innerHTML = "";
       const sph = Number(S.sph);
-      const idxs = [1.60, 1.67, 1.74];
 
-      const baseScore = calcEdgeThicknessScore(sph, 1.60);
+      const baseScore = calcThicknessScore(sph, "1.60");
 
-      idxs.forEach((ix) => {
-        const idx = Number(ix).toFixed(2);
-        const score = calcEdgeThicknessScore(sph, ix);
+      IDX_ORDER.forEach((idxKey) => {
+        const meta = IDX_META[idxKey];
+        const score = calcThicknessScore(sph, idxKey);
         const bulge = scoreToBulge(score);
         const rel = (score / baseScore) * 100;
+
+        const path = (sph < 0) ? buildLensPathForMinus(bulge) : buildLensPathForPlus(bulge);
+        const where = sph < 0 ? "端" : "中心";
 
         const card = document.createElement("div");
         card.className = "rounded-2xl bg-slate-50 p-3 ring-soft";
         card.innerHTML = `
           <div class="flex items-center justify-between">
-            <div class="text-sm font-semibold text-slate-800">${idx} <span class="text-xs font-medium text-slate-500">(${IDX_META[idx].name})</span></div>
+            <div class="text-sm font-semibold text-slate-800">${idxKey} <span class="text-xs font-medium text-slate-500">(${meta.name})</span></div>
             <div class="text-xs text-slate-500 mono-num">${rel.toFixed(0)}%</div>
           </div>
           <div class="mt-2 flex items-center justify-center">
             <svg width="240" height="120" viewBox="0 0 360 200" class="max-w-full">
               <defs>
-                <linearGradient id="g-${idx.replace(".","")}" x1="0" x2="0" y1="0" y2="1">
+                <linearGradient id="g-${idxKey.replace(".","")}" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0" stop-color="rgba(255,255,255,0.85)" />
                   <stop offset="1" stop-color="rgba(148,163,184,0.22)" />
                 </linearGradient>
               </defs>
-              <path d="${buildLensPath(bulge)}" fill="url(#g-${idx.replace(".","")})" stroke="rgba(15,23,42,0.35)" stroke-width="2"></path>
+              <path d="${path}" fill="url(#g-${idxKey.replace(".","")})" stroke="rgba(15,23,42,0.35)" stroke-width="2"></path>
             </svg>
           </div>
-          <div class="mt-2 text-xs text-slate-600">端の厚みイメージが標準比 <span class="mono-num font-semibold text-slate-800">${rel.toFixed(0)}%</span></div>
+          <div class="mt-2 text-xs text-slate-600">${where}の厚みイメージが標準比 <span class="mono-num font-semibold text-slate-800">${rel.toFixed(0)}%</span></div>
         `;
         compareGrid.appendChild(card);
       });
@@ -505,22 +564,19 @@
     function setCompareMode(on) {
       S.compare = !!on;
       compareWrap.classList.toggle("hidden", !S.compare);
-      btnToggleCompare.textContent = S.compare ? "比較を閉じる" : "3種類を同時比較";
-      btnToggleCompare.classList.toggle("bg-slate-900", !S.compare ? true : true);
+      btnToggleCompare.textContent = S.compare ? "比較を閉じる" : "5種類を同時比較";
       if (S.compare) renderCompare();
     }
 
-    function updateShareButtonVisibility() {
-      // shareは対応ブラウザ以外でもURLコピーできるため表示は常にOK、
-      // ただし狭い画面では上のボタンが無いので、下のトークコピーを使ってもらう想定
-      // →ここでは何もしない（将来拡張用）
-    }
-
     function syncUIFromState() {
+      // 0.00だけは避ける
+      if (Math.abs(Number(S.sph)) < 0.001) S.sph = -0.25;
+
       sphRange.value = Number(S.sph).toFixed(2);
       sphSelect.value = Number(S.sph).toFixed(2);
-      idxSelect.value = Number(S.idx).toFixed(2);
+      idxSelect.value = toIdxKey(S.idx);
       memo.value = S.memo || "";
+
       renderSingle();
       if (S.compare) renderCompare();
     }
@@ -531,7 +587,7 @@
     function stateToQuery() {
       const p = new URLSearchParams();
       p.set("sph", Number(S.sph).toFixed(2));
-      p.set("idx", Number(S.idx).toFixed(2));
+      p.set("idx", toIdxKey(S.idx));
       if ((S.memo || "").trim()) p.set("memo", (S.memo || "").trim().slice(0, 60));
       if (S.scaleBoost !== 1.0) p.set("scale", S.scaleBoost.toFixed(2));
       if (S.compare) p.set("cmp", "1");
@@ -542,15 +598,18 @@
       const p = new URLSearchParams(location.search);
 
       const sph = Number(p.get("sph"));
-      const idx = Number(p.get("idx"));
+      const idx = p.get("idx");
       const memoQ = p.get("memo");
       const scale = Number(p.get("scale"));
       const cmp = p.get("cmp") === "1";
 
-      if (Number.isFinite(sph)) S.sph = clamp(roundTo(sph, 0.25), -10, -2);
-      if (Number.isFinite(idx)) {
-        const fixed = Number(idx.toFixed(2));
-        if ([1.60, 1.67, 1.74].includes(fixed)) S.idx = fixed;
+      if (Number.isFinite(sph)) {
+        const v = clamp(roundTo(sph, 0.25), -10, 8);
+        S.sph = (Math.abs(v) < 0.001) ? -0.25 : v;
+      }
+      if (typeof idx === "string") {
+        const k = toIdxKey(idx);
+        if (IDX_META[k]) S.idx = k;
       }
       if (typeof memoQ === "string") S.memo = memoQ.slice(0, 60);
       if (Number.isFinite(scale)) S.scaleBoost = clamp(scale, 0.85, 1.35);
@@ -567,16 +626,10 @@
     async function shareCurrent() {
       const url = buildShareUrl();
       const title = "レンズ厚み比較（相対）";
-      const text = `SPH ${fmtDiopter(S.sph)}D / 屈折率 ${Number(S.idx).toFixed(2)} の比較URLです。`;
+      const text = `SPH ${fmtDiopter(S.sph)}D / 屈折率 ${toIdxKey(S.idx)} の比較URLです。`;
 
-      // Web Share API (if available)
       if (navigator.share) {
-        try {
-          await navigator.share({ title, text, url });
-          return;
-        } catch (e) {
-          // user canceled or unsupported
-        }
+        try { await navigator.share({ title, text, url }); return; } catch {}
       }
       await safeCopy(url);
     }
@@ -587,17 +640,17 @@
     function onSphChange(v) {
       const num = Number(v);
       if (!Number.isFinite(num)) return;
-      S.sph = clamp(roundTo(num, 0.25), -10, -2);
+      let next = clamp(roundTo(num, 0.25), -10, 8);
+      if (Math.abs(next) < 0.001) next = (S.sph < 0 ? -0.25 : 0.25);
+      S.sph = next;
       syncUIFromState();
       history.replaceState(null, "", "?" + stateToQuery());
     }
 
     function onIdxChange(v) {
-      const num = Number(v);
-      if (!Number.isFinite(num)) return;
-      const fixed = Number(num.toFixed(2));
-      if (![1.60, 1.67, 1.74].includes(fixed)) return;
-      S.idx = fixed;
+      const k = toIdxKey(v);
+      if (!IDX_META[k]) return;
+      S.idx = k;
       syncUIFromState();
       history.replaceState(null, "", "?" + stateToQuery());
     }
@@ -609,7 +662,6 @@
     }
 
     function onScaleToggle() {
-      // 3段階で視認性調整（接客で“差が小さく見える”問題を解決）
       const levels = [1.00, 1.18, 1.35];
       const idx = levels.findIndex(x => Math.abs(x - S.scaleBoost) < 0.02);
       S.scaleBoost = levels[(idx + 1) % levels.length];
@@ -630,9 +682,17 @@
     // Init
     // -----------------------------
     buildSphOptions();
+    buildIdxOptions();
+
     applyQueryToState();
+    // 初期選択を合わせる
+    sphRange.value = Number(S.sph).toFixed(2);
+    sphSelect.value = Number(S.sph).toFixed(2);
+    idxSelect.value = toIdxKey(S.idx);
+
     syncUIFromState();
     setCompareMode(S.compare);
+
     btnScale.textContent = S.scaleBoost === 1.00 ? "見やすく調整" : `表示倍率 x${S.scaleBoost.toFixed(2)}`;
 
     sphRange.addEventListener("input", (e) => onSphChange(e.target.value));
@@ -654,7 +714,6 @@
       await safeCopy(talkText.textContent.trim());
     });
 
-    // 画面サイズが変わった時もSVG見た目を崩しにくく（レンダリングはSVG自体が対応）
     window.addEventListener("resize", () => {
       if (S.compare) renderCompare();
     });
