@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>レンズ厚み比較シミュレーター Pro</title>
+    <title>レンズ厚み比較シミュレーター Pro (Universal)</title>
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -22,20 +22,63 @@
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             background-color: #f8fafc;
-            /* Prevent bounce on mobile */
             overscroll-behavior-y: none; 
         }
         .lens-transition {
             transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        
         /* Custom Slider Styling */
         input[type=range] {
             -webkit-appearance: none; 
+            appearance: none;
             background: transparent; 
+            cursor: pointer;
+            width: 100%;
         }
+
+        /* Thumb Styling */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
+            appearance: none;
+            height: 28px;
+            width: 28px;
+            background-color: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 20;
+            transition: transform 0.1s ease;
         }
+        
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+            background-color: #eff6ff;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 28px;
+            width: 28px;
+            background-color: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: none;
+            position: relative;
+            z-index: 20;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: transparent;
+        }
+        
         input[type=range]:focus {
             outline: none;
         }
@@ -47,7 +90,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // Constants for Refractive Indexes
+        // Constants
         const LENS_TYPES = [
             { index: 1.50, name: "標準 (1.50)", desc: "一般的なプラスチック" },
             { index: 1.60, name: "薄型 (1.60)", desc: "強度と薄さのバランス" },
@@ -56,46 +99,86 @@
             { index: 1.76, name: "世界最薄 (1.76)", desc: "究極の薄さを追求" }
         ];
 
+        // Settings
+        const MIN_SPH = -10.00;
+        const MAX_SPH = 6.00;
+        const BASE_VISUAL_THICKNESS = 4; // Minimum thickness base
+        const MAX_VISUAL_ALLOWED = 130; // Max pixels allowed in SVG
+
         // --- Components ---
 
-        // Icon Component Wrapper
         const Icon = ({ name, size = 20, color = "currentColor", className = "" }) => {
             const lucide = window.lucide;
             if (!lucide) return null;
-            
-            useEffect(() => {
-                lucide.createIcons();
-            }, [name]);
-
+            useEffect(() => lucide.createIcons(), [name]);
             return <i data-lucide={name} className={className} style={{ width: size, height: size, color: color }}></i>;
         };
 
-        // Lens Visualizer Component
-        const LensVisualizer = ({ sph, index, label, highlight = false, compareBaseThickness = null }) => {
-            // Simplified Physics Approximation for Visualization
-            // Thickness is roughly proportional to Power / (Index - 1)
-            // We use a base constant to make it visible on screen
-            
-            const baseCurve = 10; // Visual minimum
-            const powerFactor = Math.abs(sph) * 12; // Visual scaling
-            const calculatedThickness = (powerFactor / (index - 1)) + baseCurve;
-            
-            // Constrain visualization max width to prevent breaking layout
-            const visualWidth = Math.min(Math.max(calculatedThickness, 4), 140); 
-            
-            // Percentage calculation for marketing text
+        const LensVisualizer = ({ sph, index, label, highlight = false, compareBaseThickness = null, globalScale = 1 }) => {
+            const isConvex = sph > 0;
+            const isConcave = sph < 0;
+            const isPlano = sph === 0;
+
+            // --- Physics / Visual Logic ---
+            // Calculate RAW thickness (Variable component)
+            const powerFactor = Math.abs(sph) * 10; 
+            const variableThickness = (powerFactor / (index - 1));
+
+            let rawCenter = BASE_VISUAL_THICKNESS;
+            let rawEdge = BASE_VISUAL_THICKNESS;
+
+            if (isConcave) {
+                rawEdge += variableThickness;
+            } else if (isConvex) {
+                rawCenter += variableThickness;
+            }
+
+            // Determine current Max Thickness for percentage calc (UNSCALED)
+            const currentRawMax = Math.max(rawCenter, rawEdge);
+
+            // Determine dimensions for SVG drawing (SCALED)
+            const visualCenter = rawCenter * globalScale;
+            const visualEdge = rawEdge * globalScale;
+
             const improvementText = useMemo(() => {
                 if (!compareBaseThickness) return null;
-                const diff = compareBaseThickness - calculatedThickness;
-                if (diff <= 0) return null;
+                
+                // Use Raw values for comparison
+                const diff = compareBaseThickness - currentRawMax;
+                
+                // Filter out negligible differences
+                if (diff <= 0.1) return null;
+
                 const percent = Math.round((diff / compareBaseThickness) * 100);
-                return `${percent}% 薄型化`;
-            }, [calculatedThickness, compareBaseThickness]);
+                if (percent <= 0) return null;
+
+                return `${percent}% ${isConvex ? '薄く・軽く' : '薄型化'}`;
+            }, [currentRawMax, compareBaseThickness, isConvex]);
+
+            // --- SVG Path Generation ---
+            const halfEdge = visualEdge / 2;
+            const halfCenter = visualCenter / 2;
+
+            const tl = { x: 80 - halfEdge, y: 10 };
+            const tr = { x: 80 + halfEdge, y: 10 };
+            const bl = { x: 80 - halfEdge, y: 110 };
+            const br = { x: 80 + halfEdge, y: 110 };
+
+            const leftControl = { x: 80 - halfCenter, y: 60 };
+            const rightControl = { x: 80 + halfCenter, y: 60 };
+
+            const pathData = `
+                M ${tl.x},${tl.y}
+                Q ${leftControl.x},${leftControl.y} ${bl.x},${bl.y}
+                L ${br.x},${br.y}
+                Q ${rightControl.x},${rightControl.y} ${tr.x},${tr.y}
+                Z
+            `;
 
             return (
                 <div className={`relative flex flex-col items-center p-6 rounded-2xl transition-all duration-300 ${highlight ? 'bg-blue-50 border-2 border-blue-200 shadow-sm' : 'bg-white border border-gray-100'}`}>
-                    {/* Header Info */}
-                    <div className="text-center mb-6">
+                    {/* Header */}
+                    <div className="text-center mb-6 z-10">
                         <div className="text-sm text-gray-500 font-medium mb-1">{label}</div>
                         <div className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
                             {LENS_TYPES.find(t => t.index === index)?.name || index}
@@ -106,53 +189,67 @@
                         </div>
                     </div>
 
-                    {/* Lens Graphic (SVG Cross Section) */}
+                    {/* SVG Visualization */}
                     <div className="h-40 w-full flex items-center justify-center relative">
-                        {/* Center Guideline */}
+                        {/* Axis Line */}
                         <div className="absolute w-full h-[1px] bg-gray-100 top-1/2 -z-10"></div>
-                        
+                        <div className="absolute h-full w-[1px] bg-gray-50 left-1/2 -z-10"></div>
+
                         <svg width="160" height="120" viewBox="0 0 160 120" className="overflow-visible">
                             <defs>
                                 <linearGradient id={`grad-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.8" />
-                                    <stop offset="50%" stopColor="#cbd5e1" stopOpacity="0.2" />
-                                    <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.8" />
+                                    <stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.9" />
+                                    <stop offset="50%" stopColor="#cbd5e1" stopOpacity="0.4" />
+                                    <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.9" />
                                 </linearGradient>
                             </defs>
                             
-                            {/* Concave Lens Path (Myopia)
-                                Drawing a shape that is thicker at ends (visualWidth) and thin in middle
-                            */}
                             <path 
-                                d={`
-                                    M ${80 - visualWidth/2}, 10 
-                                    Q 80, 40 ${80 + visualWidth/2}, 10 
-                                    L ${80 + visualWidth/2}, 110 
-                                    Q 80, 80 ${80 - visualWidth/2}, 110 
-                                    Z
-                                `}
+                                d={pathData}
                                 fill={`url(#grad-${index})`}
                                 stroke={highlight ? "#3b82f6" : "#94a3b8"}
                                 strokeWidth="2"
                                 className="lens-transition"
                             />
                             
-                            {/* Edge Thickness Indicator Line */}
-                            <line 
-                                x1={80 - visualWidth/2 - 10} y1="10" 
-                                x2={80 - visualWidth/2 - 10} y2="110" 
-                                stroke="#cbd5e1" 
-                                strokeWidth="1" 
-                                strokeDasharray="4 2"
-                            />
-                            <text x={80 - visualWidth/2 - 15} y="60" textAnchor="end" className="text-[10px] fill-gray-400" style={{writingMode: 'vertical-rl'}}>
-                                厚みイメージ
+                            {!isPlano && (
+                                <>
+                                    {isConvex ? (
+                                        <line 
+                                            x1={80} y1="10" 
+                                            x2={80} y2="110" 
+                                            stroke="#f59e0b" 
+                                            strokeWidth="2" 
+                                            strokeDasharray="2 2"
+                                            opacity="0.6"
+                                        />
+                                    ) : (
+                                        <line 
+                                            x1={tl.x - 5} y1="10" 
+                                            x2={bl.x - 5} y2="110" 
+                                            stroke="#ef4444" 
+                                            strokeWidth="1" 
+                                            strokeDasharray="4 2"
+                                            opacity="0.6"
+                                        />
+                                    )}
+                                </>
+                            )}
+                            
+                            <text 
+                                x={isConvex ? 90 : (tl.x - 10)} 
+                                y="60" 
+                                textAnchor={isConvex ? "start" : "end"} 
+                                className="text-[10px] fill-gray-400" 
+                                style={{writingMode: 'vertical-rl'}}
+                            >
+                                {isPlano ? '' : (isConvex ? '中心厚' : 'コバ厚')}
                             </text>
                         </svg>
 
                         {/* Improvement Badge */}
                         {improvementText && (
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-fade-in-up">
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-fade-in-up z-20 whitespace-nowrap">
                                 {improvementText}
                             </div>
                         )}
@@ -162,24 +259,51 @@
         };
 
         const App = () => {
-            // State
             const [sph, setSph] = useState(-4.00);
-            const [baseIndex, setBaseIndex] = useState(1.50); // Left side (Comparison base)
-            const [targetIndex, setTargetIndex] = useState(1.67); // Right side (Recommendation)
-            const [mode, setMode] = useState("compare"); // 'single' or 'compare'
+            const [baseIndex, setBaseIndex] = useState(1.50);
+            const [targetIndex, setTargetIndex] = useState(1.67);
 
-            // Calculated "Physics" value for comparison logic
-            const baseThicknessVal = (Math.abs(sph) * 12) / (baseIndex - 1) + 10;
+            // New Helper: Calculate RAW max thickness (unclamped)
+            // Used for both determining scale and calculation
+            const calculateRawThickness = (s, i) => {
+                const isConv = s > 0;
+                const isConc = s < 0;
+                const pf = Math.abs(s) * 10;
+                const v = pf / (i - 1);
+                
+                let val = BASE_VISUAL_THICKNESS;
+                
+                if (isConc) {
+                    val = BASE_VISUAL_THICKNESS + v; // Edge
+                } else if (isConv) {
+                    val = BASE_VISUAL_THICKNESS + v; // Center
+                }
+                
+                return val;
+            };
 
-            // Handlers
             const handleSphChange = (e) => {
                 setSph(parseFloat(e.target.value));
             };
 
+            // 1. Calculate Raw Values for both lenses
+            const baseRaw = calculateRawThickness(sph, baseIndex);
+            const targetRaw = calculateRawThickness(sph, targetIndex);
+
+            // 2. Determine Scale Factor based on the thickest lens
+            const maxRawInScenario = Math.max(baseRaw, targetRaw);
+            
+            // If the thickest lens exceeds allowed visual width, scale everything down
+            // Otherwise, keep scale at 1 (actual size relative to base constants)
+            const globalScale = maxRawInScenario > MAX_VISUAL_ALLOWED 
+                ? (MAX_VISUAL_ALLOWED / maxRawInScenario) 
+                : 1;
+
+            const percent = ((sph - MIN_SPH) / (MAX_SPH - MIN_SPH)) * 100;
+
             return (
                 <div className="min-h-screen bg-slate-50 flex flex-col items-center py-6 px-4 md:px-8">
                     
-                    {/* Header */}
                     <header className="w-full max-w-4xl flex justify-between items-center mb-8">
                         <div className="flex items-center gap-2">
                             <div className="p-2 bg-blue-600 rounded-lg text-white">
@@ -187,7 +311,7 @@
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold text-slate-800 tracking-tight">Lens Simulator Pro</h1>
-                                <p className="text-xs text-slate-500">レンズ厚み比較シミュレーター</p>
+                                <p className="text-xs text-slate-500">レンズ厚み比較シミュレーター (全度数対応)</p>
                             </div>
                         </div>
                         <button 
@@ -201,59 +325,72 @@
 
                     <main className="w-full max-w-4xl space-y-6">
                         
-                        {/* Control Panel */}
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                                 
-                                {/* 1. SPH Slider */}
+                                {/* SPH Slider */}
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end">
                                         <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                             <Icon name="eye" size={16} />
                                             度数 (SPH)
                                         </label>
-                                        <span className="text-3xl font-bold text-blue-600 font-mono">
-                                            {sph.toFixed(2)}
+                                        <span className={`text-3xl font-bold font-mono ${sph > 0 ? 'text-orange-500' : 'text-blue-600'}`}>
+                                            {sph > 0 ? '+' : ''}{sph.toFixed(2)}
                                         </span>
                                     </div>
-                                    <div className="relative h-12 flex items-center">
+                                    
+                                    <div className="relative h-10 flex items-center w-full">
+                                        <div className="absolute left-0 right-0 h-2 bg-slate-200 rounded-full z-0"></div>
+                                        <div className="absolute h-3 w-[2px] bg-slate-400 z-0" style={{ left: `${((0 - MIN_SPH) / (MAX_SPH - MIN_SPH)) * 100}%` }}></div>
+                                        <div 
+                                            className={`absolute h-2 rounded-full z-0 pointer-events-none transition-all duration-100 ${sph > 0 ? 'bg-orange-400' : 'bg-blue-600'}`}
+                                            style={{ 
+                                                left: sph >= 0 ? `${((0 - MIN_SPH) / (MAX_SPH - MIN_SPH)) * 100}%` : `${percent}%`,
+                                                width: Math.abs(percent - ((0 - MIN_SPH) / (MAX_SPH - MIN_SPH)) * 100) + '%'
+                                            }}
+                                        ></div>
                                         <input 
                                             type="range" 
-                                            min="-12.00" 
-                                            max="-1.00" 
-                                            step="0.25" 
+                                            min={MIN_SPH} 
+                                            max={MAX_SPH} 
+                                            step={0.25} 
                                             value={sph} 
                                             onChange={handleSphChange}
-                                            className="w-full h-2 bg-slate-200 rounded-lg cursor-pointer appearance-none z-10 relative"
+                                            className="w-full absolute z-10 appearance-none bg-transparent cursor-pointer h-10"
+                                            style={{ margin: 0 }}
                                         />
-                                        <div 
-                                            className="absolute h-2 bg-blue-500 rounded-l-lg z-0 pointer-events-none"
-                                            style={{ width: `${((sph - (-12)) / (-1 - (-12))) * 100}%` }}
-                                        ></div>
                                     </div>
+
                                     <div className="flex justify-between text-xs text-slate-400 font-mono">
-                                        <span>-12.00 (強)</span>
-                                        <span>-1.00 (弱)</span>
+                                        <span>{MIN_SPH.toFixed(2)} (近視)</span>
+                                        <span>0.00</span>
+                                        <span>+{MAX_SPH.toFixed(2)} (遠視)</span>
                                     </div>
                                 </div>
 
-                                {/* 2. Comparison Mode Toggle (Conceptual) */}
                                 <div className="flex flex-col justify-end h-full pb-2">
-                                    <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-lg flex items-start gap-3">
-                                        <Icon name="info" size={18} className="mt-0.5 flex-shrink-0" />
+                                    <div className={`text-sm p-3 rounded-lg flex items-start gap-3 transition-colors ${sph > 0 ? 'bg-orange-50 text-orange-800' : 'bg-blue-50 text-blue-800'}`}>
+                                        <Icon name={sph > 0 ? "zoom-in" : "info"} size={18} className="mt-0.5 flex-shrink-0" />
                                         <p className="leading-snug">
-                                            度数が強いほど、レンズの端は厚くなります。<br/>
-                                            <span className="font-bold">高屈折レンズ</span>を選ぶことで、この厚みを抑えることができます。
+                                            {sph > 0 ? (
+                                                <>
+                                                    プラス度数（遠視・老視）です。<br/>
+                                                    <span className="font-bold">中心が厚く、目が大きく見えやすい</span>特徴があります。薄型レンズで自然な見た目に近づけましょう。
+                                                </>
+                                            ) : (
+                                                <>
+                                                    マイナス度数（近視）です。<br/>
+                                                    <span className="font-bold">端（コバ）が厚く、目が小さく見えやすい</span>特徴があります。高屈折レンズでスッキリ仕上げましょう。
+                                                </>
+                                            )}
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Visualization Area */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            
-                            {/* Left: Standard/Baseline */}
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-slate-600 ml-1">比較対象 (基本レンズ)</label>
                                 <select 
@@ -271,10 +408,10 @@
                                     sph={sph} 
                                     index={baseIndex} 
                                     label="Before / Standard"
+                                    globalScale={globalScale}
                                 />
                             </div>
 
-                            {/* Right: Recommendation */}
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-blue-600 ml-1">おすすめレンズ</label>
                                 <select 
@@ -293,12 +430,12 @@
                                     index={targetIndex} 
                                     label="After / Proposal"
                                     highlight={true}
-                                    compareBaseThickness={baseThicknessVal}
+                                    compareBaseThickness={baseRaw}
+                                    globalScale={globalScale}
                                 />
                             </div>
                         </div>
 
-                        {/* Disclaimer */}
                         <footer className="text-center py-6">
                             <p className="text-[10px] text-slate-400">
                                 ※本シミュレーションは厚みの相対的な比較を目的としたイメージ図です。実際のレンズの厚みは、フレームの形状、瞳孔間距離（PD）、レンズの設計によって異なります。<br/>
