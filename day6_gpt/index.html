@@ -12,7 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ふわっとした紙質&インク感の演出（スクショでも綺麗） */
+    /* 紙っぽい質感（保存画像でも綺麗） */
     .paper {
       background-image:
         radial-gradient(1200px 600px at 20% 0%, rgba(255,255,255,.7), rgba(255,255,255,0)),
@@ -20,10 +20,7 @@
         radial-gradient(1200px 900px at 50% 100%, rgba(0,0,0,.06), rgba(0,0,0,0));
       background-blend-mode: overlay;
     }
-    .grain {
-      position: relative;
-      overflow: hidden;
-    }
+    .grain { position: relative; overflow: hidden; }
     .grain::after{
       content:"";
       position:absolute; inset:-50%;
@@ -33,9 +30,7 @@
       mix-blend-mode:multiply;
       opacity:.22;
     }
-    .shine {
-      position: relative;
-    }
+    .shine { position: relative; }
     .shine::before{
       content:"";
       position:absolute; inset:0;
@@ -43,14 +38,8 @@
       pointer-events:none;
       opacity:.8;
     }
-
-    /* ダウンロード時の画質安定のため、カード内部は transform を控えめに */
     .card-shadow { box-shadow: 0 22px 50px rgba(0,0,0,.12), 0 10px 18px rgba(0,0,0,.08); }
-
-    /* テキストの改行と長文は自然に折り返す */
     .wrap { white-space: pre-wrap; word-break: break-word; }
-
-    /* 入力のエラーハイライト */
     .invalid { outline: 2px solid rgba(239,68,68,.8); outline-offset: 2px; }
   </style>
 
@@ -78,7 +67,8 @@
         <p class="text-xs sm:text-sm text-slate-600 truncate">LINEやチャットで「ちゃんと伝わる」感謝カードを一瞬で。</p>
       </div>
       <div class="ml-auto flex items-center gap-2">
-        <button id="btnFillExample" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 hover:bg-white border border-white/70 shadow-sm text-sm">
+        <!-- ✅ iPhoneでも表示 -->
+        <button id="btnFillExample" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 hover:bg-white border border-white/70 shadow-sm text-sm">
           <span>✨</span><span>例を入れる</span>
         </button>
         <button id="btnReset" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 hover:bg-white border border-white/70 shadow-sm text-sm">
@@ -89,7 +79,7 @@
   </header>
 
   <main class="mx-auto max-w-6xl px-4 py-6 sm:py-10 grid gap-6 lg:grid-cols-2 lg:gap-10">
-    <!-- Left: Form -->
+    <!-- Form -->
     <section class="order-2 lg:order-1">
       <div class="rounded-3xl bg-white/70 border border-white/70 shadow-sm p-4 sm:p-6">
         <h2 class="text-lg font-bold">入力フォーム</h2>
@@ -99,12 +89,12 @@
           <div>
             <label class="text-sm font-semibold">宛名</label>
             <div class="mt-2 flex items-center gap-2">
-              <input id="toName" type="text" maxlength="14"
+              <input id="toName" type="text" maxlength="18"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
                 placeholder="例）佐藤さん" autocomplete="off" />
               <span class="text-xs text-slate-500 shrink-0">へ</span>
             </div>
-            <p class="mt-1 text-xs text-slate-500">短めが見やすいです（最大14文字）。</p>
+            <p class="mt-1 text-xs text-slate-500">長くても自動で縮小します（最大18文字）。</p>
           </div>
 
           <div>
@@ -120,20 +110,20 @@
           <div>
             <label class="text-sm font-semibold">自由メッセージ（短め）</label>
             <div class="mt-2">
-              <textarea id="message" rows="4" maxlength="120"
+              <textarea id="message" rows="4" maxlength="160"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
                 placeholder="例）忙しい時間帯にフォローしてくれて本当に助かった！いつもありがとう！"></textarea>
             </div>
             <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
-              <span id="msgHint">改行もOK。相手の行動を具体的に書くと刺さります。</span>
-              <span><span id="msgCount">0</span>/120</span>
+              <span>改行OK。具体的に書くと刺さります。</span>
+              <span><span id="msgCount">0</span>/160</span>
             </div>
           </div>
 
           <div>
             <label class="text-sm font-semibold">贈り主</label>
             <div class="mt-2 flex items-center gap-2">
-              <input id="fromName" type="text" maxlength="14"
+              <input id="fromName" type="text" maxlength="18"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
                 placeholder="例）店長 田中" autocomplete="off" />
               <span class="text-xs text-slate-500 shrink-0">より</span>
@@ -145,15 +135,14 @@
           <button id="btnDownload"
             class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-400 text-white font-semibold shadow-md hover:shadow-lg active:scale-[0.99] transition">
             <span>⬇️</span>
-            <span>画像としてダウンロード</span>
+            <span>画像として保存</span>
           </button>
 
           <div class="flex-1 rounded-2xl bg-white/70 border border-white/70 px-4 py-3 text-xs text-slate-600">
-            <p class="font-semibold">コツ</p>
+            <p class="font-semibold">iPhoneの保存方法</p>
             <ul class="list-disc pl-5 mt-1 space-y-1">
-              <li>宛名と贈り主が入ると「保存したくなる感」UP</li>
-              <li>長文は自動で収まるよう調整されます</li>
-              <li>うまく保存できない場合は、カードをスクショでも綺麗です</li>
+              <li>対応していれば「共有」→「写真に保存」</li>
+              <li>ダメなら画像を新規タブに表示→長押し保存</li>
             </ul>
           </div>
         </div>
@@ -167,7 +156,7 @@
       </div>
     </section>
 
-    <!-- Right: Live Card Preview -->
+    <!-- Preview -->
     <section class="order-1 lg:order-2">
       <div class="lg:sticky lg:top-24">
         <div class="flex items-end justify-between gap-3 mb-3">
@@ -178,22 +167,20 @@
           <div class="text-xs text-slate-500">推奨：スマホで保存→LINE送信</div>
         </div>
 
-        <!-- Card container centered -->
         <div class="grid place-items-center">
-          <!-- The element to capture -->
           <div id="cardWrap" class="w-full max-w-[520px]">
             <div id="card"
               class="grain shine paper card-shadow rounded-[28px] border border-white/60 p-6 sm:p-8 relative select-none"
               style="background: linear-gradient(135deg, #ffe4e6, #fff7ed);">
-              <!-- Decorative corner doodles -->
+
               <div class="absolute -top-3 -right-3 h-16 w-16 rounded-3xl bg-white/50 blur-[1px]"></div>
               <div class="absolute -bottom-4 -left-4 h-20 w-20 rounded-3xl bg-white/40 blur-[1px]"></div>
 
-              <!-- Header -->
               <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0">
                   <div class="text-xs sm:text-sm text-slate-700/80">To:</div>
-                  <div id="cardTo" class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">〇〇さんへ</div>
+                  <!-- プレビューでは見切れ防止のため truncate を付けない（保存時も安全） -->
+                  <div id="cardTo" class="text-xl sm:text-2xl font-extrabold tracking-tight">〇〇さんへ</div>
                 </div>
                 <div class="shrink-0 text-right">
                   <div class="text-3xl sm:text-4xl" id="cardIcon">💖</div>
@@ -204,7 +191,6 @@
                 </div>
               </div>
 
-              <!-- Message -->
               <div class="mt-6 sm:mt-7">
                 <div class="text-xs sm:text-sm text-slate-700/80">Message:</div>
                 <div id="cardMessage"
@@ -213,10 +199,8 @@
                 </div>
               </div>
 
-              <!-- Divider -->
               <div class="mt-6 sm:mt-7 h-px bg-white/70"></div>
 
-              <!-- Footer -->
               <div class="mt-5 flex items-end justify-between gap-3">
                 <div class="text-xs sm:text-sm text-slate-700/80">
                   <div class="font-semibold">From:</div>
@@ -224,14 +208,12 @@
                 </div>
 
                 <div class="text-right">
-                  <div id="cardMini" class="text-xs text-slate-700/70">#ThanksCard</div>
+                  <div class="text-xs text-slate-700/70">#ThanksCard</div>
                   <div class="mt-1 text-xs text-slate-700/70" id="cardDate"></div>
                 </div>
               </div>
 
-              <!-- Safe area note (only for preview; hidden during export) -->
-              <div id="exportNote"
-                   class="mt-4 text-[11px] text-slate-700/60">
+              <div id="exportNote" class="mt-4 text-[11px] text-slate-700/60">
                 ※ 保存用画像にはこの注記は入りません
               </div>
             </div>
@@ -253,55 +235,24 @@
   </footer>
 
   <script>
-    // ====== Data ======
+    // ===== Data =====
     const CATEGORIES = [
-      {
-        key: "help",
-        label: "ヘルプ感謝！",
-        icon: "🫶",
-        gradient: ["#dbeafe", "#fff7ed"], // blue -> warm
-        accent: "#3b82f6",
-        defaultMsg: "忙しい時間帯にフォローしてくれて本当に助かった！ありがとう！"
-      },
-      {
-        key: "service",
-        label: "素晴らしい接客！",
-        icon: "🌟",
-        gradient: ["#fef9c3", "#ffe4e6"], // yellow -> rose
-        accent: "#f59e0b",
-        defaultMsg: "お客様への声かけがすごく丁寧で、見ていて気持ちよかった！"
-      },
-      {
-        key: "birthday",
-        label: "誕生日おめでとう！",
-        icon: "🎂",
-        gradient: ["#fae8ff", "#e0f2fe"], // purple -> sky
-        accent: "#a855f7",
-        defaultMsg: "お誕生日おめでとう！素敵な一年になりますように！"
-      },
-      {
-        key: "always",
-        label: "いつもありがとう",
-        icon: "💖",
-        gradient: ["#ffe4e6", "#fff7ed"], // rose -> warm
-        accent: "#ec4899",
-        defaultMsg: "いつも支えてくれてありがとう。すごく頼りにしています！"
-      },
-      {
-        key: "team",
-        label: "チーム最高！",
-        icon: "🤝",
-        gradient: ["#dcfce7", "#ecfeff"], // green -> cyan
-        accent: "#22c55e",
-        defaultMsg: "みんなの雰囲気を明るくしてくれてありがとう！"
-      }
+      { key: "help",     label: "ヘルプ感謝！",       icon: "🫶", gradient: ["#dbeafe","#fff7ed"], accent:"#3b82f6",
+        defaultMsg:"忙しい時間帯にフォローしてくれて本当に助かった！ありがとう！" },
+      { key: "service",  label: "素晴らしい接客！",   icon: "🌟", gradient: ["#fef9c3","#ffe4e6"], accent:"#f59e0b",
+        defaultMsg:"お客様への声かけがすごく丁寧で、見ていて気持ちよかった！" },
+      { key: "birthday", label: "誕生日おめでとう！", icon: "🎂", gradient: ["#fae8ff","#e0f2fe"], accent:"#a855f7",
+        defaultMsg:"お誕生日おめでとう！素敵な一年になりますように！" },
+      { key: "always",   label: "いつもありがとう",   icon: "💖", gradient: ["#ffe4e6","#fff7ed"], accent:"#ec4899",
+        defaultMsg:"いつも支えてくれてありがとう。すごく頼りにしています！" },
+      { key: "team",     label: "チーム最高！",       icon: "🤝", gradient: ["#dcfce7","#ecfeff"], accent:"#22c55e",
+        defaultMsg:"みんなの雰囲気を明るくしてくれてありがとう！" }
     ];
 
-    // ====== Helpers ======
     const $ = (id) => document.getElementById(id);
 
+    // ===== Helpers =====
     function todayJP() {
-      // ユーザーが日本想定なので日本語表示
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -315,33 +266,7 @@
       $("toastIcon").textContent = icon;
       toast.classList.remove("hidden");
       clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => toast.classList.add("hidden"), 2200);
-    }
-
-    function clampTextToFit(el, minPx, maxPx) {
-      // 文字数に応じて自動調整：まず最大→溢れたら下げる
-      // （スクショ/書き出し時も安定）
-      el.style.fontSize = maxPx + "px";
-      el.style.lineHeight = "1.6";
-      let safety = 40;
-      while (safety-- > 0 && el.scrollHeight > el.clientHeight + 2 && maxPx > minPx) {
-        maxPx -= 1;
-        el.style.fontSize = maxPx + "px";
-      }
-    }
-
-    function setCardTheme(catKey) {
-      const c = CATEGORIES.find(x => x.key === catKey) || CATEGORIES[0];
-      const card = $("card");
-      const gradient = `linear-gradient(135deg, ${c.gradient[0]}, ${c.gradient[1]})`;
-      card.style.background = gradient;
-
-      $("cardIcon").textContent = c.icon;
-      $("cardBadge").textContent = c.label;
-
-      // さりげなくバッジ枠や影にアクセント（派手すぎない）
-      $("cardBadge").style.boxShadow = `0 10px 20px ${hexToRgba(c.accent, 0.18)}`;
-      $("cardBadge").style.borderColor = hexToRgba(c.accent, 0.18);
+      showToast._t = setTimeout(() => toast.classList.add("hidden"), 2400);
     }
 
     function hexToRgba(hex, a) {
@@ -354,8 +279,84 @@
       return `rgba(${r},${g},${b},${a})`;
     }
 
-    function sanitizeSingleLine(str) {
-      return (str || "").replace(/\s+/g, " ").trim();
+    function sanitizeSingleLine(str) { return (str || "").replace(/\s+/g, " ").trim(); }
+
+    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    // 汎用：要素が収まるまでフォントを縮小（1行/複数行どちらもOK）
+    function fitText(el, { min = 12, max = 28, step = 1, mode = "width", maxHeightPx = null } = {}) {
+      if (!el) return;
+      el.style.fontSize = max + "px";
+      el.style.lineHeight = "1.25";
+
+      const check = () => {
+        const overW = el.scrollWidth > el.clientWidth + 1;
+        const overH = maxHeightPx != null ? (el.scrollHeight > maxHeightPx + 1) : (el.scrollHeight > el.clientHeight + 1);
+        return mode === "width" ? overW : (mode === "height" ? overH : (overW || overH));
+      };
+
+      let size = max;
+      let safety = 60;
+      while (safety-- > 0 && check() && size > min) {
+        size -= step;
+        el.style.fontSize = size + "px";
+      }
+    }
+
+    function setCardTheme(catKey) {
+      const c = CATEGORIES.find(x => x.key === catKey) || CATEGORIES[0];
+      $("card").style.background = `linear-gradient(135deg, ${c.gradient[0]}, ${c.gradient[1]})`;
+      $("cardIcon").textContent = c.icon;
+      $("cardBadge").textContent = c.label;
+      $("cardBadge").style.boxShadow = `0 10px 20px ${hexToRgba(c.accent, 0.18)}`;
+      $("cardBadge").style.borderColor = hexToRgba(c.accent, 0.18);
+    }
+
+    // プレビュー用：メッセージ領域は「一定行数に収める」＋自動縮小
+    function applyMessageClampAndFit() {
+      const area = $("cardMessage");
+      if (!area) return;
+
+      const maxLines = window.matchMedia("(min-width: 640px)").matches ? 6 : 5;
+      const basePx = window.matchMedia("(min-width: 640px)").matches ? 16 : 15;
+
+      area.style.maxHeight = `calc(${maxLines} * 1.6em)`;
+      area.style.overflow = "hidden";
+
+      // まず基準サイズに戻してから縮小
+      area.style.fontSize = basePx + "px";
+      area.style.lineHeight = "1.6";
+
+      // 高さに収まるまで縮小
+      let size = basePx;
+      let safety = 40;
+      while (safety-- > 0 && area.scrollHeight > area.clientHeight + 2 && size > 13) {
+        size -= 1;
+        area.style.fontSize = size + "px";
+      }
+    }
+
+    // 宛名・贈り主を幅に合わせて自動縮小
+    function applyHeaderFooterFit() {
+      const toEl = $("cardTo");
+      const fromEl = $("cardFrom");
+
+      // To: は右側にアイコン/バッジがあるので、左側枠内に収める（min-w-0で効く）
+      if (toEl) {
+        toEl.style.whiteSpace = "normal";
+        toEl.style.overflow = "hidden";
+        toEl.style.textOverflow = "clip";
+        // sm以上は28px目安、それ以外は22px目安
+        const maxPx = window.matchMedia("(min-width: 640px)").matches ? 28 : 22;
+        fitText(toEl, { min: 14, max: maxPx, step: 1, mode: "width" });
+      }
+
+      if (fromEl) {
+        fromEl.style.whiteSpace = "normal";
+        fromEl.style.overflow = "hidden";
+        const maxPx = window.matchMedia("(min-width: 640px)").matches ? 16 : 15;
+        fitText(fromEl, { min: 12, max: maxPx, step: 1, mode: "width" });
+      }
     }
 
     function updatePreview() {
@@ -365,35 +366,23 @@
       const cat = $("category").value;
 
       setCardTheme(cat);
-
       $("msgCount").textContent = String(msg.length);
 
-      // 宛名/贈り主はプレースホルダーを用意
       $("cardTo").textContent = (to ? `${to}へ` : "〇〇さんへ");
       $("cardFrom").textContent = (from ? `${from}より` : "〇〇より");
-
-      // メッセージ
       $("cardMessage").textContent =
         msg || "ここにメッセージが表示されます。短くても大丈夫。あなたの「ありがとう」は、ちゃんと届きます。";
-
       $("cardDate").textContent = todayJP();
 
-      // メッセージ表示領域を一定にして、溢れたら縮小（見た目とDL品質の両立）
-      const area = $("cardMessage");
-      // 一度高さを固定（レスポンシブで変わるので毎回計算）
-      // 目安: 4〜6行分
-      const maxLines = window.matchMedia("(min-width: 640px)").matches ? 6 : 5;
-      const basePx = window.matchMedia("(min-width: 640px)").matches ? 16 : 15;
-      area.style.maxHeight = `calc(${maxLines} * 1.6em)`;
-      clampTextToFit(area, 13, basePx);
+      // 自動縮小系
+      applyHeaderFooterFit();
+      applyMessageClampAndFit();
     }
 
-    function validateForDownload() {
-      // 「ダウンロード時だけ」最低限の入力チェック
+    function validateForSave() {
       const toEl = $("toName");
       const fromEl = $("fromName");
       const msgEl = $("message");
-
       [toEl, fromEl, msgEl].forEach(el => el.classList.remove("invalid"));
 
       const to = sanitizeSingleLine(toEl.value);
@@ -405,54 +394,196 @@
       if (!from) { fromEl.classList.add("invalid"); ok = false; }
       if (!msg) { msgEl.classList.add("invalid"); ok = false; }
 
-      if (!ok) {
-        showToast("宛名・メッセージ・贈り主を入れると、もっと嬉しいカードになります！", "⚠️");
-      }
+      if (!ok) showToast("宛名・メッセージ・贈り主を入れると、もっと嬉しいカードになります！", "⚠️");
       return ok;
     }
 
-    async function downloadCard() {
-      // 入力が空でも動くが、保存ボタンだけは軽く促す
-      if (!validateForDownload()) return;
+    function filenameSafe() {
+      const safeTo = sanitizeSingleLine($("toName").value).replace(/[\\/:*?"<>|]/g, "");
+      const stamp = todayJP().replaceAll("/", "");
+      return `thanks-card_${safeTo || "card"}_${stamp}.png`;
+    }
 
-      const card = $("card");
-      const note = $("exportNote");
+    // ===== Export: 安定化の肝（保存用クローンを作って撮る） =====
+    function buildExportClone() {
+      const original = $("card");
+      const clone = original.cloneNode(true);
 
-      // 書き出し用に注記を消す
-      note.classList.add("hidden");
+      // 注記削除
+      const note = clone.querySelector("#exportNote");
+      if (note) note.remove();
 
-      try {
-        // iOS対策含めて白背景に近い形を保つ
-        const scale = Math.min(3, Math.max(2, (window.devicePixelRatio || 2)));
-        const canvas = await html2canvas(card, {
-          backgroundColor: null, // 背景はカード自身のグラデ
-          scale,
-          useCORS: true,
-          logging: false
-        });
+      // ✅ 保存時は「切らない」方針：メッセージの制限解除
+      const msg = clone.querySelector("#cardMessage");
+      if (msg) {
+        msg.style.maxHeight = "none";
+        msg.style.overflow = "visible";
+        msg.style.whiteSpace = "pre-wrap";
+        msg.style.wordBreak = "break-word";
+      }
 
-        const dataUrl = canvas.toDataURL("image/png");
-        const a = document.createElement("a");
-        a.href = dataUrl;
+      // To/Fromも確実に切らない（ただし収まり優先で自動縮小）
+      const to = clone.querySelector("#cardTo");
+      if (to) {
+        to.style.whiteSpace = "normal";
+        to.style.overflow = "visible";
+        to.style.textOverflow = "clip";
+      }
+      const from = clone.querySelector("#cardFrom");
+      if (from) {
+        from.style.whiteSpace = "normal";
+        from.style.overflow = "visible";
+      }
 
-        // ファイル名は安全なものに
-        const safeTo = sanitizeSingleLine($("toName").value).replace(/[\\/:*?"<>|]/g, "");
-        const stamp = todayJP().replaceAll("/", "");
-        a.download = `thanks-card_${safeTo || "card"}_${stamp}.png`;
+      // 保存専用の固定幅コンテナ
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "fixed";
+      wrapper.style.left = "-99999px";
+      wrapper.style.top = "0";
+      wrapper.style.width = "1080px";
+      wrapper.style.padding = "0";
+      wrapper.style.margin = "0";
+      wrapper.style.zIndex = "-1";
 
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+      clone.style.width = "1080px";
+      clone.style.maxWidth = "1080px";
 
-        showToast("画像を保存しました！そのままLINEで送れます。", "✅");
-      } catch (e) {
-        console.error(e);
-        showToast("保存に失敗しました。カード部分をスクショして送ってください🙏", "⚠️");
-      } finally {
-        note.classList.remove("hidden");
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      // クローン側にも自動縮小を適用（保存用に最適化）
+      // ここは「clone内の要素」に対して行う
+      const cloneTo = clone.querySelector("#cardTo");
+      const cloneFrom = clone.querySelector("#cardFrom");
+      const cloneMsg = clone.querySelector("#cardMessage");
+
+      // クローンは固定幅なので、幅基準で縮小が安定
+      // Toは2行まで許可しつつ、溢れるなら縮小
+      if (cloneTo) {
+        cloneTo.style.lineHeight = "1.15";
+        // clientWidthが取れるように軽くスタイル確定
+        // （後でraf待ちも入れる）
+      }
+      if (cloneFrom) {
+        cloneFrom.style.lineHeight = "1.25";
+      }
+      if (cloneMsg) {
+        cloneMsg.style.lineHeight = "1.6";
+      }
+
+      return { wrapper, clone };
+    }
+
+    function fitCloneTexts(clone) {
+      // 保存用の自動縮小（To/From/Message全部）
+      const cloneTo = clone.querySelector("#cardTo");
+      const cloneFrom = clone.querySelector("#cardFrom");
+      const cloneMsg = clone.querySelector("#cardMessage");
+
+      if (cloneTo) {
+        const maxPx = 54;    // 1080px幅ならこれくらいが“見栄え良い”
+        // Toの領域は「左ブロック」なので、横幅を確保するために rightブロックの幅分差し引かれているが、
+        // flexで自然に決まるので、ここは width-fit でOK
+        fitText(cloneTo, { min: 28, max: maxPx, step: 1, mode: "width" });
+
+        // さらに「高さ」が増えすぎた場合（3行以上になりそう）に縮小
+        // 目安：2行分まで
+        const line = parseFloat(getComputedStyle(cloneTo).lineHeight) || 60;
+        const maxH = line * 2.15;
+        let size = parseFloat(getComputedStyle(cloneTo).fontSize) || maxPx;
+        let safety = 40;
+        while (safety-- > 0 && cloneTo.scrollHeight > maxH && size > 22) {
+          size -= 1;
+          cloneTo.style.fontSize = size + "px";
+        }
+      }
+
+      if (cloneFrom) {
+        fitText(cloneFrom, { min: 22, max: 34, step: 1, mode: "width" });
+      }
+
+      if (cloneMsg) {
+        // 保存時は切らないけど、読みやすい範囲で縮小して“長文崩壊”を防ぐ
+        // 目安：最大フォント 32px 相当（固定幅のため）
+        let max = 32;
+        let min = 22;
+        cloneMsg.style.fontSize = max + "px";
+        cloneMsg.style.lineHeight = "1.6";
+
+        // 「カード内での視覚バランス」用の上限高さ（だいたいカード中央〜下に収まる程度）
+        // 実測に依存しないよう、カード全体の高さ割合で制限
+        const card = clone;
+        const cardH = card.getBoundingClientRect().height || 1200;
+        const allowed = cardH * 0.42; // メッセージ領域はカードの約42%まで
+        let size = max;
+        let safety = 60;
+        while (safety-- > 0 && cloneMsg.scrollHeight > allowed && size > min) {
+          size -= 1;
+          cloneMsg.style.fontSize = size + "px";
+        }
       }
     }
 
+    async function downloadCard() {
+      if (!validateForSave()) return;
+
+      let wrapper, clone;
+      try {
+        ({ wrapper, clone } = buildExportClone());
+
+        // iOSで重要：レイアウト&フォント反映待ち
+        await sleep(50);
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+
+        // 保存用の自動縮小を確定
+        fitCloneTexts(clone);
+
+        // さらに1フレーム待って確実に反映
+        await new Promise(requestAnimationFrame);
+
+        // iOSは scale 上げすぎると不安定になりやすい
+        const scale = Math.min(2.5, Math.max(2, (window.devicePixelRatio || 2)));
+
+        const canvas = await html2canvas(clone, {
+          backgroundColor: null,
+          scale,
+          useCORS: true,
+          logging: false,
+          windowWidth: 1080,
+          width: 1080,
+          scrollX: 0,
+          scrollY: 0
+        });
+
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob) throw new Error("toBlob failed");
+
+        const file = new File([blob], filenameSafe(), { type: "image/png" });
+
+        // A) 共有が使えるなら最優先（iPhoneで写真に保存しやすい）
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          await navigator.share({ files: [file], title: "Thanks Card" });
+          showToast("共有メニューを開きました（写真に保存できます）", "📤");
+          return;
+        }
+
+        // B) 新規タブ表示 → 長押し保存
+        const url = URL.createObjectURL(blob);
+        const w = window.open(url, "_blank");
+        if (!w) window.location.href = url;
+        showToast("画像を表示しました。長押し→“写真に追加”で保存してください", "📌");
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
+
+      } catch (e) {
+        console.error(e);
+        showToast("保存に失敗しました。カード部分をスクショでも綺麗に送れます🙏", "⚠️");
+      } finally {
+        if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+      }
+    }
+
+    // ===== Init / Events =====
     function fillExample() {
       $("toName").value = "佐藤さん";
       $("category").value = "help";
@@ -466,14 +597,12 @@
       $("toName").value = "";
       $("message").value = "";
       $("fromName").value = "";
-      $("category").value = CATEGORIES[3].key; // いつもありがとう
+      $("category").value = "always";
       updatePreview();
       showToast("リセットしました", "↺");
     }
 
-    // ====== Init ======
     (function init() {
-      // Populate select
       const sel = $("category");
       CATEGORIES.forEach(c => {
         const opt = document.createElement("option");
@@ -481,9 +610,8 @@
         opt.textContent = c.label;
         sel.appendChild(opt);
       });
-      sel.value = CATEGORIES[3].key;
+      sel.value = "always";
 
-      // listeners
       ["toName", "message", "fromName", "category"].forEach(id => {
         $(id).addEventListener("input", updatePreview);
         $(id).addEventListener("change", updatePreview);
@@ -493,7 +621,7 @@
       $("btnFillExample").addEventListener("click", fillExample);
       $("btnReset").addEventListener("click", resetAll);
 
-      // カテゴリ変更時：メッセージが空ならおすすめ文を入れる（押し付けない）
+      // カテゴリ変更時：メッセージが空ならおすすめ文を入れる
       sel.addEventListener("change", () => {
         const msgEl = $("message");
         const msg = (msgEl.value || "").trim();
@@ -504,13 +632,10 @@
         updatePreview();
       });
 
-      // 初回描画
       $("cardDate").textContent = todayJP();
       updatePreview();
 
-      // リサイズ時に文字サイズ再調整
       window.addEventListener("resize", () => {
-        // 連打抑制
         clearTimeout(window.__rz);
         window.__rz = setTimeout(updatePreview, 80);
       });
