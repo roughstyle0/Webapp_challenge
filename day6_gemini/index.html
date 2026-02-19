@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Thanks Card Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+        }
+        .font-brand {
+            font-family: 'Quicksand', 'Noto Sans JP', sans-serif;
+        }
+        .card-preview-container {
+            perspective: 1000px;
+        }
+        .card-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        /* カテゴリ別のアニメーションや装飾 */
+        .bg-pattern {
+            background-image: radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        #download-area {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 4 / 5;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2 font-brand">Digital Thanks Card</h1>
+            <p class="text-slate-500 text-sm">頑張るスタッフへ、言葉のギフトを贈ろう。</p>
+        </header>
+
+        <div class="grid lg:grid-cols-2 gap-10 items-start">
+            
+            <!-- Left: Controls -->
+            <section class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 order-2 lg:order-1">
+                <div class="space-y-6">
+                    <!-- Recipient -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">宛名</label>
+                        <input type="text" id="input-to" maxlength="15" placeholder="例：田中さん" 
+                               class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-400 focus:border-transparent outline-none transition-all">
+                    </div>
+
+                    <!-- Category Select -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリ</label>
+                        <div class="grid grid-cols-2 gap-3" id="category-options">
+                            <!-- JS will inject buttons here -->
+                        </div>
+                    </div>
+
+                    <!-- Message -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">メッセージ</label>
+                        <textarea id="input-message" rows="3" maxlength="100" placeholder="例：今日の中間清掃、すごく丁寧で助かりました！"
+                                  class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-400 focus:border-transparent outline-none transition-all resize-none"></textarea>
+                        <p class="text-right text-xs text-slate-400 mt-1"><span id="char-count">0</span>/100</p>
+                    </div>
+
+                    <!-- Sender -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">贈り主</label>
+                        <input type="text" id="input-from" maxlength="15" placeholder="例：店長 山田"
+                               class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-400 focus:border-transparent outline-none transition-all">
+                    </div>
+
+                    <!-- Action Button -->
+                    <button id="btn-download" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="Store 4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        画像として保存する
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right: Preview -->
+            <section class="flex flex-col items-center order-1 lg:order-2 sticky top-8">
+                <div class="card-preview-container w-full flex justify-center">
+                    <!-- The Card to be Captured -->
+                    <div id="download-area" class="card-shadow rounded-[2.5rem] overflow-hidden relative bg-white transition-all duration-500">
+                        <!-- Decorative Background Layer -->
+                        <div id="card-bg" class="absolute inset-0 opacity-20 bg-pattern transition-colors duration-500"></div>
+                        
+                        <!-- Content Layer -->
+                        <div class="relative h-full flex flex-col p-10 z-10">
+                            <!-- Top Decor -->
+                            <div class="flex justify-between items-start mb-6">
+                                <span id="card-emoji" class="text-5xl">✨</span>
+                                <div class="text-right">
+                                    <p class="text-[10px] uppercase tracking-widest font-bold opacity-40">Digital Thanks Card</p>
+                                    <p id="card-date" class="text-[10px] font-bold opacity-40">2023.10.27</p>
+                                </div>
+                            </div>
+
+                            <!-- Main Text -->
+                            <div class="flex-grow flex flex-col justify-center">
+                                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <span id="display-to" class="text-2xl border-b-2 border-current pb-1">〇〇さん</span>
+                                    <span class="text-sm opacity-60">へ</span>
+                                </h2>
+                                <p id="display-message" class="text-lg leading-relaxed font-medium text-slate-700 whitespace-pre-wrap">いつもお店を支えてくれてありがとうございます！</p>
+                            </div>
+
+                            <!-- Footer Text -->
+                            <div class="mt-8 pt-6 border-t border-slate-200/50 flex justify-end items-center gap-2">
+                                <span class="text-xs opacity-60 font-bold">From</span>
+                                <span id="display-from" class="text-lg font-bold">〇〇より</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="mt-6 text-sm text-slate-400 italic">※ 入力内容は自動的にカードへ反映されます</p>
+                
+                <!-- Toast Message -->
+                <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-opacity pointer-events-none z-50">
+                    画像を保存しました！
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        const categories = [
+            { id: 'help', label: 'ヘルプ感謝！', emoji: '🤝', color: '#e0f2fe', text: '#0369a1', icon: '✨' },
+            { id: 'service', label: '接客最高！', emoji: '⭐', color: '#fef3c7', text: '#b45309', icon: '✨' },
+            { id: 'birthday', label: '誕生日おめ！', emoji: '🎂', color: '#fce7f3', text: '#be185d', icon: '🎉' },
+            { id: 'general', label: 'いつも感謝', emoji: '🌿', color: '#dcfce7', text: '#15803d', icon: '❤️' }
+        ];
+
+        let currentCategory = categories[3];
+
+        // State & DOM elements
+        const state = {
+            to: '〇〇さん',
+            message: 'いつもお店を支えてくれてありがとうございます！',
+            from: '〇〇より',
+            category: 'general'
+        };
+
+        const dom = {
+            inputTo: document.getElementById('input-to'),
+            inputMessage: document.getElementById('input-message'),
+            inputFrom: document.getElementById('input-from'),
+            displayTo: document.getElementById('display-to'),
+            displayMessage: document.getElementById('display-message'),
+            displayFrom: document.getElementById('display-from'),
+            cardArea: document.getElementById('download-area'),
+            cardBg: document.getElementById('card-bg'),
+            cardEmoji: document.getElementById('card-emoji'),
+            cardDate: document.getElementById('card-date'),
+            btnDownload: document.getElementById('btn-download'),
+            charCount: document.getElementById('char-count'),
+            categoryOptions: document.getElementById('category-options'),
+            toast: document.getElementById('toast')
+        };
+
+        // Initialize UI
+        function init() {
+            // Set Date
+            const now = new Date();
+            dom.cardDate.innerText = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
+            // Render Category Buttons
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `py-3 px-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${state.category === cat.id ? 'border-slate-800 bg-slate-50' : 'border-slate-100 bg-white hover:border-slate-300'}`;
+                btn.innerHTML = `<span class="text-xl">${cat.emoji}</span><span class="text-[10px] font-bold text-slate-600">${cat.label}</span>`;
+                btn.onclick = () => setCategory(cat.id);
+                btn.id = `cat-${cat.id}`;
+                dom.categoryOptions.appendChild(btn);
+            });
+
+            updatePreview();
+        }
+
+        function setCategory(id) {
+            state.category = id;
+            currentCategory = categories.find(c => c.id === id);
+            
+            // UI Update
+            categories.forEach(cat => {
+                const el = document.getElementById(`cat-${cat.id}`);
+                if(cat.id === id) {
+                    el.classList.add('border-slate-800', 'bg-slate-50');
+                    el.classList.remove('border-slate-100', 'bg-white');
+                } else {
+                    el.classList.remove('border-slate-800', 'bg-slate-50');
+                    el.classList.add('border-slate-100', 'bg-white');
+                }
+            });
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            // Text sync
+            dom.displayTo.innerText = dom.inputTo.value || '〇〇さん';
+            dom.displayMessage.innerText = dom.inputMessage.value || 'いつもお店を支えてくれてありがとうございます！';
+            dom.displayFrom.innerText = (dom.inputFrom.value || '〇〇') + 'より';
+            
+            // Character count
+            dom.charCount.innerText = dom.inputMessage.value.length;
+
+            // Visual sync
+            dom.cardArea.style.backgroundColor = currentCategory.color;
+            dom.cardArea.style.color = currentCategory.text;
+            dom.cardBg.style.backgroundColor = currentCategory.text;
+            dom.cardEmoji.innerText = currentCategory.icon;
+        }
+
+        // Event Listeners
+        dom.inputTo.oninput = updatePreview;
+        dom.inputMessage.oninput = updatePreview;
+        dom.inputFrom.oninput = updatePreview;
+
+        dom.btnDownload.onclick = async () => {
+            const btn = dom.btnDownload;
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 生成中...`;
+
+            try {
+                const canvas = await html2canvas(dom.cardArea, {
+                    scale: 2, // High resolution
+                    backgroundColor: null,
+                    borderRadius: 40,
+                    useCORS: true,
+                    logging: false
+                });
+
+                const link = document.createElement('a');
+                link.download = `ThanksCard_${dom.inputTo.value || 'Staff'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Show Toast
+                dom.toast.classList.remove('opacity-0');
+                setTimeout(() => dom.toast.classList.add('opacity-0'), 3000);
+
+            } catch (err) {
+                console.error("Download error:", err);
+                alert("画像の保存に失敗しました。ブラウザの設定を確認してください。");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> 画像として保存する`;
+            }
+        };
+
+        // Start
+        window.onload = init;
+    </script>
+</body>
+</html>
