@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>デジタル・サンクスカード ジェネレーター</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    /* ふわっとした紙質&インク感の演出（スクショでも綺麗） */
+    .paper {
+      background-image:
+        radial-gradient(1200px 600px at 20% 0%, rgba(255,255,255,.7), rgba(255,255,255,0)),
+        radial-gradient(900px 500px at 90% 10%, rgba(255,255,255,.55), rgba(255,255,255,0)),
+        radial-gradient(1200px 900px at 50% 100%, rgba(0,0,0,.06), rgba(0,0,0,0));
+      background-blend-mode: overlay;
+    }
+    .grain {
+      position: relative;
+      overflow: hidden;
+    }
+    .grain::after{
+      content:"";
+      position:absolute; inset:-50%;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
+      transform: rotate(6deg);
+      pointer-events:none;
+      mix-blend-mode:multiply;
+      opacity:.22;
+    }
+    .shine {
+      position: relative;
+    }
+    .shine::before{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(115deg, rgba(255,255,255,.25), rgba(255,255,255,0) 35%, rgba(255,255,255,.18) 55%, rgba(255,255,255,0) 75%);
+      pointer-events:none;
+      opacity:.8;
+    }
+
+    /* ダウンロード時の画質安定のため、カード内部は transform を控えめに */
+    .card-shadow { box-shadow: 0 22px 50px rgba(0,0,0,.12), 0 10px 18px rgba(0,0,0,.08); }
+
+    /* テキストの改行と長文は自然に折り返す */
+    .wrap { white-space: pre-wrap; word-break: break-word; }
+
+    /* 入力のエラーハイライト */
+    .invalid { outline: 2px solid rgba(239,68,68,.8); outline-offset: 2px; }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['ui-sans-serif', 'system-ui', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-b from-rose-50 via-amber-50 to-sky-50 text-slate-800">
+  <header class="sticky top-0 z-30 backdrop-blur bg-white/60 border-b border-white/40">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
+      <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-rose-400 to-amber-300 grid place-items-center shadow-sm">
+        <span class="text-white text-lg">💌</span>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-base sm:text-lg font-bold tracking-tight truncate">デジタル・サンクスカード ジェネレーター</h1>
+        <p class="text-xs sm:text-sm text-slate-600 truncate">LINEやチャットで「ちゃんと伝わる」感謝カードを一瞬で。</p>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <button id="btnFillExample" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 hover:bg-white border border-white/70 shadow-sm text-sm">
+          <span>✨</span><span>例を入れる</span>
+        </button>
+        <button id="btnReset" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 hover:bg-white border border-white/70 shadow-sm text-sm">
+          <span>↺</span><span>リセット</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-6 sm:py-10 grid gap-6 lg:grid-cols-2 lg:gap-10">
+    <!-- Left: Form -->
+    <section class="order-2 lg:order-1">
+      <div class="rounded-3xl bg-white/70 border border-white/70 shadow-sm p-4 sm:p-6">
+        <h2 class="text-lg font-bold">入力フォーム</h2>
+        <p class="text-sm text-slate-600 mt-1">入力した内容が右のカードにリアルタイム反映されます。</p>
+
+        <div class="mt-6 grid gap-4">
+          <div>
+            <label class="text-sm font-semibold">宛名</label>
+            <div class="mt-2 flex items-center gap-2">
+              <input id="toName" type="text" maxlength="14"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
+                placeholder="例）佐藤さん" autocomplete="off" />
+              <span class="text-xs text-slate-500 shrink-0">へ</span>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">短めが見やすいです（最大14文字）。</p>
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold">メッセージのカテゴリ</label>
+            <div class="mt-2">
+              <select id="category"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200">
+              </select>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">カテゴリで背景色・イラストが切り替わります。</p>
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold">自由メッセージ（短め）</label>
+            <div class="mt-2">
+              <textarea id="message" rows="4" maxlength="120"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
+                placeholder="例）忙しい時間帯にフォローしてくれて本当に助かった！いつもありがとう！"></textarea>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
+              <span id="msgHint">改行もOK。相手の行動を具体的に書くと刺さります。</span>
+              <span><span id="msgCount">0</span>/120</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold">贈り主</label>
+            <div class="mt-2 flex items-center gap-2">
+              <input id="fromName" type="text" maxlength="14"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
+                placeholder="例）店長 田中" autocomplete="off" />
+              <span class="text-xs text-slate-500 shrink-0">より</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center">
+          <button id="btnDownload"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-400 text-white font-semibold shadow-md hover:shadow-lg active:scale-[0.99] transition">
+            <span>⬇️</span>
+            <span>画像としてダウンロード</span>
+          </button>
+
+          <div class="flex-1 rounded-2xl bg-white/70 border border-white/70 px-4 py-3 text-xs text-slate-600">
+            <p class="font-semibold">コツ</p>
+            <ul class="list-disc pl-5 mt-1 space-y-1">
+              <li>宛名と贈り主が入ると「保存したくなる感」UP</li>
+              <li>長文は自動で収まるよう調整されます</li>
+              <li>うまく保存できない場合は、カードをスクショでも綺麗です</li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="toast" class="pointer-events-none mt-4 hidden">
+          <div class="rounded-2xl bg-slate-900 text-white px-4 py-3 text-sm shadow-lg inline-flex items-center gap-2">
+            <span id="toastIcon">✅</span>
+            <span id="toastMsg">保存しました</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Live Card Preview -->
+    <section class="order-1 lg:order-2">
+      <div class="lg:sticky lg:top-24">
+        <div class="flex items-end justify-between gap-3 mb-3">
+          <div>
+            <h2 class="text-lg font-bold">プレビュー</h2>
+            <p class="text-sm text-slate-600">そのまま送れる“ちょうどいいサイズ感”。</p>
+          </div>
+          <div class="text-xs text-slate-500">推奨：スマホで保存→LINE送信</div>
+        </div>
+
+        <!-- Card container centered -->
+        <div class="grid place-items-center">
+          <!-- The element to capture -->
+          <div id="cardWrap" class="w-full max-w-[520px]">
+            <div id="card"
+              class="grain shine paper card-shadow rounded-[28px] border border-white/60 p-6 sm:p-8 relative select-none"
+              style="background: linear-gradient(135deg, #ffe4e6, #fff7ed);">
+              <!-- Decorative corner doodles -->
+              <div class="absolute -top-3 -right-3 h-16 w-16 rounded-3xl bg-white/50 blur-[1px]"></div>
+              <div class="absolute -bottom-4 -left-4 h-20 w-20 rounded-3xl bg-white/40 blur-[1px]"></div>
+
+              <!-- Header -->
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <div class="text-xs sm:text-sm text-slate-700/80">To:</div>
+                  <div id="cardTo" class="text-xl sm:text-2xl font-extrabold tracking-tight truncate">〇〇さんへ</div>
+                </div>
+                <div class="shrink-0 text-right">
+                  <div class="text-3xl sm:text-4xl" id="cardIcon">💖</div>
+                  <div id="cardBadge"
+                       class="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-white/70 border border-white/70 text-xs font-semibold">
+                    いつもありがとう
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message -->
+              <div class="mt-6 sm:mt-7">
+                <div class="text-xs sm:text-sm text-slate-700/80">Message:</div>
+                <div id="cardMessage"
+                     class="wrap mt-2 text-[15px] sm:text-base leading-relaxed font-medium text-slate-800">
+                  ここにメッセージが表示されます。短くても大丈夫。あなたの「ありがとう」は、ちゃんと届きます。
+                </div>
+              </div>
+
+              <!-- Divider -->
+              <div class="mt-6 sm:mt-7 h-px bg-white/70"></div>
+
+              <!-- Footer -->
+              <div class="mt-5 flex items-end justify-between gap-3">
+                <div class="text-xs sm:text-sm text-slate-700/80">
+                  <div class="font-semibold">From:</div>
+                  <div id="cardFrom" class="mt-1 text-sm sm:text-base font-bold">〇〇より</div>
+                </div>
+
+                <div class="text-right">
+                  <div id="cardMini" class="text-xs text-slate-700/70">#ThanksCard</div>
+                  <div class="mt-1 text-xs text-slate-700/70" id="cardDate"></div>
+                </div>
+              </div>
+
+              <!-- Safe area note (only for preview; hidden during export) -->
+              <div id="exportNote"
+                   class="mt-4 text-[11px] text-slate-700/60">
+                ※ 保存用画像にはこの注記は入りません
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-xs text-slate-600">
+          <span class="font-semibold">送る前の一言例：</span>
+          「今日助かった！ちょっとカード作ったから受け取って〜」
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pb-10">
+    <div class="mx-auto max-w-6xl px-4 text-xs text-slate-500">
+      <p>© Thanks Card Generator / 1ファイル完結・外部サーバ不要</p>
+    </div>
+  </footer>
+
+  <script>
+    // ====== Data ======
+    const CATEGORIES = [
+      {
+        key: "help",
+        label: "ヘルプ感謝！",
+        icon: "🫶",
+        gradient: ["#dbeafe", "#fff7ed"], // blue -> warm
+        accent: "#3b82f6",
+        defaultMsg: "忙しい時間帯にフォローしてくれて本当に助かった！ありがとう！"
+      },
+      {
+        key: "service",
+        label: "素晴らしい接客！",
+        icon: "🌟",
+        gradient: ["#fef9c3", "#ffe4e6"], // yellow -> rose
+        accent: "#f59e0b",
+        defaultMsg: "お客様への声かけがすごく丁寧で、見ていて気持ちよかった！"
+      },
+      {
+        key: "birthday",
+        label: "誕生日おめでとう！",
+        icon: "🎂",
+        gradient: ["#fae8ff", "#e0f2fe"], // purple -> sky
+        accent: "#a855f7",
+        defaultMsg: "お誕生日おめでとう！素敵な一年になりますように！"
+      },
+      {
+        key: "always",
+        label: "いつもありがとう",
+        icon: "💖",
+        gradient: ["#ffe4e6", "#fff7ed"], // rose -> warm
+        accent: "#ec4899",
+        defaultMsg: "いつも支えてくれてありがとう。すごく頼りにしています！"
+      },
+      {
+        key: "team",
+        label: "チーム最高！",
+        icon: "🤝",
+        gradient: ["#dcfce7", "#ecfeff"], // green -> cyan
+        accent: "#22c55e",
+        defaultMsg: "みんなの雰囲気を明るくしてくれてありがとう！"
+      }
+    ];
+
+    // ====== Helpers ======
+    const $ = (id) => document.getElementById(id);
+
+    function todayJP() {
+      // ユーザーが日本想定なので日本語表示
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}/${mm}/${dd}`;
+    }
+
+    function showToast(message, icon = "✅") {
+      const toast = $("toast");
+      $("toastMsg").textContent = message;
+      $("toastIcon").textContent = icon;
+      toast.classList.remove("hidden");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.add("hidden"), 2200);
+    }
+
+    function clampTextToFit(el, minPx, maxPx) {
+      // 文字数に応じて自動調整：まず最大→溢れたら下げる
+      // （スクショ/書き出し時も安定）
+      el.style.fontSize = maxPx + "px";
+      el.style.lineHeight = "1.6";
+      let safety = 40;
+      while (safety-- > 0 && el.scrollHeight > el.clientHeight + 2 && maxPx > minPx) {
+        maxPx -= 1;
+        el.style.fontSize = maxPx + "px";
+      }
+    }
+
+    function setCardTheme(catKey) {
+      const c = CATEGORIES.find(x => x.key === catKey) || CATEGORIES[0];
+      const card = $("card");
+      const gradient = `linear-gradient(135deg, ${c.gradient[0]}, ${c.gradient[1]})`;
+      card.style.background = gradient;
+
+      $("cardIcon").textContent = c.icon;
+      $("cardBadge").textContent = c.label;
+
+      // さりげなくバッジ枠や影にアクセント（派手すぎない）
+      $("cardBadge").style.boxShadow = `0 10px 20px ${hexToRgba(c.accent, 0.18)}`;
+      $("cardBadge").style.borderColor = hexToRgba(c.accent, 0.18);
+    }
+
+    function hexToRgba(hex, a) {
+      const h = hex.replace("#", "").trim();
+      const full = h.length === 3 ? h.split("").map(ch => ch + ch).join("") : h;
+      const num = parseInt(full, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function sanitizeSingleLine(str) {
+      return (str || "").replace(/\s+/g, " ").trim();
+    }
+
+    function updatePreview() {
+      const to = sanitizeSingleLine($("toName").value);
+      const from = sanitizeSingleLine($("fromName").value);
+      const msg = ($("message").value || "").trim();
+      const cat = $("category").value;
+
+      setCardTheme(cat);
+
+      $("msgCount").textContent = String(msg.length);
+
+      // 宛名/贈り主はプレースホルダーを用意
+      $("cardTo").textContent = (to ? `${to}へ` : "〇〇さんへ");
+      $("cardFrom").textContent = (from ? `${from}より` : "〇〇より");
+
+      // メッセージ
+      $("cardMessage").textContent =
+        msg || "ここにメッセージが表示されます。短くても大丈夫。あなたの「ありがとう」は、ちゃんと届きます。";
+
+      $("cardDate").textContent = todayJP();
+
+      // メッセージ表示領域を一定にして、溢れたら縮小（見た目とDL品質の両立）
+      const area = $("cardMessage");
+      // 一度高さを固定（レスポンシブで変わるので毎回計算）
+      // 目安: 4〜6行分
+      const maxLines = window.matchMedia("(min-width: 640px)").matches ? 6 : 5;
+      const basePx = window.matchMedia("(min-width: 640px)").matches ? 16 : 15;
+      area.style.maxHeight = `calc(${maxLines} * 1.6em)`;
+      clampTextToFit(area, 13, basePx);
+    }
+
+    function validateForDownload() {
+      // 「ダウンロード時だけ」最低限の入力チェック
+      const toEl = $("toName");
+      const fromEl = $("fromName");
+      const msgEl = $("message");
+
+      [toEl, fromEl, msgEl].forEach(el => el.classList.remove("invalid"));
+
+      const to = sanitizeSingleLine(toEl.value);
+      const from = sanitizeSingleLine(fromEl.value);
+      const msg = (msgEl.value || "").trim();
+
+      let ok = true;
+      if (!to) { toEl.classList.add("invalid"); ok = false; }
+      if (!from) { fromEl.classList.add("invalid"); ok = false; }
+      if (!msg) { msgEl.classList.add("invalid"); ok = false; }
+
+      if (!ok) {
+        showToast("宛名・メッセージ・贈り主を入れると、もっと嬉しいカードになります！", "⚠️");
+      }
+      return ok;
+    }
+
+    async function downloadCard() {
+      // 入力が空でも動くが、保存ボタンだけは軽く促す
+      if (!validateForDownload()) return;
+
+      const card = $("card");
+      const note = $("exportNote");
+
+      // 書き出し用に注記を消す
+      note.classList.add("hidden");
+
+      try {
+        // iOS対策含めて白背景に近い形を保つ
+        const scale = Math.min(3, Math.max(2, (window.devicePixelRatio || 2)));
+        const canvas = await html2canvas(card, {
+          backgroundColor: null, // 背景はカード自身のグラデ
+          scale,
+          useCORS: true,
+          logging: false
+        });
+
+        const dataUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataUrl;
+
+        // ファイル名は安全なものに
+        const safeTo = sanitizeSingleLine($("toName").value).replace(/[\\/:*?"<>|]/g, "");
+        const stamp = todayJP().replaceAll("/", "");
+        a.download = `thanks-card_${safeTo || "card"}_${stamp}.png`;
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        showToast("画像を保存しました！そのままLINEで送れます。", "✅");
+      } catch (e) {
+        console.error(e);
+        showToast("保存に失敗しました。カード部分をスクショして送ってください🙏", "⚠️");
+      } finally {
+        note.classList.remove("hidden");
+      }
+    }
+
+    function fillExample() {
+      $("toName").value = "佐藤さん";
+      $("category").value = "help";
+      $("message").value = "ピークの時間にレジを助けてくれて本当に助かった！\nおかげで全体がスムーズに回ったよ。ありがとう！";
+      $("fromName").value = "店長 田中";
+      updatePreview();
+      showToast("例を入れました。好きに編集してOK！", "✨");
+    }
+
+    function resetAll() {
+      $("toName").value = "";
+      $("message").value = "";
+      $("fromName").value = "";
+      $("category").value = CATEGORIES[3].key; // いつもありがとう
+      updatePreview();
+      showToast("リセットしました", "↺");
+    }
+
+    // ====== Init ======
+    (function init() {
+      // Populate select
+      const sel = $("category");
+      CATEGORIES.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.key;
+        opt.textContent = c.label;
+        sel.appendChild(opt);
+      });
+      sel.value = CATEGORIES[3].key;
+
+      // listeners
+      ["toName", "message", "fromName", "category"].forEach(id => {
+        $(id).addEventListener("input", updatePreview);
+        $(id).addEventListener("change", updatePreview);
+      });
+
+      $("btnDownload").addEventListener("click", downloadCard);
+      $("btnFillExample").addEventListener("click", fillExample);
+      $("btnReset").addEventListener("click", resetAll);
+
+      // カテゴリ変更時：メッセージが空ならおすすめ文を入れる（押し付けない）
+      sel.addEventListener("change", () => {
+        const msgEl = $("message");
+        const msg = (msgEl.value || "").trim();
+        if (!msg) {
+          const c = CATEGORIES.find(x => x.key === sel.value);
+          msgEl.value = c?.defaultMsg || "";
+        }
+        updatePreview();
+      });
+
+      // 初回描画
+      $("cardDate").textContent = todayJP();
+      updatePreview();
+
+      // リサイズ時に文字サイズ再調整
+      window.addEventListener("resize", () => {
+        // 連打抑制
+        clearTimeout(window.__rz);
+        window.__rz = setTimeout(updatePreview, 80);
+      });
+    })();
+  </script>
+</body>
+</html>
