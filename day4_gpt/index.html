@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>店長専用｜「シフト代わって！」依頼文ジェネレーター</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <meta name="description" content="急な欠勤や混雑時に、LINEで送りやすい短めの依頼文を丁寧に生成。ワンタップコピー対応。" />
+
+  <style>
+    /* ほんの少しだけ：背景の柔らかさとフォーカスの視認性 */
+    :root { color-scheme: light; }
+    .soft-glow { box-shadow: 0 10px 35px rgba(16, 185, 129, 0.08), 0 10px 35px rgba(59, 130, 246, 0.06); }
+    .focus-ring:focus { outline: none; box-shadow: 0 0 0 4px rgba(59,130,246,.18); }
+  </style>
+
+  <script>
+    // Tailwind theme (CDNの範囲でやれる“やさしいブルー/グリーン”に寄せる)
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            calm: {
+              bg: "#f6fbff",
+              card: "#ffffff",
+              line: "#dbeafe",
+              ink: "#0f172a",
+              sub: "#475569",
+              blue: "#2563eb",
+              mint: "#10b981",
+              mint2: "#34d399",
+              warn: "#f59e0b",
+              bad: "#ef4444"
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="min-h-screen bg-[radial-gradient(1200px_circle_at_20%_10%,rgba(16,185,129,0.10),transparent_55%),radial-gradient(900px_circle_at_80%_0%,rgba(37,99,235,0.10),transparent_55%),linear-gradient(180deg,#f6fbff,white)] text-calm-ink">
+  <div class="mx-auto max-w-3xl px-4 py-8 sm:py-10">
+    <!-- Header -->
+    <header class="mb-6 sm:mb-8">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+            店長専用｜「シフト代わって！」依頼文ジェネレーター
+          </h1>
+          <p class="mt-2 text-sm sm:text-base text-calm-sub leading-relaxed">
+            日付・時間・理由・切迫度を入れるだけ。<span class="font-semibold">LINEで送りやすい短文</span>を“丁寧＋人間味”で自動生成します。
+          </p>
+        </div>
+
+        <div class="hidden sm:flex items-center gap-2">
+          <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+            落ち着いて送れる
+          </span>
+          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-200">
+            ワンタップコピー
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid gap-6">
+      <!-- Card: Form -->
+      <section class="rounded-2xl bg-calm-card soft-glow ring-1 ring-calm-line p-4 sm:p-6">
+        <h2 class="text-lg font-semibold">入力</h2>
+        <p class="mt-1 text-sm text-calm-sub">埋められるところだけでOK。未入力は自動で自然に補完します。</p>
+
+        <form id="form" class="mt-5 grid gap-4" novalidate>
+          <!-- Date + Time range -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <label class="block sm:col-span-1">
+              <span class="text-sm font-medium">募集日</span>
+              <input id="date" type="date"
+                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring"
+                     aria-describedby="dateHelp" />
+              <span id="dateHelp" class="mt-1 block text-xs text-slate-500">例：明日でもOK（未入力可）</span>
+            </label>
+
+            <label class="block sm:col-span-1">
+              <span class="text-sm font-medium">開始</span>
+              <input id="timeStart" type="time"
+                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring"
+                     aria-describedby="timeHelp" />
+            </label>
+
+            <label class="block sm:col-span-1">
+              <span class="text-sm font-medium">終了</span>
+              <input id="timeEnd" type="time"
+                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring" />
+              <span id="timeHelp" class="mt-1 block text-xs text-slate-500">例：18:00〜22:00（未入力可）</span>
+            </label>
+          </div>
+
+          <!-- Reason -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="block">
+              <span class="text-sm font-medium">理由（選択）</span>
+              <select id="reasonPreset"
+                      class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring">
+                <option value="">選択しない（自由入力のみ）</option>
+                <option value="急病で欠勤が出てしまって">急病（欠勤）</option>
+                <option value="想定以上に混雑していて">想定以上の混雑</option>
+                <option value="急な用事で人手が足りなくなって">急な用事（人手不足）</option>
+                <option value="予約が重なってバタついていて">予約が重なった</option>
+                <option value="仕込み・締め作業が多くて">仕込み/締め作業が多い</option>
+              </select>
+              <span class="mt-1 block text-xs text-slate-500">よくある理由はここから。微調整は下で。</span>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-medium">理由（自由入力）</span>
+              <input id="reasonFree" type="text"
+                     placeholder="例：スタッフ1名が体調不良で、急遽欠勤になりました"
+                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring" />
+              <span class="mt-1 block text-xs text-slate-500">空欄なら「人手が足りなくて」などに自動補完。</span>
+            </label>
+          </div>
+
+          <!-- Urgency -->
+          <fieldset class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <legend class="px-2 text-sm font-medium">切迫度</legend>
+
+            <div class="mt-2 grid gap-3 sm:grid-cols-3">
+              <label class="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-3 ring-1 ring-slate-200 hover:ring-blue-200 transition">
+                <input type="radio" name="urgency" value="low" class="mt-1" checked />
+                <div>
+                  <div class="text-sm font-semibold">① 余裕あり</div>
+                  <div class="text-xs text-slate-500">「入れる人いたら助かる」</div>
+                </div>
+              </label>
+
+              <label class="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-3 ring-1 ring-slate-200 hover:ring-emerald-200 transition">
+                <input type="radio" name="urgency" value="mid" class="mt-1" />
+                <div>
+                  <div class="text-sm font-semibold">② できればお願い</div>
+                  <div class="text-xs text-slate-500">「正直きつい、助けてほしい」</div>
+                </div>
+              </label>
+
+              <label class="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-3 ring-1 ring-slate-200 hover:ring-amber-200 transition">
+                <input type="radio" name="urgency" value="high" class="mt-1" />
+                <div>
+                  <div class="text-sm font-semibold">③ 緊急</div>
+                  <div class="text-xs text-slate-500">「お願い！店が回らない！」</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="mt-3 text-xs text-slate-500">
+              ※切迫度に応じて、<span class="font-medium">言い回し・お願いの強さ</span>が自然に変わります。
+            </div>
+          </fieldset>
+
+          <!-- Optional: Name & channel -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="block">
+              <span class="text-sm font-medium">呼びかけ（任意）</span>
+              <input id="greeting" type="text"
+                     placeholder="例：みんなへ / ○○さん / お疲れさま！"
+                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring" />
+              <span class="mt-1 block text-xs text-slate-500">未入力なら「お疲れさま！」を使用。</span>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-medium">締めの一言（任意）</span>
+              <input id="closing" type="text"
+                     placeholder="例：無理のない範囲で大丈夫です！"
+                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-ring" />
+              <span class="mt-1 block text-xs text-slate-500">未入力でも切迫度に応じて自動追加。</span>
+            </label>
+          </div>
+
+          <!-- Errors -->
+          <div id="errorBox" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div class="font-semibold">入力を確認してください</div>
+            <ul id="errorList" class="mt-1 list-disc pl-5"></ul>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+              <span>未入力でも“それっぽく”生成します</span>
+            </div>
+
+            <div class="flex gap-3">
+              <button id="btnFillSample" type="button"
+                      class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 active:scale-[0.99] transition">
+                例を入れる
+              </button>
+
+              <button id="btnGenerate" type="submit"
+                      class="rounded-xl bg-gradient-to-r from-emerald-500 to-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:opacity-95 active:scale-[0.99] transition">
+                生成する
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Card: Output -->
+      <section class="rounded-2xl bg-calm-card soft-glow ring-1 ring-calm-line p-4 sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">生成結果</h2>
+            <p class="mt-1 text-sm text-calm-sub">そのままLINEに貼れる長さ。必要なら少しだけ手直ししてOK。</p>
+          </div>
+
+          <div class="flex flex-col items-end gap-2">
+            <span id="toneBadge" class="inline-flex items-center rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+              切迫度：① 余裕あり
+            </span>
+            <span id="copyHint" class="text-xs text-slate-500">コピーすると通知が出ます</span>
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3">
+          <textarea id="output" rows="6"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm leading-relaxed focus-ring"
+            placeholder="ここに依頼文が表示されます。"></textarea>
+
+          <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <span id="charCount" class="rounded-full bg-slate-100 px-2 py-1 ring-1 ring-slate-200">0 文字</span>
+              <span class="hidden sm:inline">※長すぎるときは短くするヒントも出します</span>
+            </div>
+
+            <div class="flex gap-3">
+              <button id="btnShorten" type="button"
+                      class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 active:scale-[0.99] transition">
+                もう少し短く
+              </button>
+
+              <button id="btnCopy" type="button"
+                      class="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow hover:opacity-95 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed">
+                コピー
+              </button>
+            </div>
+          </div>
+
+          <div id="tipBox" class="hidden rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <div class="font-semibold">短くするコツ</div>
+            <div id="tipText" class="mt-1 text-sm leading-relaxed"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Toast -->
+      <div id="toast" class="pointer-events-none fixed inset-x-0 bottom-4 mx-auto w-full max-w-md px-4 hidden">
+        <div class="rounded-2xl bg-slate-900/90 px-4 py-3 text-sm text-white shadow-lg ring-1 ring-white/10">
+          <span id="toastText">コピーしました</span>
+        </div>
+      </div>
+
+      <footer class="pb-2 text-center text-xs text-slate-500">
+        うまくいかなければ、理由を短くして再生成 → コピー、が最速です。
+      </footer>
+    </main>
+  </div>
+
+<script>
+(() => {
+  // --- DOM ---
+  const $ = (id) => document.getElementById(id);
+
+  const form = $("form");
+  const dateEl = $("date");
+  const timeStartEl = $("timeStart");
+  const timeEndEl = $("timeEnd");
+  const reasonPresetEl = $("reasonPreset");
+  const reasonFreeEl = $("reasonFree");
+  const greetingEl = $("greeting");
+  const closingEl = $("closing");
+
+  const errorBox = $("errorBox");
+  const errorList = $("errorList");
+
+  const btnFillSample = $("btnFillSample");
+  const btnGenerate = $("btnGenerate");
+
+  const outputEl = $("output");
+  const btnCopy = $("btnCopy");
+  const btnShorten = $("btnShorten");
+  const charCountEl = $("charCount");
+  const toneBadge = $("toneBadge");
+
+  const tipBox = $("tipBox");
+  const tipText = $("tipText");
+
+  const toast = $("toast");
+  const toastText = $("toastText");
+
+  // --- Utils ---
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  function formatDateJP(value) {
+    // value: "YYYY-MM-DD"
+    if (!value) return "";
+    const [y, m, d] = value.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    return `${y}/${pad2(m)}/${pad2(d)}`;
+  }
+
+  function formatTimeRange(start, end) {
+    const s = (start || "").trim();
+    const e = (end || "").trim();
+    if (s && e) return `${s}〜${e}`;
+    if (s && !e) return `${s}〜`;
+    if (!s && e) return `〜${e}`;
+    return "";
+  }
+
+  function getUrgency() {
+    const checked = document.querySelector('input[name="urgency"]:checked');
+    return checked ? checked.value : "low";
+  }
+
+  function setBadge(urgency) {
+    const map = {
+      low:  { text: "切迫度：① 余裕あり", cls: "bg-slate-50 text-slate-700 ring-slate-200" },
+      mid:  { text: "切迫度：② できればお願い", cls: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
+      high: { text: "切迫度：③ 緊急", cls: "bg-amber-50 text-amber-800 ring-amber-200" },
+    };
+    const item = map[urgency] || map.low;
+    toneBadge.textContent = item.text;
+    toneBadge.className = `inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ${item.cls}`;
+  }
+
+  function showErrors(errors) {
+    if (!errors.length) {
+      errorBox.classList.add("hidden");
+      errorList.innerHTML = "";
+      return;
+    }
+    errorList.innerHTML = errors.map(e => `<li>${escapeHtml(e)}</li>`).join("");
+    errorBox.classList.remove("hidden");
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, s => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[s]));
+  }
+
+  function showToast(message) {
+    toastText.textContent = message;
+    toast.classList.remove("hidden");
+    toast.animate(
+      [
+        { transform: "translateY(12px)", opacity: 0 },
+        { transform: "translateY(0)", opacity: 1 },
+      ],
+      { duration: 180, easing: "ease-out" }
+    );
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      toast.classList.add("hidden");
+    }, 1400);
+  }
+
+  function updateCharCount() {
+    const len = (outputEl.value || "").length;
+    charCountEl.textContent = `${len} 文字`;
+    // LINEで長すぎると感じやすい目安（雑に120超えたらヒント表示）
+    if (len > 120) {
+      tipBox.classList.remove("hidden");
+      tipText.textContent =
+        "「理由」を短く（例：欠勤が出て人手不足です）＋「時間帯」＋「入れる人いませんか？」の3点に絞るとスッキリします。";
+    } else {
+      tipBox.classList.add("hidden");
+      tipText.textContent = "";
+    }
+    btnCopy.disabled = len === 0;
+  }
+
+  function smartReason(preset, free) {
+    const f = (free || "").trim();
+    if (f) return f;
+    const p = (preset || "").trim();
+    if (p) return p;
+    return "人手が足りなくて";
+  }
+
+  function smartGreeting(g) {
+    const v = (g || "").trim();
+    if (v) return v;
+    return "お疲れさま！";
+  }
+
+  function smartClosing(urgency, closing) {
+    const v = (closing || "").trim();
+    if (v) return v;
+
+    if (urgency === "low")  return "無理のない範囲で大丈夫です！入れそうなら教えてください🙏";
+    if (urgency === "mid")  return "もし入れそうなら本当に助かります…！難しければ遠慮なく言ってね🙏";
+    return "厳しければもちろん無理しないで…！ただ、入れる人がいたらすぐ連絡もらえると助かります🙏";
+  }
+
+  function buildMessage({ date, timeRange, reason, urgency, greeting, closing }) {
+    // “短め＋人間味＋丁寧”を保ちながら、切迫度で圧を変える
+    const whenParts = [];
+    if (date) whenParts.push(date);
+    if (timeRange) whenParts.push(timeRange);
+
+    const when = whenParts.length ? whenParts.join(" ") : "";
+    const whenLine = when ? `【募集】${when}` : "【募集】（入れる時間帯があれば教えてください）";
+
+    const reasonLine =
+      reason ? `【理由】${reason}` : "【理由】人手が足りなくて";
+
+    const askCore = (() => {
+      if (urgency === "low") {
+        return "もし入れそうな人いたら、代わりに出勤お願いできないかな？";
+      }
+      if (urgency === "mid") {
+        return "今日ちょっと厳しそうで…入れる人がいたら、代わりに出勤お願いできますか？";
+      }
+      return "本当にごめん！今かなり人手が足りなくて、入れる人いたらお願いしたい…！";
+    })();
+
+    const replyHint = (() => {
+      if (urgency === "high") return "◯／✕ だけでも早めに返事もらえると助かります。";
+      return "入れそうなら一言返事もらえると助かります。";
+    })();
+
+    // なるべく短く、でも冷たくならない構成
+    const lines = [
+      greeting,
+      whenLine,
+      reasonLine,
+      askCore,
+      replyHint,
+      closing
+    ].filter(Boolean);
+
+    // 連投っぽくならない程度に改行を最適化
+    return lines.join("\n");
+  }
+
+  function validate() {
+    // “未入力でも生成OK”なので、壊れやすいところだけチェック
+    const errors = [];
+    const s = (timeStartEl.value || "").trim();
+    const e = (timeEndEl.value || "").trim();
+    if (s && e && s > e) {
+      errors.push("時間帯の「開始」が「終了」より後になっています。");
+    }
+    // dateはブラウザがフォーマットを担保するので、ここは基本スルー
+    return errors;
+  }
+
+  // --- Actions ---
+  function generate() {
+    const errors = validate();
+    showErrors(errors);
+    if (errors.length) return;
+
+    const urgency = getUrgency();
+    setBadge(urgency);
+
+    const date = formatDateJP(dateEl.value);
+    const timeRange = formatTimeRange(timeStartEl.value, timeEndEl.value);
+    const reason = smartReason(reasonPresetEl.value, reasonFreeEl.value);
+    const greeting = smartGreeting(greetingEl.value);
+    const closing = smartClosing(urgency, closingEl.value);
+
+    const msg = buildMessage({ date, timeRange, reason, urgency, greeting, closing });
+    outputEl.value = msg;
+    updateCharCount();
+
+    // 生成後、結果エリアにフォーカス（店長の“次の一手＝コピー”へ誘導）
+    outputEl.focus({ preventScroll: true });
+    outputEl.setSelectionRange(outputEl.value.length, outputEl.value.length);
+  }
+
+  async function copyToClipboard(text) {
+    const t = (text || "").trim();
+    if (!t) return false;
+
+    // Clipboard API優先、ダメならfallback
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(t);
+        return true;
+      }
+    } catch (_) {}
+
+    try {
+      outputEl.focus();
+      outputEl.select();
+      const ok = document.execCommand("copy");
+      window.getSelection()?.removeAllRanges?.();
+      return ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function shortenText(text) {
+    const t = (text || "").trim();
+    if (!t) return "";
+
+    // “短く”ボタンは、情報の核だけ残す：募集/理由/お願い/返信
+    const lines = t.split("\n").map(s => s.trim()).filter(Boolean);
+
+    const pick = {
+      greeting: lines[0] && lines[0].startsWith("【") ? "" : lines[0],
+      when: lines.find(l => l.startsWith("【募集】")) || "",
+      reason: lines.find(l => l.startsWith("【理由】")) || "",
+      ask: lines.find(l => !l.startsWith("【") && /お願い|出勤|入れそう/.test(l)) || "",
+      reply: lines.find(l => /返事|◯|✕/.test(l)) || "入れそうなら返事ください🙏",
+    };
+
+    const compact = [pick.greeting, pick.when, pick.reason, pick.ask, pick.reply]
+      .filter(Boolean)
+      .join("\n");
+
+    // それでも長ければ理由をさらに圧縮
+    if (compact.length > 140 && pick.reason) {
+      const r = pick.reason
+        .replace("【理由】", "")
+        .replace(/(想定以上に混雑していて|急病で欠勤が出てしまって|急な用事で人手が足りなくなって|予約が重なってバタついていて)/g, "人手不足で")
+        .slice(0, 22);
+      return [pick.greeting, pick.when, `【理由】${r}`, pick.ask, pick.reply].filter(Boolean).join("\n");
+    }
+
+    return compact;
+  }
+
+  // --- Events ---
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    generate();
+  });
+
+  document.querySelectorAll('input[name="urgency"]').forEach(r => {
+    r.addEventListener("change", () => {
+      setBadge(getUrgency());
+      // 既に文があれば切迫度だけ反映して再生成（手戻りゼロ）
+      if ((outputEl.value || "").trim()) generate();
+    });
+  });
+
+  btnCopy.addEventListener("click", async () => {
+    const ok = await copyToClipboard(outputEl.value);
+    if (ok) showToast("コピーしました！");
+    else showToast("コピーできませんでした（テキストを長押しでコピーしてください）");
+  });
+
+  btnShorten.addEventListener("click", () => {
+    const v = shortenText(outputEl.value);
+    if (!v) {
+      showToast("先に生成してください");
+      return;
+    }
+    outputEl.value = v;
+    updateCharCount();
+    showToast("短くしました");
+  });
+
+  btnFillSample.addEventListener("click", () => {
+    // “焦ってる時”に、即デモが入る。時間の逆転だけ避けて適度に現実的
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = pad2(now.getMonth() + 1);
+    const dd = pad2(now.getDate());
+    dateEl.value = `${yyyy}-${mm}-${dd}`;
+    timeStartEl.value = "18:00";
+    timeEndEl.value = "22:00";
+    reasonPresetEl.value = "急病で欠勤が出てしまって";
+    reasonFreeEl.value = "";
+    greetingEl.value = "みんなへ、お疲れさま！";
+    closingEl.value = "";
+    generate();
+    showToast("例を入れました");
+  });
+
+  // Output change count
+  outputEl.addEventListener("input", updateCharCount);
+
+  // Init
+  setBadge(getUrgency());
+  updateCharCount();
+})();
+</script>
+</body>
+</html>
