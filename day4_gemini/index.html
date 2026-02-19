@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シフト代わって！依頼文ジェネレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #F0FDFA; /* teal-50 */
+        }
+        /* カスタムスクロールバー（モバイルでの見た目向上） */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 入力フォーカス時のリング色調整 */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.3);
+            border-color: #14B8A6;
+        }
+    </style>
+</head>
+<body class="text-slate-700 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-teal-100">
+        <!-- ヘッダーエリア -->
+        <div class="bg-teal-600 p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full">
+                    <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" />
+                </svg>
+            </div>
+            <h1 class="text-white text-xl font-bold relative z-10 tracking-wider">シフト代わって！<br><span class="text-sm font-normal opacity-90">for 忙しい店長さん</span></h1>
+        </div>
+
+        <main class="p-6 space-y-6">
+            <!-- フォームセクション -->
+            <form id="requestForm" class="space-y-5" onsubmit="return false;">
+                
+                <!-- 日時選択 -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-bold text-teal-800 mb-1">いつ？ <span class="text-red-400 text-xs">*</span></label>
+                        <input type="date" id="date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus-ring transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-teal-800 mb-1">開始 <span class="text-red-400 text-xs">*</span></label>
+                        <input type="time" id="startTime" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus-ring transition-all text-center">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-teal-800 mb-1">終了 <span class="text-red-400 text-xs">*</span></label>
+                        <input type="time" id="endTime" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus-ring transition-all text-center">
+                    </div>
+                </div>
+
+                <!-- 理由選択 -->
+                <div>
+                    <label class="block text-sm font-bold text-teal-800 mb-1">どうして？</label>
+                    <select id="reason" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus-ring transition-all appearance-none cursor-pointer">
+                        <option value="sick">急な欠勤（体調不良など）が出た</option>
+                        <option value="busy">予想以上の混雑・予約が入った</option>
+                        <option value="shortage">シフト提出が少なく人手不足</option>
+                        <option value="other">その他（理由は詳しく書かない）</option>
+                    </select>
+                </div>
+
+                <!-- 切迫度（ラジオボタン風デザイン） -->
+                <div>
+                    <label class="block text-sm font-bold text-teal-800 mb-2">どれくらいピンチ？</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <!-- Low -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="urgency" value="low" class="peer sr-only">
+                            <div class="h-full flex flex-col items-center justify-center p-2 border-2 border-slate-100 rounded-xl peer-checked:border-teal-400 peer-checked:bg-teal-50 transition-all hover:bg-slate-50">
+                                <span class="text-2xl mb-1">😌</span>
+                                <span class="text-xs font-bold text-slate-500 peer-checked:text-teal-700">できれば</span>
+                            </div>
+                        </label>
+                        <!-- Medium -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="urgency" value="medium" class="peer sr-only" checked>
+                            <div class="h-full flex flex-col items-center justify-center p-2 border-2 border-slate-100 rounded-xl peer-checked:border-orange-400 peer-checked:bg-orange-50 transition-all hover:bg-slate-50">
+                                <span class="text-2xl mb-1">💦</span>
+                                <span class="text-xs font-bold text-slate-500 peer-checked:text-orange-700">困ってる</span>
+                            </div>
+                        </label>
+                        <!-- High -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="urgency" value="high" class="peer sr-only">
+                            <div class="h-full flex flex-col items-center justify-center p-2 border-2 border-slate-100 rounded-xl peer-checked:border-red-400 peer-checked:bg-red-50 transition-all hover:bg-slate-50">
+                                <span class="text-2xl mb-1">🆘</span>
+                                <span class="text-xs font-bold text-slate-500 peer-checked:text-red-700">ガチSOS</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 生成ボタン -->
+                <button type="button" onclick="generateText()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-md transform transition active:scale-95 flex items-center justify-center gap-2">
+                    <span>✨ 文章をつくる</span>
+                </button>
+            </form>
+
+            <!-- 結果表示エリア（初期は非表示） -->
+            <div id="resultArea" class="hidden space-y-3 pt-2 border-t border-dashed border-slate-200">
+                <div class="flex justify-between items-end">
+                    <label class="text-sm font-bold text-teal-800">LINE用テキスト</label>
+                    <span class="text-xs text-slate-400">自由に編集できます</span>
+                </div>
+                
+                <textarea id="outputText" rows="6" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm leading-relaxed focus-ring resize-none"></textarea>
+
+                <button onclick="copyToClipboard()" id="copyBtn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span>コピーしてLINEを開く</span>
+                </button>
+                <div id="toast" class="hidden text-center text-xs text-teal-600 font-bold fade-in">コピーしました！</div>
+            </div>
+        </main>
+        
+        <footer class="bg-slate-50 p-4 text-center text-xs text-slate-400">
+            お疲れ様です。無理せずいきましょう🍵
+        </footer>
+    </div>
+
+    <script>
+        // 今日の日付をセット
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+        });
+
+        function generateText() {
+            const dateVal = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const reason = document.getElementById('reason').value;
+            const urgency = document.querySelector('input[name="urgency"]:checked').value;
+
+            // バリデーション
+            if (!dateVal || !startTime || !endTime) {
+                alert("日付と時間を入力してください！💦");
+                return;
+            }
+
+            // 日付のフォーマット (例: 10/24(金))
+            const dateObj = new Date(dateVal);
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}(${days[dateObj.getDay()]})`;
+
+            // 理由のテキストマッピング
+            const reasonTexts = {
+                sick: "急な体調不良のスタッフが出てしまい、",
+                busy: "ありがたいことに予想以上の混雑になっており、",
+                shortage: "この時間帯のシフトが薄くなっており、",
+                other: "急で申し訳ないのですが、"
+            };
+
+            // 切迫度別テンプレート
+            let intro = "";
+            let plea = "";
+            let outro = "";
+
+            if (urgency === 'low') {
+                intro = "お疲れ様です！店長です🍵";
+                plea = `もしご都合つけば、\n【${formattedDate} ${startTime}〜${endTime}】\nに入れる人はいませんか？`;
+                outro = `無理は言いませんので、空いてるよって人がいれば連絡もらえると助かります！🙏`;
+            } else if (urgency === 'medium') {
+                intro = "お疲れ様です。急な相談でごめんなさい💦";
+                plea = `${reasonTexts[reason]}\n【${formattedDate} ${startTime}〜${endTime}】\nにお手伝いをお願いできませんか？`;
+                outro = "短い時間でも構いません！入れるよという方がいれば、個別に連絡いただけると本当に助かります🙇‍♂️";
+            } else if (urgency === 'high') {
+                intro = "【SOS】お疲れ様です、店長です！本当に困っています😭";
+                plea = `${reasonTexts[reason]}\n店が回りそうにありません...。\n\n【${formattedDate} ${startTime}〜${endTime}】`;
+                outro = "このままだとピンチです。1時間だけでも、少し遅れても大丈夫です！\n「助けてやるよ！」という救世主の方、どうか連絡ください！！🙇‍♂️🙇‍♂️";
+            }
+
+            // テキスト結合
+            const finalMessage = `${intro}\n\n${plea}\n\n${outro}`;
+
+            // 出力と表示アニメーション
+            const resultArea = document.getElementById('resultArea');
+            const outputText = document.getElementById('outputText');
+            
+            outputText.value = finalMessage;
+            
+            resultArea.classList.remove('hidden');
+            resultArea.classList.add('fade-in');
+            
+            // スクロール調整
+            setTimeout(() => {
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('outputText');
+            text.select();
+            text.setSelectionRange(0, 99999); // Mobile対応
+
+            // クリップボードAPIを試し、だめならexecCommand
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text.value).then(showToast);
+            } else {
+                document.execCommand('copy');
+                showToast();
+            }
+        }
+
+        function showToast() {
+            const btn = document.getElementById('copyBtn');
+            const originalContent = btn.innerHTML;
+            const toast = document.getElementById('toast');
+
+            // ボタンのフィードバック
+            btn.classList.replace('bg-slate-800', 'bg-teal-600');
+            btn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>コピー完了！</span>
+            `;
+            
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                btn.classList.replace('bg-teal-600', 'bg-slate-800');
+                btn.innerHTML = originalContent;
+                toast.classList.add('hidden');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
