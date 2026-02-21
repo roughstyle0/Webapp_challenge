@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Money Counter | レジ締めアシスタント</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc; /* 目に優しいスレート系ホワイト */
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* スピナー（上下矢印）を隠す */
+        .currency-input::-webkit-outer-spin-button,
+        .currency-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .currency-input {
+            -moz-appearance: textfield;
+        }
+        /* スティッキーヘッダーによる視認性確保 */
+        .sticky-summary {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background-color: rgba(255, 255, 255, 0.85);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        /* タップ時の微細なフィードバック */
+        .tap-effect {
+            transition: transform 0.1s ease, background-color 0.2s ease;
+        }
+        .tap-effect:active {
+            transform: scale(0.96);
+        }
+        /* 金種ごとのアイコンカラー設定 */
+        .bill-10000 { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .bill-5000  { background: #fdf4ff; color: #a21caf; border: 1px solid #fbcfe8; }
+        .bill-1000  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .coin-500   { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+        .coin-100   { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+        .coin-50    { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+        .coin-10    { background: #fdf1f8; color: #be185d; border: 1px solid #fbcfe8; } /* 銅色イメージ */
+        .coin-5     { background: #fefce8; color: #a16207; border: 1px solid #fef08a; } /* 黄銅色イメージ */
+        .coin-1     { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; } /* アルミ色イメージ */
+    </style>
+</head>
+<body class="pb-24 text-slate-800 selection:bg-emerald-200">
+
+    <!-- Header Section (Sticky Total) -->
+    <header class="sticky-summary shadow-sm transition-all duration-300">
+        <div class="max-w-md mx-auto px-6 py-5">
+            <h1 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Amount / 総合計</h1>
+            <div class="flex items-end justify-between">
+                <div class="leading-none">
+                    <span class="text-xl font-bold text-slate-400 mr-1">¥</span>
+                    <span class="text-4xl font-black tracking-tight text-slate-900" id="grand-total">0</span>
+                </div>
+                <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-500" id="total-count-badge">0枚</span>
+            </div>
+            
+            <!-- 差額表示セクション（レジ残金入力時のみ展開） -->
+            <div id="diff-section" class="mt-4 pt-4 border-t border-dashed border-slate-200 overflow-hidden transition-all duration-300" style="display: none;">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 mb-0.5">レジ残金との過不足</p>
+                        <p class="text-xl font-black tracking-tight" id="diff-amount">±¥0</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 mb-0.5">あるべき金額</p>
+                        <p class="text-sm font-bold text-slate-700" id="target-display">¥0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 mt-6 space-y-8">
+        
+        <!-- Target Amount Input Section -->
+        <section class="bg-white rounded-3xl p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100">
+            <label for="target-amount" class="block text-xs font-bold text-slate-500 mb-2">本日のレジ残金（あるべき金額）</label>
+            <div class="relative flex items-center bg-slate-50 rounded-2xl border border-transparent focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50 transition-all">
+                <span class="absolute left-4 text-slate-400 font-bold">¥</span>
+                <input type="number" id="target-amount" inputmode="numeric" 
+                       class="w-full bg-transparent border-none py-4 pl-10 pr-12 text-xl font-bold text-slate-800 focus:ring-0 placeholder:text-slate-300" 
+                       placeholder="入力して過不足をチェック" oninput="calculate()">
+                <!-- 入力内容クリアボタン -->
+                <button onclick="clearTarget()" id="clear-target-btn" class="absolute right-4 text-slate-300 hover:text-slate-500 hidden tap-effect">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                    </svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Denominations Section -->
+        <section class="space-y-4">
+            <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2 pl-1">
+                <span class="w-1.5 h-4 bg-emerald-400 rounded-full"></span>
+                金種ごとの枚数
+            </h2>
+
+            <!-- JavaScriptでここにリストを生成 -->
+            <div id="denoms-container" class="space-y-3"></div>
+
+        </section>
+
+        <!-- Clear All Button -->
+        <div class="pt-4 pb-8">
+            <button onclick="confirmClearAll()" class="w-full py-4 rounded-2xl font-bold text-red-500 bg-white border border-red-100 shadow-sm hover:bg-red-50 tap-effect flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                すべての入力をリセット
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Template for Denomination Row -->
+    <template id="denom-template">
+        <div class="bg-white rounded-2xl p-4 flex items-center justify-between shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] border border-slate-100">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-sm" data-icon>
+                    <!-- Icon Text (e.g., 1万) -->
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5" data-type-label></p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-xs text-slate-400 font-bold">¥</span>
+                        <p class="text-lg font-bold text-slate-800 leading-none" data-subtotal>0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center bg-slate-50 border border-slate-100 rounded-xl p-1">
+                <button class="w-10 h-10 flex items-center justify-center text-slate-400 font-bold tap-effect rounded-lg hover:bg-white hover:text-slate-600 hover:shadow-sm" data-minus>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H3.75A.75.75 0 013 10z" clip-rule="evenodd" /></svg>
+                </button>
+                <input type="number" inputmode="numeric" 
+                       class="currency-input w-12 bg-transparent border-none text-center font-bold text-lg text-slate-800 focus:ring-0 p-0" 
+                       value="" placeholder="0" min="0" data-input>
+                <button class="w-10 h-10 flex items-center justify-center text-emerald-500 font-bold tap-effect rounded-lg hover:bg-white hover:shadow-sm" data-plus>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // 金種マスタデータ
+        const denominations = [
+            { value: 10000, label: "1万", type: "Bill", class: "bill-10000" },
+            { value: 5000,  label: "5千", type: "Bill", class: "bill-5000" },
+            { value: 1000,  label: "1千", type: "Bill", class: "bill-1000" },
+            { value: 500,   label: "500", type: "Coin", class: "coin-500" },
+            { value: 100,   label: "100", type: "Coin", class: "coin-100" },
+            { value: 50,    label: "50",  type: "Coin", class: "coin-50" },
+            { value: 10,    label: "10",  type: "Coin", class: "coin-10" },
+            { value: 5,     label: "5",   type: "Coin", class: "coin-5" },
+            { value: 1,     label: "1",   type: "Coin", class: "coin-1" }
+        ];
+
+        const container = document.getElementById('denoms-container');
+        const template = document.getElementById('denom-template');
+        const formatter = new Intl.NumberFormat('ja-JP');
+
+        // UI初期化：テンプレートから金種行を生成
+        function init() {
+            denominations.forEach((denom, index) => {
+                const clone = template.content.cloneNode(true);
+                const row = clone.querySelector('div');
+                
+                // アイコン設定
+                const icon = clone.querySelector('[data-icon]');
+                icon.textContent = denom.label;
+                icon.className += ` ${denom.class}`;
+
+                // ラベル設定
+                clone.querySelector('[data-type-label]').textContent = denom.type;
+                
+                // Input設定
+                const input = clone.querySelector('[data-input]');
+                input.dataset.index = index;
+                input.addEventListener('input', (e) => handleInput(e, input));
+                input.addEventListener('focus', () => input.select()); // タップ時全選択で上書きしやすく
+                
+                // +/- ボタン設定
+                const btnMinus = clone.querySelector('[data-minus]');
+                const btnPlus = clone.querySelector('[data-plus]');
+                
+                // 長押し対応のためイベントを少し工夫（今回はシンプルにclickのみ実装）
+                btnMinus.addEventListener('click', () => updateCount(input, -1));
+                btnPlus.addEventListener('click', () => updateCount(input, 1));
+
+                // サブ合計表示用の要素にIDを付与
+                clone.querySelector('[data-subtotal]').id = `subtotal-${index}`;
+
+                container.appendChild(clone);
+            });
+        }
+
+        // 入力値のサニタイズと計算トリガー
+        function handleInput(e, input) {
+            let val = parseInt(input.value, 10);
+            if (isNaN(val) || val < 0) {
+                // 空にするか0にするか。UX的には空のほうが消しやすい
+                val = ''; 
+            }
+            input.value = val;
+            calculate();
+        }
+
+        // +/- ボタンによる更新
+        function updateCount(input, delta) {
+            let current = parseInt(input.value, 10) || 0;
+            let newVal = current + delta;
+            if (newVal < 0) newVal = 0;
+            input.value = newVal || ''; // 0の場合はプレースホルダーを見せるために空に
+            
+            // 少しだけ振動させる（モバイルのみ対応ブラウザ）
+            if(navigator.vibrate) navigator.vibrate(10);
+            
+            calculate();
+        }
+
+        // メイン計算ロジック
+        function calculate() {
+            let grandTotal = 0;
+            let totalCount = 0;
+
+            // 各金種の計算
+            denominations.forEach((denom, index) => {
+                const input = document.querySelector(`[data-input][data-index="${index}"]`);
+                const count = parseInt(input.value, 10) || 0;
+                const subtotal = count * denom.value;
+                
+                grandTotal += subtotal;
+                totalCount += count;
+
+                // 小計を更新
+                document.getElementById(`subtotal-${index}`).textContent = formatter.format(subtotal);
+            });
+
+            // 総合計と枚数を更新
+            // アニメーション効果のために一旦要素を取得
+            const grandTotalEl = document.getElementById('grand-total');
+            if(grandTotalEl.textContent !== formatter.format(grandTotal)) {
+                 grandTotalEl.textContent = formatter.format(grandTotal);
+                 // 軽くポップするアニメーション
+                 grandTotalEl.animate([
+                     { transform: 'scale(1.05)', color: '#10b981' },
+                     { transform: 'scale(1)', color: '#0f172a' }
+                 ], { duration: 200, easing: 'ease-out' });
+            }
+           
+            document.getElementById('total-count-badge').textContent = `${formatter.format(totalCount)}枚`;
+
+            // レジ残金との差額計算
+            calculateDifference(grandTotal);
+        }
+
+        // 差額（過不足）の計算とUI更新
+        function calculateDifference(grandTotal) {
+            const targetInput = document.getElementById('target-amount');
+            const targetVal = parseInt(targetInput.value, 10);
+            const diffSection = document.getElementById('diff-section');
+            const clearBtn = document.getElementById('clear-target-btn');
+
+            if (!isNaN(targetVal)) {
+                // 残金入力がある場合
+                diffSection.style.display = 'block';
+                clearBtn.style.display = 'block';
+                
+                document.getElementById('target-display').textContent = `¥${formatter.format(targetVal)}`;
+                
+                const diff = grandTotal - targetVal;
+                const diffEl = document.getElementById('diff-amount');
+                
+                if (diff === 0) {
+                    diffEl.textContent = '±¥0 (ピッタリ!)';
+                    diffEl.className = 'text-xl font-black tracking-tight text-emerald-500';
+                } else if (diff > 0) {
+                    diffEl.textContent = `+¥${formatter.format(diff)}`;
+                    diffEl.className = 'text-xl font-black tracking-tight text-blue-500';
+                } else {
+                    diffEl.textContent = `-¥${formatter.format(Math.abs(diff))}`;
+                    diffEl.className = 'text-xl font-black tracking-tight text-red-500';
+                }
+            } else {
+                // 入力がない場合
+                diffSection.style.display = 'none';
+                clearBtn.style.display = 'none';
+            }
+        }
+
+        // レジ残金のクリア
+        function clearTarget() {
+            const input = document.getElementById('target-amount');
+            input.value = '';
+            input.focus();
+            calculate();
+        }
+
+        // 全クリアの確認と実行
+        function confirmClearAll() {
+            if (confirm('入力した枚数と想定残高をすべて0に戻しますか？')) {
+                document.getElementById('target-amount').value = '';
+                document.querySelectorAll('[data-input]').forEach(input => {
+                    input.value = '';
+                });
+                calculate();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // 初期化実行
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+            // iOS等でズームを防ぐためmetaタグで対応しているが、念の為ダブルタップズーム防止
+            document.addEventListener('dblclick', function(event) {
+                event.preventDefault();
+            }, { passive: false });
+        });
+
+    </script>
+</body>
+</html>
