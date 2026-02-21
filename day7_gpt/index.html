@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>レジ締め専用｜金種計算（マネーカウンター）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    /* iOSでnumberの見た目崩れを抑える */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    /* タップの反応を気持ちよく */
+    .tap { touch-action: manipulation; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+  <div class="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:pt-10">
+    <!-- Header -->
+    <header class="mb-6 sm:mb-8">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+            レジ締め専用 <span class="text-slate-300">金種計算</span>
+          </h1>
+          <p class="mt-2 text-slate-300 leading-relaxed">
+            枚数を入れるだけで、金種別合計・総合計・過不足をリアルタイム表示。
+          </p>
+        </div>
+        <button id="btnClearTop"
+          class="tap inline-flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-slate-100 shadow-sm ring-1 ring-white/10 hover:bg-white/15 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+          aria-label="すべてクリア（0に戻す）">
+          <span class="text-lg">↺</span>
+          <span>クリア</span>
+        </button>
+      </div>
+
+      <!-- Hint -->
+      <div class="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 h-9 w-9 shrink-0 rounded-xl bg-emerald-400/15 ring-1 ring-emerald-300/20 flex items-center justify-center">
+            <span class="text-emerald-200 text-lg">💡</span>
+          </div>
+          <div class="text-sm sm:text-base text-slate-200">
+            <p class="font-semibold">入力のコツ</p>
+            <ul class="mt-1 list-disc pl-5 text-slate-300">
+              <li>枚数は <span class="text-slate-200 font-semibold">0以上の整数</span>（小数は自動で切り捨て）</li>
+              <li>「＋ / －」は長押しで連続加算できます（スマホ向け）</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Expected cash (optional) -->
+    <section class="mb-6 sm:mb-8">
+      <div class="rounded-3xl bg-white/5 p-4 sm:p-6 ring-1 ring-white/10 shadow-lg shadow-black/20">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div class="flex-1">
+            <label for="expected"
+              class="block text-sm font-semibold text-slate-200">
+              （オプション）本日のレジ残金（あるべき金額）
+            </label>
+            <div class="mt-2 flex items-center gap-2">
+              <div class="relative w-full">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">¥</span>
+                <input id="expected" inputmode="numeric" autocomplete="off"
+                  class="tap w-full rounded-2xl bg-slate-950/40 px-10 py-4 text-lg sm:text-xl font-semibold tracking-wide ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+                  placeholder="例：150000" />
+              </div>
+              <button id="btnExpectedClear"
+                class="tap rounded-2xl bg-white/10 px-4 py-4 text-sm font-semibold ring-1 ring-white/10 hover:bg-white/15 active:scale-[0.99]">
+                消去
+              </button>
+            </div>
+            <p id="expectedHelp" class="mt-2 text-sm text-slate-400">
+              ※ 数字のみ。入力にカンマがあってもOK（自動で整形）
+            </p>
+          </div>
+
+          <div class="sm:w-60">
+            <div class="rounded-2xl bg-slate-950/30 p-4 ring-1 ring-white/10">
+              <p class="text-sm text-slate-300">過不足（差額）</p>
+              <p id="diff"
+                class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight">
+                ——
+              </p>
+              <p id="diffSub" class="mt-1 text-sm text-slate-400">
+                あるべき金額 − 計算合計
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p id="expectedError" class="mt-3 hidden rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200 ring-1 ring-rose-400/20">
+          入力は0以上の数字でお願いします（例：150000）
+        </p>
+      </div>
+    </section>
+
+    <!-- Denomination list -->
+    <main class="space-y-3 sm:space-y-4" id="rows" aria-label="金種の入力フォーム">
+      <!-- JS renders rows -->
+    </main>
+
+    <!-- Bottom summary (sticky) -->
+    <div class="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-slate-950 via-slate-950/95 to-slate-950/30 backdrop-blur">
+      <div class="mx-auto max-w-3xl px-4 pb-4 pt-3">
+        <div class="rounded-3xl bg-white/8 ring-1 ring-white/10 shadow-xl shadow-black/30">
+          <div class="flex items-center justify-between gap-3 px-5 py-4 sm:px-6">
+            <div>
+              <p class="text-xs sm:text-sm text-slate-300">総合計金額</p>
+              <p id="grand"
+                class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                ¥0
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btnClearBottom"
+                class="tap inline-flex items-center justify-center rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold ring-1 ring-white/10 hover:bg-white/15 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
+                すべてクリア
+              </button>
+              <button id="btnFocusTop"
+                class="tap inline-flex items-center justify-center rounded-2xl bg-emerald-400/15 px-4 py-3 text-sm font-semibold text-emerald-100 ring-1 ring-emerald-300/25 hover:bg-emerald-400/20 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+                aria-label="先頭へ戻る">
+                ↑ 先頭へ
+              </button>
+            </div>
+          </div>
+          <div class="px-5 pb-4 sm:px-6">
+            <p class="text-xs sm:text-sm text-slate-400">
+              入力は自動保存されます（この端末内のみ）。誤入力しても壊れません。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm modal -->
+    <div id="modal" class="hidden fixed inset-0 z-[60]">
+      <div class="absolute inset-0 bg-black/60"></div>
+      <div class="absolute inset-0 flex items-end sm:items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-3xl bg-slate-950 ring-1 ring-white/10 shadow-2xl shadow-black/40">
+          <div class="p-6">
+            <h2 class="text-lg font-bold">すべてクリアしますか？</h2>
+            <p class="mt-2 text-slate-300 text-sm leading-relaxed">
+              すべての枚数を0に戻し、（あるべき金額）も空にします。
+            </p>
+            <div class="mt-5 grid grid-cols-2 gap-3">
+              <button id="btnCancel"
+                class="tap rounded-2xl bg-white/10 px-4 py-3 font-semibold ring-1 ring-white/10 hover:bg-white/15 active:scale-[0.99]">
+                やめる
+              </button>
+              <button id="btnConfirm"
+                class="tap rounded-2xl bg-rose-500/15 px-4 py-3 font-semibold text-rose-100 ring-1 ring-rose-400/25 hover:bg-rose-500/20 active:scale-[0.99]">
+                クリアする
+              </button>
+            </div>
+          </div>
+          <div class="px-6 pb-6">
+            <p class="text-xs text-slate-500">※ 端末の自動保存データもリセットします</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const DENOMS = [
+        { value: 10000, label: "10,000円" },
+        { value: 5000,  label: "5,000円"  },
+        { value: 1000,  label: "1,000円"  },
+        { value: 500,   label: "500円"    },
+        { value: 100,   label: "100円"    },
+        { value: 50,    label: "50円"     },
+        { value: 10,    label: "10円"     },
+        { value: 5,     label: "5円"      },
+        { value: 1,     label: "1円"      }
+      ];
+
+      const fmtJPY = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 });
+
+      const els = {
+        rows: document.getElementById("rows"),
+        grand: document.getElementById("grand"),
+        expected: document.getElementById("expected"),
+        expectedError: document.getElementById("expectedError"),
+        diff: document.getElementById("diff"),
+        diffSub: document.getElementById("diffSub"),
+
+        btnClearTop: document.getElementById("btnClearTop"),
+        btnClearBottom: document.getElementById("btnClearBottom"),
+        btnExpectedClear: document.getElementById("btnExpectedClear"),
+        btnFocusTop: document.getElementById("btnFocusTop"),
+
+        modal: document.getElementById("modal"),
+        btnCancel: document.getElementById("btnCancel"),
+        btnConfirm: document.getElementById("btnConfirm")
+      };
+
+      const STORAGE_KEY = "money-counter-jpy-v1";
+
+      /** state */
+      const state = {
+        counts: Object.fromEntries(DENOMS.map(d => [String(d.value), 0])),
+        expected: "" // string (raw)
+      };
+
+      /** Utilities */
+      const clampInt = (n) => {
+        if (!Number.isFinite(n)) return 0;
+        n = Math.floor(n);
+        if (n < 0) return 0;
+        if (n > 999999) return 999999;
+        return n;
+      };
+
+      const parseLooseNumber = (s) => {
+        // "150,000" もOK
+        const cleaned = String(s ?? "").replace(/[^\d]/g, "");
+        if (cleaned === "") return { ok: true, value: null }; // 未入力はOK
+        const num = Number(cleaned);
+        if (!Number.isFinite(num)) return { ok: false, value: null };
+        return { ok: true, value: Math.max(0, Math.floor(num)) };
+      };
+
+      const setDiffStyle = (diffValue) => {
+        // diff = expected - total
+        // 0: ぴったり、>0: 不足、<0: 過多（表示上わかりやすく）
+        if (diffValue === null) {
+          els.diff.textContent = "——";
+          els.diff.className = "mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight";
+          return;
+        }
+        const abs = Math.abs(diffValue);
+        const sign = diffValue === 0 ? "" : (diffValue > 0 ? "不足 " : "過多 ");
+        els.diff.textContent = (diffValue === 0) ? "ぴったり" : `${sign}${fmtJPY.format(abs)}`;
+
+        const base = "mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight";
+        if (diffValue === 0) els.diff.className = base + " text-emerald-200";
+        else if (diffValue > 0) els.diff.className = base + " text-amber-200";
+        else els.diff.className = base + " text-rose-200";
+      };
+
+      /** Render rows */
+      const rowId = (v) => `denom-${v}`;
+      const inputId = (v) => `count-${v}`;
+      const subtotalId = (v) => `sub-${v}`;
+
+      function render() {
+        const frag = document.createDocumentFragment();
+
+        DENOMS.forEach((d) => {
+          const wrap = document.createElement("section");
+          wrap.className =
+            "rounded-3xl bg-white/5 ring-1 ring-white/10 shadow-lg shadow-black/15 overflow-hidden";
+
+          wrap.innerHTML = `
+            <div class="p-4 sm:p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-emerald-400/12 ring-1 ring-emerald-300/20 flex items-center justify-center">
+                    <span class="text-base sm:text-lg font-extrabold text-emerald-100">${d.label}</span>
+                  </div>
+                  <div>
+                    <p class="text-xs sm:text-sm text-slate-300">枚数</p>
+                    <p class="text-sm sm:text-base text-slate-400">タップで増減、直接入力もOK</p>
+                  </div>
+                </div>
+
+                <div class="text-right">
+                  <p class="text-xs sm:text-sm text-slate-300">金種別合計</p>
+                  <p id="${subtotalId(d.value)}" class="text-xl sm:text-2xl font-extrabold tracking-tight">${fmtJPY.format(0)}</p>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-[auto_1fr_auto] gap-3 items-center">
+                <button
+                  class="tap btn-step rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-xl font-black ring-1 ring-white/10 hover:bg-white/15 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+                  data-denom="${d.value}" data-step="-1" aria-label="${d.label} を1減らす">−</button>
+
+                <div class="relative">
+                  <input
+                    id="${inputId(d.value)}"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    class="tap w-full rounded-2xl bg-slate-950/40 px-4 py-4 sm:py-5 text-center text-2xl sm:text-3xl font-extrabold tracking-wide ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+                    placeholder="0"
+                    aria-label="${d.label} の枚数" />
+                  <p id="${rowId(d.value)}-err" class="mt-2 hidden text-sm text-rose-200">
+                    0以上の整数で入力してください
+                  </p>
+                </div>
+
+                <button
+                  class="tap btn-step rounded-2xl bg-emerald-400/15 px-4 py-4 sm:px-5 sm:py-5 text-xl font-black text-emerald-100 ring-1 ring-emerald-300/25 hover:bg-emerald-400/20 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+                  data-denom="${d.value}" data-step="1" aria-label="${d.label} を1増やす">＋</button>
+              </div>
+            </div>
+          `;
+
+          frag.appendChild(wrap);
+        });
+
+        els.rows.innerHTML = "";
+        els.rows.appendChild(frag);
+      }
+
+      /** Calculation */
+      function calcTotal() {
+        let total = 0;
+        for (const d of DENOMS) {
+          const c = state.counts[String(d.value)] || 0;
+          total += d.value * c;
+        }
+        return total;
+      }
+
+      function updateUI() {
+        // subtotals
+        for (const d of DENOMS) {
+          const c = state.counts[String(d.value)] || 0;
+          const sub = d.value * c;
+          const subEl = document.getElementById(subtotalId(d.value));
+          if (subEl) subEl.textContent = fmtJPY.format(sub);
+
+          const inEl = document.getElementById(inputId(d.value));
+          if (inEl && inEl.value !== String(c)) inEl.value = String(c);
+        }
+
+        const total = calcTotal();
+        els.grand.textContent = fmtJPY.format(total);
+
+        // expected + diff
+        const parsed = parseLooseNumber(els.expected.value);
+        if (!parsed.ok) {
+          els.expectedError.classList.remove("hidden");
+          setDiffStyle(null);
+        } else {
+          els.expectedError.classList.add("hidden");
+          if (parsed.value === null) {
+            setDiffStyle(null);
+          } else {
+            const diff = parsed.value - total;
+            setDiffStyle(diff);
+          }
+        }
+      }
+
+      /** Persistence */
+      function save() {
+        try {
+          const payload = {
+            counts: state.counts,
+            expected: els.expected.value ?? ""
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        } catch (_) { /* no-op */ }
+      }
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const obj = JSON.parse(raw);
+          if (obj && typeof obj === "object") {
+            if (obj.counts && typeof obj.counts === "object") {
+              for (const d of DENOMS) {
+                const v = String(d.value);
+                state.counts[v] = clampInt(Number(obj.counts[v] ?? 0));
+              }
+            }
+            if (typeof obj.expected === "string") {
+              els.expected.value = obj.expected;
+            }
+          }
+        } catch (_) { /* no-op */ }
+      }
+
+      /** Long press stepper */
+      function attachLongPress(btn) {
+        let timer = null;
+        let raf = null;
+        let running = false;
+
+        const denom = btn.getAttribute("data-denom");
+        const step = Number(btn.getAttribute("data-step")) || 0;
+
+        const tick = () => {
+          if (!running) return;
+          state.counts[denom] = clampInt((state.counts[denom] || 0) + step);
+          updateUI();
+          save();
+          raf = requestAnimationFrame(tick);
+        };
+
+        const start = (e) => {
+          e.preventDefault();
+          // まず1回反映
+          state.counts[denom] = clampInt((state.counts[denom] || 0) + step);
+          updateUI();
+          save();
+
+          // 少し押し続けたら連続
+          running = true;
+          timer = setTimeout(() => {
+            raf = requestAnimationFrame(tick);
+          }, 220);
+        };
+
+        const stop = () => {
+          running = false;
+          if (timer) clearTimeout(timer);
+          timer = null;
+          if (raf) cancelAnimationFrame(raf);
+          raf = null;
+        };
+
+        btn.addEventListener("pointerdown", start);
+        btn.addEventListener("pointerup", stop);
+        btn.addEventListener("pointercancel", stop);
+        btn.addEventListener("pointerleave", stop);
+      }
+
+      /** Events */
+      function wireEvents() {
+        // step buttons
+        document.querySelectorAll(".btn-step").forEach(attachLongPress);
+
+        // count inputs
+        for (const d of DENOMS) {
+          const denom = String(d.value);
+          const input = document.getElementById(inputId(d.value));
+          const err = document.getElementById(`${rowId(d.value)}-err`);
+
+          const commit = () => {
+            const raw = input.value;
+            // 空は0扱い
+            if (raw.trim() === "") {
+              state.counts[denom] = 0;
+              err.classList.add("hidden");
+              updateUI();
+              save();
+              return;
+            }
+            // 数字以外が混ざった場合はエラー表示（壊れない）
+            if (!/^\d+$/.test(raw)) {
+              err.classList.remove("hidden");
+              return;
+            }
+            err.classList.add("hidden");
+            state.counts[denom] = clampInt(Number(raw));
+            updateUI();
+            save();
+          };
+
+          input.addEventListener("input", () => {
+            // 途中入力は即計算したいが、非数字は一旦エラー表示で止める
+            commit();
+          });
+
+          input.addEventListener("blur", () => {
+            // blur時に整形（0以上整数）
+            state.counts[denom] = clampInt(Number(input.value || 0));
+            err.classList.add("hidden");
+            updateUI();
+            save();
+          });
+        }
+
+        // expected
+        els.expected.addEventListener("input", () => {
+          const parsed = parseLooseNumber(els.expected.value);
+          els.expectedError.classList.toggle("hidden", parsed.ok);
+          updateUI();
+          save();
+        });
+
+        els.btnExpectedClear.addEventListener("click", () => {
+          els.expected.value = "";
+          updateUI();
+          save();
+          els.expected.focus();
+        });
+
+        // clear buttons -> modal
+        const openModal = () => {
+          els.modal.classList.remove("hidden");
+          // スクロール抑止
+          document.body.style.overflow = "hidden";
+        };
+        const closeModal = () => {
+          els.modal.classList.add("hidden");
+          document.body.style.overflow = "";
+        };
+
+        els.btnClearTop.addEventListener("click", openModal);
+        els.btnClearBottom.addEventListener("click", openModal);
+        els.btnCancel.addEventListener("click", closeModal);
+
+        els.modal.addEventListener("click", (e) => {
+          if (e.target === els.modal.firstElementChild) closeModal();
+        });
+
+        els.btnConfirm.addEventListener("click", () => {
+          // reset state
+          for (const d of DENOMS) state.counts[String(d.value)] = 0;
+          els.expected.value = "";
+          try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+          updateUI();
+          closeModal();
+        });
+
+        // focus top
+        els.btnFocusTop.addEventListener("click", () => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        // escape to close
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !els.modal.classList.contains("hidden")) closeModal();
+        });
+      }
+
+      /** Init */
+      render();
+      load();
+      updateUI();
+      wireEvents();
+    })();
+  </script>
+</body>
+</html>
