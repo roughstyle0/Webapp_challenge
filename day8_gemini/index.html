@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Status Board ☕️</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: 丸みのある温かいフォントを採用 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mocha: '#8C7A6B',      /* メインのブラウン */
+                        caramel: '#D4A373',    /* アクセント */
+                        latte: '#F9F6F0',      /* 背景色（アイボリー） */
+                        espresso: '#4A3F35',   /* テキストカラー */
+                        terracotta: '#E07A5F', /* アラート色（温かみのある赤） */
+                        sage: '#A3B18A',       /* 成功・完了色 */
+                        board: '#FAFAFA'       /* カード背景 */
+                    },
+                    fontFamily: {
+                        sans: ['"Zen Maru Gothic"', '"Quicksand"', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.4s ease-out forwards',
+                        'pulse-soft': 'pulseSoft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(15px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                            '50%': { opacity: '0.95', transform: 'scale(0.99)' },
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(140, 122, 107, 0.15), 0 8px 10px -6px rgba(140, 122, 107, 0.1)',
+                        'float': '0 20px 25px -5px rgba(140, 122, 107, 0.2), 0 10px 10px -5px rgba(140, 122, 107, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D4A373;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8C7A6B;
+        }
+        
+        /* タイムピッカーのアイコンカスタマイズ(Webkit用) */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: opacity(0.6) sepia(1) hue-rotate(350deg) saturate(3) brightness(0.8);
+        }
+        
+        /* Glassmorphismエフェクト */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-latte text-espresso min-h-screen p-4 md:p-6 lg:p-10 font-sans selection:bg-caramel selection:text-white flex flex-col items-center">
+
+    <!-- 背景装飾（カフェのオーニングのようなイメージ） -->
+    <div class="fixed top-0 left-0 w-full h-2 bg-gradient-to-r from-mocha via-caramel to-mocha z-50"></div>
+
+    <div class="w-full max-w-6xl w-full">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold flex items-center gap-3 text-mocha">
+                    <i data-lucide="coffee" class="w-8 h-8 text-caramel"></i>
+                    Staff Board
+                </h1>
+                <p class="text-mocha/80 text-sm mt-1 ml-11">今日のチーム状況をお知らせします</p>
+            </div>
+            
+            <div class="glass-panel px-6 py-3 rounded-full shadow-sm flex items-center gap-3 border border-white/60">
+                <i data-lucide="clock" class="w-5 h-5 text-caramel"></i>
+                <span id="current-time" class="text-2xl font-bold tracking-wider font-['Quicksand'] text-espresso">--:--</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Input Form -->
+            <div class="lg:col-span-4 h-fit">
+                <div class="glass-panel rounded-3xl p-6 shadow-soft relative overflow-hidden">
+                    <!-- 装飾 -->
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-caramel/10 rounded-full blur-2xl"></div>
+                    <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-mocha/10 rounded-full blur-2xl"></div>
+
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 relative z-10">
+                        <i data-lucide="user-plus" class="w-5 h-5 text-caramel"></i>
+                        ステータスを更新
+                    </h2>
+
+                    <form id="status-form" class="space-y-5 relative z-10">
+                        
+                        <!-- エラーメッセージ表示エリア -->
+                        <div id="error-message" class="hidden bg-terracotta/10 text-terracotta text-sm px-4 py-3 rounded-xl border border-terracotta/20 flex items-start gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 shrink-0"></i>
+                            <span id="error-text"></span>
+                        </div>
+
+                        <!-- Name Input -->
+                        <div class="space-y-1.5">
+                            <label for="staff-name" class="block text-sm font-semibold text-mocha ml-1">スタッフ名</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <i data-lucide="user" class="w-4 h-4 text-mocha/50"></i>
+                                </div>
+                                <input type="text" id="staff-name" placeholder="例: 佐藤" 
+                                    class="w-full pl-10 pr-4 py-3 bg-white/80 border border-mocha/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-caramel/50 focus:border-caramel transition-all shadow-sm placeholder-mocha/30">
+                            </div>
+                        </div>
+
+                        <!-- Status Select -->
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-semibold text-mocha ml-1">ステータス</label>
+                            <div class="grid grid-cols-2 gap-2" id="status-options">
+                                <!-- ラジオボタンをボタン風にスタイリング -->
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status" value="休憩中" class="peer sr-only" checked>
+                                    <div class="p-3 bg-white/80 border border-mocha/20 rounded-2xl text-center transition-all peer-checked:bg-caramel peer-checked:text-white peer-checked:border-caramel peer-checked:shadow-md hover:bg-latte flex items-center justify-center gap-1.5 text-sm font-medium">
+                                        <i data-lucide="cup-soda" class="w-4 h-4"></i> 休憩中
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status" value="買い出し" class="peer sr-only">
+                                    <div class="p-3 bg-white/80 border border-mocha/20 rounded-2xl text-center transition-all peer-checked:bg-caramel peer-checked:text-white peer-checked:border-caramel peer-checked:shadow-md hover:bg-latte flex items-center justify-center gap-1.5 text-sm font-medium">
+                                        <i data-lucide="shopping-bag" class="w-4 h-4"></i> 買い出し
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status" value="銀行" class="peer sr-only">
+                                    <div class="p-3 bg-white/80 border border-mocha/20 rounded-2xl text-center transition-all peer-checked:bg-caramel peer-checked:text-white peer-checked:border-caramel peer-checked:shadow-md hover:bg-latte flex items-center justify-center gap-1.5 text-sm font-medium">
+                                        <i data-lucide="building-2" class="w-4 h-4"></i> 銀行
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="status" value="その他" class="peer sr-only">
+                                    <div class="p-3 bg-white/80 border border-mocha/20 rounded-2xl text-center transition-all peer-checked:bg-caramel peer-checked:text-white peer-checked:border-caramel peer-checked:shadow-md hover:bg-latte flex items-center justify-center gap-1.5 text-sm font-medium">
+                                        <i data-lucide="more-horizontal" class="w-4 h-4"></i> その他
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Return Time Input -->
+                        <div class="space-y-1.5">
+                            <label for="return-time" class="block text-sm font-semibold text-mocha ml-1">戻り予定時間</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <i data-lucide="timer" class="w-4 h-4 text-mocha/50"></i>
+                                </div>
+                                <input type="time" id="return-time" 
+                                    class="w-full pl-10 pr-4 py-3 bg-white/80 border border-mocha/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-caramel/50 focus:border-caramel transition-all shadow-sm text-lg font-['Quicksand'] font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="w-full py-3.5 px-4 bg-mocha hover:bg-espresso text-white rounded-2xl font-bold transition-all shadow-md hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 mt-4">
+                            <i data-lucide="pin" class="w-4 h-4"></i>
+                            ボードにピン留めする
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Status Board -->
+            <div class="lg:col-span-8">
+                <!-- 空の状態の表示 -->
+                <div id="empty-state" class="h-full min-h-[400px] glass-panel rounded-3xl flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-mocha/20">
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-inner mb-4">
+                        <i data-lucide="users" class="w-10 h-10 text-mocha/30"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-mocha mb-2">現在、離席中のスタッフはいません</h3>
+                    <p class="text-mocha/60 text-sm max-w-sm">
+                        左のフォームから名前と戻り時間を入力して、<br>ボードにピン留めしてください。
+                    </p>
+                </div>
+
+                <!-- カードグリッド -->
+                <div id="board-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-5 hidden">
+                    <!-- Cards will be injected here by JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Icons Initialization ---
+        lucide.createIcons();
+
+        // --- State Management ---
+        let staffList = [];
+
+        // --- DOM Elements ---
+        const timeDisplay = document.getElementById('current-time');
+        const form = document.getElementById('status-form');
+        const nameInput = document.getElementById('staff-name');
+        const timeInput = document.getElementById('return-time');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const boardGrid = document.getElementById('board-grid');
+        const emptyState = document.getElementById('empty-state');
+
+        // --- Clock Logic ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeDisplay.textContent = `${hours}:${minutes}`;
+            
+            // 毎分時計が更新されるタイミングで、カードの遅延チェックも実行
+            checkOverdue();
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call
+
+        // 初期値として現在の時刻の30分後をセットして入力しやすくする
+        function setInitialTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 30);
+            timeInput.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+        setInitialTime();
+
+        // --- Helper: Icon Selector ---
+        function getIconForStatus(status) {
+            switch(status) {
+                case '休憩中': return 'cup-soda';
+                case '買い出し': return 'shopping-bag';
+                case '銀行': return 'building-2';
+                default: return 'more-horizontal';
+            }
+        }
+
+        // --- Validation ---
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorMessage.classList.remove('hidden');
+            // 少し揺れるアニメーションを追加してエラーを知らせる
+            form.classList.add('animate-[shake_0.5s_ease-in-out]');
+            setTimeout(() => form.classList.remove('animate-[shake_0.5s_ease-in-out]'), 500);
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        // カスタムアニメーション（Tailwind config外で動的に付与用）
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // --- Form Submit ---
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            hideError();
+
+            const name = nameInput.value.trim();
+            const status = document.querySelector('input[name="status"]:checked').value;
+            const returnTimeStr = timeInput.value;
+
+            // 基本的なエラーハンドリング（レジリエンス）
+            if (!name) {
+                showError('スタッフ名を入力してください。');
+                nameInput.focus();
+                return;
+            }
+            if (name.length > 10) {
+                showError('名前は10文字以内で入力してください。');
+                nameInput.focus();
+                return;
+            }
+            if (!returnTimeStr) {
+                showError('戻り予定時間を指定してください。');
+                timeInput.focus();
+                return;
+            }
+
+            // 追加処理
+            const id = Date.now().toString();
+            staffList.push({ id, name, status, returnTime: returnTimeStr });
+            
+            // フォームリセット
+            nameInput.value = '';
+            setInitialTime();
+            nameInput.focus();
+
+            renderBoard();
+        });
+
+        // --- Render Logic ---
+        function renderBoard() {
+            if (staffList.length === 0) {
+                emptyState.classList.remove('hidden');
+                boardGrid.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            boardGrid.classList.remove('hidden');
+            boardGrid.innerHTML = '';
+
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            staffList.forEach((staff, index) => {
+                // 予定時刻の計算
+                const [rHours, rMinutes] = staff.returnTime.split(':').map(Number);
+                const returnTotalMinutes = rHours * 60 + rMinutes;
+                
+                // 時間超過の判定
+                const isOverdue = currentMinutes >= returnTotalMinutes;
+
+                // カード要素の生成
+                const card = document.createElement('div');
+                card.className = `
+                    relative bg-white rounded-3xl p-5 shadow-soft transition-all duration-300
+                    hover:shadow-float hover:-translate-y-1 animate-fade-in-up border-2
+                    ${isOverdue 
+                        ? 'border-terracotta bg-terracotta/5 animate-pulse-soft' 
+                        : 'border-transparent'}
+                `;
+                // 描画を少しずらしてフワッと感を強調
+                card.style.animationDelay = `${index * 0.05}s`;
+
+                const iconName = getIconForStatus(staff.status);
+
+                card.innerHTML = `
+                    <!-- 装飾のピン -->
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-caramel rounded-full shadow-sm flex items-center justify-center border-2 border-white z-10">
+                        <div class="w-2 h-2 bg-white/50 rounded-full"></div>
+                    </div>
+
+                    <div class="flex justify-between items-start mb-4 mt-2">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-latte text-mocha text-xs font-bold rounded-full mb-2">
+                                <i data-lucide="${iconName}" class="w-3.5 h-3.5"></i>
+                                ${staff.status}
+                            </span>
+                            <h3 class="text-xl font-bold text-espresso truncate max-w-[150px]">${escapeHTML(staff.name)}</h3>
+                        </div>
+                        
+                        <button onclick="removeStaff('${staff.id}')" class="text-mocha/40 hover:text-sage hover:bg-sage/10 p-2 rounded-full transition-colors group" title="戻りました">
+                            <i data-lucide="check-circle-2" class="w-6 h-6 group-hover:scale-110 transition-transform"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-end justify-between border-t border-mocha/10 pt-4 mt-2">
+                        <div class="text-sm font-semibold text-mocha">戻り予定</div>
+                        <div class="flex items-baseline gap-1 ${isOverdue ? 'text-terracotta font-bold' : 'text-espresso'}">
+                            ${isOverdue ? '<i data-lucide="alert-triangle" class="w-4 h-4 mr-1 animate-bounce"></i>' : ''}
+                            <span class="text-2xl font-['Quicksand'] tracking-wide">${staff.returnTime}</span>
+                        </div>
+                    </div>
+                `;
+
+                boardGrid.appendChild(card);
+            });
+
+            // 新しく追加したアイコンを描画
+            lucide.createIcons();
+        }
+
+        // --- Remove (Return) Logic ---
+        window.removeStaff = function(id) {
+            // 少しだけディレイを入れてUIのフィードバックを見せる
+            const card = document.querySelector(`button[onclick="removeStaff('${id}')"]`).closest('div.bg-white');
+            card.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                staffList = staffList.filter(s => s.id !== id);
+                renderBoard();
+            }, 200);
+        }
+
+        // --- Overdue Check Logic ---
+        function checkOverdue() {
+            if (staffList.length === 0) return;
+            
+            let needsRender = false;
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            staffList.forEach(staff => {
+                const [rHours, rMinutes] = staff.returnTime.split(':').map(Number);
+                const returnTotalMinutes = rHours * 60 + rMinutes;
+                
+                // 今回のチェックで新しく時間が過ぎたものが存在するか
+                if (currentMinutes >= returnTotalMinutes) {
+                    needsRender = true;
+                }
+            });
+
+            // 再描画が必要（過ぎているカードがある）場合、UIを更新する
+            // 実際は毎分renderを呼んでも良いが、不要な再描画を防ぐため簡略化
+            if (needsRender) {
+                renderBoard();
+            }
+        }
+
+        // --- Security: XSS Prevention ---
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+    </script>
+</body>
+</html>
