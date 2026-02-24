@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>離席・休憩ステータスボード</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ---- Cafe-ish texture + subtle noise (no external assets) ---- */
+    .paper-bg {
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(255, 244, 230, .95), rgba(255, 244, 230, .55) 55%, rgba(250, 250, 249, .55) 100%),
+        radial-gradient(1000px 500px at 90% 20%, rgba(232, 248, 245, .75), rgba(250, 250, 249, 0) 65%),
+        radial-gradient(900px 600px at 70% 95%, rgba(255, 235, 245, .70), rgba(250, 250, 249, 0) 60%),
+        linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.45));
+    }
+    .noise::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+      opacity:.18;
+      mix-blend-mode:multiply;
+      pointer-events:none;
+      border-radius:inherit;
+    }
+
+    /* ---- Soft pop / float animations ---- */
+    @keyframes floaty {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+      100% { transform: translateY(0px); }
+    }
+    @keyframes popIn {
+      0% { opacity:0; transform: translateY(10px) scale(.98); filter: blur(3px); }
+      100% { opacity:1; transform: translateY(0px) scale(1); filter: blur(0); }
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-120%); opacity:0; }
+      20% { opacity:.08; }
+      60% { opacity:.08; }
+      100% { transform: translateX(120%); opacity:0; }
+    }
+    .card-enter { animation: popIn .45s ease-out both; }
+    .gentle-float { animation: floaty 5s ease-in-out infinite; }
+    .shimmer::after{
+      content:"";
+      position:absolute; inset:-20%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.7) 45%, transparent 70%);
+      transform: translateX(-120%);
+      animation: shimmer 6.5s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    /* ---- Scrollbar (tablet friendly) ---- */
+    ::-webkit-scrollbar { height: 10px; width: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(120, 113, 108, .28); border-radius: 999px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,.4); border-radius: 999px; }
+
+    /* ---- Reduced motion respect ---- */
+    @media (prefers-reduced-motion: reduce){
+      .card-enter, .gentle-float, .shimmer::after { animation: none !important; }
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            'soft': '0 10px 30px rgba(15, 23, 42, 0.10)',
+            'inner-soft': 'inset 0 1px 0 rgba(255,255,255,0.7)',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="min-h-screen text-stone-800">
+  <div class="relative min-h-screen paper-bg">
+    <div class="absolute inset-0 pointer-events-none opacity-70">
+      <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-amber-200/35 blur-3xl"></div>
+      <div class="absolute top-24 -right-24 h-80 w-80 rounded-full bg-emerald-200/35 blur-3xl"></div>
+      <div class="absolute -bottom-24 left-1/3 h-80 w-80 rounded-full bg-rose-200/35 blur-3xl"></div>
+    </div>
+
+    <div class="relative mx-auto max-w-6xl px-4 py-6 sm:py-10">
+      <!-- Header -->
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="relative rounded-3xl bg-white/55 shadow-soft ring-1 ring-black/5 backdrop-blur-md p-5 sm:p-6 noise shimmer">
+          <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-2xl bg-stone-900/5 ring-1 ring-black/5 flex items-center justify-center">
+              <span class="text-xl">☕️</span>
+            </div>
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight">
+                離席・休憩ステータスボード
+              </h1>
+              <p class="text-sm sm:text-base text-stone-600">
+                休憩室のタブレットで “今どこで、何時に戻る？” を一目で。
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 ring-1 ring-emerald-200/70 px-3 py-1">
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span> 予定内
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full bg-amber-50 ring-1 ring-amber-200/70 px-3 py-1">
+              <span class="h-2 w-2 rounded-full bg-amber-400"></span> まもなく
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full bg-rose-50 ring-1 ring-rose-200/70 px-3 py-1">
+              <span class="h-2 w-2 rounded-full bg-rose-400"></span> 超過アラート
+            </span>
+            <span class="ml-auto hidden sm:inline-flex items-center gap-2 rounded-full bg-white/50 ring-1 ring-black/5 px-3 py-1 text-stone-600">
+              <span>現在時刻</span>
+              <span id="clock" class="font-medium text-stone-800 tabular-nums">--:--</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-2 sm:gap-3">
+          <button id="btnDemo"
+            class="rounded-2xl bg-white/60 backdrop-blur-md ring-1 ring-black/5 shadow-soft px-4 py-3 text-sm font-medium hover:bg-white/75 active:scale-[0.99] transition">
+            サンプル表示
+          </button>
+          <button id="btnClearAll"
+            class="rounded-2xl bg-stone-900 text-white shadow-soft px-4 py-3 text-sm font-medium hover:bg-stone-800 active:scale-[0.99] transition">
+            全削除
+          </button>
+        </div>
+      </header>
+
+      <!-- Main -->
+      <main class="mt-6 sm:mt-8 grid gap-6 lg:grid-cols-[420px_1fr]">
+        <!-- Input Panel -->
+        <section class="relative rounded-3xl bg-white/55 shadow-soft ring-1 ring-black/5 backdrop-blur-md p-5 sm:p-6 noise">
+          <h2 class="text-lg font-semibold tracking-tight">ステータスを追加</h2>
+          <p class="mt-1 text-sm text-stone-600">
+            名前・状況・戻り予定を入力して「追加」。
+          </p>
+
+          <form id="form" class="mt-5 space-y-4" autocomplete="off">
+            <div>
+              <label class="text-sm font-medium text-stone-700">スタッフ名</label>
+              <input id="name" type="text" maxlength="20"
+                class="mt-2 w-full rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-stone-900/20 placeholder:text-stone-400"
+                placeholder="例：佐藤 / Sato" />
+              <p id="errName" class="mt-2 hidden text-sm text-rose-600">スタッフ名を入力してください。</p>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-stone-700">ステータス</label>
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <select id="status"
+                  class="w-full rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-stone-900/20">
+                  <option value="">選択してください</option>
+                  <option value="休憩中">休憩中</option>
+                  <option value="買い出し">買い出し</option>
+                  <option value="銀行">銀行</option>
+                  <option value="倉庫">倉庫</option>
+                  <option value="面談">面談</option>
+                  <option value="その他">その他</option>
+                </select>
+
+                <input id="statusCustom" type="text" maxlength="18"
+                  class="w-full rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-stone-900/20 placeholder:text-stone-400"
+                  placeholder="その他（自由入力）" />
+              </div>
+              <p class="mt-2 text-xs text-stone-500">
+                「その他」を選ぶか、右の自由入力を入れると上書きされます。
+              </p>
+              <p id="errStatus" class="mt-2 hidden text-sm text-rose-600">ステータスを選択、または入力してください。</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-sm font-medium text-stone-700">戻り予定（時刻）</label>
+                <input id="time" type="time"
+                  class="mt-2 w-full rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-stone-900/20" />
+                <p id="errTime" class="mt-2 hidden text-sm text-rose-600">戻り予定時刻を入力してください。</p>
+              </div>
+
+              <div>
+                <label class="text-sm font-medium text-stone-700">猶予（分）</label>
+                <div class="mt-2 flex gap-2">
+                  <input id="grace" type="number" min="0" max="120" value="5"
+                    class="w-full rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-base outline-none focus:ring-2 focus:ring-stone-900/20"
+                    placeholder="例：5" />
+                </div>
+                <p class="mt-2 text-xs text-stone-500">予定時刻 + 猶予を過ぎるとアラート表示。</p>
+              </div>
+            </div>
+
+            <div class="pt-1 flex items-center gap-2">
+              <button type="submit"
+                class="flex-1 rounded-2xl bg-stone-900 text-white shadow-soft px-4 py-3 text-base font-semibold hover:bg-stone-800 active:scale-[0.99] transition">
+                追加
+              </button>
+              <button id="btnReset" type="button"
+                class="rounded-2xl bg-white/60 ring-1 ring-black/5 shadow-soft px-4 py-3 text-base font-medium hover:bg-white/75 active:scale-[0.99] transition">
+                リセット
+              </button>
+            </div>
+
+            <div id="toast" class="hidden rounded-2xl bg-emerald-50 ring-1 ring-emerald-200/70 px-4 py-3 text-sm text-emerald-800">
+              追加しました。
+            </div>
+          </form>
+
+          <!-- Tiny help -->
+          <div class="mt-6 rounded-2xl bg-white/45 ring-1 ring-black/5 p-4">
+            <div class="flex items-start gap-3">
+              <div class="mt-0.5 h-9 w-9 rounded-2xl bg-stone-900/5 ring-1 ring-black/5 flex items-center justify-center">
+                <span>🪧</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-stone-800">運用のコツ</p>
+                <ul class="mt-1 text-sm text-stone-600 list-disc pl-5 space-y-1">
+                  <li>戻り予定を更新したい時は、カードの「編集」を押す。</li>
+                  <li>遅れそうなら “猶予” を増やして、アラートの誤検知を防ぐ。</li>
+                  <li>この端末の時刻が正しいことを確認（自動判定に使用）。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Board -->
+        <section class="relative rounded-3xl bg-white/55 shadow-soft ring-1 ring-black/5 backdrop-blur-md p-5 sm:p-6 noise">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold tracking-tight">いまの状況</h2>
+              <p class="mt-1 text-sm text-stone-600">
+                カードは “戻り予定” を基準に自動で色が変わります。
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 items-center">
+              <div class="relative">
+                <input id="search" type="text"
+                  class="w-56 max-w-full rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-stone-900/20 placeholder:text-stone-400"
+                  placeholder="名前 / ステータスで検索" />
+                <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">⌕</div>
+              </div>
+              <select id="sort"
+                class="rounded-2xl bg-white/70 ring-1 ring-black/10 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-stone-900/20">
+                <option value="soon">戻りが近い順</option>
+                <option value="late">遅れてる順</option>
+                <option value="new">追加が新しい順</option>
+                <option value="name">名前順</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <div id="empty"
+              class="hidden rounded-3xl border border-dashed border-stone-300/70 bg-white/45 p-10 text-center">
+              <div class="mx-auto h-14 w-14 rounded-3xl bg-stone-900/5 ring-1 ring-black/5 flex items-center justify-center gentle-float">
+                <span class="text-2xl">🫧</span>
+              </div>
+              <p class="mt-4 text-base font-semibold text-stone-800">まだカードがありません</p>
+              <p class="mt-1 text-sm text-stone-600">
+                左のフォームから追加すると、ここに表示されます。
+              </p>
+            </div>
+
+            <div id="grid" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+          </div>
+
+          <footer class="mt-6 flex items-center justify-between text-xs text-stone-500">
+            <span id="count">0件</span>
+            <span class="hidden sm:inline">※ ローカル保存（この端末のブラウザ）</span>
+          </footer>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <template id="cardTpl">
+    <article class="relative overflow-hidden rounded-3xl ring-1 ring-black/5 shadow-soft bg-white/60 backdrop-blur-md p-5 noise card-enter">
+      <div class="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300" data-alert-glow></div>
+
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <div class="h-10 w-10 rounded-2xl ring-1 ring-black/5 bg-white/55 flex items-center justify-center shadow-inner-soft">
+              <span data-emoji class="text-lg">🙂</span>
+            </div>
+            <div class="min-w-0">
+              <p data-name class="truncate text-lg font-semibold tracking-tight">名前</p>
+              <p data-status class="truncate text-sm text-stone-600">ステータス</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-right">
+          <p class="text-xs text-stone-500">戻り予定</p>
+          <p data-time class="text-xl font-semibold tabular-nums">--:--</p>
+          <p data-meta class="mt-1 text-xs text-stone-500 tabular-nums">あと -- 分</p>
+        </div>
+      </div>
+
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span data-badge class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ring-1">
+          <span data-dot class="h-2 w-2 rounded-full"></span>
+          <span data-badgeText>状態</span>
+        </span>
+
+        <span data-stamp class="ml-auto text-xs text-stone-500 tabular-nums">追加: --:--</span>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button data-edit
+          class="flex-1 rounded-2xl bg-white/60 ring-1 ring-black/5 px-3 py-2 text-sm font-medium hover:bg-white/75 active:scale-[0.99] transition">
+          編集
+        </button>
+        <button data-done
+          class="rounded-2xl bg-emerald-600 text-white px-3 py-2 text-sm font-semibold hover:bg-emerald-700 active:scale-[0.99] transition">
+          戻った
+        </button>
+        <button data-del
+          class="rounded-2xl bg-white/60 ring-1 ring-black/5 px-3 py-2 text-sm font-medium hover:bg-white/75 active:scale-[0.99] transition">
+          削除
+        </button>
+      </div>
+
+      <div class="mt-3 hidden" data-editPanel>
+        <div class="grid grid-cols-2 gap-2">
+          <input data-editStatus type="text" maxlength="18"
+            class="rounded-2xl bg-white/70 ring-1 ring-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900/20"
+            placeholder="ステータス（例：休憩延長）" />
+          <input data-editTime type="time"
+            class="rounded-2xl bg-white/70 ring-1 ring-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900/20" />
+        </div>
+        <div class="mt-2 flex gap-2">
+          <input data-editGrace type="number" min="0" max="120"
+            class="w-28 rounded-2xl bg-white/70 ring-1 ring-black/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-stone-900/20"
+            placeholder="猶予" />
+          <button data-save
+            class="flex-1 rounded-2xl bg-stone-900 text-white px-3 py-2 text-sm font-semibold hover:bg-stone-800 active:scale-[0.99] transition">
+            保存
+          </button>
+          <button data-cancel
+            class="rounded-2xl bg-white/60 ring-1 ring-black/5 px-3 py-2 text-sm font-medium hover:bg-white/75 active:scale-[0.99] transition">
+            キャンセル
+          </button>
+        </div>
+        <p data-editErr class="mt-2 hidden text-sm text-rose-600">入力が不正です。</p>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    ;(() => {
+      /** ---------- Utilities ---------- */
+      const $ = (q, el=document) => el.querySelector(q);
+      const $$ = (q, el=document) => [...el.querySelectorAll(q)];
+      const pad2 = (n) => String(n).padStart(2, '0');
+
+      const STORAGE_KEY = "break-status-board.v1";
+      const DEFAULT_GRACE = 5; // minutes
+
+      const STATUS_PRESETS = [
+        { key: "休憩中", emoji: "🍩" },
+        { key: "買い出し", emoji: "🧺" },
+        { key: "銀行",   emoji: "🏦" },
+        { key: "倉庫",   emoji: "📦" },
+        { key: "面談",   emoji: "🗣️" },
+        { key: "その他", emoji: "📝" },
+      ];
+
+      // “Café board” palette per state
+      const PALETTES = {
+        ok:    { bg: "bg-emerald-50/60", ring:"ring-emerald-200/70", text:"text-emerald-900", dot:"bg-emerald-400", glow:"from-emerald-200/50 via-emerald-100/0 to-transparent" },
+        soon:  { bg: "bg-amber-50/60",   ring:"ring-amber-200/70",   text:"text-amber-900",   dot:"bg-amber-400",   glow:"from-amber-200/50 via-amber-100/0 to-transparent" },
+        late:  { bg: "bg-rose-50/65",    ring:"ring-rose-200/80",    text:"text-rose-900",    dot:"bg-rose-400",    glow:"from-rose-200/55 via-rose-100/0 to-transparent" },
+      };
+
+      // If within SOON_THRESHOLD minutes to due time, show amber
+      const SOON_THRESHOLD = 10;
+
+      function nowDate() { return new Date(); }
+
+      function formatHHMM(date) {
+        return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+      }
+
+      function parseTimeToToday(timeStr) {
+        // timeStr: "HH:MM"
+        if (!/^\d{2}:\d{2}$/.test(timeStr)) return null;
+        const [h, m] = timeStr.split(":").map(Number);
+        if (Number.isNaN(h) || Number.isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) return null;
+        const d = nowDate();
+        d.setSeconds(0,0);
+        d.setHours(h, m, 0, 0);
+        return d;
+      }
+
+      function minutesDiff(a, b) {
+        // a - b in minutes
+        return Math.round((a.getTime() - b.getTime()) / 60000);
+      }
+
+      function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function safeText(s) {
+        return String(s ?? "").replace(/\s+/g, " ").trim();
+      }
+
+      function chooseEmoji(statusText) {
+        const hit = STATUS_PRESETS.find(p => p.key === statusText);
+        if (hit) return hit.emoji;
+        // heuristic for custom statuses
+        const t = statusText;
+        if (/休|break|lunch|ごはん/i.test(t)) return "🥪";
+        if (/買|shopping|仕入/i.test(t)) return "🧺";
+        if (/銀行|bank/i.test(t)) return "🏦";
+        if (/倉庫|stock|warehouse/i.test(t)) return "📦";
+        if (/面談|mtg|meeting|打合/i.test(t)) return "🗣️";
+        if (/掃除|clean/i.test(t)) return "🧹";
+        return "🙂";
+      }
+
+      /** ---------- State ---------- */
+      let items = load();
+      let editingId = null;
+
+      /** ---------- Elements ---------- */
+      const elClock = $("#clock");
+      const elForm = $("#form");
+      const elName = $("#name");
+      const elStatus = $("#status");
+      const elStatusCustom = $("#statusCustom");
+      const elTime = $("#time");
+      const elGrace = $("#grace");
+      const elToast = $("#toast");
+
+      const elErrName = $("#errName");
+      const elErrStatus = $("#errStatus");
+      const elErrTime = $("#errTime");
+
+      const elGrid = $("#grid");
+      const elEmpty = $("#empty");
+      const elCount = $("#count");
+
+      const elSearch = $("#search");
+      const elSort = $("#sort");
+
+      const btnReset = $("#btnReset");
+      const btnDemo = $("#btnDemo");
+      const btnClearAll = $("#btnClearAll");
+
+      /** ---------- Persistence ---------- */
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) return [];
+          // minimal validation
+          return parsed.filter(x =>
+            x && typeof x.id === "string" &&
+            typeof x.name === "string" &&
+            typeof x.status === "string" &&
+            typeof x.time === "string" &&
+            typeof x.createdAt === "number" &&
+            typeof x.grace === "number"
+          );
+        } catch {
+          return [];
+        }
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        } catch {
+          // ignore storage failures (private mode etc.)
+        }
+      }
+
+      /** ---------- Rendering ---------- */
+      function computeState(item, now = nowDate()) {
+        const due = parseTimeToToday(item.time);
+        if (!due) return { state:"ok", mins: null, due: null };
+
+        const graceMin = clamp(Number(item.grace ?? DEFAULT_GRACE), 0, 120);
+        const dueWithGrace = new Date(due.getTime() + graceMin * 60000);
+
+        const minsToDue = minutesDiff(due, now);            // negative if past due
+        const minsToGraceEnd = minutesDiff(dueWithGrace, now);
+
+        // late if past due+grace
+        if (minsToGraceEnd < 0) return { state:"late", mins: minsToGraceEnd, due, dueWithGrace };
+
+        // soon if due within threshold (including slightly past due but within grace)
+        if (minsToDue <= SOON_THRESHOLD) return { state:"soon", mins: minsToDue, due, dueWithGrace };
+
+        return { state:"ok", mins: minsToDue, due, dueWithGrace };
+      }
+
+      function humanEta(item, now = nowDate()) {
+        const info = computeState(item, now);
+        if (!info.due) return "時刻不明";
+
+        const minsToDue = info.mins;
+        const graceMin = clamp(Number(item.grace ?? DEFAULT_GRACE), 0, 120);
+        const minsToGraceEnd = minutesDiff(new Date(info.due.getTime() + graceMin*60000), now);
+
+        // if still before due
+        if (minsToDue > 0) return `あと ${minsToDue} 分`;
+        // between due and grace end
+        if (minsToDue <= 0 && minsToGraceEnd >= 0) return `予定から ${Math.abs(minsToDue)} 分`;
+        // after grace end
+        return `超過 ${Math.abs(minsToGraceEnd)} 分`;
+      }
+
+      function applyPalette(card, state) {
+        const p = PALETTES[state];
+        card.classList.remove(...Object.values(PALETTES).flatMap(x => [x.bg, x.ring]));
+        card.classList.add(p.bg, p.ring);
+
+        const badge = $("[data-badge]", card);
+        const dot = $("[data-dot]", card);
+        const badgeText = $("[data-badgeText]", card);
+        const glow = $("[data-alert-glow]", card);
+
+        badge.className = `inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ring-1 ${p.ring} ${p.text} ${p.bg}`;
+        dot.className = `h-2 w-2 rounded-full ${p.dot}`;
+        badgeText.textContent = state === "ok" ? "予定内" : state === "soon" ? "まもなく" : "超過アラート";
+
+        // glow for late
+        if (state === "late") {
+          glow.className = `absolute inset-0 pointer-events-none opacity-100 transition-opacity duration-300 bg-gradient-to-r ${p.glow}`;
+          card.classList.add("gentle-float"); // subtle motion to catch eyes
+        } else {
+          glow.className = `absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300`;
+          card.classList.remove("gentle-float");
+        }
+      }
+
+      function getFilteredSorted() {
+        const q = safeText(elSearch.value).toLowerCase();
+        let list = items;
+
+        if (q) {
+          list = list.filter(it => (it.name + " " + it.status).toLowerCase().includes(q));
+        }
+
+        const now = nowDate();
+        const withInfo = list.map(it => ({ it, info: computeState(it, now) }));
+
+        const sortKey = elSort.value;
+        withInfo.sort((a, b) => {
+          if (sortKey === "new") return b.it.createdAt - a.it.createdAt;
+          if (sortKey === "name") return a.it.name.localeCompare(b.it.name, 'ja');
+          if (sortKey === "late") {
+            // more late first: most negative graceEnd first
+            const aGrace = a.info.dueWithGrace ? minutesDiff(a.info.dueWithGrace, now) : 99999;
+            const bGrace = b.info.dueWithGrace ? minutesDiff(b.info.dueWithGrace, now) : 99999;
+            return aGrace - bGrace;
+          }
+          // soon: return time closer to due (including late) first
+          const aDue = a.info.due ? minutesDiff(a.info.due, now) : 99999;
+          const bDue = b.info.due ? minutesDiff(b.info.due, now) : 99999;
+          return aDue - bDue;
+        });
+
+        return withInfo.map(x => x.it);
+      }
+
+      function render() {
+        elGrid.innerHTML = "";
+        const list = getFilteredSorted();
+
+        elEmpty.classList.toggle("hidden", list.length !== 0);
+        elCount.textContent = `${list.length}件`;
+
+        for (const item of list) {
+          elGrid.appendChild(renderCard(item));
+        }
+      }
+
+      function renderCard(item) {
+        const tpl = $("#cardTpl");
+        const card = tpl.content.firstElementChild.cloneNode(true);
+
+        $("[data-name]", card).textContent = item.name;
+        $("[data-status]", card).textContent = item.status;
+        $("[data-time]", card).textContent = item.time;
+        $("[data-emoji]", card).textContent = chooseEmoji(item.status);
+        $("[data-stamp]", card).textContent = `追加: ${formatHHMM(new Date(item.createdAt))}`;
+
+        const meta = $("[data-meta]", card);
+        meta.textContent = humanEta(item);
+
+        // palette
+        const st = computeState(item).state;
+        applyPalette(card, st);
+
+        // buttons
+        const btnEdit = $("[data-edit]", card);
+        const btnDone = $("[data-done]", card);
+        const btnDel = $("[data-del]", card);
+
+        const panel = $("[data-editPanel]", card);
+        const inStatus = $("[data-editStatus]", card);
+        const inTime = $("[data-editTime]", card);
+        const inGrace = $("[data-editGrace]", card);
+        const btnSave = $("[data-save]", card);
+        const btnCancel = $("[data-cancel]", card);
+        const editErr = $("[data-editErr]", card);
+
+        // init edit fields
+        inStatus.value = item.status;
+        inTime.value = item.time;
+        inGrace.value = String(clamp(Number(item.grace ?? DEFAULT_GRACE), 0, 120));
+
+        btnEdit.addEventListener("click", () => {
+          // close others
+          $$("#grid [data-editPanel]").forEach(p => p.classList.add("hidden"));
+          panel.classList.toggle("hidden");
+          editErr.classList.add("hidden");
+          editingId = item.id;
+        });
+
+        btnCancel.addEventListener("click", () => {
+          panel.classList.add("hidden");
+          editErr.classList.add("hidden");
+          editingId = null;
+          // reset values
+          inStatus.value = item.status;
+          inTime.value = item.time;
+          inGrace.value = String(clamp(Number(item.grace ?? DEFAULT_GRACE), 0, 120));
+        });
+
+        btnSave.addEventListener("click", () => {
+          const newStatus = safeText(inStatus.value);
+          const newTime = safeText(inTime.value);
+          const newGrace = clamp(Number(inGrace.value), 0, 120);
+
+          if (!newStatus || !parseTimeToToday(newTime) || Number.isNaN(newGrace)) {
+            editErr.classList.remove("hidden");
+            return;
+          }
+
+          const idx = items.findIndex(x => x.id === item.id);
+          if (idx >= 0) {
+            items[idx] = { ...items[idx], status: newStatus, time: newTime, grace: newGrace };
+            save();
+            render();
+          }
+        });
+
+        btnDel.addEventListener("click", () => {
+          items = items.filter(x => x.id !== item.id);
+          save();
+          render();
+        });
+
+        btnDone.addEventListener("click", () => {
+          // “Returned” -> remove card
+          items = items.filter(x => x.id !== item.id);
+          save();
+          render();
+        });
+
+        return card;
+      }
+
+      function tick() {
+        const now = nowDate();
+        // clock
+        if (elClock) elClock.textContent = formatHHMM(now);
+
+        // update meta + palettes without full rerender for smoothness
+        $$("#grid article").forEach((card, i) => {
+          // Map rendered list order to item by reading name/time (simple & safe for local use)
+          const name = $("[data-name]", card)?.textContent ?? "";
+          const time = $("[data-time]", card)?.textContent ?? "";
+          const status = $("[data-status]", card)?.textContent ?? "";
+
+          const item = items.find(x => x.name === name && x.time === time && x.status === status) || null;
+          if (!item) return;
+
+          const meta = $("[data-meta]", card);
+          meta.textContent = humanEta(item, now);
+
+          const st = computeState(item, now).state;
+          applyPalette(card, st);
+        });
+      }
+
+      /** ---------- Form ---------- */
+      function clearErrors() {
+        elErrName.classList.add("hidden");
+        elErrStatus.classList.add("hidden");
+        elErrTime.classList.add("hidden");
+      }
+
+      function showToast(msg, kind="ok") {
+        elToast.textContent = msg;
+        elToast.classList.remove("hidden");
+        elToast.className = "rounded-2xl px-4 py-3 text-sm ring-1";
+        if (kind === "ok") elToast.classList.add("bg-emerald-50","text-emerald-800","ring-emerald-200/70");
+        if (kind === "warn") elToast.classList.add("bg-amber-50","text-amber-900","ring-amber-200/70");
+        if (kind === "err") elToast.classList.add("bg-rose-50","text-rose-900","ring-rose-200/70");
+        // auto hide
+        window.clearTimeout(showToast._t);
+        showToast._t = window.setTimeout(() => elToast.classList.add("hidden"), 2000);
+      }
+
+      function resetForm() {
+        elName.value = "";
+        elStatus.value = "";
+        elStatusCustom.value = "";
+        elTime.value = "";
+        elGrace.value = String(DEFAULT_GRACE);
+        clearErrors();
+      }
+
+      function getStatusValue() {
+        const custom = safeText(elStatusCustom.value);
+        if (custom) return custom;
+        const sel = safeText(elStatus.value);
+        if (sel && sel !== "その他") return sel;
+        if (sel === "その他" && custom) return custom;
+        if (sel === "その他") return "その他";
+        return sel;
+      }
+
+      elForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        clearErrors();
+
+        const name = safeText(elName.value);
+        const status = safeText(getStatusValue());
+        const time = safeText(elTime.value);
+        const grace = clamp(Number(elGrace.value ?? DEFAULT_GRACE), 0, 120);
+
+        let ok = true;
+        if (!name) { elErrName.classList.remove("hidden"); ok = false; }
+        if (!status) { elErrStatus.classList.remove("hidden"); ok = false; }
+        if (!parseTimeToToday(time)) { elErrTime.classList.remove("hidden"); ok = false; }
+        if (Number.isNaN(grace)) { showToast("猶予の値が不正です。", "err"); ok = false; }
+
+        if (!ok) return;
+
+        // Prevent near-duplicate: same name already exists -> gently update instead
+        const existingIdx = items.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
+        if (existingIdx >= 0) {
+          items[existingIdx] = { ...items[existingIdx], status, time, grace };
+          save();
+          render();
+          showToast("同名カードを更新しました。", "warn");
+          resetForm();
+          return;
+        }
+
+        items.unshift({
+          id: crypto?.randomUUID?.() ?? String(Date.now()) + Math.random().toString(16).slice(2),
+          name,
+          status,
+          time,
+          grace: Number.isFinite(grace) ? grace : DEFAULT_GRACE,
+          createdAt: Date.now()
+        });
+
+        save();
+        render();
+        showToast("追加しました。", "ok");
+        resetForm();
+      });
+
+      btnReset.addEventListener("click", () => resetForm());
+
+      elSearch.addEventListener("input", () => render());
+      elSort.addEventListener("change", () => render());
+
+      btnClearAll.addEventListener("click", () => {
+        const ok = confirm("すべてのカードを削除しますか？");
+        if (!ok) return;
+        items = [];
+        save();
+        render();
+        showToast("全削除しました。", "warn");
+      });
+
+      btnDemo.addEventListener("click", () => {
+        const now = nowDate();
+        const plus = (min) => {
+          const d = new Date(now.getTime() + min * 60000);
+          return formatHHMM(d);
+        };
+
+        items = [
+          { id: "a", name: "田中", status: "休憩中", time: plus(8),  grace: 5, createdAt: Date.now() - 1000 * 60 * 12 },
+          { id: "b", name: "佐藤", status: "買い出し", time: plus(2),  grace: 5, createdAt: Date.now() - 1000 * 60 * 25 },
+          { id: "c", name: "山本", status: "銀行",   time: plus(-6), grace: 5, createdAt: Date.now() - 1000 * 60 * 40 },
+          { id: "d", name: "鈴木", status: "倉庫",   time: plus(20), grace: 10, createdAt: Date.now() - 1000 * 60 * 6 },
+        ];
+        save();
+        render();
+        showToast("サンプルを表示しました。", "ok");
+      });
+
+      /** ---------- Boot ---------- */
+      // initial render
+      render();
+      tick();
+      // update every 15s for smoothness
+      setInterval(tick, 15000);
+      // close edit panels on outside click
+      document.addEventListener("click", (e) => {
+        const clickedInsideCard = e.target.closest("article");
+        const clickedEditBtn = e.target.closest("[data-edit]");
+        if (clickedInsideCard || clickedEditBtn) return;
+        $$("#grid [data-editPanel]").forEach(p => p.classList.add("hidden"));
+        editingId = null;
+      });
+    })();
+  </script>
+</body>
+</html>
