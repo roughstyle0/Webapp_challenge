@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>店舗ルーティンチェッカー</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti for celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        open: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb' },
+                        close: { 50: '#f5f3ff', 100: '#ede9fe', 500: '#8b5cf6', 600: '#7c3aed' }
+                    },
+                    animation: {
+                        'pop-in': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.9)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* タップ時のハイライトを無効化し、独自のアクティブ状態を定義 */
+        * { -webkit-tap-highlight-color: transparent; }
+        .task-item:active { transform: scale(0.98); }
+        .checkbox-custom { transition: all 0.2s ease-in-out; }
+        
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex flex-col overflow-hidden selection:bg-blue-200">
+
+    <!-- Header & Progress Bar -->
+    <header class="bg-white shadow-sm z-10 relative">
+        <div class="px-4 py-5 max-w-2xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-open-500" id="header-icon"></i>
+                    ルーティンチェッカー
+                </h1>
+                <p class="text-xs text-slate-500 mt-1" id="date-display"></p>
+            </div>
+            <button id="reset-btn" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors" title="進捗をリセット">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+        <!-- Progress Container -->
+        <div class="h-4 bg-slate-100 w-full relative">
+            <div id="progress-bar" class="h-full bg-open-500 transition-all duration-500 ease-out w-0 relative overflow-hidden">
+                <!-- 光沢エフェクト -->
+                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+            </div>
+            <div id="progress-text" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-600 mix-blend-difference drop-shadow-md">0%</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto w-full max-w-2xl mx-auto relative pb-20">
+        
+        <!-- Tabs -->
+        <div class="px-4 pt-6 pb-4 sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10">
+            <div class="flex p-1 bg-slate-200 rounded-xl shadow-inner">
+                <button onclick="switchTab('open')" id="tab-open" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300 shadow-sm bg-white text-open-600 ring-1 ring-slate-900/5">
+                    <i class="fa-solid fa-sun mr-2"></i>開店タスク
+                </button>
+                <button onclick="switchTab('close')" id="tab-close" class="flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300 text-slate-500 hover:text-slate-700">
+                    <i class="fa-solid fa-moon mr-2"></i>閉店タスク
+                </button>
+            </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="px-4 pb-8">
+            <ul id="task-list" class="space-y-3">
+                <!-- Tasks will be rendered here by JS -->
+            </ul>
+            
+            <!-- Error/Empty State -->
+            <div id="empty-state" class="hidden flex-col items-center justify-center py-12 text-slate-400">
+                <i class="fa-regular fa-folder-open text-4xl mb-3"></i>
+                <p>タスクがありません</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Celebration Modal -->
+    <div id="celebration-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-[90%] shadow-2xl text-center transform scale-90 transition-transform duration-300" id="modal-content">
+            <div id="modal-icon-container" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 bg-green-100 text-green-500 text-4xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">コンプリート！</h2>
+            <p id="modal-message" class="text-slate-600 mb-6">本日の作業、お疲れ様でした！<br>ゆっくり休んでくださいね。</p>
+            <button onclick="closeModal()" class="w-full py-3.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition-colors active:scale-95">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Errors etc) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg font-medium text-sm transition-all duration-300 opacity-0 translate-y-10 pointer-events-none z-50">
+        メッセージ
+    </div>
+
+    <script>
+        /**
+         * State Management
+         * 状態駆動(State-driven)でUIを更新することで、表示の不整合を防ぐ
+         */
+        const defaultData = {
+            open: [
+                { id: 'o1', text: 'エアコン・照明の電源を入れる', done: false },
+                { id: 'o2', text: 'レジの立ち上げ・釣り銭の確認', done: false },
+                { id: 'o3', text: '店舗周辺の簡単な清掃', done: false },
+                { id: 'o4', text: '屋外看板・のぼりの設置', done: false },
+                { id: 'o5', text: 'BGMの再生スタート', done: false },
+            ],
+            close: [
+                { id: 'c1', text: 'レジ締め・売上データの送信', done: false },
+                { id: 'c2', text: '翌日の釣り銭準備', done: false },
+                { id: 'c3', text: 'ゴミ捨て・ゴミ箱の洗浄', done: false },
+                { id: 'c4', text: 'エアコン・照明・BGMの電源オフ', done: false },
+                { id: 'c5', text: '戸締まり・セキュリティー設定', done: false },
+            ]
+        };
+
+        let state = {
+            currentTab: 'open', // 'open' or 'close'
+            tasks: null
+        };
+
+        // --- Core Functions ---
+
+        function init() {
+            // 日付表示
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${['日','月','火','水','木','金','土'][now.getDay()]}）`;
+            document.getElementById('date-display').textContent = dateStr;
+
+            // ローカルストレージからの復元（レジリエンス対応）
+            try {
+                const saved = localStorage.getItem('routine_checker_data');
+                // 今日の日付が変わっていたらリセットするロジックも組み込めるが、今回はシンプルに保存データを使用
+                if (saved) {
+                    state.tasks = JSON.parse(saved);
+                } else {
+                    state.tasks = JSON.parse(JSON.stringify(defaultData));
+                }
+            } catch (e) {
+                console.error("データの読み込みに失敗しました", e);
+                showToast("前回データの復元に失敗しました。初期化します。");
+                state.tasks = JSON.parse(JSON.stringify(defaultData));
+            }
+
+            // 初期レンダリング
+            render();
+
+            // イベントリスナー
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                if(confirm('現在の進捗をすべてリセットしますか？')) {
+                    state.tasks = JSON.parse(JSON.stringify(defaultData));
+                    saveData();
+                    render();
+                    showToast('進捗をリセットしました');
+                }
+            });
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('routine_checker_data', JSON.stringify(state.tasks));
+            } catch (e) {
+                console.error("データの保存に失敗しました", e);
+                showToast("データの保存に失敗しました。容量不足等の可能性があります。");
+            }
+        }
+
+        function switchTab(tabName) {
+            if (state.currentTab === tabName) return;
+            state.currentTab = tabName;
+            render();
+            
+            // タブ切り替え時のアニメーション効果
+            const list = document.getElementById('task-list');
+            list.classList.remove('animate-slide-up');
+            void list.offsetWidth; // リフローを強制してアニメーションを再起動
+            list.classList.add('animate-slide-up');
+        }
+
+        function toggleTask(id) {
+            const task = state.tasks[state.currentTab].find(t => t.id === id);
+            if (!task) return;
+
+            const wasDone = task.done;
+            task.done = !task.done;
+            saveData();
+
+            // DOMの部分更新（スムーズなアニメーションのため全体再描画は避ける）
+            updateTaskDOM(id, task.done);
+            updateProgress();
+
+            // 100%達成チェック
+            if (!wasDone && task.done) {
+                checkCompletion();
+            }
+        }
+
+        // --- DOM Update Functions ---
+
+        function render() {
+            updateTabs();
+            renderTasks();
+            updateProgress();
+            updateTheme();
+        }
+
+        function updateTabs() {
+            const tabOpen = document.getElementById('tab-open');
+            const tabClose = document.getElementById('tab-close');
+
+            if (state.currentTab === 'open') {
+                tabOpen.className = "flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300 shadow-sm bg-white text-open-600 ring-1 ring-slate-900/5";
+                tabClose.className = "flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300 text-slate-500 hover:text-slate-700 hover:bg-slate-300/50";
+            } else {
+                tabClose.className = "flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300 shadow-sm bg-white text-close-600 ring-1 ring-slate-900/5";
+                tabOpen.className = "flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300 text-slate-500 hover:text-slate-700 hover:bg-slate-300/50";
+            }
+        }
+
+        function updateTheme() {
+            const headerIcon = document.getElementById('header-icon');
+            const progressBar = document.getElementById('progress-bar');
+            
+            if (state.currentTab === 'open') {
+                headerIcon.className = "fa-solid fa-sun text-open-500";
+                progressBar.className = "h-full bg-open-500 transition-all duration-500 ease-out relative overflow-hidden";
+                document.body.classList.remove('selection:bg-purple-200');
+                document.body.classList.add('selection:bg-blue-200');
+            } else {
+                headerIcon.className = "fa-solid fa-moon text-close-500";
+                progressBar.className = "h-full bg-close-500 transition-all duration-500 ease-out relative overflow-hidden";
+                document.body.classList.remove('selection:bg-blue-200');
+                document.body.classList.add('selection:bg-purple-200');
+            }
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            const emptyState = document.getElementById('empty-state');
+            const currentTasks = state.tasks[state.currentTab];
+
+            list.innerHTML = '';
+
+            if (!currentTasks || currentTasks.length === 0) {
+                list.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            list.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            currentTasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = `task-item animate-pop-in cursor-pointer bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 transition-all duration-200 ${task.done ? 'opacity-60 bg-slate-50/50' : 'hover:shadow-md'}`;
+                li.style.animationDelay = `${index * 0.05}s`;
+                li.onclick = () => toggleTask(task.id);
+                li.id = `task-container-${task.id}`;
+
+                // チェックボックス（視覚的なフェイク要素）
+                const checkboxColor = state.currentTab === 'open' ? 'text-open-500 border-open-500' : 'text-close-500 border-close-500';
+                const checkUI = task.done 
+                    ? `<div class="w-7 h-7 rounded-full flex items-center justify-center bg-current ${checkboxColor} checkbox-custom scale-110"><i class="fa-solid fa-check text-white text-sm"></i></div>`
+                    : `<div class="w-7 h-7 rounded-full flex items-center justify-center border-2 border-slate-300 text-transparent checkbox-custom"></div>`;
+
+                li.innerHTML = `
+                    <div id="check-ui-${task.id}" class="flex-shrink-0">${checkUI}</div>
+                    <span id="text-ui-${task.id}" class="flex-1 text-[16px] font-medium transition-all duration-200 ${task.done ? 'text-slate-400 line-through' : 'text-slate-700'}">${task.text}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function updateTaskDOM(id, isDone) {
+            const container = document.getElementById(`task-container-${id}`);
+            const checkUIContainer = document.getElementById(`check-ui-${id}`);
+            const textUI = document.getElementById(`text-ui-${id}`);
+            
+            if (!container || !checkUIContainer || !textUI) return;
+
+            const colorClass = state.currentTab === 'open' ? 'text-open-500' : 'text-close-500';
+
+            if (isDone) {
+                container.className = `task-item cursor-pointer bg-slate-50/50 rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 transition-all duration-200 opacity-60`;
+                checkUIContainer.innerHTML = `<div class="w-7 h-7 rounded-full flex items-center justify-center bg-current ${colorClass} checkbox-custom scale-110"><i class="fa-solid fa-check text-white text-sm"></i></div>`;
+                textUI.className = `flex-1 text-[16px] font-medium transition-all duration-200 text-slate-400 line-through`;
+            } else {
+                container.className = `task-item cursor-pointer bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 transition-all duration-200 hover:shadow-md`;
+                checkUIContainer.innerHTML = `<div class="w-7 h-7 rounded-full flex items-center justify-center border-2 border-slate-300 text-transparent checkbox-custom scale-100"></div>`;
+                textUI.className = `flex-1 text-[16px] font-medium transition-all duration-200 text-slate-700`;
+            }
+        }
+
+        function updateProgress() {
+            const currentTasks = state.tasks[state.currentTab];
+            if (!currentTasks || currentTasks.length === 0) return;
+
+            const total = currentTasks.length;
+            const completed = currentTasks.filter(t => t.done).length;
+            const percentage = Math.round((completed / total) * 100);
+
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}%`;
+
+            // 100%の場合は文字色を白にして目立たせる
+            if (percentage === 100) {
+                progressText.classList.remove('text-slate-600', 'mix-blend-difference');
+                progressText.classList.add('text-white', 'drop-shadow-md');
+            } else {
+                progressText.classList.add('text-slate-600', 'mix-blend-difference');
+                progressText.classList.remove('text-white', 'drop-shadow-md');
+            }
+        }
+
+        // --- UX / Animations ---
+
+        function checkCompletion() {
+            const currentTasks = state.tasks[state.currentTab];
+            const isAllDone = currentTasks.every(t => t.done);
+
+            if (isAllDone) {
+                setTimeout(() => {
+                    fireConfetti();
+                    showModal();
+                }, 300); // 最後のチェックアニメーションが終わるのを少し待つ
+            }
+        }
+
+        function fireConfetti() {
+            // 左端と右端から紙吹雪を飛ばす
+            const duration = 2000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: state.currentTab === 'open' ? ['#3b82f6', '#60a5fa', '#ffffff'] : ['#8b5cf6', '#a78bfa', '#ffffff']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: state.currentTab === 'open' ? ['#3b82f6', '#60a5fa', '#ffffff'] : ['#8b5cf6', '#a78bfa', '#ffffff']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        function showModal() {
+            const modal = document.getElementById('celebration-modal');
+            const content = document.getElementById('modal-content');
+            const iconContainer = document.getElementById('modal-icon-container');
+            const message = document.getElementById('modal-message');
+
+            // タブに応じたモーダルの演出変更
+            if (state.currentTab === 'open') {
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 bg-blue-100 text-blue-500 text-4xl";
+                iconContainer.innerHTML = '<i class="fa-solid fa-sun"></i>';
+                message.innerHTML = "開店準備完了！<br>今日も一日、元気に頑張りましょう！";
+            } else {
+                iconContainer.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 bg-purple-100 text-purple-500 text-4xl";
+                iconContainer.innerHTML = '<i class="fa-solid fa-moon"></i>';
+                message.innerHTML = "閉店作業完了！<br>本日の作業、本当にお疲れ様でした。<br>気をつけて帰ってくださいね。";
+            }
+
+            modal.classList.remove('hidden');
+            // setTimeoutによる遅延でCSSトランジションを発火させる
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-90');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('celebration-modal');
+            const content = document.getElementById('modal-content');
+
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-90');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10');
+            }, 3000);
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
