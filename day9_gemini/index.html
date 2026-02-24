@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>月間売上目標・進捗ペース計算機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 達成時の特別な演出のための超軽量パーティクルライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* デフォルトのスピナー（上下ボタン）を非表示にしてスマホでのUXを向上 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* 達成時の虹色アニメーション */
+        .rainbow-bg {
+            background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
+            background-size: 1800% 1800%;
+            animation: rainbow 4s ease infinite;
+        }
+        .rainbow-text {
+            background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 4s ease infinite;
+            background-size: 1800% 1800%;
+        }
+        @keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+
+        /* プログレスバーの滑らかな動きと発光エフェクト */
+        .progress-transition {
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+        }
+        .glow-effect {
+            box-shadow: 0 0 15px currentColor;
+        }
+        
+        /* 浮き上がるようなカードの影 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pt-4 sm:pt-10 pb-10 px-4 sm:px-6">
+
+    <div class="max-w-md w-full mx-auto space-y-6">
+        
+        <!-- ヘッダーエリア -->
+        <header class="text-center space-y-2">
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight" id="monthDisplay">今月の売上ダッシュボード</h1>
+            <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-slate-200 text-slate-700 font-medium text-sm">
+                本日: <span id="todayDate" class="ml-1 mr-2 font-bold"></span> | 残り <span id="remainingDays" class="mx-1 text-lg font-black text-indigo-600"></span> 日 <span class="text-xs opacity-75">(今日含む)</span>
+            </div>
+        </header>
+
+        <!-- 入力エリア -->
+        <section class="glass-card rounded-2xl p-5 sm:p-6 space-y-5 border border-slate-200/60">
+            <div>
+                <label for="targetAmount" class="block text-sm font-semibold text-slate-600 mb-1.5">🎯 今月の目標金額</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 font-medium">¥</span>
+                    <input type="number" id="targetAmount" inputmode="numeric" placeholder="例: 5000000" 
+                           class="w-full pl-8 pr-4 py-3 text-lg font-bold bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                           oninput="calculate()">
+                </div>
+                <p id="targetFormatted" class="text-xs text-slate-400 text-right mt-1 min-h-[16px]"></p>
+            </div>
+
+            <div>
+                <label for="currentAmount" class="block text-sm font-semibold text-slate-600 mb-1.5">📈 現在の売上金額</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 font-medium">¥</span>
+                    <input type="number" id="currentAmount" inputmode="numeric" placeholder="例: 3800000" 
+                           class="w-full pl-8 pr-4 py-3 text-lg font-bold bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                           oninput="calculate()">
+                </div>
+                <p id="currentFormatted" class="text-xs text-slate-400 text-right mt-1 min-h-[16px]"></p>
+            </div>
+            
+            <!-- エラーメッセージ表示エリア -->
+            <p id="errorMessage" class="text-rose-500 text-sm font-medium text-center hidden"></p>
+        </section>
+
+        <!-- 進捗＆結果エリア -->
+        <section class="glass-card rounded-2xl p-5 sm:p-6 space-y-6 border border-slate-200/60 relative overflow-hidden" id="resultCard">
+            
+            <!-- 達成時の背景オーバーレイ -->
+            <div id="achievementOverlay" class="absolute inset-0 opacity-0 transition-opacity duration-1000 pointer-events-none z-0 mix-blend-overlay"></div>
+
+            <div class="relative z-10 space-y-6">
+                <!-- 進捗バー -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-end">
+                        <span class="text-sm font-bold text-slate-500">進捗率</span>
+                        <span id="progressPercentage" class="text-4xl font-black text-slate-800 tracking-tighter transition-colors duration-500">0<span class="text-xl ml-0.5">%</span></span>
+                    </div>
+                    <div class="h-4 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                        <div id="progressBar" class="h-full w-0 bg-slate-400 progress-transition rounded-full"></div>
+                    </div>
+                    <p id="motivationMessage" class="text-center text-sm font-bold text-slate-500 pt-1 transition-colors duration-300">目標金額を入力してスタート！</p>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 残額 -->
+                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
+                        <p class="text-xs font-semibold text-slate-500 mb-1">目標まであと</p>
+                        <p id="remainingAmount" class="text-lg sm:text-xl font-bold text-slate-700">¥0</p>
+                    </div>
+                    
+                    <!-- 1日あたりの必要売上 (最重要) -->
+                    <div id="dailyPaceCard" class="bg-indigo-50 rounded-xl p-3 border border-indigo-100 text-center shadow-sm transition-all duration-300">
+                        <p class="text-xs font-bold text-indigo-600 mb-1">今日からの必要売上(日)</p>
+                        <p id="dailyTargetAmount" class="text-xl sm:text-2xl font-black text-indigo-700 tracking-tight">¥0</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const monthDisplay = document.getElementById('monthDisplay');
+        const todayDateDisplay = document.getElementById('todayDate');
+        const remainingDaysDisplay = document.getElementById('remainingDays');
+        const targetInput = document.getElementById('targetAmount');
+        const currentInput = document.getElementById('currentAmount');
+        const targetFormatted = document.getElementById('targetFormatted');
+        const currentFormatted = document.getElementById('currentFormatted');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const motivationMessage = document.getElementById('motivationMessage');
+        const remainingAmountDisplay = document.getElementById('remainingAmount');
+        const dailyTargetAmountDisplay = document.getElementById('dailyTargetAmount');
+        const errorMessage = document.getElementById('errorMessage');
+        const dailyPaceCard = document.getElementById('dailyPaceCard');
+        const achievementOverlay = document.getElementById('achievementOverlay');
+
+        // グローバル変数
+        let daysRemaining = 0;
+        let hasCelebrated = false; // 達成エフェクトの重複発動防止
+        const formatter = new Intl.NumberFormat('ja-JP');
+
+        // 初期化処理
+        function init() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth() + 1;
+            const date = today.getDate();
+
+            // 月末日の取得 (次の月の0日目 = 今月の末日)
+            const endOfMonth = new Date(year, month, 0);
+            const lastDate = endOfMonth.getDate();
+
+            // 残り日数の計算（今日を含む）
+            daysRemaining = lastDate - date + 1;
+
+            // UIへの反映
+            monthDisplay.textContent = `${month}月の売上ダッシュボード`;
+            todayDateDisplay.textContent = `${month}/${date}`;
+            remainingDaysDisplay.textContent = daysRemaining;
+
+            // 初期計算
+            calculate();
+        }
+
+        // 入力値のフォーマット表示
+        function updateFormattedPreviews(target, current) {
+            targetFormatted.textContent = target > 0 ? `(¥${formatter.format(target)})` : '';
+            currentFormatted.textContent = current > 0 ? `(¥${formatter.format(current)})` : '';
+        }
+
+        // メイン計算ロジック
+        function calculate() {
+            errorMessage.classList.add('hidden');
+            
+            const target = Number(targetInput.value);
+            const current = Number(currentInput.value) || 0;
+
+            updateFormattedPreviews(target, current);
+
+            // バリデーション
+            if (!targetInput.value) {
+                resetUI();
+                return;
+            }
+            if (target <= 0) {
+                showError("目標金額は1以上の数値を入力してください。");
+                resetUI();
+                return;
+            }
+            if (current < 0) {
+                showError("現在の売上は0以上を入力してください。");
+                return;
+            }
+
+            // 計算
+            const remaining = target - current;
+            const percentage = (current / target) * 100;
+            // 残額が0以下の場合は、1日あたりの必要売上は0
+            const dailyTarget = remaining > 0 ? Math.ceil(remaining / daysRemaining) : 0;
+
+            // UI更新
+            updateUI(percentage, remaining, dailyTarget);
+        }
+
+        // エラー表示
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.remove('hidden');
+        }
+
+        // UIリセット
+        function resetUI() {
+            progressBar.style.width = '0%';
+            progressBar.className = 'h-full w-0 bg-slate-300 progress-transition rounded-full';
+            progressPercentage.innerHTML = `0<span class="text-xl ml-0.5">%</span>`;
+            progressPercentage.className = 'text-4xl font-black text-slate-400 tracking-tighter transition-colors duration-500';
+            motivationMessage.textContent = '目標金額を入力してスタート！';
+            motivationMessage.className = 'text-center text-sm font-bold text-slate-500 pt-1 transition-colors duration-300';
+            remainingAmountDisplay.textContent = '¥0';
+            dailyTargetAmountDisplay.textContent = '¥0';
+            dailyPaceCard.className = 'bg-slate-50 rounded-xl p-3 border border-slate-200 text-center shadow-sm transition-all duration-300';
+            achievementOverlay.classList.remove('rainbow-bg');
+            achievementOverlay.style.opacity = '0';
+            hasCelebrated = false;
+        }
+
+        // 計算結果に基づくUIの大規模更新
+        function updateUI(percentage, remaining, dailyTarget) {
+            // 表示の整形
+            const displayPercent = Math.min(percentage, 999).toFixed(1); // 異常な数値を防ぐ上限
+            remainingAmountDisplay.textContent = remaining > 0 ? `¥${formatter.format(remaining)}` : '¥0 (達成!)';
+            dailyTargetAmountDisplay.textContent = `¥${formatter.format(dailyTarget)}`;
+
+            // プログレスバーの幅設定 (最大100%)
+            const barWidth = Math.min(percentage, 100);
+            progressBar.style.width = `${barWidth}%`;
+
+            // 進捗に応じたカラーリングとメッセージの切り替え
+            let colorClass = '';
+            let textClass = '';
+            let message = '';
+            let cardStyle = '';
+
+            // 基本リセット
+            achievementOverlay.classList.remove('rainbow-bg');
+            achievementOverlay.style.opacity = '0';
+
+            if (percentage < 50) {
+                colorClass = 'bg-rose-500 text-rose-500';
+                textClass = 'text-rose-600';
+                message = '🔥 まだまだこれから！気合を入れていこう！';
+                cardStyle = 'bg-rose-50 border-rose-200 text-rose-700';
+                hasCelebrated = false;
+            } else if (percentage < 80) {
+                colorClass = 'bg-amber-400 text-amber-500';
+                textClass = 'text-amber-600';
+                message = '⚡ 折り返し地点！この調子でキープ！';
+                cardStyle = 'bg-amber-50 border-amber-200 text-amber-700';
+                hasCelebrated = false;
+            } else if (percentage < 100) {
+                colorClass = 'bg-emerald-500 text-emerald-500 glow-effect';
+                textClass = 'text-emerald-600';
+                message = '🚀 あと少し！ラストスパート！！';
+                cardStyle = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+                hasCelebrated = false;
+            } else {
+                // 100% 達成時
+                colorClass = 'rainbow-bg glow-effect';
+                textClass = 'rainbow-text';
+                message = '🎉 目標達成！おめでとうございます！ 🎉';
+                cardStyle = 'bg-yellow-50 border-yellow-300 text-yellow-700';
+                
+                // 背景の特別な演出
+                achievementOverlay.classList.add('rainbow-bg');
+                achievementOverlay.style.opacity = '0.15';
+
+                if (!hasCelebrated) {
+                    fireConfetti();
+                    hasCelebrated = true;
+                }
+            }
+
+            // クラスの適用
+            progressBar.className = `h-full rounded-full progress-transition ${colorClass}`;
+            progressPercentage.innerHTML = `${displayPercent}<span class="text-xl ml-0.5">%</span>`;
+            progressPercentage.className = `text-4xl font-black tracking-tighter transition-colors duration-500 ${textClass}`;
+            motivationMessage.textContent = message;
+            motivationMessage.className = `text-center text-sm font-bold pt-1 transition-colors duration-300 ${textClass}`;
+            
+            // 毎日の目標カードのスタイル調整
+            dailyPaceCard.className = `rounded-xl p-3 border text-center shadow-sm transition-all duration-500 ${cardStyle}`;
+            dailyTargetAmountDisplay.className = `text-xl sm:text-2xl font-black tracking-tight ${percentage >= 100 ? 'text-yellow-600' : ''}`;
+        }
+
+        // 紙吹雪エフェクト (canvas-confetti)
+        function fireConfetti() {
+            var duration = 3000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // アプリ起動
+        init();
+    </script>
+</body>
+</html>
