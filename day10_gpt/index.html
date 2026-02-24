@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>進捗ゲージ付き 開店/閉店ルーティンチェッカー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-sky-50 to-emerald-50 min-h-screen flex flex-col items-center p-4">
+
+  <!-- Completion Overlay -->
+  <div id="completionOverlay" class="fixed inset-0 hidden items-center justify-center bg-white/80 backdrop-blur-sm z-50 flex-col text-center px-6">
+    <h2 class="text-2xl md:text-3xl font-bold text-emerald-600 mb-4 animate-bounce">
+      🎉 本日の作業、お疲れ様でした！
+    </h2>
+    <p class="text-gray-600 mb-6">すべてのタスクが完了しました。</p>
+    <button onclick="closeOverlay()" 
+      class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg transition active:scale-95">
+      OK
+    </button>
+  </div>
+
+  <div class="w-full max-w-md">
+
+    <!-- Header -->
+    <h1 class="text-xl md:text-2xl font-bold text-gray-700 text-center mb-4">
+      🏪 ルーティンチェッカー
+    </h1>
+
+    <!-- Progress Section -->
+    <div class="bg-white rounded-2xl shadow p-4 mb-4">
+      <div class="flex justify-between mb-2 text-sm text-gray-600">
+        <span>完了率</span>
+        <span id="progressText">0%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+        <div id="progressBar"
+          class="h-6 bg-emerald-400 text-xs font-bold text-white flex items-center justify-center transition-all duration-300"
+          style="width: 0%">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex bg-white rounded-2xl shadow mb-4 overflow-hidden">
+      <button id="openTabBtn" 
+        class="flex-1 py-3 font-semibold bg-emerald-500 text-white transition">
+        開店
+      </button>
+      <button id="closeTabBtn"
+        class="flex-1 py-3 font-semibold bg-white text-gray-600 transition">
+        閉店
+      </button>
+    </div>
+
+    <!-- Task List -->
+    <div id="taskList" class="space-y-3"></div>
+
+    <!-- Reset Button -->
+    <div class="mt-6 text-center">
+      <button onclick="resetTasks()"
+        class="text-sm text-gray-500 underline hover:text-gray-700">
+        チェックをすべてリセット
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const tasks = {
+      open: [
+        "レジ立ち上げ",
+        "釣り銭準備",
+        "看板出し",
+        "清掃確認",
+        "BGM開始"
+      ],
+      close: [
+        "レジ締め",
+        "売上記録",
+        "ゴミ捨て",
+        "戸締まり確認",
+        "照明消灯"
+      ]
+    };
+
+    let currentTab = "open";
+    let state = {
+      open: Array(tasks.open.length).fill(false),
+      close: Array(tasks.close.length).fill(false)
+    };
+
+    const taskList = document.getElementById("taskList");
+    const progressBar = document.getElementById("progressBar");
+    const progressText = document.getElementById("progressText");
+    const completionOverlay = document.getElementById("completionOverlay");
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      tasks[currentTab].forEach((task, index) => {
+        const isChecked = state[currentTab][index];
+        const item = document.createElement("div");
+        item.className = "bg-white rounded-xl shadow p-4 flex items-center justify-between";
+
+        item.innerHTML = `
+          <label class="flex items-center w-full cursor-pointer">
+            <input type="checkbox"
+              class="w-6 h-6 mr-4 accent-emerald-500"
+              ${isChecked ? "checked" : ""}
+              onchange="toggleTask(${index})">
+            <span class="text-lg ${isChecked ? 'line-through text-gray-400' : 'text-gray-700'}">
+              ${task}
+            </span>
+          </label>
+        `;
+
+        taskList.appendChild(item);
+      });
+
+      updateProgress();
+    }
+
+    function toggleTask(index) {
+      try {
+        state[currentTab][index] = !state[currentTab][index];
+        renderTasks();
+      } catch (e) {
+        alert("エラーが発生しました。ページを再読み込みしてください。");
+      }
+    }
+
+    function updateProgress() {
+      const total = tasks[currentTab].length;
+      const completed = state[currentTab].filter(Boolean).length;
+      const percent = Math.round((completed / total) * 100);
+
+      progressBar.style.width = percent + "%";
+      progressBar.textContent = percent > 0 ? percent + "%" : "";
+      progressText.textContent = percent + "%";
+
+      if (percent === 100) {
+        showCompletion();
+      }
+    }
+
+    function showCompletion() {
+      completionOverlay.classList.remove("hidden");
+      completionOverlay.classList.add("flex");
+      document.body.classList.add("bg-emerald-100");
+    }
+
+    function closeOverlay() {
+      completionOverlay.classList.add("hidden");
+      completionOverlay.classList.remove("flex");
+      document.body.classList.remove("bg-emerald-100");
+    }
+
+    function resetTasks() {
+      if (!confirm("本当にすべてリセットしますか？")) return;
+      state[currentTab] = Array(tasks[currentTab].length).fill(false);
+      closeOverlay();
+      renderTasks();
+    }
+
+    document.getElementById("openTabBtn").addEventListener("click", () => {
+      currentTab = "open";
+      switchTabUI();
+    });
+
+    document.getElementById("closeTabBtn").addEventListener("click", () => {
+      currentTab = "close";
+      switchTabUI();
+    });
+
+    function switchTabUI() {
+      document.getElementById("openTabBtn").className =
+        currentTab === "open"
+          ? "flex-1 py-3 font-semibold bg-emerald-500 text-white transition"
+          : "flex-1 py-3 font-semibold bg-white text-gray-600 transition";
+
+      document.getElementById("closeTabBtn").className =
+        currentTab === "close"
+          ? "flex-1 py-3 font-semibold bg-emerald-500 text-white transition"
+          : "flex-1 py-3 font-semibold bg-white text-gray-600 transition";
+
+      closeOverlay();
+      renderTasks();
+    }
+
+    renderTasks();
+  </script>
+
+</body>
+</html>
