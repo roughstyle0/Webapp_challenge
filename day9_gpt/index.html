@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>月間売上目標・進捗ペース計算機（小売店向け）</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Optional: Tailwind config (single-file) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            soft: "0 12px 40px rgba(0,0,0,.10)",
+          },
+          keyframes: {
+            floaty: {
+              "0%,100%": { transform: "translateY(0)" },
+              "50%": { transform: "translateY(-6px)" },
+            },
+            pop: {
+              "0%": { transform: "scale(.98)", opacity: ".6" },
+              "100%": { transform: "scale(1)", opacity: "1" },
+            },
+            shimmer: {
+              "0%": { backgroundPosition: "0% 50%" },
+              "100%": { backgroundPosition: "100% 50%" },
+            },
+            confettiFall: {
+              "0%": { transform: "translateY(-20vh) rotate(0deg)", opacity: "0" },
+              "10%": { opacity: "1" },
+              "100%": { transform: "translateY(120vh) rotate(720deg)", opacity: "0" },
+            }
+          },
+          animation: {
+            floaty: "floaty 3s ease-in-out infinite",
+            pop: "pop .25s ease-out",
+            shimmer: "shimmer 2.2s linear infinite",
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Confetti container */
+    .confetti-wrap {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 1.25rem;
+    }
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 18px;
+      border-radius: 3px;
+      animation: confettiFall 1.8s linear forwards;
+      opacity: 0;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.12));
+    }
+
+    /* Rainbow-ish background for "achieved" */
+    .rainbow-bg {
+      background: linear-gradient(90deg, #f59e0b, #ef4444, #a855f7, #3b82f6, #22c55e, #f59e0b);
+      background-size: 250% 250%;
+      animation: shimmer 2.6s linear infinite;
+    }
+    .text-glow {
+      text-shadow: 0 0 18px rgba(245, 158, 11, .45);
+    }
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      .animate-floaty, .animate-shimmer, .confetti { animation: none !important; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+  <div class="mx-auto max-w-5xl px-4 py-8 sm:py-10">
+    <!-- Header -->
+    <header class="mb-6 sm:mb-8">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+            月間売上目標・進捗ペース計算機
+          </h1>
+          <p class="mt-1 text-sm sm:text-base text-slate-300">
+            月末の着地にハラハラする店長と、今日の目標を知りたいスタッフのために。
+          </p>
+        </div>
+        <div class="text-sm text-slate-300">
+          <span class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="todayLabel">今日: --</span>
+            <span class="text-slate-400">|</span>
+            <span id="remainLabel">残り: --日（今日含む）</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Card -->
+    <main class="relative overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 shadow-soft">
+      <div id="confettiWrap" class="confetti-wrap hidden" aria-hidden="true"></div>
+
+      <div class="grid gap-6 p-5 sm:p-7 lg:grid-cols-2">
+        <!-- Left: Inputs -->
+        <section class="space-y-5">
+          <div class="rounded-2xl bg-black/20 p-4 ring-1 ring-white/10">
+            <h2 class="text-base sm:text-lg font-semibold">入力</h2>
+            <p class="mt-1 text-sm text-slate-300">
+              数字だけでもOK。<span class="text-slate-200 font-medium">「500万円」「3,800,000円」「0.38億」</span>みたいな入力も解釈します。
+            </p>
+
+            <div class="mt-4 space-y-4">
+              <!-- Target -->
+              <div>
+                <label class="text-sm font-medium text-slate-200" for="targetInput">今月の売上目標金額</label>
+                <div class="mt-2 flex gap-2">
+                  <div class="relative flex-1">
+                    <input
+                      id="targetInput"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      placeholder="例：500万円 / 5000000"
+                      class="w-full rounded-xl bg-white/5 px-4 py-3 text-base outline-none ring-1 ring-white/10 placeholder:text-slate-500 focus:ring-2 focus:ring-sky-400"
+                    />
+                    <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400 text-sm">¥</div>
+                  </div>
+                  <button
+                    id="fillDemo"
+                    class="rounded-xl bg-white/5 px-3 py-3 text-sm font-semibold ring-1 ring-white/10 hover:bg-white/10 active:scale-[.98]"
+                    type="button"
+                    title="例を入力"
+                  >例</button>
+                </div>
+                <p id="targetErr" class="mt-2 hidden text-sm text-rose-300"></p>
+              </div>
+
+              <!-- Current -->
+              <div>
+                <label class="text-sm font-medium text-slate-200" for="currentInput">現在の売上金額</label>
+                <div class="mt-2 relative">
+                  <input
+                    id="currentInput"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="例：380万円 / 3800000"
+                    class="w-full rounded-xl bg-white/5 px-4 py-3 text-base outline-none ring-1 ring-white/10 placeholder:text-slate-500 focus:ring-2 focus:ring-sky-400"
+                  />
+                  <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400 text-sm">¥</div>
+                </div>
+                <p id="currentErr" class="mt-2 hidden text-sm text-rose-300"></p>
+              </div>
+
+              <!-- Remaining days (auto) -->
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
+                  <div class="text-xs text-slate-400">今月の残り日数（今日含む）</div>
+                  <div class="mt-1 flex items-baseline gap-2">
+                    <div id="remainDaysBig" class="text-2xl font-bold">--</div>
+                    <div class="text-slate-300">日</div>
+                  </div>
+                </div>
+                <div class="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
+                  <div class="text-xs text-slate-400">今月の総日数</div>
+                  <div class="mt-1 flex items-baseline gap-2">
+                    <div id="daysInMonthBig" class="text-2xl font-bold">--</div>
+                    <div class="text-slate-300">日</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Helper -->
+              <div class="rounded-xl bg-sky-500/10 p-4 ring-1 ring-sky-400/20">
+                <p class="text-sm text-slate-200">
+                  ✅ リアルタイム自動計算 / ✅ 入力を自動保存 / ✅ 目標に近づくほど色が変化
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                  ※ 端末の日時設定がズレていると、残り日数もズレます。
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Results -->
+        <section class="space-y-5">
+          <div id="moodCard" class="rounded-2xl bg-black/20 p-4 ring-1 ring-white/10">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h2 class="text-base sm:text-lg font-semibold">結果</h2>
+                <p id="moodText" class="mt-1 text-sm text-slate-300">
+                  金額を入力すると、今日からの必要ペースが表示されます。
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="badge" class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-white/10 bg-white/5 text-slate-200">
+                  --%
+                </span>
+              </div>
+            </div>
+
+            <!-- Top KPIs -->
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
+                <div class="text-xs text-slate-400">目標まであと</div>
+                <div class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight" id="remainingAmt">
+                  —
+                </div>
+                <div class="mt-1 text-xs text-slate-400">（残額）</div>
+              </div>
+
+              <div class="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
+                <div class="text-xs text-slate-400">【最重要】今日から毎日あと</div>
+                <div class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight" id="neededPerDay">
+                  —
+                </div>
+                <div class="mt-1 text-xs text-slate-400">（1日あたり必要売上）</div>
+              </div>
+            </div>
+
+            <!-- Visuals -->
+            <div class="mt-4 grid gap-4 sm:grid-cols-[1fr,220px]">
+              <!-- Progress bar -->
+              <div class="rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm font-semibold text-slate-200">進捗率</div>
+                  <div class="text-sm text-slate-300">
+                    <span id="progressPctText" class="font-bold">--</span><span class="text-slate-400">%</span>
+                  </div>
+                </div>
+                <div class="mt-3 h-4 w-full overflow-hidden rounded-full bg-white/5 ring-1 ring-white/10">
+                  <div id="progressBar"
+                       class="h-full w-0 rounded-full transition-[width,background-color] duration-700 ease-out"
+                       style="background: linear-gradient(90deg, rgba(239,68,68,.95), rgba(245,158,11,.95));">
+                  </div>
+                </div>
+
+                <div class="mt-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-2">
+                  <div class="flex items-center justify-between rounded-lg bg-black/20 px-3 py-2 ring-1 ring-white/10">
+                    <span class="text-slate-400">目標</span>
+                    <span id="targetFmt" class="font-semibold">—</span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-lg bg-black/20 px-3 py-2 ring-1 ring-white/10">
+                    <span class="text-slate-400">現在</span>
+                    <span id="currentFmt" class="font-semibold">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Donut -->
+              <div class="rounded-xl bg-white/5 p-4 ring-1 ring-white/10 flex flex-col items-center justify-center">
+                <div class="relative h-40 w-40">
+                  <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90">
+                    <defs>
+                      <linearGradient id="donutGrad" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#ef4444"/>
+                        <stop offset="50%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#22c55e"/>
+                      </linearGradient>
+                      <linearGradient id="goldGrad" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#fbbf24"/>
+                        <stop offset="60%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#fde68a"/>
+                      </linearGradient>
+                      <linearGradient id="rainbowGrad" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#f59e0b"/>
+                        <stop offset="20%" stop-color="#ef4444"/>
+                        <stop offset="40%" stop-color="#a855f7"/>
+                        <stop offset="60%" stop-color="#3b82f6"/>
+                        <stop offset="80%" stop-color="#22c55e"/>
+                        <stop offset="100%" stop-color="#f59e0b"/>
+                      </linearGradient>
+                    </defs>
+
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="12" />
+                    <circle id="donutArc"
+                            cx="60" cy="60" r="46"
+                            fill="none"
+                            stroke="url(#donutGrad)"
+                            stroke-linecap="round"
+                            stroke-width="12"
+                            stroke-dasharray="289"
+                            stroke-dashoffset="289"
+                            class="transition-[stroke-dashoffset] duration-700 ease-out"
+                    />
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <div id="donutPct" class="text-3xl font-extrabold tracking-tight">--%</div>
+                    <div id="donutSub" class="text-xs text-slate-400">進捗</div>
+                  </div>
+                </div>
+                <div id="donutHint" class="mt-3 text-center text-xs text-slate-400">
+                  目標に近づくほど色が変化します
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer note -->
+            <div class="mt-4 rounded-xl bg-black/20 p-4 ring-1 ring-white/10">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="text-xs text-slate-400">
+                  ※ 「毎日あと〜」は <span class="text-slate-200 font-semibold">今日を含む残り日数</span> で均等割りした目安です。
+                </div>
+                <button
+                  id="resetBtn"
+                  class="self-start sm:self-auto rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold ring-1 ring-white/10 hover:bg-white/10 active:scale-[.98]"
+                  type="button"
+                >入力をリセット</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tiny tips -->
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+              <div class="text-sm font-semibold">現場向けワンポイント</div>
+              <p class="mt-2 text-sm text-slate-300">
+                「今日の必要売上」を朝礼で共有 → 夕方に進捗を再確認すると、<span class="text-slate-200 font-semibold">行動が具体化</span>します。
+              </p>
+            </div>
+            <div class="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+              <div class="text-sm font-semibold">入力のコツ</div>
+              <p class="mt-2 text-sm text-slate-300">
+                例：<span class="font-semibold text-slate-200">500万</span> / <span class="font-semibold text-slate-200">0.5千万</span> / <span class="font-semibold text-slate-200">0.05億</span> などもOK。
+              </p>
+              <p class="mt-1 text-xs text-slate-400">（万・千・億・円、カンマ混在を吸収します）</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="mt-6 text-center text-xs text-slate-500">
+      <p>© Monthly Sales Pace Calculator — single-file / Tailwind CDN</p>
+    </footer>
+  </div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (id) => document.getElementById(id);
+
+    function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+
+    function formatYen(n) {
+      if (!Number.isFinite(n)) return "—";
+      const sign = n < 0 ? "-" : "";
+      const v = Math.abs(Math.round(n));
+      return sign + "¥" + v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // Parse Japanese-ish money inputs:
+    // - Accept: "500万円", "3,800,000円", "0.38億", "120万", "1.2千", "2500"
+    // - Convert to yen number
+    function parseMoneyToYen(raw) {
+      if (raw == null) return NaN;
+      let s = String(raw).trim();
+      if (!s) return NaN;
+
+      // Normalize common full-width characters
+      s = s
+        .replace(/[，、]/g, ",")
+        .replace(/[　\s]/g, "")
+        .replace(/[￥¥円]/g, "")
+        .replace(/,/g, "");
+
+      // Allow "m" / "M" as million yen? People might use "5M" meaning 5,000,000
+      // We'll interpret suffix "m" or "M" as million (1,000,000).
+      // But if "万円" exists, it's already handled.
+      const millionSuffix = /([0-9.]+)\s*[mM]$/.exec(s);
+      if (millionSuffix) {
+        const v = Number(millionSuffix[1]);
+        return Number.isFinite(v) ? v * 1_000_000 : NaN;
+      }
+
+      // Handle Japanese units: 千(1,000), 万(10,000), 億(100,000,000)
+      // Also allow "千万" (10,000,000) as "千"+"万" combo in casual use.
+      // Strategy: if it contains unit chars, parse pieces; else plain number.
+      const hasUnit = /[千万億]/.test(s);
+      if (!hasUnit) {
+        const v = Number(s);
+        return Number.isFinite(v) ? v : NaN;
+      }
+
+      // Support patterns like "0.5千万" or "2千万" etc.
+      // We'll compute by scanning units from large to small.
+      // Rules:
+      // - 億: multiply by 1e8
+      // - 万: multiply by 1e4
+      // - 千: multiply by 1e3 (when used alone as unit; "千万" will be handled as 1000*10000)
+      let total = 0;
+      let rest = s;
+
+      // Helper to extract "<number><unit>" once
+      function extractUnit(unitChar, mult) {
+        const re = new RegExp("([0-9.]+)" + unitChar);
+        const m = re.exec(rest);
+        if (m) {
+          const v = Number(m[1]);
+          if (!Number.isFinite(v)) return false;
+          total += v * mult;
+          rest = rest.replace(m[0], "");
+        }
+        return true;
+      }
+
+      // Special: "千万" and "千万" occurrences (treat as 10,000,000)
+      // Convert any "X千万" -> X * 10,000,000 by rewriting into "X" + "万" with factor.
+      // We'll just detect "千万" first.
+      const senman = /([0-9.]+)千万/.exec(rest);
+      if (senman) {
+        const v = Number(senman[1]);
+        if (!Number.isFinite(v)) return NaN;
+        total += v * 10_000_000;
+        rest = rest.replace(senman[0], "");
+      }
+
+      // Now standard units
+      extractUnit("億", 100_000_000);
+      extractUnit("万", 10_000);
+      extractUnit("千", 1_000);
+
+      // Remaining plain number (yen)
+      if (rest) {
+        const v = Number(rest);
+        if (!Number.isFinite(v)) return NaN;
+        total += v;
+      }
+      return total;
+    }
+
+    function daysInMonth(date) {
+      // JS month is 0-indexed; day 0 of next month = last day of current month
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+
+    function remainingDaysIncludingToday(date) {
+      const dim = daysInMonth(date);
+      return (dim - date.getDate() + 1);
+    }
+
+    function moodFromProgress(pct) {
+      // Returns: {label, desc, barStyle, ringClass, donutStroke, accentClass}
+      // pct can exceed 100
+      if (!Number.isFinite(pct)) {
+        return {
+          label: "--%",
+          desc: "金額を入力すると、今日からの必要ペースが表示されます。",
+          bar: "linear-gradient(90deg, rgba(239,68,68,.95), rgba(245,158,11,.95))",
+          badge: "bg-white/5 text-slate-200 ring-white/10",
+          donut: "url(#donutGrad)",
+          card: "bg-black/20 ring-white/10",
+          achieved: false
+        };
+      }
+
+      if (pct >= 100) {
+        return {
+          label: `${Math.floor(pct)}%`,
+          desc: "🎉 目標達成！この調子で“上振れ”を狙いましょう。",
+          bar: "linear-gradient(90deg, rgba(251,191,36,.95), rgba(245,158,11,.95), rgba(253,230,138,.95))",
+          badge: "rainbow-bg text-black ring-white/20 text-glow",
+          donut: "url(#rainbowGrad)",
+          card: "rainbow-bg ring-white/20",
+          achieved: true
+        };
+      }
+
+      // Near (85-99)
+      if (pct >= 85) {
+        return {
+          label: `${Math.floor(pct)}%`,
+          desc: "🔥 かなり良いペース！今日の目標を積み上げて一気に決めましょう。",
+          bar: "linear-gradient(90deg, rgba(34,197,94,.95), rgba(16,185,129,.95))",
+          badge: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30",
+          donut: "url(#donutGrad)",
+          card: "bg-emerald-500/10 ring-emerald-400/20",
+          achieved: false
+        };
+      }
+
+      // Mid (50-84)
+      if (pct >= 50) {
+        return {
+          label: `${Math.floor(pct)}%`,
+          desc: "👍 悪くない進捗。必要ペースを意識して“取りこぼし”を減らしましょう。",
+          bar: "linear-gradient(90deg, rgba(245,158,11,.95), rgba(34,197,94,.85))",
+          badge: "bg-amber-500/15 text-amber-200 ring-amber-400/30",
+          donut: "url(#donutGrad)",
+          card: "bg-amber-500/10 ring-amber-400/20",
+          achieved: false
+        };
+      }
+
+      // Low (<50)
+      return {
+        label: `${Math.floor(pct)}%`,
+        desc: "⚠️ まだ差が大きめ。『今日の必要売上』を起点に、声かけ・提案数を増やしましょう。",
+        bar: "linear-gradient(90deg, rgba(239,68,68,.95), rgba(245,158,11,.95))",
+        badge: "bg-rose-500/15 text-rose-200 ring-rose-400/30",
+        donut: "url(#donutGrad)",
+        card: "bg-rose-500/10 ring-rose-400/20",
+        achieved: false
+      };
+    }
+
+    // Confetti (simple, single-file)
+    function launchConfetti() {
+      const wrap = $("confettiWrap");
+      wrap.classList.remove("hidden");
+      wrap.innerHTML = "";
+
+      const pieces = 26;
+      const colors = ["#f59e0b","#ef4444","#a855f7","#3b82f6","#22c55e","#fde68a"];
+
+      for (let i = 0; i < pieces; i++) {
+        const el = document.createElement("div");
+        el.className = "confetti";
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.35;
+        const dur = 1.4 + Math.random() * 0.9;
+        const size = 7 + Math.random() * 8;
+        const hue = colors[i % colors.length];
+
+        el.style.left = left + "%";
+        el.style.animationDelay = delay + "s";
+        el.style.animationDuration = dur + "s";
+        el.style.width = size + "px";
+        el.style.height = (size * 1.7) + "px";
+        el.style.background = hue;
+        el.style.transform = `translateY(-20vh) rotate(${Math.random()*180}deg)`;
+        wrap.appendChild(el);
+      }
+
+      // auto-hide after a bit
+      window.clearTimeout(launchConfetti._t);
+      launchConfetti._t = window.setTimeout(() => {
+        wrap.classList.add("hidden");
+        wrap.innerHTML = "";
+      }, 2200);
+    }
+
+    // ---------- App State ----------
+    const state = {
+      target: NaN,
+      current: NaN,
+      date: new Date(),
+      achievedOnce: false,
+    };
+
+    function setError(elId, msg) {
+      const p = $(elId);
+      if (!msg) {
+        p.classList.add("hidden");
+        p.textContent = "";
+      } else {
+        p.textContent = msg;
+        p.classList.remove("hidden");
+      }
+    }
+
+    function validateMoney(yen, labelForHuman) {
+      if (!Number.isFinite(yen)) return `${labelForHuman}を正しく入力してください（例：500万円 / 5000000）`;
+      if (yen < 0) return `${labelForHuman}は0以上で入力してください`;
+      if (yen > 9_999_999_999_999) return `${labelForHuman}が大きすぎます（桁数を確認してください）`;
+      return "";
+    }
+
+    function updateDateUI() {
+      const d = state.date;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      $("todayLabel").textContent = `今日: ${yyyy}/${mm}/${dd}`;
+
+      const dim = daysInMonth(d);
+      const remain = remainingDaysIncludingToday(d);
+      $("remainLabel").textContent = `残り: ${remain}日（今日含む）`;
+      $("remainDaysBig").textContent = String(remain);
+      $("daysInMonthBig").textContent = String(dim);
+    }
+
+    function computeAndRender() {
+      // Parse
+      const targetYen = parseMoneyToYen($("targetInput").value);
+      const currentYen = parseMoneyToYen($("currentInput").value);
+
+      // Validate & show errors
+      const e1 = validateMoney(targetYen, "売上目標金額");
+      const e2 = validateMoney(currentYen, "現在の売上金額");
+
+      setError("targetErr", e1);
+      setError("currentErr", e2);
+
+      // Save raw inputs (not parsed) to preserve user's formatting
+      try {
+        localStorage.setItem("salesPace.target", $("targetInput").value);
+        localStorage.setItem("salesPace.current", $("currentInput").value);
+      } catch (_) {}
+
+      // If invalid, keep UI calm
+      const valid = !e1 && !e2 && targetYen >= 0 && currentYen >= 0;
+
+      const remainDays = remainingDaysIncludingToday(state.date);
+      const safeRemainDays = Math.max(1, remainDays);
+
+      // Compute
+      let remaining = NaN, perDay = NaN, pct = NaN;
+
+      if (valid && targetYen > 0) {
+        remaining = targetYen - currentYen;
+        // If exceeded, remaining can be negative; perDay becomes 0 (we show 0 rather than negative "need")
+        const need = Math.max(0, remaining);
+        perDay = need / safeRemainDays;
+        pct = (currentYen / targetYen) * 100;
+      } else if (valid && targetYen === 0) {
+        // Edge: target = 0 -> achieved if current >= 0
+        remaining = 0 - currentYen;
+        perDay = 0;
+        pct = 100;
+      }
+
+      // Render formatted amounts
+      $("targetFmt").textContent = Number.isFinite(targetYen) ? formatYen(targetYen) : "—";
+      $("currentFmt").textContent = Number.isFinite(currentYen) ? formatYen(currentYen) : "—";
+
+      $("remainingAmt").textContent = Number.isFinite(remaining)
+        ? (remaining <= 0 ? "達成 🎉（上振れ中）" : formatYen(remaining))
+        : "—";
+
+      $("neededPerDay").textContent = Number.isFinite(perDay)
+        ? (perDay === 0 && Number.isFinite(remaining) && remaining <= 0 ? "0（維持でOK）" : formatYen(perDay))
+        : "—";
+
+      // Progress
+      const pctSafe = Number.isFinite(pct) ? pct : NaN;
+      const pctClamped = Number.isFinite(pctSafe) ? clamp(pctSafe, 0, 150) : 0;
+
+      $("progressPctText").textContent = Number.isFinite(pctSafe) ? Math.floor(pctSafe) : "--";
+      $("donutPct").textContent = Number.isFinite(pctSafe) ? `${Math.floor(pctSafe)}%` : "--%";
+      $("badge").textContent = Number.isFinite(pctSafe) ? `${Math.floor(pctSafe)}%` : "--%";
+
+      // Mood / colors
+      const mood = moodFromProgress(pctSafe);
+
+      // Card + badge
+      const moodCard = $("moodCard");
+      moodCard.className = "rounded-2xl p-4 ring-1 shadow-soft transition-[background-color,box-shadow] duration-700 " + (mood.achieved ? "rainbow-bg ring-white/20" : mood.card);
+
+      const badge = $("badge");
+      badge.className = "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 transition-[background-color,color] duration-700 " + mood.badge;
+
+      $("moodText").textContent = mood.desc;
+
+      // Progress bar width + gradient
+      const bar = $("progressBar");
+      bar.style.width = (Number.isFinite(pctSafe) ? clamp(pctSafe, 0, 100) : 0) + "%";
+      bar.style.background = mood.bar;
+
+      // Donut arc
+      const arc = $("donutArc");
+      const circumference = 289; // approx 2*pi*r where r=46
+      const donutPct = Number.isFinite(pctSafe) ? clamp(pctSafe, 0, 100) : 0;
+      const offset = circumference * (1 - donutPct / 100);
+      arc.style.strokeDashoffset = String(offset);
+      arc.setAttribute("stroke", mood.achieved ? mood.donut : mood.donut);
+
+      // If achieved, make it feel special
+      const wrap = $("confettiWrap");
+      if (mood.achieved) {
+        $("donutSub").textContent = "達成";
+        $("donutHint").textContent = "おめでとう！ここからは上振れを狙えます";
+        // Confetti only once per crossing
+        if (!state.achievedOnce) {
+          launchConfetti();
+          state.achievedOnce = true;
+        }
+      } else {
+        $("donutSub").textContent = "進捗";
+        $("donutHint").textContent = "目標に近づくほど色が変化します";
+        wrap.classList.add("hidden");
+        wrap.innerHTML = "";
+        state.achievedOnce = false;
+      }
+
+      // Micro animation (pop) for KPIs when valid
+      const kpi1 = $("remainingAmt");
+      const kpi2 = $("neededPerDay");
+      if (valid) {
+        kpi1.classList.remove("animate-pop"); kpi2.classList.remove("animate-pop");
+        // reflow trick
+        void kpi1.offsetWidth;
+        kpi1.classList.add("animate-pop");
+        kpi2.classList.add("animate-pop");
+      }
+    }
+
+    function init() {
+      // Load from localStorage
+      try {
+        const t = localStorage.getItem("salesPace.target");
+        const c = localStorage.getItem("salesPace.current");
+        if (t != null) $("targetInput").value = t;
+        if (c != null) $("currentInput").value = c;
+      } catch (_) {}
+
+      // Date UI
+      state.date = new Date();
+      updateDateUI();
+
+      // Live update
+      const onInput = () => computeAndRender();
+      $("targetInput").addEventListener("input", onInput);
+      $("currentInput").addEventListener("input", onInput);
+
+      // Example button
+      $("fillDemo").addEventListener("click", () => {
+        $("targetInput").value = "500万円";
+        $("currentInput").value = "380万円";
+        computeAndRender();
+      });
+
+      // Reset
+      $("resetBtn").addEventListener("click", () => {
+        $("targetInput").value = "";
+        $("currentInput").value = "";
+        try {
+          localStorage.removeItem("salesPace.target");
+          localStorage.removeItem("salesPace.current");
+        } catch (_) {}
+        state.achievedOnce = false;
+        computeAndRender();
+      });
+
+      // Update date at midnight (best effort)
+      setInterval(() => {
+        const now = new Date();
+        const old = state.date;
+        if (now.getDate() !== old.getDate() || now.getMonth() !== old.getMonth() || now.getFullYear() !== old.getFullYear()) {
+          state.date = now;
+          updateDateUI();
+          computeAndRender();
+        }
+      }, 30_000);
+
+      // First render
+      computeAndRender();
+    }
+
+    init();
+  </script>
+</body>
+</html>
