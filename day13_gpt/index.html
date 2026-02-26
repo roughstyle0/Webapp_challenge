@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>これ頼んどいて！備品発注リクエストボード</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="p-6 border-b border-gray-700 bg-gray-800">
+    <h1 class="text-3xl font-bold tracking-wide">📦 これ頼んどいて！</h1>
+    <p class="text-gray-300 mt-1 text-lg">備品発注リクエストボード</p>
+
+    <div class="mt-6 flex items-center justify-between bg-gray-700 rounded-xl p-4">
+      <span class="text-xl font-semibold">発注が必要なアイテム数</span>
+      <span id="orderCount" class="text-4xl font-extrabold bg-red-600 text-white px-6 py-2 rounded-full shadow-lg">
+        0
+      </span>
+    </div>
+  </header>
+
+  <!-- Item List -->
+  <main class="flex-1 overflow-y-auto p-6 space-y-4" id="itemList">
+  </main>
+
+  <!-- Add Item -->
+  <div class="p-6 border-t border-gray-700 bg-gray-800 space-y-4">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input 
+        type="text" 
+        id="newItemInput"
+        placeholder="新しい備品名を入力（例：電池）"
+        class="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button 
+        onclick="addItem()"
+        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-bold transition"
+      >
+        追加
+      </button>
+    </div>
+
+    <button 
+      onclick="copyOrderList()"
+      class="w-full py-4 bg-green-600 hover:bg-green-700 rounded-xl text-xl font-bold transition"
+    >
+      📲 発注リストをLINEで送る（コピーする）
+    </button>
+
+    <p id="copyMessage" class="text-center text-sm text-green-400 hidden">
+      コピーしました！LINEに貼り付けてください。
+    </p>
+  </div>
+
+  <script>
+    const defaultItems = [
+      "レジ袋",
+      "レシートロール",
+      "トイレ洗剤",
+      "ボールペン",
+      "セロハンテープ"
+    ];
+
+    const STATUS = {
+      OK: 0,
+      LOW: 1,
+      OUT: 2
+    };
+
+    const statusStyles = [
+      {
+        label: "在庫あり",
+        class: "bg-gray-600 text-white"
+      },
+      {
+        label: "残りわずか",
+        class: "bg-yellow-400 text-black font-bold"
+      },
+      {
+        label: "在庫切れ・発注して！",
+        class: "bg-red-600 text-white font-bold animate-pulse"
+      }
+    ];
+
+    let items = [];
+
+    function init() {
+      items = defaultItems.map(name => ({
+        name,
+        status: STATUS.OK
+      }));
+      render();
+    }
+
+    function render() {
+      const list = document.getElementById("itemList");
+      list.innerHTML = "";
+
+      items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "flex flex-col sm:flex-row sm:items-center justify-between bg-gray-800 p-4 rounded-xl shadow-md gap-3";
+
+        const name = document.createElement("span");
+        name.className = "text-2xl font-semibold";
+        name.textContent = item.name;
+
+        const button = document.createElement("button");
+        const style = statusStyles[item.status];
+        button.className = `px-4 py-3 rounded-lg text-lg transition ${style.class}`;
+        button.textContent = style.label;
+        button.onclick = () => toggleStatus(index);
+
+        div.appendChild(name);
+        div.appendChild(button);
+
+        list.appendChild(div);
+      });
+
+      updateOrderCount();
+    }
+
+    function toggleStatus(index) {
+      if (!items[index]) return;
+      items[index].status = (items[index].status + 1) % 3;
+      render();
+    }
+
+    function updateOrderCount() {
+      const count = items.filter(item => item.status === STATUS.OUT).length;
+      document.getElementById("orderCount").textContent = count;
+    }
+
+    function addItem() {
+      const input = document.getElementById("newItemInput");
+      const name = input.value.trim();
+
+      if (!name) {
+        alert("備品名を入力してください。");
+        return;
+      }
+
+      if (items.some(item => item.name === name)) {
+        alert("同じ備品名がすでに存在します。");
+        return;
+      }
+
+      items.push({ name, status: STATUS.OK });
+      input.value = "";
+      render();
+    }
+
+    async function copyOrderList() {
+      const targets = items.filter(item => item.status === STATUS.LOW || item.status === STATUS.OUT);
+
+      if (targets.length === 0) {
+        alert("発注が必要なアイテムはありません。");
+        return;
+      }
+
+      const text = `【備品発注リスト】\n\n` +
+        targets.map(item => {
+          if (item.status === STATUS.OUT) {
+            return `🔴 ${item.name}（在庫切れ）`;
+          } else {
+            return `🟡 ${item.name}（残りわずか）`;
+          }
+        }).join("\n") +
+        `\n\nよろしくお願いします！`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        const msg = document.getElementById("copyMessage");
+        msg.classList.remove("hidden");
+        setTimeout(() => msg.classList.add("hidden"), 3000);
+      } catch (err) {
+        alert("コピーに失敗しました。手動でコピーしてください。");
+      }
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
