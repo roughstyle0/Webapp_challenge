@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>これ頼んどいて！備品発注リクエストボード</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* モバイルでのタップハイライトを無効化し、独自のアクティブステートを活用 */
+        * { -webkit-tap-highlight-color: transparent; }
+        /* スクロールバーのカスタマイズ (WebKit) */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+        /* 安全領域(iOSのホームバーなど)への対応 */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        line: '#06C755',
+                        lineHover: '#05b34c'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col font-sans pb-32">
+
+    <!-- Header (Sticky) -->
+    <header class="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-md border-b border-gray-800 px-4 py-4 shadow-xl">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-extrabold tracking-tight flex items-center gap-2">
+                <i data-lucide="clipboard-list" class="w-6 h-6 text-blue-400"></i>
+                発注ボード
+            </h1>
+            <div id="badge-container" class="flex items-center bg-gray-800 text-gray-400 px-4 py-1.5 rounded-full border border-gray-700 transition-colors duration-300">
+                <i data-lucide="shopping-cart" class="w-5 h-5 mr-1.5"></i>
+                <span class="font-bold text-sm">要発注: <span id="badge-count" class="text-lg">0</span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-md mx-auto w-full p-4 mt-2">
+        <!-- Item List -->
+        <div id="item-list" class="space-y-4">
+            <!-- JavaScriptで動的に描画されます -->
+        </div>
+
+        <!-- Add Item Form -->
+        <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 mt-8 shadow-lg">
+            <h2 class="text-base font-bold mb-3 flex items-center text-gray-300">
+                <i data-lucide="plus-circle" class="w-5 h-5 mr-2 text-blue-400"></i>新しい備品を追加
+            </h2>
+            <div class="flex gap-2 relative">
+                <input type="text" id="new-item-input" placeholder="例: 消毒液" 
+                    class="flex-grow bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-500 transition-colors">
+                <button id="add-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold transition-transform active:scale-95 flex items-center justify-center">
+                    追加
+                </button>
+            </div>
+            <p id="error-message" class="text-red-400 text-sm mt-2 hidden font-medium flex items-center gap-1">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i><span id="error-text"></span>
+            </p>
+        </div>
+    </main>
+
+    <!-- Footer Action Area (Fixed) -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 p-4 pb-safe z-40">
+        <div class="max-w-md mx-auto relative">
+            <button id="copy-btn" disabled 
+                class="w-full bg-line hover:bg-lineHover text-white text-lg font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(6,199,85,0.3)] transition-all active:scale-[0.98] flex justify-center items-center gap-2 opacity-50 cursor-not-allowed">
+                <i data-lucide="message-circle" class="w-6 h-6"></i>
+                発注リストをLINEで送る
+            </button>
+        </div>
+    </footer>
+
+    <!-- Custom Toast Notification -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-3 border border-gray-700 w-max max-w-[90%]">
+        <div id="toast-icon-wrapper" class="rounded-full p-1 bg-green-500/20">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-400" id="toast-icon"></i>
+        </div>
+        <span id="toast-message" class="font-bold text-sm"></span>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex justify-center items-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-3xl shadow-2xl max-w-xs w-full mx-4 transform scale-95 transition-transform duration-200" id="modal-content">
+            <div class="flex justify-center mb-4">
+                <div class="bg-red-500/20 p-3 rounded-full text-red-400">
+                    <i data-lucide="trash-2" class="w-8 h-8"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-extrabold mb-2 text-white text-center" id="modal-title">削除の確認</h3>
+            <p class="text-gray-400 mb-6 text-center text-sm font-medium" id="modal-desc">アイテムを削除しますか？</p>
+            <div class="flex gap-3">
+                <button id="modal-cancel" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition-colors active:scale-95 text-gray-200">やめる</button>
+                <button id="modal-confirm" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-600/20 active:scale-95">削除する</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const STATUS = {
+            OK: 0,
+            LOW: 1,
+            EMPTY: 2
+        };
+
+        // 初期データ
+        let items = [
+            { id: 1, name: 'レジ袋', status: STATUS.OK },
+            { id: 2, name: 'レシートロール', status: STATUS.OK },
+            { id: 3, name: 'トイレ洗剤', status: STATUS.OK },
+            { id: 4, name: 'ボールペン', status: STATUS.OK },
+            { id: 5, name: 'セロハンテープ', status: STATUS.OK },
+        ];
+
+        // --- DOM Elements ---
+        const itemListEl = document.getElementById('item-list');
+        const badgeContainer = document.getElementById('badge-container');
+        const badgeCountEl = document.getElementById('badge-count');
+        const copyBtn = document.getElementById('copy-btn');
+        const addInput = document.getElementById('new-item-input');
+        const addBtn = document.getElementById('add-btn');
+        const errorMsg = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        // --- Core Logic ---
+        
+        // 描画処理（Single Source of Truth に基づく完全再描画）
+        function renderItems() {
+            itemListEl.innerHTML = '';
+            let orderCount = 0;
+
+            items.forEach(item => {
+                if (item.status !== STATUS.OK) orderCount++;
+
+                const isOk = item.status === STATUS.OK;
+                const isLow = item.status === STATUS.LOW;
+                const isEmpty = item.status === STATUS.EMPTY;
+
+                // 状態に応じたカードのスタイル
+                let cardClass = "bg-gray-800 border-2 rounded-2xl p-4 transition-all duration-300 ";
+                if (isEmpty) {
+                    cardClass += "border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.15)] bg-red-950/20";
+                } else if (isLow) {
+                    cardClass += "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)] bg-yellow-950/20";
+                } else {
+                    cardClass += "border-transparent";
+                }
+
+                // アイテムHTMLの構築
+                const itemHTML = `
+                    <div class="${cardClass}">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xl font-extrabold tracking-wide ${isEmpty ? 'text-red-400' : isLow ? 'text-yellow-400' : 'text-gray-100'}">
+                                ${item.name}
+                            </span>
+                            <button class="text-gray-500 hover:text-red-400 p-2 -mr-2 rounded-lg transition-colors active:scale-90" data-action="delete" data-id="${item.id}">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button data-id="${item.id}" data-status="${STATUS.OK}" 
+                                class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 flex flex-col items-center justify-center gap-1.5
+                                ${isOk ? 'bg-green-500/10 text-green-400 border border-green-500/30 ring-1 ring-green-500/50' : 'bg-gray-900 text-gray-500 border border-gray-700 hover:bg-gray-800'}">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                                在庫あり
+                            </button>
+                            
+                            <button data-id="${item.id}" data-status="${STATUS.LOW}" 
+                                class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 flex flex-col items-center justify-center gap-1.5
+                                ${isLow ? 'bg-yellow-500 text-gray-900 border border-yellow-400 shadow-[0_4px_10px_rgba(234,179,8,0.3)] ring-2 ring-yellow-500/50' : 'bg-gray-900 text-gray-500 border border-gray-700 hover:bg-gray-800'}">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                                残りわずか
+                            </button>
+                            
+                            <button data-id="${item.id}" data-status="${STATUS.EMPTY}" 
+                                class="flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 flex flex-col items-center justify-center gap-1.5
+                                ${isEmpty ? 'bg-red-600 text-white border border-red-500 shadow-[0_4px_15px_rgba(220,38,38,0.4)] ring-2 ring-red-500/50' : 'bg-gray-900 text-gray-500 border border-gray-700 hover:bg-gray-800'}">
+                                <i data-lucide="x-octagon" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                                発注して！
+                            </button>
+                        </div>
+                    </div>
+                `;
+                itemListEl.insertAdjacentHTML('beforeend', itemHTML);
+            });
+
+            // バッジとボタンの状態更新
+            badgeCountEl.textContent = orderCount;
+            if (orderCount > 0) {
+                badgeContainer.classList.replace('bg-gray-800', 'bg-red-600/20');
+                badgeContainer.classList.replace('text-gray-400', 'text-red-400');
+                badgeContainer.classList.replace('border-gray-700', 'border-red-500/50');
+                
+                copyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                copyBtn.disabled = false;
+            } else {
+                badgeContainer.classList.replace('bg-red-600/20', 'bg-gray-800');
+                badgeContainer.classList.replace('text-red-400', 'text-gray-400');
+                badgeContainer.classList.replace('border-red-500/50', 'border-gray-700');
+                
+                copyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                copyBtn.disabled = true;
+            }
+
+            // アイコンの再描画
+            lucide.createIcons();
+        }
+
+        // --- Event Handlers ---
+
+        // アイテムリスト内のクリックイベント（イベントデリゲーション）
+        itemListEl.addEventListener('click', (e) => {
+            // ステータス変更
+            const statusBtn = e.target.closest('[data-status]');
+            if (statusBtn) {
+                const id = parseInt(statusBtn.dataset.id, 10);
+                const newStatus = parseInt(statusBtn.dataset.status, 10);
+                const itemIndex = items.findIndex(i => i.id === id);
+                
+                if (itemIndex > -1 && items[itemIndex].status !== newStatus) {
+                    items[itemIndex].status = newStatus;
+                    renderItems();
+                }
+                return;
+            }
+
+            // 削除ボタン
+            const deleteBtn = e.target.closest('[data-action="delete"]');
+            if (deleteBtn) {
+                const id = parseInt(deleteBtn.dataset.id, 10);
+                const item = items.find(i => i.id === id);
+                showConfirmModal(
+                    `「${item.name}」を削除`,
+                    'この備品をリストから削除してもよろしいですか？',
+                    () => {
+                        items = items.filter(i => i.id !== id);
+                        renderItems();
+                        showToast(`${item.name} を削除しました`);
+                    }
+                );
+            }
+        });
+
+        // アイテム追加処理
+        function handleAddItem() {
+            const name = addInput.value.trim();
+            if (!name) {
+                showError('備品名を入力してください');
+                return;
+            }
+            if (items.some(item => item.name === name)) {
+                showError('その備品は既にリストにあります');
+                return;
+            }
+            if (name.length > 20) {
+                showError('備品名は20文字以内で入力してください');
+                return;
+            }
+
+            const newId = items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1;
+            items.push({ id: newId, name: name, status: STATUS.OK });
+            
+            addInput.value = '';
+            hideError();
+            renderItems();
+            
+            // 一番下までスクロールして追加されたことを見せる
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            showToast(`「${name}」を追加しました`);
+        }
+
+        addBtn.addEventListener('click', handleAddItem);
+        addInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleAddItem();
+        });
+        addInput.addEventListener('input', hideError);
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorMsg.classList.remove('hidden');
+            addInput.classList.add('border-red-500', 'bg-red-900/10');
+        }
+
+        function hideError() {
+            errorMsg.classList.add('hidden');
+            addInput.classList.remove('border-red-500', 'bg-red-900/10');
+        }
+
+        // --- Copy to Clipboard ---
+        copyBtn.addEventListener('click', () => {
+            const emptyItems = items.filter(i => i.status === STATUS.EMPTY);
+            const lowItems = items.filter(i => i.status === STATUS.LOW);
+
+            if (emptyItems.length === 0 && lowItems.length === 0) return;
+
+            // 送信しやすいフォーマットの構築
+            let text = "【備品発注リクエスト】\n\n";
+            
+            if (emptyItems.length > 0) {
+                text += "🚨 [急ぎ！在庫切れ]\n";
+                emptyItems.forEach(i => text += `・${i.name}\n`);
+                text += "\n";
+            }
+
+            if (lowItems.length > 0) {
+                text += "⚠️ [残りわずか]\n";
+                lowItems.forEach(i => text += `・${i.name}\n`);
+                text += "\n";
+            }
+
+            text += "お手すきの際に発注をお願いいたします！";
+
+            // 堅牢なクリップボードコピー（iFrame制約対応）
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('LINE用にリストをコピーしました！', 'success');
+                    // コピー成功時の視覚的フィードバック
+                    copyBtn.innerHTML = '<i data-lucide="check-circle" class="w-6 h-6"></i> コピー完了！LINEへ';
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<i data-lucide="message-circle" class="w-6 h-6"></i> 発注リストをLINEで送る';
+                        lucide.createIcons();
+                    }, 3000);
+                } else {
+                    showToast('コピーに失敗しました', 'error');
+                }
+            } catch (err) {
+                showToast('コピーに失敗しました', 'error');
+            }
+            
+            document.body.removeChild(textArea);
+        });
+
+        // --- Custom UI Components ---
+
+        // Toast
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+            const wrapper = document.getElementById('toast-icon-wrapper');
+            
+            toastMsg.textContent = message;
+            
+            if (type === 'error') {
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+                toastIcon.classList.replace('text-green-400', 'text-red-400');
+                wrapper.classList.replace('bg-green-500/20', 'bg-red-500/20');
+            } else {
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+                toastIcon.classList.replace('text-red-400', 'text-green-400');
+                wrapper.classList.replace('bg-red-500/20', 'bg-green-500/20');
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Confirm Modal
+        const modal = document.getElementById('confirm-modal');
+        const modalContent = document.getElementById('modal-content');
+        let currentConfirmCallback = null;
+
+        function showConfirmModal(title, desc, onConfirm) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-desc').textContent = desc;
+            currentConfirmCallback = onConfirm;
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-95');
+        }
+
+        function hideConfirmModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.add('scale-95');
+            currentConfirmCallback = null;
+        }
+
+        document.getElementById('modal-cancel').addEventListener('click', hideConfirmModal);
+        document.getElementById('modal-confirm').addEventListener('click', () => {
+            if (currentConfirmCallback) currentConfirmCallback();
+            hideConfirmModal();
+        });
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderItems();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
