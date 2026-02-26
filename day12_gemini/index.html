@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>シフト希望提出ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F59E0B', // Amber 500
+                        secondary: '#FEF3C7', // Amber 100
+                        accent: '#10B981', // Emerald 500
+                    },
+                    animation: {
+                        'slide-down': 'slideDown 0.2s ease-out forwards',
+                        'fade-in': 'fadeIn 0.2s ease-out forwards',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                    },
+                    keyframes: {
+                        slideDown: {
+                            '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* スマホのタップハイライトを無効化し、独自UIを際立たせる */
+        * { -webkit-tap-highlight-color: transparent; }
+        /* iOSのセーフエリア対応（下部のバーに被らないようにする） */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #D1D5DB; border-radius: 10px; }
+        /* 入力欄のデフォルトスタイルリセット */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            background-color: #F3F4F6;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden">
+    <!-- スマホサイズを想定したコンテナ -->
+    <div id="app" class="max-w-md mx-auto bg-white h-screen flex flex-col shadow-2xl relative">
+        
+        <!-- ヘッダー -->
+        <header class="bg-gradient-to-r from-amber-400 to-primary text-white p-4 shadow-md z-20 flex-shrink-0 rounded-b-xl">
+            <h1 class="text-center font-bold text-lg mb-4 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-calendar-check text-2xl"></i>
+                シフトサクッと提出
+            </h1>
+            <div class="flex justify-between items-center bg-white/20 rounded-full px-2 py-1">
+                <button id="prev-month" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <h2 id="month-display" class="font-bold text-xl tracking-wider">2023年10月</h2>
+                <button id="next-month" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 名前入力 -->
+        <div class="px-4 py-4 border-b border-gray-100 bg-white flex-shrink-0 z-10 shadow-sm relative">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-user text-gray-400"></i>
+                </div>
+                <input type="text" id="user-name" placeholder="あなたの名前を入力してください" 
+                    class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium text-gray-700">
+            </div>
+            <p id="name-error" class="text-red-500 text-xs mt-1 ml-1 hidden">名前を入力してください</p>
+        </div>
+
+        <!-- カレンダーリスト (スクロール領域) -->
+        <div class="flex-1 overflow-y-auto pb-32" id="calendar-container">
+            <ul id="calendar-list" class="divide-y divide-gray-100">
+                <!-- JSで動的に生成 -->
+            </ul>
+        </div>
+
+        <!-- フッター (固定) -->
+        <footer class="absolute bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 p-4 pb-safe flex flex-col gap-2 z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+            <p class="text-xs text-center text-gray-500 font-medium">※希望なしの日は自動で省略されます</p>
+            <button id="copy-btn" class="w-full bg-accent text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-lg">
+                <i class="fa-brands fa-line text-2xl"></i>
+                店長にLINEで送る (コピー)
+            </button>
+        </footer>
+
+        <!-- トースト通知 -->
+        <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 font-medium">
+            <i class="fa-solid fa-circle-check text-green-400"></i>
+            <span id="toast-message">コピーしました！</span>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * State Management
+         * アプリケーションの状態を一元管理します。
+         */
+        const AppState = {
+            currentDate: new Date(),
+            userName: localStorage.getItem('shiftApp_userName') || '',
+            shifts: JSON.parse(localStorage.getItem('shiftApp_data')) || {}, // 形式: { '2023-10-01': { type: 'off', start: '', end: '' } }
+            activeDateKey: null, // 現在アコーディオンが開いている日付
+
+            // 定数
+            TYPES: {
+                NONE: 'none',
+                OFF: 'off',
+                EARLY: 'early',
+                LATE: 'late',
+                CUSTOM: 'custom'
+            },
+            TYPE_LABELS: {
+                'none': '希望なし',
+                'off': '1日休み',
+                'early': '早番希望',
+                'late': '遅番希望',
+                'custom': '時間指定'
+            }
+        };
+
+        // DOM Elements
+        const DOM = {
+            monthDisplay: document.getElementById('month-display'),
+            prevMonthBtn: document.getElementById('prev-month'),
+            nextMonthBtn: document.getElementById('next-month'),
+            userNameInput: document.getElementById('user-name'),
+            nameError: document.getElementById('name-error'),
+            calendarList: document.getElementById('calendar-list'),
+            copyBtn: document.getElementById('copy-btn'),
+            toast: document.getElementById('toast'),
+            toastMessage: document.getElementById('toast-message'),
+        };
+
+        /**
+         * ユーティリティ関数群
+         */
+        const Utils = {
+            formatDateKey: (year, month, day) => {
+                return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            },
+            getDaysInMonth: (year, month) => {
+                return new Date(year, month, 0).getDate();
+            },
+            getDayOfWeekName: (year, month, day) => {
+                const days = ['日', '月', '火', '水', '木', '金', '土'];
+                return days[new Date(year, month - 1, day).getDay()];
+            },
+            getDayColorClass: (year, month, day) => {
+                const dateObj = new Date(year, month - 1, day);
+                if (dateObj.getDay() === 0) return 'text-red-500 font-bold'; // 日曜
+                if (dateObj.getDay() === 6) return 'text-blue-500 font-bold'; // 土曜
+                return 'text-gray-500';
+            },
+            saveData: () => {
+                localStorage.setItem('shiftApp_userName', AppState.userName);
+                localStorage.setItem('shiftApp_data', JSON.stringify(AppState.shifts));
+            },
+            showToast: (message, isError = false) => {
+                DOM.toastMessage.textContent = message;
+                DOM.toast.innerHTML = isError 
+                    ? `<i class="fa-solid fa-circle-exclamation text-red-400"></i><span>${message}</span>`
+                    : `<i class="fa-solid fa-circle-check text-green-400"></i><span>${message}</span>`;
+                DOM.toast.classList.remove('opacity-0', '-translate-y-4');
+                DOM.toast.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    DOM.toast.classList.remove('opacity-100', 'translate-y-0');
+                    DOM.toast.classList.add('opacity-0', '-translate-y-4');
+                }, 3000);
+            }
+        };
+
+        /**
+         * レンダリングエンジン
+         */
+        const Renderer = {
+            init: () => {
+                DOM.userNameInput.value = AppState.userName;
+                Renderer.renderHeader();
+                Renderer.renderCalendar();
+                setupEventListeners();
+            },
+
+            renderHeader: () => {
+                const year = AppState.currentDate.getFullYear();
+                const month = AppState.currentDate.getMonth() + 1;
+                DOM.monthDisplay.textContent = `${year}年${month}月`;
+            },
+
+            renderCalendar: () => {
+                const year = AppState.currentDate.getFullYear();
+                const month = AppState.currentDate.getMonth() + 1;
+                const daysInMonth = Utils.getDaysInMonth(year, month);
+                
+                let html = '';
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = Utils.formatDateKey(year, month, day);
+                    const dayName = Utils.getDayOfWeekName(year, month, day);
+                    const dayColor = Utils.getDayColorClass(year, month, day);
+                    
+                    // 現在のシフト状態を取得（なければ初期値）
+                    if (!AppState.shifts[dateKey]) {
+                        AppState.shifts[dateKey] = { type: AppState.TYPES.NONE, start: '', end: '' };
+                    }
+                    const shift = AppState.shifts[dateKey];
+                    const isActive = AppState.activeDateKey === dateKey;
+
+                    // バッジのデザイン設定
+                    let badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
+                    let badgeText = AppState.TYPE_LABELS[shift.type];
+                    if (shift.type === AppState.TYPES.OFF) badgeClass = 'bg-red-100 text-red-700 border-red-200 font-bold';
+                    if (shift.type === AppState.TYPES.EARLY) badgeClass = 'bg-orange-100 text-orange-700 border-orange-200 font-bold';
+                    if (shift.type === AppState.TYPES.LATE) badgeClass = 'bg-indigo-100 text-indigo-700 border-indigo-200 font-bold';
+                    if (shift.type === AppState.TYPES.CUSTOM) {
+                        badgeClass = 'bg-primary text-white border-amber-600 font-bold';
+                        if (shift.start && shift.end) badgeText = `${shift.start}〜${shift.end}`;
+                        else badgeText = '時間未入力';
+                    }
+
+                    html += `
+                        <li class="bg-white transition-colors duration-200 ${isActive ? 'bg-secondary/30' : ''}">
+                            <!-- 行のヘッダー部分 (タップで開閉) -->
+                            <div class="px-4 py-4 flex items-center justify-between cursor-pointer active:bg-gray-50" 
+                                 onclick="Actions.toggleAccordion('${dateKey}')">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-xl font-bold text-gray-800 w-8 text-right">${day}</span>
+                                    <span class="text-sm ${dayColor}">${dayName}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-sm px-3 py-1 rounded-full border ${badgeClass} transition-all">
+                                        ${badgeText}
+                                    </span>
+                                    <i class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300 ${isActive ? 'rotate-180' : ''}"></i>
+                                </div>
+                            </div>
+
+                            <!-- コントロールパネル (アコーディオン中身) -->
+                            <div class="overflow-hidden transition-all duration-300 ${isActive ? 'max-h-64 border-t border-gray-100' : 'max-h-0'}">
+                                <div class="p-4 bg-gray-50/50">
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                                        ${Renderer.generateTypeButton(dateKey, AppState.TYPES.NONE, 'fa-minus')}
+                                        ${Renderer.generateTypeButton(dateKey, AppState.TYPES.OFF, 'fa-umbrella-beach')}
+                                        ${Renderer.generateTypeButton(dateKey, AppState.TYPES.EARLY, 'fa-sun')}
+                                        ${Renderer.generateTypeButton(dateKey, AppState.TYPES.LATE, 'fa-moon')}
+                                    </div>
+                                    <div class="grid grid-cols-1 gap-2">
+                                        ${Renderer.generateTypeButton(dateKey, AppState.TYPES.CUSTOM, 'fa-clock')}
+                                    </div>
+                                    
+                                    <!-- 時間入力フォーム (時間指定時のみ表示) -->
+                                    <div class="${shift.type === AppState.TYPES.CUSTOM ? 'flex' : 'hidden'} animate-fade-in items-center justify-center gap-2 mt-3 p-3 bg-white rounded-xl border border-amber-200">
+                                        <input type="time" value="${shift.start}" 
+                                            class="border border-gray-300 rounded-lg p-2 text-lg focus:ring-2 focus:ring-primary focus:outline-none w-full"
+                                            onchange="Actions.updateTime('${dateKey}', 'start', this.value)">
+                                        <span class="text-gray-500 font-bold">〜</span>
+                                        <input type="time" value="${shift.end}" 
+                                            class="border border-gray-300 rounded-lg p-2 text-lg focus:ring-2 focus:ring-primary focus:outline-none w-full"
+                                            onchange="Actions.updateTime('${dateKey}', 'end', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                }
+                DOM.calendarList.innerHTML = html;
+            },
+
+            generateTypeButton: (dateKey, type, iconClass) => {
+                const shift = AppState.shifts[dateKey];
+                const isSelected = shift.type === type;
+                
+                let baseClass = "flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all duration-200 active:scale-95 ";
+                
+                // 選択状態によるスタイルの変化
+                if (isSelected) {
+                    if (type === AppState.TYPES.OFF) baseClass += "bg-red-50 border-red-400 text-red-600 shadow-sm";
+                    else if (type === AppState.TYPES.EARLY) baseClass += "bg-orange-50 border-orange-400 text-orange-600 shadow-sm";
+                    else if (type === AppState.TYPES.LATE) baseClass += "bg-indigo-50 border-indigo-400 text-indigo-600 shadow-sm";
+                    else if (type === AppState.TYPES.CUSTOM) baseClass += "bg-amber-50 border-primary text-primary shadow-sm";
+                    else baseClass += "bg-gray-200 border-gray-300 text-gray-700 shadow-sm";
+                } else {
+                    baseClass += "bg-white border-gray-100 text-gray-400 hover:bg-gray-50";
+                }
+
+                return `
+                    <button onclick="Actions.updateType('${dateKey}', '${type}')" class="${baseClass}">
+                        <i class="fa-solid ${iconClass} text-lg mb-1"></i>
+                        <span class="text-xs font-bold">${AppState.TYPE_LABELS[type]}</span>
+                    </button>
+                `;
+            }
+        };
+
+        /**
+         * ユーザーアクション処理
+         */
+        const Actions = {
+            changeMonth: (delta) => {
+                AppState.currentDate.setMonth(AppState.currentDate.getMonth() + delta);
+                AppState.activeDateKey = null; // 月を変えたらアコーディオンは閉じる
+                Renderer.renderHeader();
+                Renderer.renderCalendar();
+            },
+
+            toggleAccordion: (dateKey) => {
+                // 同じ場所をタップしたら閉じる、違う場所なら開く
+                AppState.activeDateKey = AppState.activeDateKey === dateKey ? null : dateKey;
+                Renderer.renderCalendar();
+                
+                // 開いた要素が見える位置に少しスクロール
+                if (AppState.activeDateKey) {
+                    setTimeout(() => {
+                        const activeEl = document.querySelector(`[onclick="Actions.toggleAccordion('${dateKey}')"]`);
+                        if(activeEl) {
+                            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 50);
+                }
+            },
+
+            updateType: (dateKey, newType) => {
+                AppState.shifts[dateKey].type = newType;
+                
+                // 時間指定以外を選んだら、アコーディオンを自動で閉じてサクサク入力できるようにする
+                if (newType !== AppState.TYPES.CUSTOM) {
+                     AppState.activeDateKey = null;
+                }
+                
+                Utils.saveData();
+                Renderer.renderCalendar();
+            },
+
+            updateTime: (dateKey, timeType, value) => {
+                AppState.shifts[dateKey][timeType] = value;
+                Utils.saveData();
+                Renderer.renderCalendar();
+            },
+
+            updateName: (e) => {
+                AppState.userName = e.target.value.trim();
+                Utils.saveData();
+                DOM.userNameInput.classList.remove('border-red-500', 'ring-red-200');
+                DOM.nameError.classList.add('hidden');
+            },
+
+            generateCopyText: () => {
+                const year = AppState.currentDate.getFullYear();
+                const month = AppState.currentDate.getMonth() + 1;
+                
+                // バリデーション：名前
+                if (!AppState.userName) {
+                    DOM.userNameInput.classList.add('border-red-500', 'ring-2', 'ring-red-200', 'animate-shake');
+                    DOM.nameError.classList.remove('hidden');
+                    DOM.userNameInput.focus();
+                    Utils.showToast('名前を入力してください', true);
+                    return null;
+                }
+
+                let text = `【${month}月シフト希望】\n`;
+                text += `名前：${AppState.userName}\n`;
+                text += `----------------------\n`;
+
+                const daysInMonth = Utils.getDaysInMonth(year, month);
+                let hasRequest = false;
+                let errorInCustom = false;
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = Utils.formatDateKey(year, month, day);
+                    const shift = AppState.shifts[dateKey];
+
+                    if (!shift || shift.type === AppState.TYPES.NONE) continue;
+
+                    let requestText = '';
+                    if (shift.type === AppState.TYPES.OFF) requestText = '休み';
+                    else if (shift.type === AppState.TYPES.EARLY) requestText = '早番希望';
+                    else if (shift.type === AppState.TYPES.LATE) requestText = '遅番希望';
+                    else if (shift.type === AppState.TYPES.CUSTOM) {
+                        if (!shift.start || !shift.end) {
+                            errorInCustom = true;
+                            // エラー箇所を開く
+                            AppState.activeDateKey = dateKey;
+                            Renderer.renderCalendar();
+                            Utils.showToast(`${day}日の時間を入力してください`, true);
+                            return null; // 処理中断
+                        }
+                        requestText = `${shift.start}〜${shift.end}`;
+                    }
+
+                    text += `${day}日：${requestText}\n`;
+                    hasRequest = true;
+                }
+
+                if (!hasRequest) {
+                    Utils.showToast('希望シフトが1日も入力されていません', true);
+                    return null;
+                }
+
+                return text;
+            },
+
+            executeCopy: async () => {
+                const text = Actions.generateCopyText();
+                if (!text) return; // バリデーションエラー
+
+                try {
+                    // モダンなClipboard API
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                    } else {
+                        // フォールバック (古いブラウザやiframe環境用)
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                    }
+                    Utils.showToast('LINE用にコピーしました！');
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    Utils.showToast('コピーに失敗しました。手動でコピーしてください。', true);
+                }
+            }
+        };
+
+        /**
+         * イベントリスナーのセットアップ
+         */
+        function setupEventListeners() {
+            DOM.prevMonthBtn.addEventListener('click', () => Actions.changeMonth(-1));
+            DOM.nextMonthBtn.addEventListener('click', () => Actions.changeMonth(1));
+            DOM.userNameInput.addEventListener('input', Actions.updateName);
+            DOM.copyBtn.addEventListener('click', () => {
+                // ボタンのプッシュアニメーション付与
+                DOM.copyBtn.classList.add('scale-95', 'opacity-90');
+                setTimeout(() => DOM.copyBtn.classList.remove('scale-95', 'opacity-90'), 150);
+                Actions.executeCopy();
+            });
+        }
+
+        // アプリ起動
+        document.addEventListener('DOMContentLoaded', Renderer.init);
+
+    </script>
+</body>
+</html>
