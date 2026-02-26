@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>シフト希望日サクッと提出ツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#ffffff" />
+  <style>
+    /* 小さな“気持ちよさ” */
+    .tap { -webkit-tap-highlight-color: transparent; }
+    .safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    .safe-top { padding-top: max(0px, env(safe-area-inset-top)); }
+    .shadow-soft { box-shadow: 0 10px 30px rgba(2,6,23,.10); }
+    .glass { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    @keyframes pop { from { transform: scale(.98); opacity: .6 } to { transform: scale(1); opacity: 1 } }
+    .pop { animation: pop .12s ease-out; }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-pink-50 via-yellow-50 to-sky-50 min-h-screen text-slate-800 tap">
+  <!-- Header -->
+  <header class="sticky top-0 z-40 safe-top">
+    <div class="glass bg-white/70 border-b border-white/60">
+      <div class="max-w-xl mx-auto px-4 pt-3 pb-2">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-pink-400 to-orange-300 grid place-items-center shadow-soft">
+              <span class="text-white font-black">⏱</span>
+            </div>
+            <div>
+              <h1 class="text-lg font-extrabold leading-tight">シフト希望 サクッと提出</h1>
+              <p class="text-xs text-slate-600">タップで希望を入力 → 最後にコピーしてLINEへ</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="prevMonthBtn" class="h-10 w-10 rounded-2xl bg-white border border-slate-200 shadow-sm active:scale-95 transition grid place-items-center" aria-label="前の月">←</button>
+
+            <button id="monthBtn" class="h-10 px-3 rounded-2xl bg-white border border-slate-200 shadow-sm active:scale-95 transition flex items-center gap-2" aria-label="月を選択">
+              <span id="monthLabel" class="font-bold"></span>
+              <span class="text-slate-500 text-sm">▼</span>
+            </button>
+
+            <button id="nextMonthBtn" class="h-10 w-10 rounded-2xl bg-white border border-slate-200 shadow-sm active:scale-95 transition grid place-items-center" aria-label="次の月">→</button>
+          </div>
+        </div>
+
+        <!-- 名前入力 -->
+        <div class="mt-3">
+          <label class="block text-xs font-bold text-slate-700 mb-1" for="nameInput">名前（店長に見せる用）</label>
+          <div class="flex items-center gap-2">
+            <input id="nameInput" type="text" inputmode="text" maxlength="30"
+                   class="w-full h-11 rounded-2xl px-4 bg-white/90 border border-slate-200 shadow-sm focus:outline-none focus:ring-4 focus:ring-pink-200"
+                   placeholder="例：山田 花子" />
+            <button id="clearAllBtn" class="h-11 px-3 rounded-2xl bg-white border border-slate-200 shadow-sm active:scale-95 transition whitespace-nowrap">
+              リセット
+            </button>
+          </div>
+          <p id="nameHint" class="mt-1 text-xs text-slate-600">※ 空だとコピーできないよ</p>
+        </div>
+
+        <!-- 使い方チップ -->
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/80 border border-white text-xs shadow-sm">
+            👆 日付をタップ
+          </span>
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/80 border border-white text-xs shadow-sm">
+            ✨ 希望は上書きOK
+          </span>
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/80 border border-white text-xs shadow-sm">
+            🧾 希望がある日だけ出力
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-xl mx-auto px-4 pt-4 pb-28 safe-bottom">
+    <div class="bg-white/80 border border-white rounded-3xl p-4 shadow-soft">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <h2 class="text-base font-extrabold">希望入力</h2>
+          <p id="monthMeta" class="text-xs text-slate-600 mt-1"></p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-500">入力済み</div>
+          <div class="text-lg font-black"><span id="countFilled">0</span><span class="text-sm font-bold text-slate-600">日</span></div>
+        </div>
+      </div>
+
+      <!-- 曜日見出し -->
+      <div class="mt-4 grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500">
+        <div class="text-pink-500">日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="text-sky-600">土</div>
+      </div>
+
+      <!-- カレンダー -->
+      <div id="calendar" class="mt-2 grid grid-cols-7 gap-2"></div>
+
+      <!-- 凡例 -->
+      <div class="mt-4 flex flex-wrap gap-2">
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">なし</span>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700">休み</span>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">早番</span>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">遅番</span>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">時間</span>
+      </div>
+    </div>
+
+    <!-- 出力プレビュー -->
+    <div class="mt-4 bg-white/70 border border-white rounded-3xl p-4 shadow-soft">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-sm font-extrabold">送信プレビュー</h3>
+        <button id="copyPreviewBtn" class="text-xs font-bold px-3 py-2 rounded-2xl bg-white border border-slate-200 shadow-sm active:scale-95 transition">
+          ここだけコピー
+        </button>
+      </div>
+      <p class="text-xs text-slate-600 mt-1">※ 店長が見やすい形式で整形されます</p>
+
+      <div class="mt-3 relative">
+        <pre id="preview" class="whitespace-pre-wrap text-sm leading-relaxed bg-white/80 border border-slate-200 rounded-2xl p-3 min-h-[120px]"></pre>
+        <div id="emptyPreview" class="absolute inset-0 grid place-items-center pointer-events-none text-slate-400 text-sm px-4 text-center">
+          まだ希望がないよ。<br>日付をタップして入力してね👆
+        </div>
+      </div>
+
+      <div id="toastArea" class="mt-3"></div>
+    </div>
+  </main>
+
+  <!-- Bottom CTA -->
+  <div class="fixed bottom-0 left-0 right-0 z-50 safe-bottom">
+    <div class="max-w-xl mx-auto px-4 pb-4">
+      <div class="bg-white/75 glass border border-white rounded-3xl shadow-soft p-3 flex items-center gap-3">
+        <button id="copyBtn"
+          class="w-full h-12 rounded-2xl font-extrabold text-white shadow-soft active:scale-[0.99] transition
+                 bg-gradient-to-r from-pink-500 via-orange-400 to-amber-400 disabled:opacity-50 disabled:grayscale"
+          disabled>
+          店長にLINEで送る（コピーする）
+        </button>
+      </div>
+      <p id="bottomHint" class="text-center text-xs text-slate-600 mt-2">
+        コピー後、LINEを開いて貼り付けるだけ！
+      </p>
+    </div>
+  </div>
+
+  <!-- Month Picker Modal -->
+  <div id="monthModal" class="hidden fixed inset-0 z-[60]">
+    <div class="absolute inset-0 bg-slate-900/30" data-close="1"></div>
+    <div class="absolute inset-x-0 bottom-0 max-w-xl mx-auto p-4">
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 pop">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-extrabold">月を選択</div>
+            <div class="text-xs text-slate-600">来月などに切り替えられます</div>
+          </div>
+          <button class="h-10 w-10 rounded-2xl bg-slate-100 active:scale-95 transition grid place-items-center" data-close="1" aria-label="閉じる">✕</button>
+        </div>
+        <div class="p-4">
+          <div class="grid grid-cols-3 gap-2" id="monthGrid"></div>
+          <div class="mt-4 flex gap-2">
+            <button id="jumpThisMonth" class="flex-1 h-11 rounded-2xl bg-slate-100 font-bold active:scale-95 transition">今月</button>
+            <button id="jumpNextMonth" class="flex-1 h-11 rounded-2xl bg-gradient-to-r from-sky-400 to-indigo-400 text-white font-extrabold shadow-sm active:scale-95 transition">来月</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shift Option Modal -->
+  <div id="optionModal" class="hidden fixed inset-0 z-[70]">
+    <div class="absolute inset-0 bg-slate-900/30" data-close="1"></div>
+    <div class="absolute inset-x-0 bottom-0 max-w-xl mx-auto p-4">
+      <div class="bg-white rounded-3xl shadow-soft border border-slate-100 pop">
+        <div class="p-4 border-b border-slate-100 flex items-start justify-between gap-3">
+          <div>
+            <div class="text-sm font-extrabold">
+              <span id="optDateTitle"></span> の希望
+            </div>
+            <div class="text-xs text-slate-600">タップで選択。時間指定は入力してOK</div>
+          </div>
+          <button class="h-10 w-10 rounded-2xl bg-slate-100 active:scale-95 transition grid place-items-center" data-close="1" aria-label="閉じる">✕</button>
+        </div>
+
+        <div class="p-4 space-y-2">
+          <button data-opt="none" class="w-full h-12 rounded-2xl border border-slate-200 bg-white shadow-sm font-bold active:scale-95 transition flex items-center justify-between px-4">
+            <span>希望なし（消す）</span><span class="text-slate-400">—</span>
+          </button>
+          <button data-opt="off" class="w-full h-12 rounded-2xl border border-rose-200 bg-rose-50 font-extrabold text-rose-800 active:scale-95 transition flex items-center justify-between px-4">
+            <span>1日休み</span><span>🌙</span>
+          </button>
+          <button data-opt="early" class="w-full h-12 rounded-2xl border border-emerald-200 bg-emerald-50 font-extrabold text-emerald-800 active:scale-95 transition flex items-center justify-between px-4">
+            <span>早番希望</span><span>🌤</span>
+          </button>
+          <button data-opt="late" class="w-full h-12 rounded-2xl border border-indigo-200 bg-indigo-50 font-extrabold text-indigo-800 active:scale-95 transition flex items-center justify-between px-4">
+            <span>遅番希望</span><span>🌙</span>
+          </button>
+
+          <div class="mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+            <div class="flex items-center justify-between">
+              <div class="font-extrabold text-amber-900">時間指定（自由入力）</div>
+              <button id="applyTimeBtn" class="h-10 px-3 rounded-2xl bg-white border border-amber-200 shadow-sm font-extrabold active:scale-95 transition">
+                これでOK
+              </button>
+            </div>
+            <input id="timeInput" type="text" inputmode="text" maxlength="30"
+                   class="mt-2 w-full h-11 rounded-2xl px-4 bg-white/90 border border-amber-200 shadow-sm focus:outline-none focus:ring-4 focus:ring-amber-200"
+                   placeholder="例：10時〜15時 / 12:00-18:00 / 夕方から" />
+            <p class="text-xs text-amber-900/80 mt-1">※ 入力すると「12日：10時〜15時」みたいに出力されます</p>
+          </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-100">
+          <button id="quickCycleBtn" class="w-full h-11 rounded-2xl bg-slate-100 font-bold active:scale-95 transition">
+            1タップでローテーション（なし→休み→早→遅→時間）
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // ====== Utilities ======
+      const pad2 = (n) => String(n).padStart(2, "0");
+      const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+      const escapeLineBreaks = (s) => String(s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+      const toastArea = document.getElementById("toastArea");
+      const toast = (msg, kind = "ok") => {
+        const el = document.createElement("div");
+        el.className =
+          "mt-2 rounded-2xl px-3 py-2 text-sm font-bold border pop " +
+          (kind === "err"
+            ? "bg-rose-50 border-rose-200 text-rose-800"
+            : "bg-emerald-50 border-emerald-200 text-emerald-800");
+        el.textContent = msg;
+        toastArea.appendChild(el);
+        setTimeout(() => {
+          el.style.transition = "opacity .25s ease, transform .25s ease";
+          el.style.opacity = "0";
+          el.style.transform = "translateY(4px)";
+          setTimeout(() => el.remove(), 280);
+        }, 2200);
+      };
+
+      // ====== State ======
+      // selection: Map key "YYYY-MM-DD" -> { type: "off"|"early"|"late"|"time", value?: string }
+      // "none" means not stored.
+      const state = {
+        year: 0,
+        month: 0, // 1-12
+        selections: {}, // key -> {type, value}
+        name: ""
+      };
+
+      const LS_KEY = "shift-quick-submit:v1";
+
+      const load = () => {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          if (!raw) return;
+          const obj = JSON.parse(raw);
+          if (!obj || typeof obj !== "object") return;
+
+          // 防御的にロード（壊れても起動できる）
+          const y = Number(obj.year);
+          const m = Number(obj.month);
+          state.year = Number.isFinite(y) ? y : state.year;
+          state.month = Number.isFinite(m) ? clamp(m, 1, 12) : state.month;
+
+          state.selections = (obj.selections && typeof obj.selections === "object") ? obj.selections : {};
+          state.name = typeof obj.name === "string" ? obj.name : "";
+        } catch (e) {
+          // 破損してても無視して起動
+          console.warn("Failed to load:", e);
+        }
+      };
+
+      const save = () => {
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify({
+            year: state.year,
+            month: state.month,
+            selections: state.selections,
+            name: state.name
+          }));
+        } catch (e) {
+          console.warn("Failed to save:", e);
+        }
+      };
+
+      const today = new Date();
+      const initial = new Date(today.getFullYear(), today.getMonth() + 1, 1); // デフォルトは「来月」
+      state.year = initial.getFullYear();
+      state.month = initial.getMonth() + 1;
+
+      load();
+
+      // ====== DOM ======
+      const monthLabel = document.getElementById("monthLabel");
+      const monthMeta = document.getElementById("monthMeta");
+      const calendar = document.getElementById("calendar");
+      const countFilled = document.getElementById("countFilled");
+      const preview = document.getElementById("preview");
+      const emptyPreview = document.getElementById("emptyPreview");
+
+      const nameInput = document.getElementById("nameInput");
+      const nameHint = document.getElementById("nameHint");
+      const copyBtn = document.getElementById("copyBtn");
+      const copyPreviewBtn = document.getElementById("copyPreviewBtn");
+
+      const prevMonthBtn = document.getElementById("prevMonthBtn");
+      const nextMonthBtn = document.getElementById("nextMonthBtn");
+      const monthBtn = document.getElementById("monthBtn");
+      const monthModal = document.getElementById("monthModal");
+      const monthGrid = document.getElementById("monthGrid");
+      const jumpThisMonth = document.getElementById("jumpThisMonth");
+      const jumpNextMonth = document.getElementById("jumpNextMonth");
+      const clearAllBtn = document.getElementById("clearAllBtn");
+
+      const optionModal = document.getElementById("optionModal");
+      const optDateTitle = document.getElementById("optDateTitle");
+      const timeInput = document.getElementById("timeInput");
+      const applyTimeBtn = document.getElementById("applyTimeBtn");
+      const quickCycleBtn = document.getElementById("quickCycleBtn");
+
+      // Option modal current key
+      let currentKey = null;
+      let currentDay = null;
+
+      // ====== Calendar helpers ======
+      const daysInMonth = (y, m1to12) => new Date(y, m1to12, 0).getDate();
+      const firstWeekday = (y, m1to12) => new Date(y, m1to12 - 1, 1).getDay(); // 0 Sun
+
+      const keyOf = (y, m1to12, d) => `${y}-${pad2(m1to12)}-${pad2(d)}`;
+
+      const labelForSelection = (sel) => {
+        if (!sel || !sel.type) return { short: "なし", long: null, pill: "none" };
+        if (sel.type === "off") return { short: "休み", long: "休み", pill: "off" };
+        if (sel.type === "early") return { short: "早", long: "早番希望", pill: "early" };
+        if (sel.type === "late") return { short: "遅", long: "遅番希望", pill: "late" };
+        if (sel.type === "time") {
+          const v = (sel.value || "").trim();
+          return { short: "時間", long: v ? v : "時間指定", pill: "time" };
+        }
+        return { short: "なし", long: null, pill: "none" };
+      };
+
+      const pillClasses = (pill) => {
+        switch (pill) {
+          case "off": return "bg-rose-100 text-rose-800 border-rose-200";
+          case "early": return "bg-emerald-100 text-emerald-800 border-emerald-200";
+          case "late": return "bg-indigo-100 text-indigo-800 border-indigo-200";
+          case "time": return "bg-amber-100 text-amber-900 border-amber-200";
+          default: return "bg-slate-100 text-slate-600 border-slate-200";
+        }
+      };
+
+      const isCurrentMonthToday = () => {
+        return state.year === today.getFullYear() && state.month === (today.getMonth() + 1);
+      };
+
+      const formatMonthHeader = () => `${state.month}月分`;
+      const formatMeta = () => `${state.year}年 ${state.month}月（タップして希望を選択）`;
+
+      // ====== Render Month Picker ======
+      const openMonthModal = () => {
+        monthModal.classList.remove("hidden");
+        buildMonthGrid();
+      };
+      const closeMonthModal = () => monthModal.classList.add("hidden");
+
+      const buildMonthGrid = () => {
+        monthGrid.innerHTML = "";
+        // 現在月を中心に前後5ヶ月（合計12ヶ月）表示
+        const base = new Date(state.year, state.month - 1, 1);
+        const start = new Date(base.getFullYear(), base.getMonth() - 5, 1);
+
+        for (let i = 0; i < 12; i++) {
+          const dt = new Date(start.getFullYear(), start.getMonth() + i, 1);
+          const y = dt.getFullYear();
+          const m = dt.getMonth() + 1;
+          const active = (y === state.year && m === state.month);
+
+          const btn = document.createElement("button");
+          btn.className =
+            "h-11 rounded-2xl border shadow-sm active:scale-95 transition font-extrabold " +
+            (active
+              ? "bg-gradient-to-r from-pink-500 to-orange-400 text-white border-white"
+              : "bg-white border-slate-200");
+          btn.textContent = `${y}/${m}`;
+          btn.addEventListener("click", () => {
+            state.year = y;
+            state.month = m;
+            save();
+            renderAll();
+            closeMonthModal();
+          });
+          monthGrid.appendChild(btn);
+        }
+      };
+
+      // ====== Option Modal ======
+      const openOptionModal = (y, m, d) => {
+        currentKey = keyOf(y, m, d);
+        currentDay = d;
+        const w = new Date(y, m - 1, d).getDay();
+        const wLabel = ["日","月","火","水","木","金","土"][w];
+        optDateTitle.textContent = `${m}/${d}（${wLabel}）`;
+
+        const sel = state.selections[currentKey];
+        timeInput.value = sel?.type === "time" ? (sel.value || "") : "";
+        optionModal.classList.remove("hidden");
+
+        // フォーカスは “時間入力” ではなく、誤タップ防止で基本しない（必要時にユーザーがタップする）
+      };
+
+      const closeOptionModal = () => optionModal.classList.add("hidden");
+
+      const setSelection = (key, selOrNull) => {
+        if (!key) return;
+        if (!selOrNull) {
+          delete state.selections[key];
+        } else {
+          state.selections[key] = selOrNull;
+        }
+        save();
+        renderAll();
+      };
+
+      const cycleSelection = (key) => {
+        const cur = state.selections[key]?.type || "none";
+        // なし → 休み → 早 → 遅 → なし（時間はモーダルで）
+        if (cur === "none") return setSelection(key, { type: "off" });
+        if (cur === "off") return setSelection(key, { type: "early" });
+        if (cur === "early") return setSelection(key, { type: "late" });
+        if (cur === "late") return setSelection(key, null);
+        if (cur === "time") return setSelection(key, null);
+      };
+
+      // ====== Render Calendar ======
+      const renderCalendar = () => {
+        calendar.innerHTML = "";
+        const y = state.year;
+        const m = state.month;
+        const dim = daysInMonth(y, m);
+        const first = firstWeekday(y, m);
+
+        // 空マス（先頭）
+        for (let i = 0; i < first; i++) {
+          const blank = document.createElement("div");
+          blank.className = "h-14";
+          calendar.appendChild(blank);
+        }
+
+        for (let d = 1; d <= dim; d++) {
+          const key = keyOf(y, m, d);
+          const sel = state.selections[key];
+          const { short, pill } = labelForSelection(sel);
+
+          const isToday = isCurrentMonthToday() && d === today.getDate();
+
+          const btn = document.createElement("button");
+          btn.className =
+            "h-14 rounded-2xl border shadow-sm active:scale-95 transition p-2 text-left flex flex-col justify-between " +
+            (isToday ? "border-pink-300 bg-pink-50/70" : "border-slate-200 bg-white/90");
+          btn.setAttribute("aria-label", `${m}月${d}日`);
+          btn.addEventListener("click", () => openOptionModal(y, m, d));
+          btn.addEventListener("contextmenu", (e) => { e.preventDefault(); cycleSelection(key); }); // 長押し代替（右クリック）
+          btn.addEventListener("dblclick", () => cycleSelection(key)); // デスクトップ向け
+
+          const top = document.createElement("div");
+          top.className = "flex items-center justify-between";
+          const day = document.createElement("div");
+          day.className = "text-sm font-black";
+          day.textContent = d;
+
+          const dot = document.createElement("div");
+          dot.className =
+            "text-[10px] px-2 py-0.5 rounded-full border font-extrabold " + pillClasses(pill);
+          dot.textContent = short;
+
+          top.appendChild(day);
+          top.appendChild(dot);
+
+          const hint = document.createElement("div");
+          hint.className = "text-[11px] text-slate-500";
+          hint.textContent = isToday ? "今日" : " ";
+
+          btn.appendChild(top);
+          btn.appendChild(hint);
+
+          calendar.appendChild(btn);
+        }
+      };
+
+      // ====== Build Output Text ======
+      const buildOutput = () => {
+        const name = escapeLineBreaks(state.name).trim();
+        if (!name) return { text: "", ok: false, reason: "name" };
+
+        const y = state.year;
+        const m = state.month;
+        const dim = daysInMonth(y, m);
+
+        const lines = [];
+        for (let d = 1; d <= dim; d++) {
+          const key = keyOf(y, m, d);
+          const sel = state.selections[key];
+          if (!sel || !sel.type) continue;
+
+          if (sel.type === "off") lines.push(`${d}日：休み`);
+          else if (sel.type === "early") lines.push(`${d}日：早番希望`);
+          else if (sel.type === "late") lines.push(`${d}日：遅番希望`);
+          else if (sel.type === "time") {
+            const v = escapeLineBreaks(sel.value || "").trim();
+            if (v) lines.push(`${d}日：${v}`);
+            else lines.push(`${d}日：時間指定`);
+          }
+        }
+
+        const header = `【${m}月シフト希望】`;
+        const body = [`名前：${name}`, ...lines];
+        return { text: [header, ...body].join("\n"), ok: true, empty: lines.length === 0 };
+      };
+
+      const updatePreviewAndCTA = () => {
+        const out = buildOutput();
+
+        preview.textContent = out.text || "";
+        emptyPreview.style.display = (out.ok && !out.empty) ? "none" : (out.ok ? "grid" : "none");
+
+        const filledCount = Object.values(state.selections).filter(v => v && v.type).length;
+        countFilled.textContent = String(filledCount);
+
+        const nameOk = !!state.name.trim();
+        if (!nameOk) {
+          nameHint.textContent = "※ 名前を入れるとコピーできるよ";
+          nameHint.className = "mt-1 text-xs font-bold text-rose-700";
+        } else {
+          nameHint.textContent = "※ そのままコピーしてLINEに貼り付けてね";
+          nameHint.className = "mt-1 text-xs text-slate-600";
+        }
+
+        // ボタン活性条件：名前が入っている &（希望がゼロでも送れるが、注意を出す）
+        copyBtn.disabled = !nameOk;
+      };
+
+      const renderHeader = () => {
+        monthLabel.textContent = formatMonthHeader();
+        monthMeta.textContent = formatMeta();
+      };
+
+      const renderAll = () => {
+        renderHeader();
+        renderCalendar();
+        updatePreviewAndCTA();
+      };
+
+      // ====== Copy ======
+      const copyText = async (text) => {
+        // Clipboard API
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (_) {
+          // Fallback
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand("copy");
+            ta.remove();
+            return ok;
+          } catch (e) {
+            return false;
+          }
+        }
+      };
+
+      const doCopy = async () => {
+        const out = buildOutput();
+        if (!out.ok) {
+          toast("名前を入力してね（例：山田 花子）", "err");
+          nameInput.focus();
+          return;
+        }
+        if (out.empty) {
+          // 希望ゼロでも送れる（“希望なし”として連絡したいケース）
+          // ただし気づけるよう軽く通知
+          toast("希望がまだないよ（空でもコピーはOK）", "err");
+        }
+        const ok = await copyText(out.text);
+        if (ok) toast("コピーしたよ！LINEに貼り付けて送ってね✨", "ok");
+        else toast("コピーに失敗…端末の設定を確認してね", "err");
+      };
+
+      const doCopyPreview = async () => {
+        const out = buildOutput();
+        if (!out.ok) {
+          toast("名前を入力してね", "err");
+          nameInput.focus();
+          return;
+        }
+        const ok = await copyText(out.text);
+        if (ok) toast("プレビュー内容をコピーしたよ🧾", "ok");
+        else toast("コピーに失敗…", "err");
+      };
+
+      // ====== Events ======
+      nameInput.value = state.name || "";
+      nameInput.addEventListener("input", () => {
+        state.name = nameInput.value;
+        save();
+        updatePreviewAndCTA();
+      });
+
+      prevMonthBtn.addEventListener("click", () => {
+        const dt = new Date(state.year, state.month - 2, 1);
+        state.year = dt.getFullYear();
+        state.month = dt.getMonth() + 1;
+        save();
+        renderAll();
+      });
+
+      nextMonthBtn.addEventListener("click", () => {
+        const dt = new Date(state.year, state.month, 1);
+        state.year = dt.getFullYear();
+        state.month = dt.getMonth() + 1;
+        save();
+        renderAll();
+      });
+
+      monthBtn.addEventListener("click", openMonthModal);
+
+      monthModal.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && t.dataset && t.dataset.close) closeMonthModal();
+      });
+
+      jumpThisMonth.addEventListener("click", () => {
+        const dt = new Date(today.getFullYear(), today.getMonth(), 1);
+        state.year = dt.getFullYear();
+        state.month = dt.getMonth() + 1;
+        save();
+        renderAll();
+        closeMonthModal();
+      });
+
+      jumpNextMonth.addEventListener("click", () => {
+        const dt = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        state.year = dt.getFullYear();
+        state.month = dt.getMonth() + 1;
+        save();
+        renderAll();
+        closeMonthModal();
+      });
+
+      // Option modal interactions
+      optionModal.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && t.dataset && t.dataset.close) closeOptionModal();
+        const btn = t && t.closest && t.closest("button[data-opt]");
+        if (btn) {
+          const opt = btn.dataset.opt;
+          if (!currentKey) return;
+
+          if (opt === "none") setSelection(currentKey, null);
+          if (opt === "off") setSelection(currentKey, { type: "off" });
+          if (opt === "early") setSelection(currentKey, { type: "early" });
+          if (opt === "late") setSelection(currentKey, { type: "late" });
+
+          closeOptionModal();
+        }
+      });
+
+      applyTimeBtn.addEventListener("click", () => {
+        if (!currentKey) return;
+        const v = escapeLineBreaks(timeInput.value || "").trim();
+        setSelection(currentKey, v ? { type: "time", value: v } : { type: "time", value: "" });
+        closeOptionModal();
+      });
+
+      quickCycleBtn.addEventListener("click", () => {
+        if (!currentKey) return;
+        // モーダル内ローテ：なし→休み→早→遅→時間（時間は前回入力があればそれ）
+        const cur = state.selections[currentKey]?.type || "none";
+        if (cur === "none") setSelection(currentKey, { type: "off" });
+        else if (cur === "off") setSelection(currentKey, { type: "early" });
+        else if (cur === "early") setSelection(currentKey, { type: "late" });
+        else if (cur === "late") {
+          const prev = state.selections[currentKey]?.value || "";
+          setSelection(currentKey, { type: "time", value: prev });
+        } else if (cur === "time") setSelection(currentKey, null);
+        closeOptionModal();
+      });
+
+      // Copy buttons
+      copyBtn.addEventListener("click", doCopy);
+      copyPreviewBtn.addEventListener("click", doCopyPreview);
+
+      // Reset
+      clearAllBtn.addEventListener("click", () => {
+        const ok = confirm("今月の入力を全部リセットする？（名前は残すよ）");
+        if (!ok) return;
+        state.selections = {};
+        save();
+        renderAll();
+        toast("リセットしたよ🧼", "ok");
+      });
+
+      // Keyboard: ESC close modals
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeMonthModal();
+          closeOptionModal();
+        }
+      });
+
+      // Initial render
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
