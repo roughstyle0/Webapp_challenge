@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <meta name="theme-color" content="#ffffff" />
   <style>
-    /* 小さな“気持ちよさ” */
     .tap { -webkit-tap-highlight-color: transparent; }
     .safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
     .safe-top { padding-top: max(0px, env(safe-area-inset-top)); }
@@ -247,8 +246,6 @@
       };
 
       // ====== State ======
-      // selection: Map key "YYYY-MM-DD" -> { type: "off"|"early"|"late"|"time", value?: string }
-      // "none" means not stored.
       const state = {
         year: 0,
         month: 0, // 1-12
@@ -265,7 +262,6 @@
           const obj = JSON.parse(raw);
           if (!obj || typeof obj !== "object") return;
 
-          // 防御的にロード（壊れても起動できる）
           const y = Number(obj.year);
           const m = Number(obj.month);
           state.year = Number.isFinite(y) ? y : state.year;
@@ -274,7 +270,6 @@
           state.selections = (obj.selections && typeof obj.selections === "object") ? obj.selections : {};
           state.name = typeof obj.name === "string" ? obj.name : "";
         } catch (e) {
-          // 破損してても無視して起動
           console.warn("Failed to load:", e);
         }
       };
@@ -293,7 +288,7 @@
       };
 
       const today = new Date();
-      const initial = new Date(today.getFullYear(), today.getMonth() + 1, 1); // デフォルトは「来月」
+      const initial = new Date(today.getFullYear(), today.getMonth() + 1, 1); // デフォルトは来月
       state.year = initial.getFullYear();
       state.month = initial.getMonth() + 1;
 
@@ -329,7 +324,6 @@
 
       // Option modal current key
       let currentKey = null;
-      let currentDay = null;
 
       // ====== Calendar helpers ======
       const daysInMonth = (y, m1to12) => new Date(y, m1to12, 0).getDate();
@@ -375,7 +369,6 @@
 
       const buildMonthGrid = () => {
         monthGrid.innerHTML = "";
-        // 現在月を中心に前後5ヶ月（合計12ヶ月）表示
         const base = new Date(state.year, state.month - 1, 1);
         const start = new Date(base.getFullYear(), base.getMonth() - 5, 1);
 
@@ -406,7 +399,6 @@
       // ====== Option Modal ======
       const openOptionModal = (y, m, d) => {
         currentKey = keyOf(y, m, d);
-        currentDay = d;
         const w = new Date(y, m - 1, d).getDay();
         const wLabel = ["日","月","火","水","木","金","土"][w];
         optDateTitle.textContent = `${m}/${d}（${wLabel}）`;
@@ -414,8 +406,6 @@
         const sel = state.selections[currentKey];
         timeInput.value = sel?.type === "time" ? (sel.value || "") : "";
         optionModal.classList.remove("hidden");
-
-        // フォーカスは “時間入力” ではなく、誤タップ防止で基本しない（必要時にユーザーがタップする）
       };
 
       const closeOptionModal = () => optionModal.classList.add("hidden");
@@ -431,16 +421,6 @@
         renderAll();
       };
 
-      const cycleSelection = (key) => {
-        const cur = state.selections[key]?.type || "none";
-        // なし → 休み → 早 → 遅 → なし（時間はモーダルで）
-        if (cur === "none") return setSelection(key, { type: "off" });
-        if (cur === "off") return setSelection(key, { type: "early" });
-        if (cur === "early") return setSelection(key, { type: "late" });
-        if (cur === "late") return setSelection(key, null);
-        if (cur === "time") return setSelection(key, null);
-      };
-
       // ====== Render Calendar ======
       const renderCalendar = () => {
         calendar.innerHTML = "";
@@ -449,7 +429,6 @@
         const dim = daysInMonth(y, m);
         const first = firstWeekday(y, m);
 
-        // 空マス（先頭）
         for (let i = 0; i < first; i++) {
           const blank = document.createElement("div");
           blank.className = "h-14";
@@ -463,31 +442,35 @@
 
           const isToday = isCurrentMonthToday() && d === today.getDate();
 
+          // ★修正：justify-betweenを外して、下段はmt-autoで安定配置
           const btn = document.createElement("button");
           btn.className =
-            "h-14 rounded-2xl border shadow-sm active:scale-95 transition p-2 text-left flex flex-col justify-between " +
+            "h-14 rounded-2xl border shadow-sm active:scale-95 transition p-2 text-left flex flex-col " +
             (isToday ? "border-pink-300 bg-pink-50/70" : "border-slate-200 bg-white/90");
           btn.setAttribute("aria-label", `${m}月${d}日`);
           btn.addEventListener("click", () => openOptionModal(y, m, d));
-          btn.addEventListener("contextmenu", (e) => { e.preventDefault(); cycleSelection(key); }); // 長押し代替（右クリック）
-          btn.addEventListener("dblclick", () => cycleSelection(key)); // デスクトップ向け
 
           const top = document.createElement("div");
-          top.className = "flex items-center justify-between";
+          top.className = "flex items-center justify-between gap-1";
+
           const day = document.createElement("div");
           day.className = "text-sm font-black";
           day.textContent = d;
 
           const dot = document.createElement("div");
+          // ★修正：ピルは固定幅＋中央寄せ＋改行禁止で崩れ防止
           dot.className =
-            "text-[10px] px-2 py-0.5 rounded-full border font-extrabold " + pillClasses(pill);
+            "text-[10px] px-2 py-0.5 rounded-full border font-extrabold " +
+            "min-w-[44px] text-center whitespace-nowrap leading-none " +
+            pillClasses(pill);
           dot.textContent = short;
 
           top.appendChild(day);
           top.appendChild(dot);
 
           const hint = document.createElement("div");
-          hint.className = "text-[11px] text-slate-500";
+          // ★修正：常に下へ
+          hint.className = "text-[11px] text-slate-500 mt-auto";
           hint.textContent = isToday ? "今日" : " ";
 
           btn.appendChild(top);
@@ -545,13 +528,12 @@
           nameHint.className = "mt-1 text-xs text-slate-600";
         }
 
-        // ボタン活性条件：名前が入っている &（希望がゼロでも送れるが、注意を出す）
         copyBtn.disabled = !nameOk;
       };
 
       const renderHeader = () => {
-        monthLabel.textContent = formatMonthHeader();
-        monthMeta.textContent = formatMeta();
+        monthLabel.textContent = `${state.month}月分`;
+        monthMeta.textContent = `${state.year}年 ${state.month}月（タップして希望を選択）`;
       };
 
       const renderAll = () => {
@@ -562,12 +544,10 @@
 
       // ====== Copy ======
       const copyText = async (text) => {
-        // Clipboard API
         try {
           await navigator.clipboard.writeText(text);
           return true;
         } catch (_) {
-          // Fallback
           try {
             const ta = document.createElement("textarea");
             ta.value = text;
@@ -593,8 +573,6 @@
           return;
         }
         if (out.empty) {
-          // 希望ゼロでも送れる（“希望なし”として連絡したいケース）
-          // ただし気づけるよう軽く通知
           toast("希望がまだないよ（空でもコピーはOK）", "err");
         }
         const ok = await copyText(out.text);
@@ -663,7 +641,6 @@
         closeMonthModal();
       });
 
-      // Option modal interactions
       optionModal.addEventListener("click", (e) => {
         const t = e.target;
         if (t && t.dataset && t.dataset.close) closeOptionModal();
@@ -690,7 +667,6 @@
 
       quickCycleBtn.addEventListener("click", () => {
         if (!currentKey) return;
-        // モーダル内ローテ：なし→休み→早→遅→時間（時間は前回入力があればそれ）
         const cur = state.selections[currentKey]?.type || "none";
         if (cur === "none") setSelection(currentKey, { type: "off" });
         else if (cur === "off") setSelection(currentKey, { type: "early" });
@@ -702,11 +678,9 @@
         closeOptionModal();
       });
 
-      // Copy buttons
       copyBtn.addEventListener("click", doCopy);
       copyPreviewBtn.addEventListener("click", doCopyPreview);
 
-      // Reset
       clearAllBtn.addEventListener("click", () => {
         const ok = confirm("今月の入力を全部リセットする？（名前は残すよ）");
         if (!ok) return;
@@ -716,15 +690,13 @@
         toast("リセットしたよ🧼", "ok");
       });
 
-      // Keyboard: ESC close modals
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
-          closeMonthModal();
-          closeOptionModal();
+          monthModal.classList.add("hidden");
+          optionModal.classList.add("hidden");
         }
       });
 
-      // Initial render
       renderAll();
     })();
   </script>
