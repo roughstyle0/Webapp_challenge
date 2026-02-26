@@ -56,11 +56,16 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        /* スマホブラウザのUIバー(アドレスバー等)を考慮した高さ */
+        html, body {
+            height: 100%;
+            height: 100dvh;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden">
     <!-- スマホサイズを想定したコンテナ -->
-    <div id="app" class="max-w-md mx-auto bg-white h-screen flex flex-col shadow-2xl relative">
+    <div id="app" class="max-w-md mx-auto bg-white h-full flex flex-col shadow-2xl relative">
         
         <!-- ヘッダー -->
         <header class="bg-gradient-to-r from-amber-400 to-primary text-white p-4 shadow-md z-20 flex-shrink-0 rounded-b-xl">
@@ -92,14 +97,14 @@
         </div>
 
         <!-- カレンダーリスト (スクロール領域) -->
-        <div class="flex-1 overflow-y-auto pb-32" id="calendar-container">
+        <div class="flex-1 overflow-y-auto pb-4" id="calendar-container">
             <ul id="calendar-list" class="divide-y divide-gray-100">
                 <!-- JSで動的に生成 -->
             </ul>
         </div>
 
         <!-- フッター (固定) -->
-        <footer class="absolute bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 p-4 pb-safe flex flex-col gap-2 z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        <footer class="w-full bg-white/90 backdrop-blur-md border-t border-gray-200 p-4 pb-safe flex flex-col gap-2 z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] flex-shrink-0 mt-auto">
             <p class="text-xs text-center text-gray-500 font-medium">※希望なしの日は自動で省略されます</p>
             <button id="copy-btn" class="w-full bg-accent text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-lg">
                 <i class="fa-brands fa-line text-2xl"></i>
