@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <!-- スマホでの意図しないズームを防ぐためのviewport設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>爆速・引き継ぎメモジェネレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* タップ時の青いハイライトを消去し、ネイティブアプリ感を出す */
+        * { -webkit-tap-highlight-color: transparent; }
+        
+        /* エラー時の直感的なフィードバック用アニメーション */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(4px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        /* UIをスッキリさせるためスクロールバーを非表示 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen w-screen overflow-hidden flex justify-center selection:bg-blue-200">
+
+    <!-- モバイルアプリ風のコンテナ -->
+    <div class="w-full max-w-md bg-gray-50 h-full flex flex-col relative shadow-2xl overflow-hidden">
+        
+        <!-- ヘッダー -->
+        <header class="bg-white px-5 py-4 border-b border-gray-200 shrink-0 z-10 flex items-center justify-between shadow-sm">
+            <h1 class="text-lg font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
+                <span class="text-xl">⚡️</span> 爆速引き継ぎメモ
+            </h1>
+            <button id="resetBtn" class="text-sm font-medium text-gray-400 hover:text-red-500 transition-colors py-1 px-2 rounded-md hover:bg-red-50 active:scale-95">
+                クリア
+            </button>
+        </header>
+
+        <!-- メインコンテンツ (スクロール可能領域) -->
+        <main class="flex-1 overflow-y-auto p-5 pb-36 space-y-7 no-scrollbar">
+            
+            <!-- 宛先セクション -->
+            <section id="section-target" class="space-y-3 transition-colors duration-300 p-3 -mx-3 rounded-2xl">
+                <h2 class="text-sm font-bold text-gray-700 flex items-center gap-1">
+                    <span class="text-red-500">*</span> 誰に伝えますか？
+                </h2>
+                <div class="grid grid-cols-2 gap-3" id="grid-target">
+                    <!-- JSで動的に生成 -->
+                </div>
+            </section>
+
+            <!-- 重要度セクション -->
+            <section id="section-priority" class="space-y-3 transition-colors duration-300 p-3 -mx-3 rounded-2xl">
+                <h2 class="text-sm font-bold text-gray-700 flex items-center gap-1">
+                    <span class="text-red-500">*</span> 重要度は？
+                </h2>
+                <div class="grid grid-cols-3 gap-3" id="grid-priority">
+                    <!-- JSで動的に生成 -->
+                </div>
+            </section>
+
+            <!-- カテゴリセクション -->
+            <section id="section-category" class="space-y-3 transition-colors duration-300 p-3 -mx-3 rounded-2xl">
+                <h2 class="text-sm font-bold text-gray-700 flex items-center gap-1">
+                    <span class="text-red-500">*</span> カテゴリは？
+                </h2>
+                <div class="grid grid-cols-2 gap-3" id="grid-category">
+                    <!-- JSで動的に生成 -->
+                </div>
+            </section>
+
+            <!-- フリーメモセクション -->
+            <section class="space-y-3 p-3 -mx-3">
+                <h2 class="text-sm font-bold text-gray-700 flex items-center justify-between">
+                    <span>詳細メモ <span class="text-xs font-normal text-gray-400 ml-1">(任意)</span></span>
+                </h2>
+                <!-- iOSのズーム防止のため text-base を指定 -->
+                <textarea id="memoInput" rows="3" class="w-full bg-white border border-gray-200 rounded-xl p-4 text-base text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all shadow-sm" placeholder="例: レジの1万円札が不足気味です。両替をお願いします。"></textarea>
+            </section>
+        </main>
+
+        <!-- フッター (コピーボタン・画面下部固定) -->
+        <footer class="absolute bottom-0 w-full bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pt-10 pb-6 px-5 z-20 pointer-events-none">
+            <button id="copyBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] transform transition-all active:scale-95 flex items-center justify-center gap-2 text-lg pointer-events-auto border border-blue-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                LINEにコピーする
+            </button>
+        </footer>
+
+        <!-- トースト通知 -->
+        <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 -translate-y-10 opacity-0 bg-gray-900 text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 transition-all duration-300 pointer-events-none z-50 whitespace-nowrap font-medium text-sm">
+            <span id="toastIcon">✅</span>
+            <span id="toastMessage">コピーしました！</span>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. State Management ---
+        const config = {
+            target: ['早番へ', '遅番へ', '店長へ', '全員へ'],
+            priority: ['高 🚨', '中 ⚠️', '低 ℹ️'],
+            category: ['レジ・金銭', '品出し・在庫', '接客・クレーム', 'その他']
+        };
+
+        let state = {
+            target: null,
+            priority: null,
+            category: null,
+        };
+
+        // --- 2. Initialization & Rendering ---
+        function init() {
+            renderButtons('target');
+            renderButtons('priority');
+            renderButtons('category');
+
+            document.getElementById('copyBtn').addEventListener('click', handleCopy);
+            document.getElementById('resetBtn').addEventListener('click', handleReset);
+        }
+
+        function renderButtons(type) {
+            const container = document.getElementById(`grid-${type}`);
+            container.innerHTML = '';
+            
+            config[type].forEach(val => {
+                const btn = document.createElement('button');
+                btn.textContent = val;
+                btn.className = getButtonClasses(false);
+                btn.onclick = () => {
+                    // 同じボタンを押したら選択解除（トグル機能）
+                    state[type] = state[type] === val ? null : val;
+                    updateUI();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // 状態に応じたTailwindクラスを返す関数
+        function getButtonClasses(isSelected) {
+            const baseClasses = 'py-3.5 px-2 rounded-xl text-sm transition-all duration-200 flex items-center justify-center text-center leading-tight active:scale-95';
+            if (isSelected) {
+                // 選択時: 浮き上がるような視覚効果とプライマリーカラー
+                return `${baseClasses} font-bold border-2 bg-blue-50 border-blue-500 text-blue-700 shadow-md transform scale-[1.02]`;
+            } else {
+                // 未選択時: 落ち着いた色合い
+                return `${baseClasses} font-semibold border bg-white border-gray-200 text-gray-500 hover:bg-gray-50`;
+            }
+        }
+
+        // --- 3. UI Update Logic ---
+        function updateUI() {
+            ['target', 'priority', 'category'].forEach(type => {
+                const container = document.getElementById(`grid-${type}`);
+                Array.from(container.children).forEach(btn => {
+                    const isSelected = btn.textContent === state[type];
+                    btn.className = getButtonClasses(isSelected);
+                });
+
+                // 選択されたらエラー状態（赤背景）を解除
+                if (state[type]) {
+                    const section = document.getElementById(`section-${type}`);
+                    section.classList.remove('bg-red-50/50', 'shake');
+                }
+            });
+        }
+
+        // --- 4. Validation & Copy Logic ---
+        function validate() {
+            let isValid = true;
+            let firstErrorSection = null;
+
+            ['target', 'priority', 'category'].forEach(type => {
+                if (!state[type]) {
+                    isValid = false;
+                    const section = document.getElementById(`section-${type}`);
+                    
+                    // アニメーションを再トリガーするためのハック
+                    section.classList.remove('shake');
+                    void section.offsetWidth; // Reflowを強制
+                    section.classList.add('bg-red-50/50', 'shake');
+
+                    if (!firstErrorSection) firstErrorSection = section;
+                }
+            });
+
+            // エラー箇所にスクロール
+            if (firstErrorSection) {
+                firstErrorSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            return isValid;
+        }
+
+        function generateText() {
+            const memoText = document.getElementById('memoInput').value.trim();
+            
+            let text = `【宛先】${state.target}\n`;
+            text += `【重要度】${state.priority}\n`;
+            text += `【カテゴリ】${state.category}\n`;
+            
+            if (memoText) {
+                text += `\n【メモ】\n${memoText}\n`;
+            }
+            
+            return text;
+        }
+
+        function handleCopy() {
+            if (!validate()) {
+                showToast('必須項目（*）を選んでください', 'error');
+                return;
+            }
+
+            const textToCopy = generateText();
+            copyToClipboard(textToCopy);
+        }
+
+        function copyToClipboard(text) {
+            // iframe内やセキュアコンテキスト外でも確実に動作するレガシーフォールバック方式
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('LINE用にコピーしました！🎉', 'success');
+                    // 成功したらフォームをリセット（お好みで外してもOK）
+                    setTimeout(handleReset, 1500);
+                } else {
+                    showToast('コピーに失敗しました。', 'error');
+                }
+            } catch (err) {
+                showToast('お使いの環境ではコピーできません。', 'error');
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // --- 5. Utilities ---
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+            
+            msgEl.textContent = message;
+            
+            // 状態に応じたスタイル適用
+            if (type === 'success') {
+                toast.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.3)] flex items-center gap-2 transition-all duration-300 z-50 whitespace-nowrap font-medium text-sm translate-y-0 opacity-100';
+                iconEl.textContent = '✅';
+            } else {
+                toast.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-5 py-3 rounded-full shadow-[0_10px_30px_rgba(220,38,38,0.4)] flex items-center gap-2 transition-all duration-300 z-50 whitespace-nowrap font-medium text-sm translate-y-0 opacity-100';
+                iconEl.textContent = '⚠️';
+            }
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-10', 'opacity-0');
+            }, 3000);
+        }
+
+        function handleReset() {
+            state = { target: null, priority: null, category: null };
+            document.getElementById('memoInput').value = '';
+            
+            // エラー状態のクリア
+            ['target', 'priority', 'category'].forEach(type => {
+                const section = document.getElementById(`section-${type}`);
+                section.classList.remove('bg-red-50/50', 'shake');
+            });
+            
+            updateUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 起動
+        init();
+    </script>
+</body>
+</html>
