@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>電話応対パニック防止！カンペ＆ワンタップメモ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                        }
+                    },
+                    animation: {
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'slide-down': 'slideDown 0.3s ease-out forwards',
+                        'fade-in-up': 'fadeInUp 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        pop: {
+                            '0%': { transform: 'scale(0.95)' },
+                            '100%': { transform: 'scale(1)' },
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translate(-50%, -100%)', opacity: '0' },
+                            '100%': { transform: 'translate(-50%, 0)', opacity: '1' },
+                        },
+                        fadeInUp: {
+                            '0%': { transform: 'translate(-50%, 20px)', opacity: '0' },
+                            '100%': { transform: 'translate(-50%, -50%)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* スクロールバーの非表示（スッキリ見せるため） */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        /* 選択済みボタンのスタイル定義 */
+        .btn-selected {
+            background-color: #0d9488 !important; /* brand-600 */
+            color: white !important;
+            border-color: #0d9488 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: scale(1.02);
+        }
+        
+        /* 入力欄のフォーカス時の背景色 */
+        input:focus, textarea:focus {
+            background-color: #ffffff;
+        }
+
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-brand-50 text-slate-800 font-sans min-h-screen pb-32 selection:bg-brand-200">
+
+    <!-- カンペエリア（画面上部に追従固定） -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md shadow-sm rounded-b-3xl border-b-4 border-brand-400 p-4 md:p-6 mb-6 transform transition-all">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center gap-2 mb-2 text-brand-600 font-bold text-sm md:text-base">
+                <i class="fas fa-bullhorn animate-pulse"></i>
+                <span>深呼吸して、この通りに読んでください</span>
+            </div>
+            <h1 class="text-2xl md:text-4xl font-extrabold leading-tight md:leading-normal text-slate-700">
+                「お電話ありがとうございます！<br class="hidden sm:block">
+                〇〇店、担当の
+                <input type="text" id="staffNameInput" placeholder="お名前" 
+                       class="inline-block border-b-4 border-brand-200 focus:border-brand-500 focus:outline-none bg-brand-50 px-2 py-1 w-28 md:w-40 text-center text-brand-700 transition-colors rounded-t-lg mx-1 shadow-inner text-xl md:text-3xl font-extrabold" 
+                       autocomplete="off">
+                です！」
+            </h1>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 space-y-8 relative z-10">
+        
+        <!-- 相手カテゴリ -->
+        <section class="animate-pop" style="animation-delay: 0.1s;">
+            <h2 class="text-lg md:text-xl font-bold mb-3 flex items-center gap-2 text-slate-700">
+                <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center"><i class="fas fa-user"></i></div>
+                相手は誰ですか？
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="callerGroup">
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95" data-group="caller" data-value="お客様">お客様</button>
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95" data-group="caller" data-value="業者様">業者様</button>
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95" data-group="caller" data-value="アルバイト応募">バイト応募</button>
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95" data-group="caller" data-value="スタッフの欠勤連絡">欠勤連絡</button>
+            </div>
+        </section>
+
+        <!-- 用件カテゴリ -->
+        <section class="animate-pop" style="animation-delay: 0.2s;">
+            <h2 class="text-lg md:text-xl font-bold mb-3 flex items-center gap-2 text-slate-700">
+                <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center"><i class="fas fa-clipboard-check"></i></div>
+                用件は何ですか？
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="purposeGroup">
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95" data-group="purpose" data-value="折り返し希望">折り返し希望</button>
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95" data-group="purpose" data-value="伝言あり">伝言あり</button>
+                <button type="button" class="category-btn bg-white border-2 border-brand-200 text-slate-600 py-4 px-2 rounded-2xl font-bold text-base md:text-lg transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-1" data-group="purpose" data-value="保留中（至急対応）">
+                    <span>保留中</span>
+                    <span class="text-xs font-normal opacity-80">※すぐ変わってほしい</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- フリーメモ -->
+        <section class="animate-pop" style="animation-delay: 0.3s;">
+            <h2 class="text-lg md:text-xl font-bold mb-3 flex items-center gap-2 text-slate-700">
+                <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center"><i class="fas fa-pen"></i></div>
+                お名前・詳細メモ
+            </h2>
+            <textarea id="memoInput" rows="4" placeholder="例：鈴木様。15時に予約していたが、15時半に変更したいとのこと。" 
+                      class="w-full p-4 rounded-2xl border-2 border-brand-200 bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-100 outline-none text-base md:text-lg resize-none transition-all shadow-sm"></textarea>
+        </section>
+
+    </main>
+
+    <!-- 下部アクションバー（固定） -->
+    <div class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 md:p-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)] z-30">
+        <div class="max-w-3xl mx-auto flex gap-3">
+            <button id="clearBtn" class="px-5 py-4 rounded-2xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex flex-col items-center justify-center gap-1">
+                <i class="fas fa-trash-alt text-lg"></i>
+                <span class="text-xs">クリア</span>
+            </button>
+            <button id="copyBtn" class="flex-1 py-4 rounded-2xl font-bold text-lg md:text-xl text-white bg-[#06C755] hover:bg-[#05b34c] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 relative overflow-hidden group">
+                <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
+                <i class="fab fa-line text-2xl"></i> 
+                <span>店長へLINEで送る (コピー)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- エラーメッセージ用トースト -->
+    <div id="errorToast" class="fixed top-24 left-1/2 hidden z-50 pointer-events-none">
+        <div class="bg-red-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 font-bold text-sm md:text-base">
+            <i class="fas fa-exclamation-triangle text-xl"></i>
+            <span id="errorMessage">エラーメッセージ</span>
+        </div>
+    </div>
+
+    <!-- 成功時の中央モーダルトースト -->
+    <div id="successToast" class="fixed top-1/2 left-1/2 hidden z-50 pointer-events-none w-11/12 max-w-sm">
+        <div class="bg-slate-800/95 backdrop-blur-sm text-white px-6 py-8 rounded-3xl shadow-2xl flex flex-col items-center text-center gap-4 border border-slate-700">
+            <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-2">
+                <i class="fas fa-check text-4xl text-green-400"></i>
+            </div>
+            <h3 class="text-2xl font-bold">コピー完了！</h3>
+            <p class="text-slate-300 text-base leading-relaxed">
+                クリップボードに保存しました。<br>
+                LINEを開いて貼り付けてください。<br>
+                <span class="text-brand-300 font-bold block mt-2">深呼吸、お疲れ様です！🍵</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // State
+            const state = {
+                staffName: localStorage.getItem('phoneMemo_staffName') || '',
+                caller: null,
+                purpose: null,
+                memo: ''
+            };
+
+            // DOM Elements
+            const elements = {
+                staffNameInput: document.getElementById('staffNameInput'),
+                memoInput: document.getElementById('memoInput'),
+                categoryBtns: document.querySelectorAll('.category-btn'),
+                copyBtn: document.getElementById('copyBtn'),
+                clearBtn: document.getElementById('clearBtn'),
+                errorToast: document.getElementById('errorToast'),
+                errorMessage: document.getElementById('errorMessage'),
+                successToast: document.getElementById('successToast')
+            };
+
+            // Initialize
+            if (state.staffName) {
+                elements.staffNameInput.value = state.staffName;
+            }
+
+            // Event Listeners
+            
+            // 1. Staff Name Input (Auto Save)
+            elements.staffNameInput.addEventListener('input', (e) => {
+                state.staffName = e.target.value.trim();
+                localStorage.setItem('phoneMemo_staffName', state.staffName);
+            });
+
+            // 2. Category Buttons (Toggle logic)
+            elements.categoryBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Prevent button click from causing layout shifts
+                    e.preventDefault();
+                    
+                    const group = btn.dataset.group;
+                    const value = btn.dataset.value;
+
+                    // Update state
+                    if (state[group] === value) {
+                        state[group] = null; // Deselect if already selected
+                    } else {
+                        state[group] = value;
+                    }
+
+                    // Update UI
+                    updateButtonStyles(group);
+                });
+            });
+
+            // 3. Memo Input
+            elements.memoInput.addEventListener('input', (e) => {
+                state.memo = e.target.value;
+            });
+
+            // 4. Copy to Clipboard
+            elements.copyBtn.addEventListener('click', () => {
+                // Validation
+                if (!state.caller && !state.purpose && !state.memo.trim()) {
+                    showError('相手、用件、メモのいずれかを入力してください。');
+                    return;
+                }
+
+                // Format text
+                const now = new Date();
+                const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                const formattedText = 
+`【電話メモ】(${timeString} 受信)
+受電者: ${state.staffName || '未入力'}
+相手: ${state.caller || '未選択'}
+用件: ${state.purpose || '未選択'}
+
+■詳細
+${state.memo.trim() || '（記載なし）'}`;
+
+                // Execute Copy (Using execCommand for broad compatibility including iframes)
+                const tempTextArea = document.createElement("textarea");
+                tempTextArea.value = formattedText;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showSuccess();
+                    } else {
+                        showError('コピーに失敗しました。端末の設定を確認してください。');
+                    }
+                } catch (err) {
+                    showError('コピー機能がサポートされていません。');
+                } finally {
+                    document.body.removeChild(tempTextArea);
+                }
+            });
+
+            // 5. Clear Form
+            elements.clearBtn.addEventListener('click', () => {
+                // Vibrate for tactile feedback if supported
+                if (navigator.vibrate) navigator.vibrate(50);
+                
+                state.caller = null;
+                state.purpose = null;
+                state.memo = '';
+                elements.memoInput.value = '';
+                updateButtonStyles('caller');
+                updateButtonStyles('purpose');
+            });
+
+            // Helper Functions
+            function updateButtonStyles(group) {
+                elements.categoryBtns.forEach(btn => {
+                    if (btn.dataset.group === group) {
+                        if (btn.dataset.value === state[group]) {
+                            btn.classList.add('btn-selected');
+                        } else {
+                            btn.classList.remove('btn-selected');
+                        }
+                    }
+                });
+            }
+
+            let errorTimeout;
+            function showError(msg) {
+                clearTimeout(errorTimeout);
+                elements.errorMessage.textContent = msg;
+                elements.errorToast.classList.remove('hidden');
+                elements.errorToast.classList.add('animate-slide-down');
+                
+                errorTimeout = setTimeout(() => {
+                    elements.errorToast.classList.add('hidden');
+                    elements.errorToast.classList.remove('animate-slide-down');
+                }, 3000);
+                
+                // Vibrate for error
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
+
+            let successTimeout;
+            function showSuccess() {
+                clearTimeout(successTimeout);
+                elements.successToast.classList.remove('hidden');
+                elements.successToast.classList.add('animate-fade-in-up');
+                
+                successTimeout = setTimeout(() => {
+                    elements.successToast.classList.add('hidden');
+                    elements.successToast.classList.remove('animate-fade-in-up');
+                }, 2500);
+            }
+        });
+    </script>
+</body>
+</html>
