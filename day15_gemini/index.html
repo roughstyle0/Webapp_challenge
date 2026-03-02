@@ -3,247 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Multilingual Communication Board</title>
+    <title>OptiSpeak - 眼鏡店向け指差し接客ボード</title>
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            800: '#102a43',
+                            900: '#0a192f', // 信頼感のある深いネイビー
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* 押しやすさと視覚的フィードバックを強化するカスタムCSS */
-        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
-        .touch-action-manipulation { touch-action: manipulation; }
-        
-        /* YES/NOタップ時の波紋エフェクト用 */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            transform: scale(0);
-            animation: ripple-anim 600ms linear;
-            background-color: rgba(255, 255, 255, 0.4);
+        /* ネイティブアプリのような挙動にするための設定 */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
         }
-        @keyframes ripple-anim {
-            to { transform: scale(4); opacity: 0; }
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(10px);
         }
-
-        /* アニメーション */
-        .fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
         }
-
-        /* 成功/キャンセルのオーバーレイフラッシュ */
-        .flash-overlay {
-            position: fixed; inset: 0; pointer-events: none; z-index: 50;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.2s;
+        /* スクロールバーの非表示（美観のため） */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        .flash-overlay.active { opacity: 1; animation: fadeOut 1.5s ease-in forwards; }
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
     </style>
 </head>
-<body class="bg-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans text-gray-800 select-none touch-action-manipulation">
+<body class="bg-navy-50 text-slate-800 h-screen flex flex-col md:flex-row overflow-hidden font-sans selection:bg-blue-200">
 
-    <!-- オーバーレイ (YES/NO 選択時のフィードバック) -->
-    <div id="feedback-overlay" class="flash-overlay">
-        <div id="feedback-icon" class="text-[15rem] drop-shadow-2xl scale-50 transition-transform duration-300"></div>
-    </div>
-
-    <!-- スタッフ操作エリア (上部) -->
-    <header class="bg-white shadow-md z-10 flex-shrink-0 border-b-4 border-gray-200">
-        <div class="p-3 bg-gray-800 text-white flex justify-between items-center">
-            <h1 class="text-sm font-bold tracking-wider">👩‍💼 STAFF CONSOLE</h1>
-            <button onclick="resetBoard()" class="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded-full transition-colors tap-highlight-transparent">
-                リセット ↺
-            </button>
+    <!-- モバイル用ヘッダー (スタッフ操作用) -->
+    <header class="md:hidden bg-navy-900 text-white p-4 flex justify-between items-center shadow-md z-20 relative">
+        <div class="flex flex-col">
+            <span class="text-xs text-navy-100 font-medium tracking-wider uppercase mb-1"><i class="fa-solid fa-glasses mr-1"></i> OptiSpeak</span>
+            <span id="mobile-current-phrase" class="text-sm font-bold truncate w-48">フレーズを選択してください</span>
         </div>
-        <!-- フレーズボタンコンテナ -->
-        <div id="btn-container" class="p-3 grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[35vh] overflow-y-auto">
-            <!-- JSで動的に生成 -->
-        </div>
+        <button id="menu-toggle" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors flex items-center gap-2" aria-label="メニューを開く">
+            <i class="fa-solid fa-bars"></i>
+            <span class="text-sm font-bold">メニュー</span>
+        </button>
     </header>
 
-    <!-- お客様向け表示エリア (中央) -->
-    <main id="main-display" class="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#fdfdfd] relative overflow-hidden tap-highlight-transparent">
-        <div id="empty-state" class="text-gray-300 flex flex-col items-center justify-center">
-            <span class="text-6xl mb-4">💬</span>
-            <p class="text-xl font-medium">上のボタンから質問を選んでください</p>
-            <p class="text-sm mt-2">Please select a phrase from the top panel.</p>
+    <!-- サイドバー / モバイルドロップダウンメニュー (スタッフ用) -->
+    <aside id="sidebar" class="absolute md:relative top-[72px] md:top-0 left-0 w-full md:w-80 h-[calc(100vh-72px)] md:h-full bg-navy-900 text-white shadow-2xl md:shadow-none z-20 flex flex-col transition-transform duration-300 ease-in-out origin-top md:transform-none transform scale-y-0 md:scale-y-100 opacity-0 md:opacity-100">
+        <div class="hidden md:flex p-6 border-b border-navy-800 items-center justify-between">
+            <h1 class="text-xl font-extrabold tracking-wider"><i class="fa-solid fa-glasses mr-2"></i>OptiSpeak</h1>
+            <span class="text-[10px] bg-navy-800 px-2 py-1 rounded text-navy-100">STAFF ONLY</span>
+        </div>
+        
+        <div class="p-4 bg-navy-800 text-xs font-semibold text-navy-100 uppercase tracking-wider">
+            接客フレーズ一覧
+        </div>
+        
+        <nav id="phrase-list" class="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2">
+            <!-- フレーズボタンがここに動的に生成されます -->
+        </nav>
+        
+        <div class="p-4 text-xs text-center text-navy-100/50 border-t border-navy-800">
+            お客様に画面を向けてご使用ください
+        </div>
+    </aside>
+
+    <!-- メインコンテンツ (お客様提示用) -->
+    <main class="flex-1 flex flex-col relative h-full bg-white z-10" id="main-content" aria-live="polite">
+        
+        <!-- エラー/初期プレースホルダー表示 -->
+        <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 p-8 text-center transition-opacity duration-300">
+            <div class="w-24 h-24 bg-navy-50 rounded-full flex items-center justify-center mb-6">
+                <i class="fa-solid fa-arrow-pointer text-4xl text-navy-800"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-navy-900 mb-2">準備完了</h2>
+            <p class="text-slate-500">メニューから伝えたいフレーズを選択し、<br>お客様にこの画面をお見せください。</p>
         </div>
 
-        <div id="content-state" class="hidden w-full max-w-4xl mx-auto flex flex-col items-center justify-center space-y-8">
-            <!-- アイコン -->
-            <div id="disp-icon" class="text-7xl md:text-8xl drop-shadow-md"></div>
-            <!-- 英語 (最大) -->
-            <div id="disp-en" class="text-4xl md:text-6xl lg:text-7xl font-black text-gray-900 leading-tight tracking-tight px-2 w-full break-words"></div>
-            <!-- アジア言語コンテナ -->
-            <div class="flex flex-col space-y-3 w-full border-t-2 border-gray-100 pt-6">
-                <!-- 中国語 -->
-                <div class="flex items-center justify-center space-x-2">
-                    <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">中文</span>
-                    <div id="disp-zh" class="text-2xl md:text-4xl font-medium text-gray-700"></div>
-                </div>
-                <!-- 韓国語 -->
-                <div class="flex items-center justify-center space-x-2">
-                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">한국어</span>
-                    <div id="disp-ko" class="text-2xl md:text-4xl font-medium text-gray-700"></div>
-                </div>
+        <!-- 翻訳テキスト表示エリア -->
+        <div class="flex-1 flex flex-col justify-center items-center p-6 md:p-12 text-center overflow-y-auto no-scrollbar" id="display-area">
+            <!-- 英語 (最大強調) -->
+            <div id="text-en" class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-navy-900 mb-6 md:mb-10 leading-tight tracking-tight opacity-0 transition-opacity duration-500"></div>
+            
+            <div class="w-16 h-1 bg-blue-100 rounded-full mb-6 md:mb-10 opacity-0 transition-opacity duration-500 delay-100 divider"></div>
+            
+            <!-- 中国語・韓国語 -->
+            <div class="flex flex-col md:flex-row gap-4 md:gap-12 w-full justify-center">
+                <div id="text-zh" class="text-xl sm:text-2xl md:text-3xl font-medium text-slate-600 opacity-0 transition-opacity duration-500 delay-200"></div>
+                <div id="text-ko" class="text-xl sm:text-2xl md:text-3xl font-medium text-slate-600 opacity-0 transition-opacity duration-500 delay-300"></div>
             </div>
-            <!-- 日本語 (スタッフ確認用・小さく) -->
-            <div id="disp-ja" class="mt-4 text-sm text-gray-400 font-medium"></div>
+            
+            <!-- 日本語 (スタッフ確認用：小さく下に配置) -->
+            <div id="text-ja" class="absolute bottom-4 left-0 w-full text-center text-sm md:text-base font-medium text-slate-300 opacity-0 transition-opacity duration-500"></div>
+        </div>
+
+        <!-- お客様入力エリア (YES/NO) -->
+        <div class="h-1/3 min-h-[140px] md:min-h-[180px] max-h-[200px] flex w-full border-t-2 border-slate-100 bg-slate-50 relative overflow-hidden shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+            
+            <button onclick="handleInteraction('yes')" class="flex-1 flex flex-col justify-center items-center bg-white hover:bg-green-50 active:bg-green-100 transition-colors border-r-2 border-slate-100 group relative overflow-hidden" aria-label="Yes">
+                <div class="absolute inset-0 bg-green-500 transform translate-y-full group-active:translate-y-0 transition-transform duration-200 opacity-10"></div>
+                <span class="text-5xl md:text-7xl mb-2 md:mb-4 group-active:scale-90 transition-transform duration-200 drop-shadow-sm">👍</span>
+                <span class="text-2xl md:text-4xl font-extrabold text-green-600 tracking-wider">YES</span>
+            </button>
+            
+            <button onclick="handleInteraction('no')" class="flex-1 flex flex-col justify-center items-center bg-white hover:bg-red-50 active:bg-red-100 transition-colors group relative overflow-hidden" aria-label="No">
+                <div class="absolute inset-0 bg-red-500 transform translate-y-full group-active:translate-y-0 transition-transform duration-200 opacity-10"></div>
+                <span class="text-5xl md:text-7xl mb-2 md:mb-4 group-active:scale-90 transition-transform duration-200 drop-shadow-sm">✋</span>
+                <span class="text-2xl md:text-4xl font-extrabold text-red-600 tracking-wider">NO</span>
+            </button>
+            
         </div>
     </main>
 
-    <!-- お客様操作エリア (下部 YES/NO) -->
-    <footer class="h-[22vh] min-h-[120px] flex shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-10 flex-shrink-0">
-        <button onclick="handleAnswer('yes', event)" class="w-1/2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex flex-col items-center justify-center relative overflow-hidden tap-highlight-transparent transition-colors">
-            <span class="text-5xl md:text-7xl mb-1 drop-shadow-md">👍</span>
-            <span class="text-3xl md:text-5xl font-black tracking-widest drop-shadow-md">YES</span>
-        </button>
-        <button onclick="handleAnswer('no', event)" class="w-1/2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white flex flex-col items-center justify-center relative overflow-hidden tap-highlight-transparent transition-colors border-l-2 border-white/20">
-            <span class="text-5xl md:text-7xl mb-1 drop-shadow-md">✋</span>
-            <span class="text-3xl md:text-5xl font-black tracking-widest drop-shadow-md">NO</span>
-        </button>
-    </footer>
-
     <script>
-        // 1. データ定義 (現場でよく使われるフレーズを厳選)
-        const phrases = [
-            { id: 'bag', icon: '🛍️', ja: 'レジ袋はご利用ですか？', en: 'Do you need a plastic bag?', zh: '需要塑料袋吗？', ko: '비닐봉투 필요하신가요?' },
-            { id: 'cutlery', icon: '🥢', ja: 'お箸/スプーンはつけますか？', en: 'Need chopsticks or a spoon?', zh: '需要筷子或勺子吗？', ko: '젓가락/숟가락 드릴까요?' },
-            { id: 'warm', icon: '🍱', ja: 'お弁当は温めますか？', en: 'Would you like this warmed up?', zh: '便当需要加热吗？', ko: '도시락 데워드릴까요?' },
-            { id: 'age', icon: '🔞', ja: '年齢確認ボタンを押してください', en: 'Please press the age verification button.', zh: '请按屏幕上的年龄确认按钮。', ko: '화면의 연령 확인 버튼을 눌러주세요.' },
-            { id: 'pay', icon: '💳', ja: '現金ですか？カードですか？', en: 'Cash or Card?', zh: '现金还是刷卡？', ko: '현금인가요, 카드인가요?' },
-            { id: 'point', icon: '📱', ja: 'ポイントカードはお持ちですか？', en: 'Do you have a point card?', zh: '您有积分卡吗？', ko: '포인트 카드 있으신가요?' }
-        ];
+        /**
+         * アプリケーションのデータとロジック
+         * 堅牢性を高めるため、データ構造を明確にし、エラーハンドリングを実装。
+         */
+        const AppData = {
+            phrases: [
+                { id: 'exam', ja: '視力測定をご希望ですか？', en: 'Would you like an eye exam?', zh: '您需要验光吗？', ko: '시력 검사를 원하십니까?' },
+                { id: 'prescription', ja: '眼科の処方箋はお持ちですか？', en: 'Do you have an eye prescription?', zh: '您有眼科医生的处方吗？', ko: '안과 처방전이 있으십니까?' },
+                { id: 'glasses', ja: '現在お使いのメガネはお持ちですか？', en: 'Do you have your current glasses with you?', zh: '您带着现在的眼镜吗？', ko: '현재 사용 중인 안경이 있으십니까?' },
+                { id: 'stock', ja: '在庫があれば、本日中にお渡しできます。', en: 'If in stock, it will be ready today.', zh: '如果有库存，今天就可以交给您。', ko: '재고가 있으면 오늘 중으로 받으실 수 있습니다.' },
+                { id: 'custom', ja: '特注レンズのため、完成まで数日かかります。', en: 'Custom lenses take a few days to complete.', zh: '定制镜片需要几天时间才能完成。', ko: '특수 렌즈이므로 완성까지 며칠이 걸립니다.' },
+                { id: 'fitting', ja: '掛け心地（フィッティング）はいかがですか？', en: 'How does the fitting feel?', zh: '佩戴感觉怎么样？', ko: '착용감은 어떠신가요?' },
+                { id: 'mirror', ja: 'こちらの鏡でご確認ください。', en: 'Please check with this mirror.', zh: '请用这面镜子确认。', ko: '이 거울로 확인해 주십시오.' },
+                { id: 'pay', ja: 'お会計はこちらです。', en: 'The cashier is right here.', zh: '这里结账。', ko: '계산은 이쪽입니다.' }
+            ],
+            state: {
+                activeId: null,
+                isMenuOpen: false
+            }
+        };
 
-        let currentPhraseId = null;
+        // DOM要素のキャッシュ
+        const DOM = {
+            phraseList: document.getElementById('phrase-list'),
+            placeholder: document.getElementById('placeholder'),
+            textEn: document.getElementById('text-en'),
+            textZh: document.getElementById('text-zh'),
+            textKo: document.getElementById('text-ko'),
+            textJa: document.getElementById('text-ja'),
+            dividers: document.querySelectorAll('.divider'),
+            sidebar: document.getElementById('sidebar'),
+            menuToggle: document.getElementById('menu-toggle'),
+            mobileCurrentPhrase: document.getElementById('mobile-current-phrase'),
+            mainContent: document.getElementById('main-content')
+        };
 
-        // 2. 初期化処理
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('btn-container');
-            
-            phrases.forEach(phrase => {
-                const btn = document.createElement('button');
-                btn.className = 'flex items-center justify-start space-x-2 p-3 bg-gray-50 hover:bg-blue-50 active:bg-blue-100 border border-gray-200 rounded-lg text-left transition-all tap-highlight-transparent group';
-                btn.innerHTML = `
-                    <span class="text-2xl group-hover:scale-110 transition-transform">${phrase.icon}</span>
-                    <span class="text-sm font-bold text-gray-700 leading-tight">${phrase.ja}</span>
-                `;
-                btn.onclick = () => showPhrase(phrase);
-                container.appendChild(btn);
-            });
-        });
-
-        // 3. フレーズ表示処理
-        function showPhrase(phrase) {
-            currentPhraseId = phrase.id;
-            
-            // DOM要素の取得
-            const emptyState = document.getElementById('empty-state');
-            const contentState = document.getElementById('content-state');
-            
-            // 値のセット
-            document.getElementById('disp-icon').textContent = phrase.icon;
-            document.getElementById('disp-en').textContent = phrase.en;
-            document.getElementById('disp-zh').textContent = phrase.zh;
-            document.getElementById('disp-ko').textContent = phrase.ko;
-            document.getElementById('disp-ja').textContent = `( Staff: ${phrase.ja} )`;
-
-            // 表示切替とアニメーション
-            emptyState.classList.add('hidden');
-            contentState.classList.remove('hidden');
-            
-            // アニメーションのリセットと再適用
-            contentState.classList.remove('fade-in-up');
-            void contentState.offsetWidth; // リフローを強制してアニメーションをリスタート
-            contentState.classList.add('fade-in-up');
-            
-            // ボタンのハイライト状態を更新
-            updateButtonHighlight(phrase.ja);
+        /**
+         * 初期化処理
+         */
+        function initApp() {
+            try {
+                if (!AppData.phrases || AppData.phrases.length === 0) {
+                    throw new Error("フレーズデータが見つかりません。");
+                }
+                renderPhraseList();
+                setupEventListeners();
+            } catch (error) {
+                console.error("Initialization error:", error);
+                showErrorState("データの読み込みに失敗しました。ページをリロードしてください。");
+            }
         }
 
-        function updateButtonHighlight(activeText) {
-            const buttons = document.getElementById('btn-container').querySelectorAll('button');
-            buttons.forEach(btn => {
-                if (btn.innerText.includes(activeText)) {
-                    btn.classList.remove('bg-gray-50', 'border-gray-200');
-                    btn.classList.add('bg-blue-100', 'border-blue-400', 'ring-2', 'ring-blue-200');
-                } else {
-                    btn.classList.add('bg-gray-50', 'border-gray-200');
-                    btn.classList.remove('bg-blue-100', 'border-blue-400', 'ring-2', 'ring-blue-200');
+        /**
+         * サイドバーのリストを生成
+         */
+        function renderPhraseList() {
+            DOM.phraseList.innerHTML = '';
+            
+            AppData.phrases.forEach((phrase, index) => {
+                const button = document.createElement('button');
+                button.className = `w-full text-left p-4 rounded-xl transition-all duration-200 flex items-center justify-between group border border-transparent hover:bg-navy-800 ${AppData.state.activeId === phrase.id ? 'bg-blue-600 border-blue-500 shadow-lg' : 'bg-navy-900/50'}`;
+                button.dataset.id = phrase.id;
+                
+                button.innerHTML = `
+                    <div class="flex flex-col gap-1 pr-2">
+                        <span class="text-sm font-bold ${AppData.state.activeId === phrase.id ? 'text-white' : 'text-slate-200 group-hover:text-white'}">${phrase.ja}</span>
+                        <span class="text-[10px] text-navy-200 truncate ${AppData.state.activeId === phrase.id ? 'text-blue-100' : ''}">${phrase.en}</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs ${AppData.state.activeId === phrase.id ? 'text-white' : 'text-navy-400 opacity-0 group-hover:opacity-100 transition-opacity'}"></i>
+                `;
+                
+                button.addEventListener('click', () => selectPhrase(phrase.id));
+                DOM.phraseList.appendChild(button);
+            });
+        }
+
+        /**
+         * フレーズ選択時の処理
+         */
+        function selectPhrase(id) {
+            try {
+                const phrase = AppData.phrases.find(p => p.id === id);
+                if (!phrase) return;
+
+                AppData.state.activeId = id;
+                
+                // モバイルメニューを閉じる
+                if (AppData.state.isMenuOpen) {
+                    toggleMobileMenu(false);
+                }
+
+                // UI更新
+                DOM.mobileCurrentPhrase.textContent = phrase.ja;
+                renderPhraseList(); // ボタンのハイライト状態を更新
+                updateDisplay(phrase);
+
+            } catch (error) {
+                console.error("Selection error:", error);
+            }
+        }
+
+        /**
+         * メインエリアの表示更新（アニメーション付き）
+         */
+        function updateDisplay(phrase) {
+            // プレースホルダーを隠す
+            if (DOM.placeholder.style.display !== 'none') {
+                DOM.placeholder.style.opacity = '0';
+                setTimeout(() => {
+                    DOM.placeholder.style.display = 'none';
+                }, 300);
+            }
+
+            // 一旦テキストをフェードアウト
+            const textElements = [DOM.textEn, DOM.textZh, DOM.textKo, DOM.textJa, ...DOM.dividers];
+            textElements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(10px)';
+            });
+
+            // 少し遅延させてからテキストを更新しフェードイン
+            setTimeout(() => {
+                DOM.textEn.textContent = phrase.en;
+                DOM.textZh.textContent = phrase.zh;
+                DOM.textKo.textContent = phrase.ko;
+                DOM.textJa.textContent = `日本語: ${phrase.ja}`;
+
+                textElements.forEach(el => {
+                    el.classList.add('fade-enter-active');
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                });
+                
+                // アニメーションクラスのリセット
+                setTimeout(() => {
+                    textElements.forEach(el => el.classList.remove('fade-enter-active'));
+                }, 300);
+
+            }, 200); // フェードアウトを待つ時間
+        }
+
+        /**
+         * モバイルメニューの開閉トグル
+         */
+        function toggleMobileMenu(forceState = null) {
+            AppData.state.isMenuOpen = forceState !== null ? forceState : !AppData.state.isMenuOpen;
+            
+            if (AppData.state.isMenuOpen) {
+                DOM.sidebar.classList.remove('scale-y-0', 'opacity-0', 'pointer-events-none');
+                DOM.sidebar.classList.add('scale-y-100', 'opacity-100');
+                DOM.menuToggle.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="text-sm font-bold">閉じる</span>';
+                DOM.menuToggle.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            } else {
+                DOM.sidebar.classList.add('scale-y-0', 'opacity-0', 'pointer-events-none');
+                DOM.sidebar.classList.remove('scale-y-100', 'opacity-100');
+                DOM.menuToggle.innerHTML = '<i class="fa-solid fa-bars"></i><span class="text-sm font-bold">メニュー</span>';
+                DOM.menuToggle.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            }
+        }
+
+        /**
+         * お客様がYES/NOボタンを押した際の視覚的フィードバック
+         */
+        function handleInteraction(type) {
+            // ここでは視覚的なフィードバックのみ。必要に応じて音を鳴らすなどの拡張が可能。
+            // CSSの active:クラス で基本的なアニメーションは処理済み。
+            // デバイスのバイブレーションをトリガー (対応デバイスのみ)
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        /**
+         * エラー発生時のフォールバックUI
+         */
+        function showErrorState(message) {
+            DOM.placeholder.innerHTML = `
+                <div class="text-red-500 mb-4"><i class="fa-solid fa-triangle-exclamation text-5xl"></i></div>
+                <h2 class="text-xl font-bold text-slate-800 mb-2">エラーが発生しました</h2>
+                <p class="text-slate-600">${message}</p>
+            `;
+            DOM.placeholder.style.display = 'flex';
+            DOM.placeholder.style.opacity = '1';
+        }
+
+        /**
+         * イベントリスナーの設定
+         */
+        function setupEventListeners() {
+            DOM.menuToggle.addEventListener('click', () => toggleMobileMenu());
+            
+            // メニューが開いているとき、メインエリアをタップしたらメニューを閉じる
+            DOM.mainContent.addEventListener('click', (e) => {
+                // YES/NOボタンのクリックは除外
+                if (AppData.state.isMenuOpen && !e.target.closest('button')) {
+                    toggleMobileMenu(false);
+                }
+            });
+
+            // ウィンドウリサイズ時のメニュー状態リセット（バグ防止）
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) { // md breakpoint
+                    DOM.sidebar.classList.remove('scale-y-0', 'opacity-0', 'pointer-events-none');
+                    AppData.state.isMenuOpen = false;
+                } else if (!AppData.state.isMenuOpen) {
+                    DOM.sidebar.classList.add('scale-y-0', 'opacity-0', 'pointer-events-none');
                 }
             });
         }
 
-        // 4. リセット処理
-        function resetBoard() {
-            currentPhraseId = null;
-            document.getElementById('empty-state').classList.remove('hidden');
-            document.getElementById('content-state').classList.add('hidden');
-            updateButtonHighlight(''); // ハイライト全解除
-        }
+        // DOMの読み込み完了を待って初期化
+        document.addEventListener('DOMContentLoaded', initApp);
 
-        // 5. お客様の回答処理 (YES / NO) とエフェクト
-        function handleAnswer(type, event) {
-            if (!currentPhraseId) return; // 質問が選ばれていない時は無効
-
-            // リップルエフェクト生成
-            createRipple(event);
-
-            // 画面全体のフラッシュオーバーレイ
-            const overlay = document.getElementById('feedback-overlay');
-            const icon = document.getElementById('feedback-icon');
-            
-            // 既存のアニメーションをクリア
-            overlay.classList.remove('active');
-            void overlay.offsetWidth;
-            
-            if (type === 'yes') {
-                overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.9)'; // Blue-500
-                icon.textContent = '👍';
-            } else {
-                overlay.style.backgroundColor = 'rgba(239, 68, 68, 0.9)'; // Red-500
-                icon.textContent = '✋';
-            }
-            
-            overlay.classList.add('active');
-            icon.classList.remove('scale-50');
-            icon.classList.add('scale-100');
-            
-            // アニメーション終了後にアイコンのスケールを戻す
-            setTimeout(() => {
-                icon.classList.remove('scale-100');
-                icon.classList.add('scale-50');
-            }, 1500);
-        }
-
-        // リップル(波紋)エフェクト生成ロジック
-        function createRipple(event) {
-            const button = event.currentTarget;
-            const circle = document.createElement('span');
-            const diameter = Math.max(button.clientWidth, button.clientHeight);
-            const radius = diameter / 2;
-
-            const rect = button.getBoundingClientRect();
-            // タッチイベントかマウスイベントか判定
-            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${clientX - rect.left - radius}px`;
-            circle.style.top = `${clientY - rect.top - radius}px`;
-            circle.classList.add('ripple');
-
-            // 既存の波紋があれば削除
-            const existingRipple = button.querySelector('.ripple');
-            if (existingRipple) {
-                existingRipple.remove();
-            }
-
-            button.appendChild(circle);
-        }
     </script>
 </body>
 </html>
