@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multilingual Communication Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 押しやすさと視覚的フィードバックを強化するカスタムCSS */
+        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
+        .touch-action-manipulation { touch-action: manipulation; }
+        
+        /* YES/NOタップ時の波紋エフェクト用 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-anim 600ms linear;
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        @keyframes ripple-anim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* アニメーション */
+        .fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 成功/キャンセルのオーバーレイフラッシュ */
+        .flash-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 50;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .flash-overlay.active { opacity: 1; animation: fadeOut 1.5s ease-in forwards; }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen w-screen overflow-hidden flex flex-col font-sans text-gray-800 select-none touch-action-manipulation">
+
+    <!-- オーバーレイ (YES/NO 選択時のフィードバック) -->
+    <div id="feedback-overlay" class="flash-overlay">
+        <div id="feedback-icon" class="text-[15rem] drop-shadow-2xl scale-50 transition-transform duration-300"></div>
+    </div>
+
+    <!-- スタッフ操作エリア (上部) -->
+    <header class="bg-white shadow-md z-10 flex-shrink-0 border-b-4 border-gray-200">
+        <div class="p-3 bg-gray-800 text-white flex justify-between items-center">
+            <h1 class="text-sm font-bold tracking-wider">👩‍💼 STAFF CONSOLE</h1>
+            <button onclick="resetBoard()" class="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded-full transition-colors tap-highlight-transparent">
+                リセット ↺
+            </button>
+        </div>
+        <!-- フレーズボタンコンテナ -->
+        <div id="btn-container" class="p-3 grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[35vh] overflow-y-auto">
+            <!-- JSで動的に生成 -->
+        </div>
+    </header>
+
+    <!-- お客様向け表示エリア (中央) -->
+    <main id="main-display" class="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#fdfdfd] relative overflow-hidden tap-highlight-transparent">
+        <div id="empty-state" class="text-gray-300 flex flex-col items-center justify-center">
+            <span class="text-6xl mb-4">💬</span>
+            <p class="text-xl font-medium">上のボタンから質問を選んでください</p>
+            <p class="text-sm mt-2">Please select a phrase from the top panel.</p>
+        </div>
+
+        <div id="content-state" class="hidden w-full max-w-4xl mx-auto flex flex-col items-center justify-center space-y-8">
+            <!-- アイコン -->
+            <div id="disp-icon" class="text-7xl md:text-8xl drop-shadow-md"></div>
+            <!-- 英語 (最大) -->
+            <div id="disp-en" class="text-4xl md:text-6xl lg:text-7xl font-black text-gray-900 leading-tight tracking-tight px-2 w-full break-words"></div>
+            <!-- アジア言語コンテナ -->
+            <div class="flex flex-col space-y-3 w-full border-t-2 border-gray-100 pt-6">
+                <!-- 中国語 -->
+                <div class="flex items-center justify-center space-x-2">
+                    <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded">中文</span>
+                    <div id="disp-zh" class="text-2xl md:text-4xl font-medium text-gray-700"></div>
+                </div>
+                <!-- 韓国語 -->
+                <div class="flex items-center justify-center space-x-2">
+                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">한국어</span>
+                    <div id="disp-ko" class="text-2xl md:text-4xl font-medium text-gray-700"></div>
+                </div>
+            </div>
+            <!-- 日本語 (スタッフ確認用・小さく) -->
+            <div id="disp-ja" class="mt-4 text-sm text-gray-400 font-medium"></div>
+        </div>
+    </main>
+
+    <!-- お客様操作エリア (下部 YES/NO) -->
+    <footer class="h-[22vh] min-h-[120px] flex shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-10 flex-shrink-0">
+        <button onclick="handleAnswer('yes', event)" class="w-1/2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex flex-col items-center justify-center relative overflow-hidden tap-highlight-transparent transition-colors">
+            <span class="text-5xl md:text-7xl mb-1 drop-shadow-md">👍</span>
+            <span class="text-3xl md:text-5xl font-black tracking-widest drop-shadow-md">YES</span>
+        </button>
+        <button onclick="handleAnswer('no', event)" class="w-1/2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white flex flex-col items-center justify-center relative overflow-hidden tap-highlight-transparent transition-colors border-l-2 border-white/20">
+            <span class="text-5xl md:text-7xl mb-1 drop-shadow-md">✋</span>
+            <span class="text-3xl md:text-5xl font-black tracking-widest drop-shadow-md">NO</span>
+        </button>
+    </footer>
+
+    <script>
+        // 1. データ定義 (現場でよく使われるフレーズを厳選)
+        const phrases = [
+            { id: 'bag', icon: '🛍️', ja: 'レジ袋はご利用ですか？', en: 'Do you need a plastic bag?', zh: '需要塑料袋吗？', ko: '비닐봉투 필요하신가요?' },
+            { id: 'cutlery', icon: '🥢', ja: 'お箸/スプーンはつけますか？', en: 'Need chopsticks or a spoon?', zh: '需要筷子或勺子吗？', ko: '젓가락/숟가락 드릴까요?' },
+            { id: 'warm', icon: '🍱', ja: 'お弁当は温めますか？', en: 'Would you like this warmed up?', zh: '便当需要加热吗？', ko: '도시락 데워드릴까요?' },
+            { id: 'age', icon: '🔞', ja: '年齢確認ボタンを押してください', en: 'Please press the age verification button.', zh: '请按屏幕上的年龄确认按钮。', ko: '화면의 연령 확인 버튼을 눌러주세요.' },
+            { id: 'pay', icon: '💳', ja: '現金ですか？カードですか？', en: 'Cash or Card?', zh: '现金还是刷卡？', ko: '현금인가요, 카드인가요?' },
+            { id: 'point', icon: '📱', ja: 'ポイントカードはお持ちですか？', en: 'Do you have a point card?', zh: '您有积分卡吗？', ko: '포인트 카드 있으신가요?' }
+        ];
+
+        let currentPhraseId = null;
+
+        // 2. 初期化処理
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('btn-container');
+            
+            phrases.forEach(phrase => {
+                const btn = document.createElement('button');
+                btn.className = 'flex items-center justify-start space-x-2 p-3 bg-gray-50 hover:bg-blue-50 active:bg-blue-100 border border-gray-200 rounded-lg text-left transition-all tap-highlight-transparent group';
+                btn.innerHTML = `
+                    <span class="text-2xl group-hover:scale-110 transition-transform">${phrase.icon}</span>
+                    <span class="text-sm font-bold text-gray-700 leading-tight">${phrase.ja}</span>
+                `;
+                btn.onclick = () => showPhrase(phrase);
+                container.appendChild(btn);
+            });
+        });
+
+        // 3. フレーズ表示処理
+        function showPhrase(phrase) {
+            currentPhraseId = phrase.id;
+            
+            // DOM要素の取得
+            const emptyState = document.getElementById('empty-state');
+            const contentState = document.getElementById('content-state');
+            
+            // 値のセット
+            document.getElementById('disp-icon').textContent = phrase.icon;
+            document.getElementById('disp-en').textContent = phrase.en;
+            document.getElementById('disp-zh').textContent = phrase.zh;
+            document.getElementById('disp-ko').textContent = phrase.ko;
+            document.getElementById('disp-ja').textContent = `( Staff: ${phrase.ja} )`;
+
+            // 表示切替とアニメーション
+            emptyState.classList.add('hidden');
+            contentState.classList.remove('hidden');
+            
+            // アニメーションのリセットと再適用
+            contentState.classList.remove('fade-in-up');
+            void contentState.offsetWidth; // リフローを強制してアニメーションをリスタート
+            contentState.classList.add('fade-in-up');
+            
+            // ボタンのハイライト状態を更新
+            updateButtonHighlight(phrase.ja);
+        }
+
+        function updateButtonHighlight(activeText) {
+            const buttons = document.getElementById('btn-container').querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.innerText.includes(activeText)) {
+                    btn.classList.remove('bg-gray-50', 'border-gray-200');
+                    btn.classList.add('bg-blue-100', 'border-blue-400', 'ring-2', 'ring-blue-200');
+                } else {
+                    btn.classList.add('bg-gray-50', 'border-gray-200');
+                    btn.classList.remove('bg-blue-100', 'border-blue-400', 'ring-2', 'ring-blue-200');
+                }
+            });
+        }
+
+        // 4. リセット処理
+        function resetBoard() {
+            currentPhraseId = null;
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('content-state').classList.add('hidden');
+            updateButtonHighlight(''); // ハイライト全解除
+        }
+
+        // 5. お客様の回答処理 (YES / NO) とエフェクト
+        function handleAnswer(type, event) {
+            if (!currentPhraseId) return; // 質問が選ばれていない時は無効
+
+            // リップルエフェクト生成
+            createRipple(event);
+
+            // 画面全体のフラッシュオーバーレイ
+            const overlay = document.getElementById('feedback-overlay');
+            const icon = document.getElementById('feedback-icon');
+            
+            // 既存のアニメーションをクリア
+            overlay.classList.remove('active');
+            void overlay.offsetWidth;
+            
+            if (type === 'yes') {
+                overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.9)'; // Blue-500
+                icon.textContent = '👍';
+            } else {
+                overlay.style.backgroundColor = 'rgba(239, 68, 68, 0.9)'; // Red-500
+                icon.textContent = '✋';
+            }
+            
+            overlay.classList.add('active');
+            icon.classList.remove('scale-50');
+            icon.classList.add('scale-100');
+            
+            // アニメーション終了後にアイコンのスケールを戻す
+            setTimeout(() => {
+                icon.classList.remove('scale-100');
+                icon.classList.add('scale-50');
+            }, 1500);
+        }
+
+        // リップル(波紋)エフェクト生成ロジック
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement('span');
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+
+            const rect = button.getBoundingClientRect();
+            // タッチイベントかマウスイベントか判定
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${clientX - rect.left - radius}px`;
+            circle.style.top = `${clientY - rect.top - radius}px`;
+            circle.classList.add('ripple');
+
+            // 既存の波紋があれば削除
+            const existingRipple = button.querySelector('.ripple');
+            if (existingRipple) {
+                existingRipple.remove();
+            }
+
+            button.appendChild(circle);
+        }
+    </script>
+</body>
+</html>
