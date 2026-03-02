@@ -2,421 +2,562 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b1220" />
-  <title>指差し接客ボード（レジ）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>眼鏡店向け 指差し接客ボード（EN/中文/한국어）</title>
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    /* 端末のスリープ/ズーム事故を減らす（完全ではない） */
-    html, body { height: 100%; }
-    body { -webkit-tap-highlight-color: transparent; }
-    /* 表示エリアを「とにかく大きく」するための補助 */
-    .fit-text {
-      line-height: 1.02;
-      letter-spacing: -0.01em;
-      word-break: break-word;
-      text-wrap: balance;
-    }
-    /* 触りやすいボタンの最低サイズ */
-    .tap {
-      min-height: 3.25rem; /* 52px */
-    }
-  </style>
+  <!-- Font: 読みやすいサンセリフ（日本語含む） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <script>
-    // Tailwindのちょい拡張（任意）
     tailwind.config = {
       theme: {
         extend: {
-          boxShadow: {
-            soft: "0 10px 30px rgba(0,0,0,.28)"
-          }
+          colors: {
+            ink: "#0B1B33",      // ネイビー
+            ink2: "#102A52",
+            mist: "#F4F7FB",     // ほんのり青みの白
+            line: "#D7E2F0",
+            ok: "#0EA5E9",       // アクセント（清潔感）
+            danger: "#EF4444"
+          },
+          fontFamily: { sans: ["Noto Sans", "ui-sans-serif", "system-ui"] }
         }
       }
     }
   </script>
+
+  <style>
+    /* iOSのアドレスバー縮み等でも見やすく */
+    html, body { height: 100%; }
+    body { -webkit-tap-highlight-color: transparent; }
+
+    /* メイン文字：端末幅に応じて極大に、長文は自動で縮む */
+    .mega {
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      font-size: clamp(28px, 6.2vw, 72px);
+    }
+    .mega2 {
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.08;
+      font-size: clamp(22px, 4.7vw, 56px);
+    }
+    .mega3 {
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.12;
+      font-size: clamp(18px, 4vw, 44px);
+    }
+
+    /* “見せる”前提：余白を確保しつつ最大表示 */
+    .main-safe {
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-top: env(safe-area-inset-top);
+    }
+
+    /* キーボード操作時のフォーカスリング */
+    :focus-visible { outline: 3px solid rgba(14,165,233,.55); outline-offset: 2px; border-radius: 14px; }
+  </style>
 </head>
 
-<body class="bg-slate-950 text-slate-50">
-  <div class="min-h-dvh flex flex-col">
-
-    <!-- Header -->
-    <header class="px-4 pt-4 pb-3">
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <div class="w-10 h-10 rounded-2xl bg-slate-800/70 border border-white/10 shadow-soft grid place-items-center">
-            <span class="text-lg">🧾</span>
-          </div>
-          <div>
-            <h1 class="text-base font-semibold leading-tight">外国人対応・指差し接客ボード</h1>
-            <p class="text-xs text-slate-300/90">レジ向け / タップ → 画面中央に超巨大表示</p>
+<body class="bg-mist text-ink font-sans">
+  <div class="min-h-screen flex flex-col main-safe">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-line">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div class="flex items-center justify-center h-10 w-10 rounded-xl bg-ink text-white font-extrabold select-none">👓</div>
+        <div class="min-w-0">
+          <div class="text-sm text-ink2 font-semibold leading-tight">眼鏡店向け 指差し接客ボード</div>
+          <div class="text-xs text-slate-600 leading-tight">
+            ボタンを押す → メインに超巨大表示（EN / 中文 / 한국어）
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button id="btnReset" class="tap px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 text-sm font-medium active:scale-[0.99] transition">
-            リセット
+        <div class="ml-auto flex items-center gap-2">
+          <button id="btnClear"
+            class="px-3 py-2 rounded-xl border border-line bg-white hover:bg-slate-50 active:scale-[0.99] transition text-sm font-semibold">
+            クリア
           </button>
-          <button id="btnFullscreen" class="tap px-3 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 border border-emerald-300/20 text-sm font-semibold active:scale-[0.99] transition">
+          <button id="btnFullscreen"
+            class="px-3 py-2 rounded-xl bg-ink text-white hover:bg-ink2 active:scale-[0.99] transition text-sm font-semibold">
             全画面
           </button>
         </div>
       </div>
     </header>
 
-    <!-- Main Display -->
-    <main class="flex-1 px-4 pb-4 flex flex-col gap-3">
-      <!-- Big phrase area -->
-      <section class="relative flex-1 rounded-3xl bg-slate-900/70 border border-white/10 shadow-soft overflow-hidden">
-        <div class="absolute inset-0 pointer-events-none opacity-30"
-             style="background: radial-gradient(900px 400px at 20% 0%, rgba(16,185,129,.35), transparent 55%),
-                            radial-gradient(900px 400px at 90% 40%, rgba(59,130,246,.25), transparent 55%);">
-        </div>
+    <!-- Main -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <!-- Phrase buttons -->
+      <section class="lg:col-span-5 xl:col-span-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-line overflow-hidden">
+          <div class="px-4 py-3 border-b border-line flex items-center gap-2">
+            <div class="text-sm font-extrabold text-ink">フレーズ</div>
+            <div class="text-xs text-slate-600">よく使う順に配置</div>
 
-        <div class="relative h-full p-4 sm:p-6 flex flex-col">
-          <div class="flex items-center justify-between gap-2">
-            <div class="text-xs text-slate-300">
-              <span class="font-semibold text-slate-100">表示中:</span>
-              <span id="labelJa" class="ml-1">（未選択）</span>
+            <div class="ml-auto flex items-center gap-2">
+              <label class="text-xs text-slate-600 select-none flex items-center gap-2 cursor-pointer">
+                <input id="toggleCN" type="checkbox" class="accent-ink" checked>
+                中文
+              </label>
+              <label class="text-xs text-slate-600 select-none flex items-center gap-2 cursor-pointer">
+                <input id="toggleKR" type="checkbox" class="accent-ink" checked>
+                한국어
+              </label>
             </div>
-            <div class="flex items-center gap-2">
-              <button id="btnSpeak" class="tap px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 text-sm font-medium active:scale-[0.99] transition"
-                      title="英語を音声で読み上げ（対応端末のみ）">
-                🔊 読み上げ
+          </div>
+
+          <div class="p-3">
+            <div class="relative">
+              <input id="search"
+                type="text"
+                inputmode="search"
+                autocomplete="off"
+                placeholder="検索（例：処方箋 / 視力 / レンズ / 何日）"
+                class="w-full px-4 py-3 rounded-2xl border border-line bg-white focus:border-ok focus:ring-2 focus:ring-ok/20 text-sm"
+              />
+              <button id="btnResetSearch" class="hidden absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200">
+                クリア
               </button>
             </div>
-          </div>
 
-          <div class="mt-3 flex-1 flex flex-col justify-center gap-5">
-            <!-- English super huge -->
-            <div class="text-center">
-              <div id="bigEn"
-                   class="fit-text font-black tracking-tight text-white drop-shadow-sm"
-                   style="font-size: clamp(34px, 7.2vw, 86px);">
-                Tap a phrase button below.
-              </div>
-              <div id="subNote" class="mt-2 text-xs sm:text-sm text-slate-300/90">
-                ※ お客様に画面を向けて見せてください
-              </div>
+            <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2" id="btnGrid" aria-label="phrase buttons">
+              <!-- buttons injected -->
             </div>
 
-            <!-- CN / KR -->
-            <div class="grid grid-cols-1 gap-3">
-              <div class="rounded-2xl bg-slate-950/40 border border-white/10 p-3">
-                <div class="text-[11px] uppercase tracking-wider text-slate-300">中文</div>
-                <div id="bigZh" class="fit-text font-extrabold text-slate-50"
-                     style="font-size: clamp(22px, 4.6vw, 52px);">
-                  （中国語表示）
-                </div>
-              </div>
-              <div class="rounded-2xl bg-slate-950/40 border border-white/10 p-3">
-                <div class="text-[11px] uppercase tracking-wider text-slate-300">한국어</div>
-                <div id="bigKo" class="fit-text font-extrabold text-slate-50"
-                     style="font-size: clamp(22px, 4.6vw, 52px);">
-                  （韓国語表示）
-                </div>
-              </div>
+            <div id="emptyState" class="hidden mt-3 text-sm text-slate-600 bg-slate-50 border border-line rounded-2xl p-3">
+              該当するフレーズがありません。検索語を変えてみてください。
+            </div>
+
+            <div class="mt-3 text-xs text-slate-500">
+              ヒント：ボタン長押しで誤タップしにくいように、余白を多めにしています。
             </div>
           </div>
-
-          <!-- Error / status -->
-          <div id="status" class="mt-3 text-xs text-slate-300/90"></div>
         </div>
       </section>
 
-      <!-- Phrase Buttons -->
-      <section class="rounded-3xl bg-slate-900/60 border border-white/10 shadow-soft p-3 sm:p-4">
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <div class="text-sm font-semibold">よく使うフレーズ</div>
-          <div class="flex items-center gap-2">
-            <label class="text-xs text-slate-300 flex items-center gap-2 select-none">
-              <input id="toggleCNKR" type="checkbox" class="accent-emerald-500" checked />
-              中文 / 한국어 を表示
-            </label>
+      <!-- Display area -->
+      <section class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+        <div class="bg-ink rounded-3xl shadow-sm overflow-hidden border border-ink/10">
+          <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <div class="text-white/90 text-sm font-semibold">お客様に見せるエリア</div>
+            <div class="text-white/60 text-xs">タップでコピー（英語）</div>
+          </div>
+
+          <div id="display"
+               class="p-5 md:p-7 min-h-[42vh] flex flex-col justify-center gap-4 select-none"
+               role="button"
+               tabindex="0"
+               aria-label="display area">
+            <!-- English -->
+            <div class="text-white">
+              <div class="text-white/70 text-xs font-semibold tracking-wide">ENGLISH</div>
+              <div id="enText" class="mega mt-1">Tap a Japanese phrase button.</div>
+            </div>
+
+            <!-- Chinese -->
+            <div id="cnBlock" class="text-white/95">
+              <div class="text-white/70 text-xs font-semibold tracking-wide">中文</div>
+              <div id="cnText" class="mega2 mt-1">（可选）</div>
+            </div>
+
+            <!-- Korean -->
+            <div id="krBlock" class="text-white/95">
+              <div class="text-white/70 text-xs font-semibold tracking-wide">한국어</div>
+              <div id="krText" class="mega2 mt-1">（선택）</div>
+            </div>
+
+            <div id="toast" class="hidden mt-2 text-sm font-semibold text-white bg-white/10 border border-white/15 rounded-2xl px-4 py-3">
+              Copied!
+            </div>
           </div>
         </div>
 
-        <div id="phraseGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-
-        <div class="mt-3 flex gap-2">
-          <input id="quickSearch" class="w-full tap px-3 rounded-2xl bg-slate-950/40 border border-white/10 placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-                 placeholder="（任意）フレーズ検索：例「袋」「温め」" />
-          <button id="btnClearSearch" class="tap px-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 text-sm font-semibold active:scale-[0.99] transition">
-            クリア
-          </button>
+        <!-- YES / NO -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="rounded-3xl border border-line bg-white shadow-sm overflow-hidden">
+            <div class="p-4 md:p-6 flex flex-col items-center justify-center min-h-[18vh]">
+              <div class="text-5xl md:text-6xl">👍</div>
+              <div class="mt-2 text-2xl md:text-3xl font-extrabold text-ink">YES</div>
+              <div class="mt-1 text-sm md:text-base font-semibold text-slate-600">OK / はい</div>
+            </div>
+          </div>
+          <div class="rounded-3xl border border-line bg-white shadow-sm overflow-hidden">
+            <div class="p-4 md:p-6 flex flex-col items-center justify-center min-h-[18vh]">
+              <div class="text-5xl md:text-6xl">✋</div>
+              <div class="mt-2 text-2xl md:text-3xl font-extrabold text-ink">NO</div>
+              <div class="mt-1 text-sm md:text-base font-semibold text-slate-600">No / いいえ</div>
+            </div>
+          </div>
         </div>
-        <p class="mt-2 text-[11px] text-slate-400/90">
-          ヒント: ボタン長押し不要。タップ1回で即切替。誤操作しても「リセット」で復帰。
-        </p>
+
+        <!-- Quick meta -->
+        <div class="bg-white rounded-2xl border border-line shadow-sm p-4 flex flex-wrap items-center gap-3">
+          <div class="text-sm font-extrabold text-ink">爆速操作</div>
+          <div class="text-xs text-slate-600">・クリック即時反映（Vanilla JS）</div>
+          <div class="text-xs text-slate-600">・長文は自動で文字サイズ調整</div>
+          <div class="text-xs text-slate-600">・表示エリアタップで英語コピー</div>
+        </div>
       </section>
     </main>
 
-    <!-- YES / NO -->
-    <footer class="px-4 pb-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div class="rounded-3xl border border-white/10 shadow-soft bg-emerald-600/90 active:scale-[0.995] transition select-none">
-          <div class="h-[min(16vh,140px)] flex items-center justify-center">
-            <div class="text-center">
-              <div class="text-[min(7vw,56px)] font-black leading-none">👍 YES</div>
-              <div class="mt-1 text-[min(3.5vw,18px)] font-semibold opacity-95">OK / はい</div>
-            </div>
-          </div>
-        </div>
-        <div class="rounded-3xl border border-white/10 shadow-soft bg-rose-600/90 active:scale-[0.995] transition select-none">
-          <div class="h-[min(16vh,140px)] flex items-center justify-center">
-            <div class="text-center">
-              <div class="text-[min(7vw,56px)] font-black leading-none">✋ NO</div>
-              <div class="mt-1 text-[min(3.5vw,18px)] font-semibold opacity-95">No / いいえ</div>
-            </div>
-          </div>
-        </div>
+    <!-- Footer -->
+    <footer class="px-4 pb-5">
+      <div class="max-w-7xl mx-auto text-xs text-slate-500">
+        ※翻訳は現場向けの自然な表現に寄せています（必要なら店舗用語に合わせて編集OK）。
       </div>
     </footer>
-
   </div>
 
   <script>
-    // ===== Data =====
+    // ------------------------------
+    // Data (JP -> EN/CN/KR)
+    // ------------------------------
     const PHRASES = [
       {
-        id: "bag",
-        ja: "レジ袋はご利用ですか？",
-        en: "Do you need a shopping bag?",
-        zh: "需要购物袋吗？",
-        ko: "봉투 필요하세요?"
+        jp: "視力測定をご希望ですか？",
+        en: "Would you like an eye test (vision check)?",
+        cn: "您想做视力检查吗？",
+        kr: "시력 검사를 원하시나요?"
       },
       {
-        id: "chopsticks",
-        ja: "お箸／スプーンはつけますか？",
-        en: "Would you like chopsticks or a spoon?",
-        zh: "需要筷子还是勺子吗？",
-        ko: "젓가락이나 스푼 필요하세요?"
+        jp: "眼科の処方箋はお持ちですか？",
+        en: "Do you have a prescription from an eye doctor?",
+        cn: "您有眼科处方单吗？",
+        kr: "안과 처방전이 있으신가요?"
       },
       {
-        id: "heat",
-        ja: "お弁当は温めますか？",
-        en: "Would you like me to heat this up?",
-        zh: "需要加热吗？",
-        ko: "데워 드릴까요?"
+        jp: "コンタクトの度数を眼鏡にできます（可能なら情報を見せてください）",
+        en: "We may be able to use your contact lens prescription for glasses. Please show the details if you have them.",
+        cn: "我们可能可以用您的隐形眼镜度数配眼镜。若有信息请给我们看一下。",
+        kr: "콘택트렌즈 도수로 안경 제작이 가능할 수 있어요. 가능하면 정보를 보여주세요."
       },
       {
-        id: "agecheck",
-        ja: "年齢確認ボタンを押してください",
-        en: "Please press the age verification button.",
-        zh: "请按年龄确认按钮。",
-        ko: "연령 확인 버튼을 눌러 주세요."
+        jp: "こちらのフレームを試着できます。掛けてみてください。",
+        en: "You can try this frame on. Please put it on.",
+        cn: "您可以试戴这副镜框。请戴一下看看。",
+        kr: "이 프레임 착용해 보실 수 있어요. 한번 써 보세요."
       },
       {
-        id: "paymethod",
-        ja: "お支払いは現金ですか？カードですか？",
-        en: "Will you pay by cash or card?",
-        zh: "现金还是刷卡？",
-        ko: "현금이세요, 카드이세요?"
+        jp: "掛け心地（フィッティング）はいかがですか？",
+        en: "How does it feel? Is the fitting comfortable?",
+        cn: "戴着感觉怎么样？合适吗？",
+        kr: "착용감은 어떠세요? 피팅이 편한가요?"
       },
       {
-        id: "pointcard",
-        ja: "ポイントカードはお持ちですか？",
-        en: "Do you have a point card?",
-        zh: "有积分卡吗？",
-        ko: "포인트 카드 있으세요?"
+        jp: "少し調整します。耳と鼻の位置を合わせます。",
+        en: "I will adjust it slightly—around the ears and nose pads.",
+        cn: "我帮您稍微调整一下，主要是耳朵和鼻托的位置。",
+        kr: "조금 조정해 드릴게요. 귀와 코받침 부분을 맞추겠습니다."
       },
       {
-        id: "receipt",
-        ja: "レシートはご利用ですか？",
-        en: "Do you need the receipt?",
-        zh: "需要收据吗？",
-        ko: "영수증 필요하세요?"
+        jp: "レンズは薄型をご希望ですか？",
+        en: "Would you like thinner lenses?",
+        cn: "您想要薄型镜片吗？",
+        kr: "얇은 렌즈를 원하시나요?"
       },
       {
-        id: "split",
-        ja: "お会計はまとめてですか？別々ですか？",
-        en: "Together or separate payments?",
-        zh: "一起结账还是分开结账？",
-        ko: "한 번에 결제할까요, 나눠서 할까요?"
+        jp: "ブルーライトカットをご希望ですか？",
+        en: "Would you like blue-light filtering lenses?",
+        cn: "您需要防蓝光镜片吗？",
+        kr: "블루라이트 차단 렌즈를 원하시나요?"
       },
       {
-        id: "taxfree",
-        ja: "免税はご利用ですか？（対象の場合）",
-        en: "Do you need tax-free shopping? (if eligible)",
-        zh: "需要免税吗？（符合条件时）",
-        ko: "면세 받으시나요? (해당 시)"
+        jp: "遠く用／近く用／遠近両用、どれをご希望ですか？",
+        en: "Do you need glasses for distance, for reading, or progressive (both)?",
+        cn: "您需要看远、看近，还是渐进多焦（远近两用）呢？",
+        kr: "먼 거리용, 가까운 거리(독서)용, 또는 누진(원·근거리) 중 어떤 걸 원하세요?"
+      },
+      {
+        jp: "在庫があれば、本日約〇分でお渡しできます。",
+        en: "If we have the lenses in stock, we can have them ready in about __ minutes today.",
+        cn: "如果有现货镜片，今天大约 __ 分钟可以完成交付。",
+        kr: "재고 렌즈가 있으면 오늘 약 __분 안에 준비해 드릴 수 있어요."
+      },
+      {
+        jp: "特注レンズのため、完成まで〇日ほどかかります。",
+        en: "These are custom lenses, so it will take about __ days to be ready.",
+        cn: "这是定制镜片，完成大约需要 __ 天。",
+        kr: "맞춤 렌즈라서 완성까지 약 __일 정도 걸립니다."
+      },
+      {
+        jp: "レンズのコーティング（傷防止・反射防止）を選べます。",
+        en: "You can choose lens coatings (scratch-resistant and anti-reflection).",
+        cn: "您可以选择镜片镀膜（防刮、抗反射等）。",
+        kr: "렌즈 코팅(스크래치 방지, 반사 방지 등)을 선택하실 수 있어요."
+      },
+      {
+        jp: "お支払いは現金／クレジット／交通系ICが使えます。",
+        en: "You can pay by cash, credit card, or transit IC card.",
+        cn: "可以使用现金、信用卡或交通IC卡付款。",
+        kr: "현금, 신용카드, 교통카드(IC)로 결제 가능합니다."
+      },
+      {
+        jp: "免税（Tax-free）をご希望ですか？（条件があります）",
+        en: "Would you like tax-free shopping? (Conditions apply.)",
+        cn: "您需要免税吗？（有条件）",
+        kr: "면세(Tax-free)를 원하시나요? (조건이 있습니다.)"
+      },
+      {
+        jp: "お名前をローマ字で書いてください。",
+        en: "Please write your name in Roman letters.",
+        cn: "请用罗马字母（英文字母）写下您的姓名。",
+        kr: "성함을 로마자(영문)로 적어 주세요."
+      },
+      {
+        jp: "こちらにご記入ください（電話番号／メールなど）。",
+        en: "Please fill this out (phone number, email, etc.).",
+        cn: "请在这里填写（电话、邮箱等）。",
+        kr: "여기에 작성해 주세요(전화번호, 이메일 등)."
+      },
+      {
+        jp: "受け取りはいつがよろしいですか？",
+        en: "When would you like to pick it up?",
+        cn: "您想什么时候来取呢？",
+        kr: "언제 수령하시길 원하세요?"
+      },
+      {
+        jp: "度数確認のため、少しお時間をください。",
+        en: "Please give us a moment to confirm your prescription.",
+        cn: "我们需要一点时间确认您的度数。",
+        kr: "도수 확인을 위해 잠시만 시간을 주세요."
+      },
+      {
+        jp: "こちらが合計金額です。",
+        en: "This is the total amount.",
+        cn: "这是总金额。",
+        kr: "총 금액입니다."
+      },
+      {
+        jp: "保証とアフターサービスがあります（調整はいつでも）。",
+        en: "We offer a warranty and after-sales service. Adjustments are always available.",
+        cn: "我们提供保修和售后服务，随时可以帮您调整。",
+        kr: "보증 및 사후 서비스가 있습니다. 피팅 조정은 언제든 가능합니다."
       }
     ];
 
-    // ===== Elements =====
-    const phraseGrid = document.getElementById("phraseGrid");
-    const labelJa = document.getElementById("labelJa");
-    const bigEn = document.getElementById("bigEn");
-    const bigZh = document.getElementById("bigZh");
-    const bigKo = document.getElementById("bigKo");
-    const statusEl = document.getElementById("status");
-
-    const btnReset = document.getElementById("btnReset");
+    // ------------------------------
+    // Elements
+    // ------------------------------
+    const btnGrid = document.getElementById("btnGrid");
+    const enText = document.getElementById("enText");
+    const cnText = document.getElementById("cnText");
+    const krText = document.getElementById("krText");
+    const cnBlock = document.getElementById("cnBlock");
+    const krBlock = document.getElementById("krBlock");
+    const toggleCN = document.getElementById("toggleCN");
+    const toggleKR = document.getElementById("toggleKR");
+    const btnClear = document.getElementById("btnClear");
     const btnFullscreen = document.getElementById("btnFullscreen");
-    const btnSpeak = document.getElementById("btnSpeak");
+    const display = document.getElementById("display");
+    const toast = document.getElementById("toast");
+    const search = document.getElementById("search");
+    const btnResetSearch = document.getElementById("btnResetSearch");
+    const emptyState = document.getElementById("emptyState");
 
-    const toggleCNKR = document.getElementById("toggleCNKR");
-    const quickSearch = document.getElementById("quickSearch");
-    const btnClearSearch = document.getElementById("btnClearSearch");
+    // ------------------------------
+    // Helpers
+    // ------------------------------
+    const state = {
+      q: "",
+      last: null,
+      toastTimer: null
+    };
 
-    // ===== State =====
-    let current = null;
-
-    // ===== Helpers =====
     function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      }[s]));
     }
 
-    function setStatus(msg = "", type = "info") {
-      const base = "text-slate-300/90";
-      const err = "text-rose-200";
-      const ok = "text-emerald-200";
-      statusEl.className = "mt-3 text-xs " + (type === "error" ? err : type === "ok" ? ok : base);
-      statusEl.textContent = msg;
+    function pickFontClass(text) {
+      const len = (text || "").length;
+      if (len <= 40) return "mega";
+      if (len <= 80) return "mega2";
+      return "mega3";
     }
 
-    function applyPhrase(p) {
-      current = p;
-      labelJa.textContent = p ? p.ja : "（未選択）";
+    function setDisplay(item) {
+      state.last = item;
 
-      bigEn.textContent = p ? p.en : "Tap a phrase button below.";
-      bigZh.textContent = p ? (p.zh || "（中国語なし）") : "（中国語表示）";
-      bigKo.textContent = p ? (p.ko || "（韓国語なし）") : "（韓国語表示）";
+      const en = item?.en ?? "Tap a Japanese phrase button.";
+      const cn = item?.cn ?? "";
+      const kr = item?.kr ?? "";
 
-      // CN/KR 表示切替
-      const show = toggleCNKR.checked;
-      bigZh.closest("div").parentElement.classList.toggle("hidden", !show); // 中文 card
-      bigKo.closest("div").parentElement.classList.toggle("hidden", !show); // 한국어 card
+      enText.textContent = en;
+      enText.className = `${pickFontClass(en)} mt-1`;
 
-      setStatus(p ? "表示を切り替えました。" : "", p ? "ok" : "info");
+      cnText.textContent = cn || "（非表示）";
+      cnText.className = `${pickFontClass(cn || "（非表示）")} mt-1`;
 
-      // 触った瞬間に視線をメインに誘導（迷子防止）
-      // ※強制スクロールは端末によって挙動がブレるため「控えめ」に
-      if (p) {
-        // 画面が下にある場合は少し上へ戻す
-        window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "smooth" });
-      }
+      krText.textContent = kr || "（숨김）";
+      krText.className = `${pickFontClass(kr || "（숨김）")} mt-1`;
+
+      // show/hide language blocks
+      cnBlock.classList.toggle("hidden", !toggleCN.checked);
+      krBlock.classList.toggle("hidden", !toggleKR.checked);
     }
 
-    function renderButtons(filter = "") {
-      const q = filter.trim();
-      const list = q
-        ? PHRASES.filter(p => (p.ja + " " + p.en).toLowerCase().includes(q.toLowerCase()))
-        : PHRASES;
-
-      phraseGrid.innerHTML = list.map(p => `
-        <button
-          class="tap text-left px-3 py-2 rounded-2xl bg-slate-950/40 hover:bg-slate-800/70 border border-white/10 active:scale-[0.99] transition shadow-sm"
-          data-id="${escapeHtml(p.id)}"
-          type="button"
-          aria-label="${escapeHtml(p.ja)}"
-        >
-          <div class="text-[13px] font-semibold leading-snug">${escapeHtml(p.ja)}</div>
-          <div class="mt-1 text-[11px] text-slate-400 line-clamp-1">${escapeHtml(p.en)}</div>
-        </button>
-      `).join("");
-
-      if (q && list.length === 0) {
-        setStatus("該当するフレーズがありません。検索語を変えてください。", "error");
-      } else {
-        setStatus("");
-      }
+    function showToast(msg = "Copied!") {
+      toast.textContent = msg;
+      toast.classList.remove("hidden");
+      clearTimeout(state.toastTimer);
+      state.toastTimer = setTimeout(() => toast.classList.add("hidden"), 1000);
     }
 
-    async function toggleFullscreen() {
+    function normalized(s) {
+      return (s || "").toLowerCase().trim();
+    }
+
+    function filterPhrases(q) {
+      const nq = normalized(q);
+      if (!nq) return PHRASES;
+      return PHRASES.filter(p => {
+        const hay = `${p.jp} ${p.en} ${p.cn} ${p.kr}`.toLowerCase();
+        return hay.includes(nq);
+      });
+    }
+
+    // ------------------------------
+    // Render Buttons
+    // ------------------------------
+    function renderButtons() {
+      const list = filterPhrases(state.q);
+      btnGrid.innerHTML = "";
+
+      emptyState.classList.toggle("hidden", list.length !== 0);
+
+      const frag = document.createDocumentFragment();
+
+      list.forEach((p, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = [
+          "w-full text-left",
+          "px-4 py-4",
+          "rounded-2xl border border-line bg-white",
+          "hover:bg-slate-50 active:scale-[0.99] transition",
+          "shadow-[0_1px_0_rgba(16,42,82,0.03)]",
+          "min-h-[64px]",
+          "font-semibold text-ink"
+        ].join(" ");
+
+        btn.setAttribute("data-idx", String(idx));
+        btn.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 h-9 w-9 shrink-0 rounded-xl bg-ink text-white grid place-items-center font-extrabold">JP</div>
+            <div class="min-w-0">
+              <div class="text-[15px] leading-snug">${escapeHtml(p.jp)}</div>
+              <div class="mt-1 text-xs text-slate-500 line-clamp-1">${escapeHtml(p.en)}</div>
+            </div>
+          </div>
+        `;
+        btn.addEventListener("click", () => setDisplay(p), { passive: true });
+        frag.appendChild(btn);
+      });
+
+      btnGrid.appendChild(frag);
+    }
+
+    // ------------------------------
+    // Events
+    // ------------------------------
+    toggleCN.addEventListener("change", () => setDisplay(state.last ?? PHRASES[0]));
+    toggleKR.addEventListener("change", () => setDisplay(state.last ?? PHRASES[0]));
+
+    btnClear.addEventListener("click", () => {
+      state.last = null;
+      enText.textContent = "Tap a Japanese phrase button.";
+      enText.className = "mega mt-1";
+      cnText.textContent = "（可选）";
+      cnText.className = "mega2 mt-1";
+      krText.textContent = "（선택）";
+      krText.className = "mega2 mt-1";
+      cnBlock.classList.toggle("hidden", !toggleCN.checked);
+      krBlock.classList.toggle("hidden", !toggleKR.checked);
+      showToast("Cleared");
+    });
+
+    btnFullscreen.addEventListener("click", async () => {
       try {
-        const el = document.documentElement;
         if (!document.fullscreenElement) {
-          await el.requestFullscreen?.();
-          setStatus("全画面表示にしました。", "ok");
+          await document.documentElement.requestFullscreen();
+          btnFullscreen.textContent = "全画面解除";
         } else {
-          await document.exitFullscreen?.();
-          setStatus("全画面表示を終了しました。", "ok");
+          await document.exitFullscreen();
+          btnFullscreen.textContent = "全画面";
         }
       } catch (e) {
-        setStatus("この端末/ブラウザでは全画面が使えない場合があります。", "error");
+        // 失敗しても壊れない
+        showToast("Fullscreen not available");
       }
-    }
+    });
 
-    function speakEnglish() {
+    document.addEventListener("fullscreenchange", () => {
+      btnFullscreen.textContent = document.fullscreenElement ? "全画面解除" : "全画面";
+    });
+
+    // Display tap to copy (English)
+    async function copyEnglish() {
+      const text = (state.last?.en ?? "").trim();
+      if (!text) return;
       try {
-        if (!current?.en) {
-          setStatus("先にフレーズを選んでください。", "error");
-          return;
-        }
-        const synth = window.speechSynthesis;
-        if (!synth) {
-          setStatus("この端末は音声読み上げに対応していません。", "error");
-          return;
-        }
-
-        // 連打対策：前の読み上げを止める
-        synth.cancel();
-
-        const u = new SpeechSynthesisUtterance(current.en);
-        u.lang = "en-US";
-        u.rate = 0.95;
-        u.pitch = 1.0;
-        u.onend = () => setStatus("読み上げました。", "ok");
-        u.onerror = () => setStatus("読み上げに失敗しました。", "error");
-        synth.speak(u);
-        setStatus("読み上げ中…", "info");
+        await navigator.clipboard.writeText(text);
+        showToast("Copied (EN)");
       } catch (e) {
-        setStatus("読み上げ機能でエラーが発生しました。", "error");
+        // Clipboard API不可の環境向け fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); showToast("Copied (EN)"); }
+        catch { showToast("Copy failed"); }
+        finally { document.body.removeChild(ta); }
       }
     }
 
-    // ===== Events =====
-    phraseGrid.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-id]");
-      if (!btn) return;
-      const id = btn.dataset.id;
-      const p = PHRASES.find(x => x.id === id);
-      if (!p) {
-        setStatus("フレーズが見つかりませんでした。", "error");
-        return;
+    display.addEventListener("click", () => copyEnglish(), { passive: true });
+    display.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        copyEnglish();
       }
-      applyPhrase(p);
     });
 
-    toggleCNKR.addEventListener("change", () => applyPhrase(current));
-    btnReset.addEventListener("click", () => {
-      current = null;
-      quickSearch.value = "";
-      renderButtons("");
-      applyPhrase(null);
-      setStatus("リセットしました。", "ok");
+    // Search
+    function updateSearchUI() {
+      btnResetSearch.classList.toggle("hidden", !state.q);
+    }
+
+    search.addEventListener("input", (e) => {
+      state.q = e.target.value || "";
+      updateSearchUI();
+      renderButtons();
     });
 
-    btnFullscreen.addEventListener("click", toggleFullscreen);
-    btnSpeak.addEventListener("click", speakEnglish);
-
-    quickSearch.addEventListener("input", () => renderButtons(quickSearch.value));
-    btnClearSearch.addEventListener("click", () => {
-      quickSearch.value = "";
-      renderButtons("");
-      quickSearch.focus();
+    btnResetSearch.addEventListener("click", () => {
+      state.q = "";
+      search.value = "";
+      updateSearchUI();
+      renderButtons();
+      search.focus();
     });
 
-    // ===== Init =====
-    renderButtons("");
-    applyPhrase(null);
-
-    // iOSのダブルタップ拡大を多少抑える（完全抑止ではない）
-    let lastTouchEnd = 0;
-    document.addEventListener("touchend", (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
+    // ------------------------------
+    // Init
+    // ------------------------------
+    renderButtons();
+    setDisplay(PHRASES[0]);
   </script>
 </body>
 </html>
