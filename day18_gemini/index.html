@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レンズオプションお見積りシミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* カスタムスタイル: スムーズなアニメーションと選択状態の強調 */
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+        
+        .option-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* ラジオボタン（一つだけ選択）の選択状態 */
+        .radio-selected {
+            border-color: #2563eb; /* Tailwind blue-600 */
+            background-color: #eff6ff; /* Tailwind blue-50 */
+            position: relative;
+        }
+        .radio-selected::after {
+            content: '\f058'; /* FontAwesome check-circle */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            color: #2563eb;
+            font-size: 1.25rem;
+        }
+
+        /* チェックボックス（複数選択）の選択状態 */
+        .checkbox-selected {
+            border-color: #059669; /* Tailwind emerald-600 */
+            background-color: #ecfdf5; /* Tailwind emerald-50 */
+            position: relative;
+        }
+        .checkbox-selected::after {
+            content: '\f14a'; /* FontAwesome check-square */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            color: #059669;
+            font-size: 1.25rem;
+        }
+
+        /* 固定フッターの影 */
+        .footer-shadow {
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 pb-32"> <!-- フッター分の余白を下部に確保 -->
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-700">
+                <i class="fa-solid fa-glasses text-blue-600 mr-2"></i>レンズオプションお見積り
+            </h1>
+            <button id="resetBtn" class="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center">
+                <i class="fa-solid fa-rotate-right mr-1"></i>リセット
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 space-y-8">
+        
+        <!-- 1. フレーム基本料金 -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">
+                <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full mr-2">STEP 1</span>
+                フレーム基本料金
+            </h2>
+            <div class="flex items-center">
+                <div class="relative w-full max-w-xs">
+                    <input type="number" id="basePrice" 
+                           class="w-full text-right text-xl font-bold p-3 pr-8 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                           placeholder="0" value="5500" min="0" step="100">
+                    <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">円</span>
+                </div>
+                <p class="ml-4 text-sm text-gray-500">※税込価格をご入力ください</p>
+            </div>
+            <p id="basePriceError" class="text-red-500 text-sm mt-2 hidden">正しい金額を入力してください。</p>
+        </section>
+
+        <!-- 2. レンズの薄さ（排他選択） -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2 flex justify-between items-end">
+                <div>
+                    <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full mr-2">STEP 2</span>
+                    レンズの薄さ
+                </div>
+                <span class="text-xs text-gray-500 font-normal">※1つだけ選択</span>
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="thicknessOptions">
+                <!-- JSで生成 -->
+            </div>
+        </section>
+
+        <!-- 3. コーティング（複数選択可） -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2 flex justify-between items-end">
+                <div>
+                    <span class="bg-emerald-100 text-emerald-800 text-sm px-2 py-1 rounded-full mr-2">STEP 3</span>
+                    コーティング機能
+                </div>
+                <span class="text-xs text-gray-500 font-normal">※複数選択可</span>
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="coatingOptions">
+                <!-- JSで生成 -->
+            </div>
+        </section>
+
+        <!-- 4. カラーレンズ（排他選択） -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+            <h2 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2 flex justify-between items-end">
+                <div>
+                    <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full mr-2">STEP 4</span>
+                    カラーレンズ
+                </div>
+                <span class="text-xs text-gray-500 font-normal">※1つだけ選択</span>
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="colorOptions">
+                <!-- JSで生成 -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 固定フッター：合計金額 -->
+    <footer class="fixed bottom-0 left-0 w-full bg-slate-800 text-white py-4 px-4 footer-shadow z-20 transition-all duration-300">
+        <div class="max-w-3xl mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div class="text-slate-300 text-sm mb-1 sm:mb-0">
+                お見積り合計（税込）
+            </div>
+            <div class="flex items-baseline">
+                <span id="totalPrice" class="text-4xl sm:text-5xl font-extrabold tracking-tight text-yellow-400 transition-all duration-300">0</span>
+                <span class="ml-2 text-xl font-bold">円</span>
+            </div>
+        </div>
+        <!-- 内訳の簡易表示エリア -->
+        <div class="max-w-3xl mx-auto mt-2 pt-2 border-t border-slate-600 text-xs text-slate-400 flex flex-wrap gap-x-3 gap-y-1" id="summaryArea">
+            <!-- JSで生成 -->
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. データ定義 ---
+        const optionsData = {
+            thickness: [
+                { id: 'thick_std', name: '標準', price: 0, desc: '度数が弱めの方に', default: true },
+                { id: 'thick_160', name: '薄型 1.60', price: 3300, desc: '一般的な薄さ' },
+                { id: 'thick_167', name: '超薄型 1.67', price: 5500, desc: '度数が強めの方に' },
+                { id: 'thick_174', name: '極薄型 1.74', price: 7700, desc: '最も薄く軽い仕上がり' }
+            ],
+            coatings: [
+                { id: 'coat_blue', name: 'ブルーライトカット', price: 3300, icon: 'fa-desktop' },
+                { id: 'coat_scratch', name: '傷防止コート', price: 3300, icon: 'fa-shield-halved' },
+                { id: 'coat_fog', name: 'くもり止めコート', price: 4400, icon: 'fa-cloud' }
+            ],
+            color: [
+                { id: 'color_none', name: 'なし（クリア）', price: 0, default: true },
+                { id: 'color_add', name: 'カラーレンズにする', price: 3300 }
+            ]
+        };
+
+        // --- 2. 状態管理 ---
+        let state = {
+            basePrice: 5500,
+            selectedThicknessId: 'thick_std',
+            selectedCoatingIds: new Set(),
+            selectedColorId: 'color_none'
+        };
+
+        // DOM要素の取得
+        const els = {
+            basePrice: document.getElementById('basePrice'),
+            basePriceError: document.getElementById('basePriceError'),
+            thicknessContainer: document.getElementById('thicknessOptions'),
+            coatingContainer: document.getElementById('coatingOptions'),
+            colorContainer: document.getElementById('colorOptions'),
+            totalPrice: document.getElementById('totalPrice'),
+            summaryArea: document.getElementById('summaryArea'),
+            resetBtn: document.getElementById('resetBtn')
+        };
+
+        // --- 3. UI構築関数 ---
+
+        // 通貨フォーマット
+        const formatPrice = (price) => new Intl.NumberFormat('ja-JP').format(price);
+        const formatPriceDiff = (price) => price === 0 ? '±0円' : `+${formatPrice(price)}円`;
+
+        // ラジオボタン用カード生成（排他選択）
+        const createRadioCard = (item, groupName, isSelected, onClick) => {
+            const div = document.createElement('div');
+            const selectedClass = isSelected ? 'radio-selected' : 'border-gray-200 hover:border-blue-300 bg-white';
+            
+            div.className = `option-card border-2 rounded-lg p-4 flex flex-col justify-between ${selectedClass}`;
+            div.innerHTML = `
+                <div>
+                    <div class="font-bold text-gray-800 text-lg">${item.name}</div>
+                    ${item.desc ? `<div class="text-xs text-gray-500 mt-1">${item.desc}</div>` : ''}
+                </div>
+                <div class="mt-3 text-right font-bold ${isSelected ? 'text-blue-700' : 'text-gray-600'}">
+                    ${formatPriceDiff(item.price)}
+                </div>
+            `;
+            div.addEventListener('click', () => onClick(item.id));
+            return div;
+        };
+
+        // チェックボックス用カード生成（複数選択可）
+        const createCheckboxCard = (item, isSelected, onClick) => {
+            const div = document.createElement('div');
+            const selectedClass = isSelected ? 'checkbox-selected' : 'border-gray-200 hover:border-emerald-300 bg-white';
+            
+            div.className = `option-card border-2 rounded-lg p-4 flex flex-col justify-between h-full ${selectedClass}`;
+            div.innerHTML = `
+                <div class="flex items-center mb-2">
+                    <i class="fa-solid ${item.icon} text-xl ${isSelected ? 'text-emerald-600' : 'text-gray-400'} w-8"></i>
+                    <div class="font-bold text-gray-800 leading-tight">${item.name}</div>
+                </div>
+                <div class="text-right font-bold mt-auto ${isSelected ? 'text-emerald-700' : 'text-gray-600'}">
+                    ${formatPriceDiff(item.price)}
+                </div>
+            `;
+            div.addEventListener('click', () => onClick(item.id));
+            return div;
+        };
+
+        // 画面描画の更新
+        const render = () => {
+            // 薄さオプション描画
+            els.thicknessContainer.innerHTML = '';
+            optionsData.thickness.forEach(item => {
+                els.thicknessContainer.appendChild(
+                    createRadioCard(item, 'thickness', state.selectedThicknessId === item.id, (id) => {
+                        state.selectedThicknessId = id;
+                        updateAndRender();
+                    })
+                );
+            });
+
+            // コーティングオプション描画
+            els.coatingContainer.innerHTML = '';
+            optionsData.coatings.forEach(item => {
+                els.coatingContainer.appendChild(
+                    createCheckboxCard(item, state.selectedCoatingIds.has(item.id), (id) => {
+                        if (state.selectedCoatingIds.has(id)) {
+                            state.selectedCoatingIds.delete(id);
+                        } else {
+                            state.selectedCoatingIds.add(id);
+                        }
+                        updateAndRender();
+                    })
+                );
+            });
+
+            // カラーオプション描画
+            els.colorContainer.innerHTML = '';
+            optionsData.color.forEach(item => {
+                els.colorContainer.appendChild(
+                    createRadioCard(item, 'color', state.selectedColorId === item.id, (id) => {
+                        state.selectedColorId = id;
+                        updateAndRender();
+                    })
+                );
+            });
+            
+            calculateTotal();
+        };
+
+        // --- 4. 計算と表示更新 ---
+
+        // アニメーション付きで数値をカウントアップする
+        const animateValue = (obj, start, end, duration) => {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // イージング (easeOutQuart)
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+                const current = Math.floor(start + (end - start) * easeOut);
+                obj.innerText = formatPrice(current);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerText = formatPrice(end); // 確実に最終値をセット
+                }
+            };
+            window.requestAnimationFrame(step);
+        };
+
+        let currentDisplayedTotal = 0;
+
+        const calculateTotal = () => {
+            let total = state.basePrice;
+            let summaryItems = [];
+
+            // 1. フレーム
+            summaryItems.push(`フレーム: ${formatPrice(state.basePrice)}円`);
+
+            // 2. 薄さ
+            const selectedThick = optionsData.thickness.find(t => t.id === state.selectedThicknessId);
+            if (selectedThick) {
+                total += selectedThick.price;
+                if(selectedThick.price > 0) summaryItems.push(`${selectedThick.name}: +${formatPrice(selectedThick.price)}円`);
+            }
+
+            // 3. コーティング
+            optionsData.coatings.forEach(coat => {
+                if (state.selectedCoatingIds.has(coat.id)) {
+                    total += coat.price;
+                    summaryItems.push(`${coat.name}: +${formatPrice(coat.price)}円`);
+                }
+            });
+
+            // 4. カラー
+            const selectedColor = optionsData.color.find(c => c.id === state.selectedColorId);
+            if (selectedColor) {
+                total += selectedColor.price;
+                if(selectedColor.price > 0) summaryItems.push(`${selectedColor.name}: +${formatPrice(selectedColor.price)}円`);
+            }
+
+            // 合計金額の更新（アニメーション）
+            if (currentDisplayedTotal !== total) {
+                // 値が変わった時だけちょっと色を変えてアピール
+                els.totalPrice.classList.remove('text-yellow-400');
+                els.totalPrice.classList.add('text-white', 'scale-110');
+                
+                animateValue(els.totalPrice, currentDisplayedTotal, total, 400);
+                currentDisplayedTotal = total;
+
+                setTimeout(() => {
+                    els.totalPrice.classList.add('text-yellow-400');
+                    els.totalPrice.classList.remove('text-white', 'scale-110');
+                }, 400);
+            } else {
+                els.totalPrice.innerText = formatPrice(total);
+            }
+
+            // サマリー（内訳）の更新
+            els.summaryArea.innerHTML = summaryItems.map(item => `<span>${item}</span>`).join('<span class="text-slate-500">|</span>');
+        };
+
+        const updateAndRender = () => {
+            render();
+        };
+
+        // --- 5. イベントリスナー ---
+
+        // 基本料金の入力監視
+        els.basePrice.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val < 0) {
+                els.basePriceError.classList.remove('hidden');
+                els.basePrice.classList.add('border-red-500');
+                state.basePrice = 0;
+            } else {
+                els.basePriceError.classList.add('hidden');
+                els.basePrice.classList.remove('border-red-500');
+                state.basePrice = val;
+            }
+            calculateTotal();
+            // 内訳だけ更新したいのでrender()は呼ばない（フォーカス外れ防止）
+        });
+
+        // リセットボタン
+        els.resetBtn.addEventListener('click', () => {
+            if(confirm('入力内容と選択をすべてリセットしますか？')) {
+                els.basePrice.value = "5500";
+                state = {
+                    basePrice: 5500,
+                    selectedThicknessId: 'thick_std',
+                    selectedCoatingIds: new Set(),
+                    selectedColorId: 'color_none'
+                };
+                els.basePriceError.classList.add('hidden');
+                els.basePrice.classList.remove('border-red-500');
+                updateAndRender();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // --- 初期化 ---
+        render();
+
+    </script>
+</body>
+</html>
