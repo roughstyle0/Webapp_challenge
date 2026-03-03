@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お渡し目安時間ボード</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Roboto:wght@700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        number: ['"Roboto"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#F8F9FA', // 清潔感のあるオフホワイト
+                            text: '#2C3E50', // 視認性の高いネイビーグレー
+                            accent: '#3498DB', // 上品なブルー
+                            panel: '#FFFFFF',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 10px 30px -10px rgba(44, 62, 80, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 看板モード時のトランジション用 */
+        .panel-transition {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hide-panel {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            pointer-events: none;
+        }
+        /* 画面全体のフェードイン */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans h-screen w-screen overflow-hidden flex flex-col items-center justify-between select-none animate-fade-in">
+
+    <!-- 全画面クリック検知用オーバーレイ（看板モード復帰用） -->
+    <div id="click-overlay" class="fixed inset-0 z-0 hidden cursor-pointer"></div>
+
+    <!-- ヘッダー部分 -->
+    <header class="w-full text-center pt-8 md:pt-12 z-10 transition-transform duration-500" id="header-area">
+        <h2 class="text-xl md:text-3xl font-bold tracking-widest text-brand-text/70 flex items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            現在のお渡し目安時間
+        </h2>
+    </header>
+
+    <!-- メイン時刻表示部分 -->
+    <main class="flex-1 flex flex-col items-center justify-center w-full z-10 relative">
+        <div class="flex items-baseline justify-center gap-2 md:gap-6 mt-[-5vh]">
+            <div class="text-[20vw] md:text-[15vw] font-number font-black leading-none tracking-tighter" id="time-display">
+                --:--
+            </div>
+            <div class="text-3xl md:text-6xl font-bold text-brand-text/80 pb-4 md:pb-8">
+                以降
+            </div>
+        </div>
+        <p class="text-sm md:text-lg text-brand-text/50 font-medium mt-2" id="current-time-note">現在時刻を基準に計算しています</p>
+    </main>
+
+    <!-- スタッフ操作パネル -->
+    <section id="control-panel" class="absolute bottom-[8vh] z-20 bg-brand-panel p-6 md:p-8 rounded-3xl shadow-glass border border-brand-text/5 panel-transition w-[90%] max-w-3xl flex flex-col gap-6">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+            <h3 class="font-bold text-gray-500 text-sm tracking-wider">STAFF CONTROLS</h3>
+            <button id="btn-signboard" class="bg-brand-text text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-gray-700 transition-colors flex items-center gap-2 active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                看板モード起動
+            </button>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <button class="time-btn bg-brand-bg hover:bg-brand-accent hover:text-white border-2 border-brand-bg hover:border-brand-accent text-brand-text rounded-2xl py-4 text-xl font-bold transition-all duration-200 active:scale-95" data-add="30">
+                +30<span class="text-sm font-normal ml-1">分</span>
+            </button>
+            <button class="time-btn bg-brand-bg hover:bg-brand-accent hover:text-white border-2 border-brand-bg hover:border-brand-accent text-brand-text rounded-2xl py-4 text-xl font-bold transition-all duration-200 active:scale-95" data-add="45">
+                +45<span class="text-sm font-normal ml-1">分</span>
+            </button>
+            <button class="time-btn bg-brand-bg hover:bg-brand-accent hover:text-white border-2 border-brand-bg hover:border-brand-accent text-brand-text rounded-2xl py-4 text-xl font-bold transition-all duration-200 active:scale-95" data-add="60">
+                +60<span class="text-sm font-normal ml-1">分</span>
+            </button>
+            <button class="time-btn bg-brand-bg hover:bg-brand-accent hover:text-white border-2 border-brand-bg hover:border-brand-accent text-brand-text rounded-2xl py-4 text-xl font-bold transition-all duration-200 active:scale-95" data-add="90">
+                +90<span class="text-sm font-normal ml-1">分</span>
+            </button>
+        </div>
+        
+        <div class="flex items-center justify-between pt-2">
+            <div class="flex items-center gap-2 text-sm text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span id="real-time-display">--:--</span>
+            </div>
+            <button id="btn-manual" class="text-brand-accent text-sm font-bold hover:underline px-2 py-1 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></path></svg>
+                手動設定
+            </button>
+            <input type="time" id="manual-time-input" class="absolute opacity-0 pointer-events-none w-0 h-0">
+        </div>
+    </section>
+
+    <!-- フッター（注意事項） -->
+    <footer class="w-full text-center pb-6 md:pb-8 z-10 px-4 transition-transform duration-500" id="footer-area">
+        <p class="text-xs md:text-base font-medium text-brand-text/60 bg-brand-text/5 inline-block px-4 py-2 rounded-lg">
+            ※特注レンズ（遠近両用・カラー等）は、完成まで約1週間〜10日ほどお時間をいただきます。
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const timeDisplay = document.getElementById('time-display');
+            const realTimeDisplay = document.getElementById('real-time-display');
+            const currentTimeNote = document.getElementById('current-time-note');
+            const timeBtns = document.querySelectorAll('.time-btn');
+            const btnSignboard = document.getElementById('btn-signboard');
+            const controlPanel = document.getElementById('control-panel');
+            const clickOverlay = document.getElementById('click-overlay');
+            const headerArea = document.getElementById('header-area');
+            const footerArea = document.getElementById('footer-area');
+            
+            // 手動設定用
+            const btnManual = document.getElementById('btn-manual');
+            const manualTimeInput = document.getElementById('manual-time-input');
+
+            let isSignboardMode = false;
+            let currentTargetDate = null;
+
+            // 初期設定: デフォルトで現在時刻+30分をセット
+            updateTargetTime(30);
+
+            // 時計の更新ループ（操作パネル用の現在時刻表示）
+            setInterval(updateRealTime, 1000);
+            updateRealTime();
+
+            // --- 関数定義 ---
+
+            function updateRealTime() {
+                const now = new Date();
+                realTimeDisplay.textContent = `現在時刻: ${formatTime(now)}`;
+            }
+
+            function updateTargetTime(addMinutes) {
+                try {
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() + parseInt(addMinutes, 10));
+                    currentTargetDate = now;
+                    renderTimeDisplay();
+                    currentTimeNote.textContent = `${formatTime(new Date())} 基準で計算しました`;
+                    
+                    // ボタンのアクティブ状態をリセット
+                    timeBtns.forEach(b => {
+                        b.classList.remove('bg-brand-accent', 'text-white', 'border-brand-accent');
+                        b.classList.add('bg-brand-bg', 'text-brand-text', 'border-brand-bg');
+                    });
+                    
+                    // クリックされたボタンをハイライト（手動設定の場合はハイライトしない）
+                    if (addMinutes !== null) {
+                        const activeBtn = Array.from(timeBtns).find(b => b.dataset.add === addMinutes.toString());
+                        if (activeBtn) {
+                            activeBtn.classList.remove('bg-brand-bg', 'text-brand-text', 'border-brand-bg');
+                            activeBtn.classList.add('bg-brand-accent', 'text-white', 'border-brand-accent');
+                        }
+                    }
+                } catch (e) {
+                    console.error("時刻の計算に失敗しました:", e);
+                }
+            }
+
+            function setManualTime(timeString) {
+                if (!timeString) return;
+                const [hours, minutes] = timeString.split(':');
+                const now = new Date();
+                now.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                
+                // もし設定した時間が過去なら明日にする（夜の営業などを考慮）
+                if (now < new Date()) {
+                    now.setDate(now.getDate() + 1);
+                }
+                
+                currentTargetDate = now;
+                renderTimeDisplay();
+                currentTimeNote.textContent = `手動で時刻が設定されました`;
+                
+                // ボタンのハイライトを全解除
+                timeBtns.forEach(b => {
+                    b.classList.remove('bg-brand-accent', 'text-white', 'border-brand-accent');
+                    b.classList.add('bg-brand-bg', 'text-brand-text', 'border-brand-bg');
+                });
+            }
+
+            function renderTimeDisplay() {
+                if (currentTargetDate) {
+                    timeDisplay.textContent = formatTime(currentTargetDate);
+                }
+            }
+
+            function formatTime(date) {
+                const h = String(date.getHours()).padStart(2, '0');
+                const m = String(date.getMinutes()).padStart(2, '0');
+                return `${h}:${m}`;
+            }
+
+            function toggleSignboardMode() {
+                isSignboardMode = !isSignboardMode;
+
+                if (isSignboardMode) {
+                    // 看板モードON
+                    controlPanel.classList.add('hide-panel');
+                    clickOverlay.classList.remove('hidden');
+                    clickOverlay.classList.add('block');
+                    
+                    // 表示を画面中央に寄せる微調整
+                    headerArea.classList.add('translate-y-[5vh]');
+                    footerArea.classList.add('-translate-y-[5vh]');
+
+                    // 可能であればフルスクリーン化
+                    try {
+                        if (document.documentElement.requestFullscreen) {
+                            document.documentElement.requestFullscreen().catch(err => {
+                                console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                            });
+                        }
+                    } catch (e) { /* ignores */ }
+                } else {
+                    // 看板モードOFF
+                    controlPanel.classList.remove('hide-panel');
+                    clickOverlay.classList.add('hidden');
+                    clickOverlay.classList.remove('block');
+                    
+                    headerArea.classList.remove('translate-y-[5vh]');
+                    footerArea.classList.remove('-translate-y-[5vh]');
+
+                    // フルスクリーン解除
+                    try {
+                        if (document.fullscreenElement) {
+                            document.exitFullscreen().catch(err => {});
+                        }
+                    } catch (e) { /* ignores */ }
+                }
+            }
+
+            // --- イベントリスナー ---
+
+            // 時間加算ボタン
+            timeBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const minutes = e.currentTarget.dataset.add;
+                    updateTargetTime(minutes);
+                    // 時間を設定した直後に、自動的に看板モードへ移行するかどうかは好みだが、
+                    // 今回はスタッフの確認ステップを考慮し自動移行はさせない。
+                });
+            });
+
+            // 手動設定ボタン
+            btnManual.addEventListener('click', () => {
+                manualTimeInput.showPicker ? manualTimeInput.showPicker() : manualTimeInput.click();
+            });
+
+            manualTimeInput.addEventListener('change', (e) => {
+                setManualTime(e.target.value);
+            });
+
+            // 看板モードトグル
+            btnSignboard.addEventListener('click', (e) => {
+                e.stopPropagation(); // オーバーレイのクリックイベント発火を防ぐ
+                toggleSignboardMode();
+            });
+
+            // 全画面タップで看板モード解除
+            clickOverlay.addEventListener('click', () => {
+                if (isSignboardMode) {
+                    toggleSignboardMode();
+                }
+            });
+
+            // フルスクリーン状態の変更を監視（Escキーで解除された場合の同期用）
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement && isSignboardMode) {
+                    toggleSignboardMode(); // UIも通常モードに戻す
+                }
+            });
+        });
+    </script>
+</body>
+</html>
