@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0B1B33" />
+  <title>只今のお渡し目安時間｜デジタル店頭ボード</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: "#0B1B33",      // navy-ish
+            slateInk: "#1F2937", // deep gray
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(15, 23, 42, 0.08)",
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Kiosk-friendly: prevent accidental selection, keep tap fast */
+    * { -webkit-tap-highlight-color: transparent; }
+    body { user-select: none; -webkit-user-select: none; }
+    button:focus-visible { outline: 3px solid rgba(11, 27, 51, 0.25); outline-offset: 3px; }
+
+    /* Smooth hide/show for staff panel */
+    .panel-hidden {
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .panel-visible {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Signboard mode: full screen and extra clean */
+    .signboard {
+      cursor: none;
+    }
+  </style>
+</head>
+
+<body class="bg-white text-slate-900 antialiased">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Top bar -->
+    <header class="px-4 sm:px-8 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-ink/5 flex items-center justify-center shadow-soft">
+          <!-- simple glasses icon -->
+          <svg class="h-6 w-6 text-ink" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3.5 10.5h2.2c.7 0 1.3.5 1.4 1.2l.4 2.4c.2 1.3 1.3 2.3 2.6 2.3h1.2c1.4 0 2.6-1.1 2.6-2.6v-2.4c0-.6.5-1.1 1.1-1.1h1c.6 0 1.1.5 1.1 1.1v2.4c0 1.4 1.1 2.6 2.6 2.6H20c1.3 0 2.4-1 2.6-2.3l.4-2.4c.1-.7.7-1.2 1.4-1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 13.2h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="leading-tight">
+          <div class="text-sm text-slate-500">眼鏡屋向け 店頭ボード</div>
+          <h1 class="text-base sm:text-lg font-semibold tracking-tight text-ink">只今のお渡し目安時間</h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:block text-right">
+          <div class="text-xs text-slate-500">現在時刻</div>
+          <div id="nowClock" class="font-semibold text-slateInk tabular-nums">--:--</div>
+        </div>
+
+        <button id="toggleSignboard"
+          class="rounded-2xl px-4 py-2.5 bg-ink text-white font-semibold shadow-soft active:scale-[0.99] transition"
+          aria-pressed="false"
+        >
+          看板モード
+        </button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main id="main" class="flex-1 px-4 sm:px-8 pb-6 flex flex-col">
+      <!-- Big display card -->
+      <section class="flex-1 flex flex-col items-center justify-center text-center">
+        <div class="w-full max-w-5xl rounded-3xl border border-slate-200 shadow-soft bg-white px-6 sm:px-10 py-8 sm:py-12">
+          <div class="text-slate-500 text-base sm:text-lg mb-3">
+            現在のお渡し目安時間
+          </div>
+
+          <div class="flex items-baseline justify-center gap-3 flex-wrap">
+            <div class="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-ink tabular-nums"
+                 id="etaText">
+              --時--分
+            </div>
+            <div class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-slateInk/80">
+              以降
+            </div>
+          </div>
+
+          <div id="subHint" class="mt-4 text-sm sm:text-base text-slate-500">
+            ※スタッフ操作で自動更新されます
+          </div>
+
+          <!-- Tiny helper row (hidden in signboard mode) -->
+          <div id="miniRow" class="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-slate-500">
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 bg-slate-50">
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+              目安は状況により前後します
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 bg-slate-50">
+              更新: <span id="updatedAt" class="font-semibold tabular-nums">--:--</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notice always at bottom -->
+      <footer class="mt-6">
+        <div class="w-full max-w-5xl mx-auto rounded-2xl border border-slate-200 bg-slate-50 px-5 sm:px-6 py-4">
+          <p class="text-slateInk font-semibold text-sm sm:text-base">
+            ※特注レンズは、完成まで約1週間〜10日ほどお時間をいただきます
+          </p>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Staff panel -->
+    <section
+      id="staffPanel"
+      class="fixed left-0 right-0 bottom-0 px-4 sm:px-8 pb-4 transition duration-300 ease-out panel-visible"
+      aria-label="スタッフ用操作パネル"
+    >
+      <div class="mx-auto w-full max-w-5xl rounded-3xl border border-slate-200 bg-white shadow-soft overflow-hidden">
+        <div class="px-5 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 h-9 w-9 rounded-2xl bg-ink/5 flex items-center justify-center">
+              <svg class="h-5 w-5 text-ink" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+            </div>
+            <div>
+              <div class="text-sm text-slate-500">スタッフ操作</div>
+              <div class="font-semibold text-ink">ワンタップで目安時間を更新</div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 justify-start sm:justify-end">
+            <button data-add="30" class="etaBtn rounded-2xl px-4 py-2.5 bg-ink text-white font-bold shadow-soft active:scale-[0.99] transition">
+              +30分
+            </button>
+            <button data-add="45" class="etaBtn rounded-2xl px-4 py-2.5 bg-ink text-white font-bold shadow-soft active:scale-[0.99] transition">
+              +45分
+            </button>
+            <button data-add="60" class="etaBtn rounded-2xl px-4 py-2.5 bg-ink text-white font-bold shadow-soft active:scale-[0.99] transition">
+              +60分
+            </button>
+            <button data-add="90" class="etaBtn rounded-2xl px-4 py-2.5 bg-ink text-white font-bold shadow-soft active:scale-[0.99] transition">
+              +90分
+            </button>
+
+            <div class="w-full sm:w-auto sm:ml-2 flex gap-2">
+              <button id="setNow" class="rounded-2xl px-4 py-2.5 border border-slate-200 bg-white font-semibold text-slateInk hover:bg-slate-50 active:scale-[0.99] transition">
+                いまに戻す
+              </button>
+              <button id="resetDefault" class="rounded-2xl px-4 py-2.5 border border-slate-200 bg-white font-semibold text-slateInk hover:bg-slate-50 active:scale-[0.99] transition">
+                初期化
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-5 sm:px-6 py-4 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div class="text-sm text-slate-600">
+            表示中: <span class="font-bold text-slateInk tabular-nums" id="currentEtaInline">--時--分</span> 以降
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-slate-600" for="customTime">手入力（任意）</label>
+            <input id="customTime" type="time"
+              class="rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold text-slateInk tabular-nums focus:outline-none focus:ring-2 focus:ring-ink/15"
+              aria-describedby="customHelp"
+            />
+            <button id="applyCustom"
+              class="rounded-2xl px-4 py-2.5 bg-ink text-white font-semibold shadow-soft active:scale-[0.99] transition"
+            >
+              反映
+            </button>
+          </div>
+        </div>
+
+        <div id="errorBox" class="hidden px-5 sm:px-6 py-3 border-t border-red-200 bg-red-50 text-red-800 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- Tap-to-exit hint overlay (only in signboard mode) -->
+    <div id="tapHint"
+      class="hidden fixed inset-0 pointer-events-none flex items-end justify-center pb-6 sm:pb-10"
+      aria-hidden="true"
+    >
+      <div class="rounded-full bg-ink/90 text-white px-5 py-2 text-sm sm:text-base shadow-soft">
+        画面をタップすると操作パネルが戻ります
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      const etaText = $("#etaText");
+      const updatedAt = $("#updatedAt");
+      const nowClock = $("#nowClock");
+      const currentEtaInline = $("#currentEtaInline");
+      const staffPanel = $("#staffPanel");
+      const toggleSignboard = $("#toggleSignboard");
+      const tapHint = $("#tapHint");
+      const miniRow = $("#miniRow");
+      const subHint = $("#subHint");
+      const errorBox = $("#errorBox");
+      const setNowBtn = $("#setNow");
+      const resetDefaultBtn = $("#resetDefault");
+      const customTime = $("#customTime");
+      const applyCustom = $("#applyCustom");
+
+      const STORAGE_KEY = "optical_eta_v1";
+      const STORAGE_UPDATED = "optical_eta_updated_v1";
+      const STORAGE_SIGNBOARD = "optical_signboard_v1";
+
+      // ---- Time utilities ----
+      const pad2 = (n) => String(n).padStart(2, "0");
+
+      function formatHM(date) {
+        const h = date.getHours();
+        const m = date.getMinutes();
+        return `${pad2(h)}時${pad2(m)}分`;
+      }
+      function formatClock(date) {
+        return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+      }
+      function roundToNextMinute(date) {
+        // defensive: ensure seconds/ms are zeroed for stable display
+        const d = new Date(date);
+        d.setSeconds(0, 0);
+        return d;
+      }
+      function addMinutes(baseDate, minutes) {
+        const d = new Date(baseDate);
+        if (!Number.isFinite(minutes)) return d;
+        d.setMinutes(d.getMinutes() + minutes);
+        return d;
+      }
+
+      // ---- State ----
+      let state = {
+        etaMs: null,        // timestamp in ms
+        signboard: false
+      };
+
+      function showError(msg) {
+        if (!msg) {
+          errorBox.classList.add("hidden");
+          errorBox.textContent = "";
+          return;
+        }
+        errorBox.textContent = msg;
+        errorBox.classList.remove("hidden");
+      }
+
+      function safeLoad() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const rawUpdated = localStorage.getItem(STORAGE_UPDATED);
+          const rawSignboard = localStorage.getItem(STORAGE_SIGNBOARD);
+
+          const etaMs = raw ? Number(raw) : NaN;
+          const updatedMs = rawUpdated ? Number(rawUpdated) : NaN;
+          const signboard = rawSignboard === "1";
+
+          if (Number.isFinite(etaMs)) state.etaMs = etaMs;
+          if (Number.isFinite(updatedMs)) {/* reserved for future */}
+          state.signboard = signboard;
+
+        } catch (e) {
+          // localStorage may be disabled; continue without persistence.
+        }
+      }
+
+      function safeSaveEta(date) {
+        try {
+          localStorage.setItem(STORAGE_KEY, String(date.getTime()));
+          localStorage.setItem(STORAGE_UPDATED, String(Date.now()));
+        } catch (e) {}
+      }
+
+      function safeSaveSignboard(on) {
+        try {
+          localStorage.setItem(STORAGE_SIGNBOARD, on ? "1" : "0");
+        } catch (e) {}
+      }
+
+      function setEta(date, sourceLabel) {
+        const d = roundToNextMinute(date);
+        state.etaMs = d.getTime();
+        safeSaveEta(d);
+        render();
+        showError("");
+        // tiny haptic-ish feedback (visual)
+        if (sourceLabel) {
+          subHint.textContent = `更新しました（${sourceLabel}）`;
+          clearTimeout(setEta._t);
+          setEta._t = setTimeout(() => {
+            subHint.textContent = "※スタッフ操作で自動更新されます";
+          }, 2500);
+        }
+      }
+
+      function defaultEta() {
+        // If no saved ETA, start with +30 minutes (typical)
+        const now = roundToNextMinute(new Date());
+        return addMinutes(now, 30);
+      }
+
+      // ---- Signboard mode ----
+      function setSignboardMode(on) {
+        state.signboard = !!on;
+        toggleSignboard.setAttribute("aria-pressed", on ? "true" : "false");
+        toggleSignboard.textContent = on ? "看板モード解除" : "看板モード";
+        document.body.classList.toggle("signboard", on);
+
+        // hide/show staff panel with "swoosh"
+        staffPanel.classList.toggle("panel-hidden", on);
+        staffPanel.classList.toggle("panel-visible", !on);
+
+        // extra clean UI in signboard
+        miniRow.classList.toggle("hidden", on);
+        subHint.classList.toggle("hidden", on);
+        tapHint.classList.toggle("hidden", !on);
+
+        safeSaveSignboard(on);
+      }
+
+      function exitSignboardIfNeeded(ev) {
+        if (!state.signboard) return;
+        // Avoid exiting when tapping the toggle itself (though it's hidden mostly in signboard)
+        setSignboardMode(false);
+      }
+
+      // ---- Render ----
+      function render() {
+        const now = new Date();
+        nowClock.textContent = formatClock(now);
+
+        let etaDate;
+        if (Number.isFinite(state.etaMs)) {
+          etaDate = new Date(state.etaMs);
+          // If stored ETA is in the past by > 3 minutes, gently auto-bump to now+30
+          const diff = etaDate.getTime() - now.getTime();
+          if (diff < -3 * 60 * 1000) {
+            etaDate = defaultEta();
+            state.etaMs = etaDate.getTime();
+            safeSaveEta(etaDate);
+          }
+        } else {
+          etaDate = defaultEta();
+          state.etaMs = etaDate.getTime();
+          safeSaveEta(etaDate);
+        }
+
+        const hm = formatHM(etaDate);
+        etaText.textContent = hm;
+        currentEtaInline.textContent = hm;
+        updatedAt.textContent = formatClock(new Date());
+      }
+
+      // ---- Actions ----
+      function applyAdd(minutes) {
+        const now = roundToNextMinute(new Date());
+        setEta(addMinutes(now, minutes), `+${minutes}分`);
+      }
+
+      function applyCustomTime() {
+        const v = customTime.value;
+        if (!v) {
+          showError("手入力の時刻が空です。例：14:30 のように入力してください。");
+          return;
+        }
+        const parts = v.split(":");
+        if (parts.length !== 2) {
+          showError("時刻の形式が正しくありません。例：14:30");
+          return;
+        }
+        const hh = Number(parts[0]);
+        const mm = Number(parts[1]);
+        if (!Number.isInteger(hh) || !Number.isInteger(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
+          showError("時刻が不正です。00:00〜23:59 の範囲で入力してください。");
+          return;
+        }
+        const now = new Date();
+        const d = new Date(now);
+        d.setHours(hh, mm, 0, 0);
+
+        // If user sets a time earlier than now by more than 1 minute, assume "tomorrow" to avoid confusion
+        if (d.getTime() < now.getTime() - 60 * 1000) {
+          d.setDate(d.getDate() + 1);
+        }
+        setEta(d, "手入力");
+      }
+
+      function resetDefault() {
+        setEta(defaultEta(), "初期値");
+        customTime.value = "";
+      }
+
+      function backToNow() {
+        // "Now" means: set ETA to current time (rounded)
+        setEta(roundToNextMinute(new Date()), "いま");
+        customTime.value = "";
+      }
+
+      // ---- Wiring ----
+      safeLoad();
+      render();
+      setSignboardMode(state.signboard);
+
+      // Update clock every 10s (stable, low CPU)
+      setInterval(render, 10000);
+
+      $$(".etaBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const minutes = Number(btn.getAttribute("data-add"));
+          if (!Number.isFinite(minutes)) {
+            showError("内部エラー：分数が読み取れませんでした。");
+            return;
+          }
+          applyAdd(minutes);
+        });
+      });
+
+      toggleSignboard.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        setSignboardMode(!state.signboard);
+      });
+
+      // In signboard mode, tapping anywhere returns panel
+      document.addEventListener("click", (ev) => {
+        // If panel is visible, do nothing
+        if (!state.signboard) return;
+        // If click came from inside staff panel (should be hidden), ignore
+        if (staffPanel.contains(ev.target)) return;
+        exitSignboardIfNeeded(ev);
+      }, { passive: true });
+
+      // Also allow touchstart for quicker kiosk feel
+      document.addEventListener("touchstart", (ev) => {
+        if (!state.signboard) return;
+        if (staffPanel.contains(ev.target)) return;
+        setSignboardMode(false);
+      }, { passive: true });
+
+      applyCustom.addEventListener("click", applyCustomTime);
+      customTime.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") applyCustomTime();
+      });
+
+      resetDefaultBtn.addEventListener("click", resetDefault);
+      setNowBtn.addEventListener("click", backToNow);
+
+      // Accessibility: Esc exits signboard mode
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && state.signboard) setSignboardMode(false);
+      });
+    })();
+  </script>
+</body>
+</html>
