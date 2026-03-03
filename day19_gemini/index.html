@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヘルプ・ミー！応援要請ダッシュボード</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* カスタムアニメーションとトランジション */
+        .progress-bar {
+            transition: width 1s linear;
+        }
+        .progress-bar.reset {
+            transition: none;
+            width: 0 !important;
+        }
+        
+        @keyframes emergency-flash {
+            0%, 100% { background-color: #ef4444; } /* red-500 */
+            50% { background-color: #b91c1c; } /* red-700 */
+        }
+        .animate-emergency {
+            animation: emergency-flash 1.5s ease-in-out infinite;
+        }
+
+        /* タッチデバイスでのテキスト選択やデフォルトアクションを無効化 */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col font-sans overflow-hidden text-gray-800">
+
+    <!-- アプリケーションコンテナ -->
+    <div id="app" class="flex-1 flex flex-col w-full max-w-3xl mx-auto bg-white shadow-2xl relative">
+        
+        <!-- ダッシュボードエリア (ステータス表示) -->
+        <div id="dashboard" class="flex-1 flex flex-col items-center justify-center p-8 transition-colors duration-500 bg-emerald-50 text-emerald-800">
+            <div id="status-icon" class="text-7xl mb-6 transition-transform duration-300 transform scale-100">
+                <i class="fa-solid fa-mug-hot"></i>
+            </div>
+            <h1 id="status-text" class="text-3xl md:text-5xl font-bold text-center leading-tight tracking-wide">
+                現在、応援要請は<br>ありません
+            </h1>
+            <p id="status-subtext" class="mt-4 text-emerald-600 text-lg md:text-xl font-medium">
+                （平和です。それぞれの持ち場を頑張りましょう！）
+            </p>
+        </div>
+
+        <!-- コントロールエリア -->
+        <div id="control-area" class="p-4 bg-white border-t border-gray-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] relative z-10">
+            
+            <!-- SOSボタン群 (平常時表示) -->
+            <div id="sos-buttons" class="grid grid-cols-2 gap-3 md:gap-4">
+                <!-- JavaScriptで動的に生成されます -->
+            </div>
+
+            <!-- 解除ボタン (緊急時表示・初期は非表示) -->
+            <div id="resolve-area" class="hidden h-full flex items-center justify-center">
+                <button id="btn-resolve" class="w-full py-8 md:py-10 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg text-2xl md:text-3xl font-bold transition-all active:scale-95 flex items-center justify-center gap-4">
+                    <i class="fa-solid fa-person-running"></i>
+                    私が対応に向かいます！
+                </button>
+            </div>
+            
+        </div>
+        
+        <!-- 長押し案内のトースト通知 -->
+        <div id="toast" class="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-4 bg-gray-800 text-white px-6 py-3 rounded-full opacity-0 pointer-events-none transition-opacity duration-300 text-sm font-bold shadow-xl whitespace-nowrap z-50">
+            ボタンを1秒間「長押し」してください
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- データ定義 ---
+            const sosTypes = [
+                { id: 'register', title: 'レジ応援', icon: 'fa-cash-register', color: 'bg-blue-500', hover: 'hover:bg-blue-600' },
+                { id: 'measure', title: '視力測定ヘルプ', icon: 'fa-eye', color: 'bg-purple-500', hover: 'hover:bg-purple-600' },
+                { id: 'fitting', title: 'フィッティング', icon: 'fa-glasses', color: 'bg-amber-500', hover: 'hover:bg-amber-600' },
+                { id: 'claim', title: '至急！クレーム対応', icon: 'fa-triangle-exclamation', color: 'bg-red-600', hover: 'hover:bg-red-700' }
+            ];
+
+            // --- DOM要素の取得 ---
+            const dashboard = document.getElementById('dashboard');
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+            const statusSubtext = document.getElementById('status-subtext');
+            
+            const sosButtonsContainer = document.getElementById('sos-buttons');
+            const resolveArea = document.getElementById('resolve-area');
+            const btnResolve = document.getElementById('btn-resolve');
+            const toast = document.getElementById('toast');
+
+            // --- 状態管理 ---
+            let currentRequest = null;
+            let holdTimer = null;
+            const HOLD_DURATION = 1000; // 1秒長押しで発動
+            let isHolding = false;
+
+            // --- 初期化：ボタンの生成 ---
+            function renderButtons() {
+                sosTypes.forEach(type => {
+                    const btnHtml = `
+                        <button 
+                            data-id="${type.id}" 
+                            class="sos-btn relative overflow-hidden flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl text-white ${type.color} ${type.hover} shadow-md transition-transform active:scale-95 no-select group"
+                        >
+                            <!-- プログレスバー背景 -->
+                            <div class="progress-bar absolute left-0 top-0 bottom-0 bg-black/30 w-0 z-0 reset"></div>
+                            
+                            <!-- コンテンツ -->
+                            <div class="relative z-10 flex flex-col items-center pointer-events-none">
+                                <i class="fa-solid ${type.icon} text-3xl md:text-4xl mb-3 group-active:scale-110 transition-transform"></i>
+                                <span class="font-bold text-lg md:text-xl tracking-wide">${type.title}</span>
+                                <span class="text-xs opacity-75 mt-1">長押しで要請</span>
+                            </div>
+                        </button>
+                    `;
+                    sosButtonsContainer.insertAdjacentHTML('beforeend', btnHtml);
+                });
+
+                attachHoldEvents();
+            }
+
+            // --- イベントリスナーの登録 (長押しロジック) ---
+            function attachHoldEvents() {
+                const buttons = document.querySelectorAll('.sos-btn');
+
+                buttons.forEach(btn => {
+                    const progressBar = btn.querySelector('.progress-bar');
+                    const reqType = sosTypes.find(t => t.id === btn.dataset.id);
+
+                    // ポインターダウン（タッチ開始/マウスクリック開始）
+                    btn.addEventListener('pointerdown', (e) => {
+                        // 左クリックまたはタッチのみ反応
+                        if (e.button !== 0 && e.pointerType === 'mouse') return;
+                        
+                        isHolding = true;
+                        
+                        // プログレスバーのアニメーション開始
+                        progressBar.classList.remove('reset');
+                        // setTimeoutを挟むことでブラウザに再描画させ、transitionを確実に発火させる
+                        requestAnimationFrame(() => {
+                            progressBar.style.width = '100%';
+                        });
+
+                        // 長押しタイマーセット
+                        holdTimer = setTimeout(() => {
+                            if (isHolding) {
+                                triggerEmergency(reqType);
+                                navigator.vibrate?.([200, 100, 200]); // 触覚フィードバック(対応端末のみ)
+                                resetProgressBar(progressBar);
+                            }
+                        }, HOLD_DURATION);
+                    });
+
+                    // キャンセル処理をまとめた関数
+                    const cancelHold = () => {
+                        if (isHolding) {
+                            isHolding = false;
+                            clearTimeout(holdTimer);
+                            resetProgressBar(progressBar);
+                            
+                            // もし完全に押し切る前に離した場合はトーストで案内
+                            if(!currentRequest) {
+                                showToast();
+                            }
+                        }
+                    };
+
+                    // 各種ポインターが離れた時のイベント
+                    btn.addEventListener('pointerup', cancelHold);
+                    btn.addEventListener('pointerleave', cancelHold);
+                    btn.addEventListener('pointercancel', cancelHold);
+                    
+                    // コンテキストメニュー（右クリック長押し等）が出た場合もキャンセル
+                    btn.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        cancelHold();
+                    });
+                });
+            }
+
+            // プログレスバーを即座に0に戻す
+            function resetProgressBar(bar) {
+                bar.classList.add('reset');
+                bar.style.width = '0';
+            }
+
+            // トースト通知を表示
+            let toastTimer;
+            function showToast() {
+                clearTimeout(toastTimer);
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+                toastTimer = setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
+                }, 2000);
+            }
+
+            // --- 状態遷移ロジック ---
+
+            // 緊急状態（応援要請）の発動
+            function triggerEmergency(reqType) {
+                if (currentRequest) return; // すでに要請中なら無視
+                currentRequest = reqType;
+
+                // ダッシュボードのUI変更
+                dashboard.className = 'flex-1 flex flex-col items-center justify-center p-4 transition-colors duration-300 animate-emergency text-white';
+                
+                statusIcon.innerHTML = `<i class="fa-solid ${reqType.icon} animate-bounce"></i>`;
+                statusIcon.className = 'text-8xl md:text-9xl mb-4 text-white drop-shadow-lg';
+                
+                statusText.innerHTML = `🚨<br><span class="text-5xl md:text-7xl underline decoration-white/50 underline-offset-8">${reqType.title}</span><br>で応援要請が出ています！`;
+                statusText.className = 'text-4xl md:text-6xl font-black text-center leading-tight tracking-tighter drop-shadow-md';
+                
+                statusSubtext.innerHTML = '手の空いているスタッフは至急向かってください！';
+                statusSubtext.className = 'mt-6 text-white/90 text-xl md:text-2xl font-bold bg-black/20 px-6 py-2 rounded-full animate-pulse';
+
+                // コントロールエリアの切り替え（SOSボタン非表示、解除ボタン表示）
+                sosButtonsContainer.classList.add('hidden');
+                resolveArea.classList.remove('hidden');
+            }
+
+            // 平和状態（要請解除）への復帰
+            function resolveEmergency() {
+                currentRequest = null;
+
+                // ダッシュボードのUIを元に戻す
+                dashboard.className = 'flex-1 flex flex-col items-center justify-center p-8 transition-colors duration-500 bg-emerald-50 text-emerald-800';
+                
+                statusIcon.innerHTML = '<i class="fa-solid fa-mug-hot"></i>';
+                statusIcon.className = 'text-7xl mb-6 transition-transform duration-300 transform scale-100';
+                
+                statusText.innerHTML = '現在、応援要請は<br>ありません';
+                statusText.className = 'text-3xl md:text-5xl font-bold text-center leading-tight tracking-wide';
+                
+                statusSubtext.innerHTML = '（平和です。それぞれの持ち場を頑張りましょう！）';
+                statusSubtext.className = 'mt-4 text-emerald-600 text-lg md:text-xl font-medium';
+
+                // コントロールエリアの切り替え
+                resolveArea.classList.add('hidden');
+                sosButtonsContainer.classList.remove('hidden');
+                
+                // 解除時の安心感を与える触覚フィードバック
+                navigator.vibrate?.([100]); 
+            }
+
+            // 解除ボタンのイベントリスナー
+            btnResolve.addEventListener('click', resolveEmergency);
+
+            // アプリケーション開始
+            renderButtons();
+        });
+    </script>
+</body>
+</html>
