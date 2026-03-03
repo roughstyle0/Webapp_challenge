@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>レンズオプション・サクッと見積もりシミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0b5fff" />
+  <style>
+    /* 少しだけ「店舗っぽい信頼感」を出すための微調整 */
+    .chip { transition: transform .06s ease, background-color .15s ease, border-color .15s ease, color .15s ease; }
+    .chip:active { transform: translateY(1px); }
+    .focus-ring:focus { outline: none; box-shadow: 0 0 0 4px rgba(11,95,255,.18); border-color: rgba(11,95,255,.55); }
+    /* iOSで固定バーが隠れないように */
+    :root { --bar-h: 104px; }
+    @media (min-width: 640px) { :root { --bar-h: 92px; } }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <h1 class="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
+          レンズオプション・サクッと見積もり
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 truncate">
+          お客様と一緒に「見える・わかる」透明見積もり
+        </p>
+      </div>
+      <button id="resetBtn"
+        class="shrink-0 inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+        type="button" aria-label="見積もりをリセット">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 1 1-3-6.7" />
+          <path d="M21 3v7h-7" />
+        </svg>
+        見積もりをリセット
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-[calc(var(--bar-h)+24px)]">
+    <!-- Frame price -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900">フレーム基本料金</h2>
+          <p class="mt-1 text-xs text-slate-600">
+            数字だけ入力OK（例：5500）。自動で「円」に整形します。
+          </p>
+        </div>
+
+        <div class="w-full sm:w-auto">
+          <label class="sr-only" for="framePrice">フレーム基本料金</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">¥</span>
+            <input id="framePrice" inputmode="numeric" autocomplete="off"
+              class="focus-ring w-full sm:w-72 rounded-xl border border-slate-300 bg-white pl-8 pr-12 py-3 text-base font-semibold text-slate-900 placeholder:text-slate-400"
+              placeholder="例：5500" />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">円</span>
+          </div>
+          <p id="frameError" class="mt-2 text-xs text-rose-600 hidden">
+            0以上の数字を入力してください（記号は不要です）。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Options -->
+    <section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Lens thickness (single select) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-semibold">レンズの薄さ</h3>
+            <p class="mt-1 text-xs text-slate-600">どれか1つ選択</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">必須</span>
+        </div>
+
+        <div class="mt-4 grid gap-2" role="radiogroup" aria-label="レンズの薄さ">
+          <!-- chips injected by JS -->
+          <div id="thicknessGroup" class="grid gap-2"></div>
+        </div>
+
+        <div class="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
+          <p class="text-xs text-slate-600">
+            ヒント：度数が強いほど薄型を選ぶと見た目がスッキリします。
+          </p>
+        </div>
+      </div>
+
+      <!-- Coating (multi select) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-semibold">コーティング機能</h3>
+            <p class="mt-1 text-xs text-slate-600">複数選択OK</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">任意</span>
+        </div>
+
+        <div id="coatingGroup" class="mt-4 grid gap-2" role="group" aria-label="コーティング機能"></div>
+
+        <div class="mt-4 text-xs text-slate-600">
+          <ul class="list-disc pl-5 space-y-1">
+            <li>ブルーライト：PC/スマホが多い方に</li>
+            <li>傷防止：日常使いで安心</li>
+            <li>くもり止め：マスク利用時に便利</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Color lens (single select) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-semibold">カラーレンズ</h3>
+            <p class="mt-1 text-xs text-slate-600">あり / なし</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">任意</span>
+        </div>
+
+        <div class="mt-4 grid gap-2" role="radiogroup" aria-label="カラーレンズ">
+          <div id="colorGroup" class="grid gap-2"></div>
+        </div>
+
+        <div class="mt-4 rounded-xl bg-blue-50 border border-blue-100 p-3">
+          <p class="text-xs text-blue-800">
+            店頭案内向け：色の濃さや用途により別料金になる場合は、ここで一言添えると安心です。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Breakdown -->
+    <section class="mt-6 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h2 class="text-sm font-semibold">内訳</h2>
+          <p class="mt-1 text-xs text-slate-600">「何にいくら」がその場で明確に見えます</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="copyBtn" type="button"
+            class="inline-flex items-center gap-2 rounded-xl bg-blue-600 text-white px-3 py-2 text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            内訳をコピー
+          </button>
+          <span id="copyToast" class="text-xs text-slate-600 hidden">コピーしました</span>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <dl class="space-y-2 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-700">フレーム基本料金</dt>
+              <dd id="bFrame" class="font-semibold tabular-nums">¥0</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-700">レンズ薄さ</dt>
+              <dd id="bThickness" class="font-semibold tabular-nums">¥0</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-700">コーティング合計</dt>
+              <dd id="bCoating" class="font-semibold tabular-nums">¥0</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-slate-700">カラーレンズ</dt>
+              <dd id="bColor" class="font-semibold tabular-nums">¥0</dd>
+            </div>
+            <div class="pt-3 mt-3 border-t border-slate-200 flex items-center justify-between gap-3">
+              <dt class="text-slate-900 font-semibold">小計（税込）</dt>
+              <dd id="bTotal" class="text-slate-900 font-extrabold tabular-nums">¥0</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <p class="text-xs text-slate-600 mb-3">選択中のオプション</p>
+          <div id="selectedBadges" class="flex flex-wrap gap-2"></div>
+          <p id="noneSelectedHint" class="text-sm text-slate-500 mt-2">
+            まだ選択がありません（標準のままでもOK）
+          </p>
+          <div class="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3">
+            <p class="text-xs text-slate-600">
+              ※ 表示金額は「税込」の合計です（簡易見積り）。最終金額は店頭ルールに従ってご案内ください。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sticky Total Bar -->
+  <div class="fixed bottom-0 inset-x-0 z-40">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 pb-4">
+      <div class="rounded-2xl shadow-lg border border-blue-200 bg-white">
+        <div class="p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div class="min-w-0">
+            <p class="text-xs sm:text-sm text-slate-600">現在の合計金額</p>
+            <div class="flex items-end gap-2">
+              <p id="totalText" class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-blue-700 tabular-nums">
+                ¥0
+              </p>
+              <p class="text-sm sm:text-base text-slate-700 font-semibold">（税込）</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="quickStdBtn" type="button"
+              class="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100 active:bg-blue-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
+              標準へ戻す
+            </button>
+            <button id="scrollTopBtn" type="button"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200">
+              上へ
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // --- Data (all prices are tax-included, as requested) ---
+      const THICKNESS = [
+        { id: "std", label: "標準", price: 0, note: "+0円" },
+        { id: "160", label: "薄型 1.60", price: 3300, note: "+3,300円" },
+        { id: "167", label: "超薄型 1.67", price: 5500, note: "+5,500円" },
+        { id: "174", label: "極薄型 1.74", price: 7700, note: "+7,700円" },
+      ];
+
+      const COATINGS = [
+        { id: "blue", label: "ブルーライトカット", price: 3300, note: "+3,300円" },
+        { id: "scratch", label: "傷防止コート", price: 3300, note: "+3,300円" },
+        { id: "fog", label: "くもり止めコート", price: 4400, note: "+4,400円" },
+      ];
+
+      const COLORS = [
+        { id: "none", label: "なし", price: 0, note: "+0円" },
+        { id: "yes", label: "あり", price: 3300, note: "+3,300円" },
+      ];
+
+      // --- State ---
+      const state = {
+        frame: 5500,
+        thicknessId: "std",
+        coatingIds: new Set(),
+        colorId: "none",
+        frameValid: true,
+      };
+
+      // --- Elements ---
+      const el = {
+        framePrice: document.getElementById("framePrice"),
+        frameError: document.getElementById("frameError"),
+        thicknessGroup: document.getElementById("thicknessGroup"),
+        coatingGroup: document.getElementById("coatingGroup"),
+        colorGroup: document.getElementById("colorGroup"),
+        totalText: document.getElementById("totalText"),
+
+        bFrame: document.getElementById("bFrame"),
+        bThickness: document.getElementById("bThickness"),
+        bCoating: document.getElementById("bCoating"),
+        bColor: document.getElementById("bColor"),
+        bTotal: document.getElementById("bTotal"),
+
+        badges: document.getElementById("selectedBadges"),
+        noneHint: document.getElementById("noneSelectedHint"),
+
+        resetBtn: document.getElementById("resetBtn"),
+        quickStdBtn: document.getElementById("quickStdBtn"),
+        scrollTopBtn: document.getElementById("scrollTopBtn"),
+
+        copyBtn: document.getElementById("copyBtn"),
+        copyToast: document.getElementById("copyToast"),
+      };
+
+      // --- Utils ---
+      const yen = (n) => {
+        const safe = Number.isFinite(n) ? Math.round(n) : 0;
+        return "¥" + safe.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      };
+
+      const sanitizeMoney = (raw) => {
+        // Allow digits only. Convert full-width digits too.
+        const normalized = String(raw)
+          .replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xFEE0))
+          .replace(/[^\d]/g, "");
+        if (normalized === "") return { ok: false, value: 0 };
+        // Avoid extremely large numbers breaking layout; still compute safely.
+        const value = Math.min(parseInt(normalized, 10), 999999999);
+        return { ok: true, value };
+      };
+
+      const optionById = (arr, id) => arr.find(o => o.id === id) || arr[0];
+
+      const sumCoatings = () => {
+        let total = 0;
+        for (const id of state.coatingIds) {
+          const opt = optionById(COATINGS, id);
+          total += opt.price;
+        }
+        return total;
+      };
+
+      const calcTotal = () => {
+        const thickness = optionById(THICKNESS, state.thicknessId).price;
+        const color = optionById(COLORS, state.colorId).price;
+        const coating = sumCoatings();
+        const frame = state.frameValid ? state.frame : 0;
+        return frame + thickness + coating + color;
+      };
+
+      const chipClasses = ({ selected, kind }) => {
+        // kind: "radio" | "check"
+        const base = "chip w-full text-left rounded-xl border px-4 py-3 flex items-center justify-between gap-3 select-none";
+        const left = "flex items-center gap-3 min-w-0";
+        const label = "font-semibold truncate";
+        const note = "text-xs tabular-nums";
+        const iconWrap = "h-9 w-9 rounded-xl grid place-items-center border";
+
+        const on = "border-blue-300 bg-blue-50 text-slate-900";
+        const off = "border-slate-200 bg-white text-slate-900 hover:bg-slate-50";
+
+        const iconOn = "border-blue-200 bg-white";
+        const iconOff = "border-slate-200 bg-slate-50";
+
+        const dotOn = kind === "radio"
+          ? `<span class="h-3.5 w-3.5 rounded-full bg-blue-600"></span>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+        const dotOff = kind === "radio"
+          ? `<span class="h-3.5 w-3.5 rounded-full bg-slate-300"></span>`
+          : `<span class="h-2.5 w-2.5 rounded bg-slate-300"></span>`;
+
+        return { base, left, label, note, iconWrap, on, off, iconOn, iconOff, dotOn, dotOff };
+      };
+
+      // --- Renderers ---
+      const renderRadioGroup = (mountEl, options, selectedId, onSelect, ariaName) => {
+        mountEl.innerHTML = "";
+        options.forEach(opt => {
+          const selected = opt.id === selectedId;
+          const cls = chipClasses({ selected, kind: "radio" });
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = `${cls.base} ${selected ? cls.on : cls.off}`;
+          btn.setAttribute("role", "radio");
+          btn.setAttribute("aria-checked", String(selected));
+          btn.setAttribute("aria-label", `${ariaName}: ${opt.label} ${opt.note}`);
+          btn.dataset.id = opt.id;
+
+          btn.innerHTML = `
+            <div class="${cls.left}">
+              <div class="${cls.iconWrap} ${selected ? cls.iconOn : cls.iconOff}">
+                ${selected ? cls.dotOn : cls.dotOff}
+              </div>
+              <div class="min-w-0">
+                <div class="${cls.label}">${opt.label}</div>
+                <div class="${cls.note} ${selected ? "text-blue-700" : "text-slate-500"}">${opt.note}</div>
+              </div>
+            </div>
+            <div class="text-xs font-semibold ${selected ? "text-blue-700" : "text-slate-600"}">${selected ? "選択中" : "選択"}</div>
+          `;
+
+          btn.addEventListener("click", () => onSelect(opt.id));
+          mountEl.appendChild(btn);
+        });
+      };
+
+      const renderCheckGroup = (mountEl, options, selectedSet, onToggle) => {
+        mountEl.innerHTML = "";
+        options.forEach(opt => {
+          const selected = selectedSet.has(opt.id);
+          const cls = chipClasses({ selected, kind: "check" });
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = `${cls.base} ${selected ? cls.on : cls.off}`;
+          btn.setAttribute("role", "checkbox");
+          btn.setAttribute("aria-checked", String(selected));
+          btn.dataset.id = opt.id;
+
+          btn.innerHTML = `
+            <div class="${cls.left}">
+              <div class="${cls.iconWrap} ${selected ? cls.iconOn : cls.iconOff}">
+                ${selected ? cls.dotOn : cls.dotOff}
+              </div>
+              <div class="min-w-0">
+                <div class="${cls.label}">${opt.label}</div>
+                <div class="${cls.note} ${selected ? "text-blue-700" : "text-slate-500"}">${opt.note}</div>
+              </div>
+            </div>
+            <div class="text-xs font-semibold ${selected ? "text-blue-700" : "text-slate-600"}">${selected ? "ON" : "OFF"}</div>
+          `;
+
+          btn.addEventListener("click", () => onToggle(opt.id));
+          mountEl.appendChild(btn);
+        });
+      };
+
+      const renderBadges = () => {
+        const items = [];
+        const t = optionById(THICKNESS, state.thicknessId);
+        if (t.id !== "std") items.push({ label: `薄さ：${t.label}`, price: t.price });
+
+        const c = optionById(COLORS, state.colorId);
+        if (c.id !== "none") items.push({ label: `カラーレンズ：あり`, price: c.price });
+
+        for (const id of state.coatingIds) {
+          const opt = optionById(COATINGS, id);
+          items.push({ label: opt.label, price: opt.price });
+        }
+
+        el.badges.innerHTML = "";
+        if (items.length === 0) {
+          el.noneHint.classList.remove("hidden");
+          return;
+        }
+        el.noneHint.classList.add("hidden");
+
+        items
+          .sort((a, b) => a.label.localeCompare(b.label, "ja"))
+          .forEach(it => {
+            const span = document.createElement("span");
+            span.className = "inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800";
+            span.innerHTML = `<span class="truncate max-w-[220px] sm:max-w-none">${it.label}</span><span class="tabular-nums text-blue-700">${yen(it.price)}</span>`;
+            el.badges.appendChild(span);
+          });
+      };
+
+      const renderTotals = () => {
+        const frame = state.frameValid ? state.frame : 0;
+        const thickness = optionById(THICKNESS, state.thicknessId).price;
+        const color = optionById(COLORS, state.colorId).price;
+        const coating = sumCoatings();
+        const total = calcTotal();
+
+        el.totalText.textContent = yen(total);
+
+        el.bFrame.textContent = yen(frame);
+        el.bThickness.textContent = yen(thickness);
+        el.bColor.textContent = yen(color);
+        el.bCoating.textContent = yen(coating);
+        el.bTotal.textContent = yen(total);
+
+        renderBadges();
+      };
+
+      const renderAll = () => {
+        renderRadioGroup(el.thicknessGroup, THICKNESS, state.thicknessId, (id) => {
+          state.thicknessId = id;
+          renderAll();
+        }, "レンズの薄さ");
+
+        renderCheckGroup(el.coatingGroup, COATINGS, state.coatingIds, (id) => {
+          if (state.coatingIds.has(id)) state.coatingIds.delete(id);
+          else state.coatingIds.add(id);
+          renderAll();
+        });
+
+        renderRadioGroup(el.colorGroup, COLORS, state.colorId, (id) => {
+          state.colorId = id;
+          renderAll();
+        }, "カラーレンズ");
+
+        renderTotals();
+      };
+
+      // --- Frame input behavior ---
+      const setFrameFromInput = (raw) => {
+        const { ok, value } = sanitizeMoney(raw);
+        state.frameValid = ok && value >= 0;
+        if (state.frameValid) {
+          state.frame = value;
+          el.frameError.classList.add("hidden");
+          el.framePrice.setAttribute("aria-invalid", "false");
+        } else {
+          el.frameError.classList.remove("hidden");
+          el.framePrice.setAttribute("aria-invalid", "true");
+        }
+        renderTotals();
+      };
+
+      const formatFrameInput = () => {
+        // Keep UI neat: show with commas (no "¥" inside the input)
+        if (!state.frameValid) return;
+        el.framePrice.value = String(state.frame).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      };
+
+      // --- Reset ---
+      const resetAll = () => {
+        state.frame = 5500;
+        state.frameValid = true;
+        state.thicknessId = "std";
+        state.coatingIds = new Set();
+        state.colorId = "none";
+
+        el.frameError.classList.add("hidden");
+        el.framePrice.setAttribute("aria-invalid", "false");
+        el.framePrice.value = "5,500";
+        renderAll();
+      };
+
+      // --- Copy breakdown ---
+      const buildCopyText = () => {
+        const t = optionById(THICKNESS, state.thicknessId);
+        const c = optionById(COLORS, state.colorId);
+        const coatingList = [...state.coatingIds].map(id => optionById(COATINGS, id));
+        const coatingTotal = sumCoatings();
+        const total = calcTotal();
+        const frame = state.frameValid ? state.frame : 0;
+
+        const lines = [];
+        lines.push("【レンズ見積もり（概算・税込）】");
+        lines.push(`フレーム基本料金：${yen(frame)}`);
+        lines.push(`レンズの薄さ：${t.label}（${yen(t.price)}）`);
+        if (coatingList.length) {
+          lines.push("コーティング：");
+          coatingList.forEach(o => lines.push(` - ${o.label}（${yen(o.price)}）`));
+          lines.push(`コーティング合計：${yen(coatingTotal)}`);
+        } else {
+          lines.push("コーティング：なし（¥0）");
+        }
+        lines.push(`カラーレンズ：${c.id === "none" ? "なし" : "あり"}（${yen(c.price)}）`);
+        lines.push(`合計：${yen(total)}（税込）`);
+        return lines.join("\n");
+      };
+
+      const toast = (ms = 1200) => {
+        el.copyToast.classList.remove("hidden");
+        window.clearTimeout(toast._t);
+        toast._t = window.setTimeout(() => el.copyToast.classList.add("hidden"), ms);
+      };
+
+      // --- Events ---
+      el.framePrice.addEventListener("input", (e) => setFrameFromInput(e.target.value));
+      el.framePrice.addEventListener("blur", () => formatFrameInput());
+
+      el.resetBtn.addEventListener("click", resetAll);
+      el.quickStdBtn.addEventListener("click", () => {
+        state.thicknessId = "std";
+        state.coatingIds = new Set();
+        state.colorId = "none";
+        renderAll();
+      });
+
+      el.scrollTopBtn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        el.framePrice.focus({ preventScroll: true });
+      });
+
+      el.copyBtn.addEventListener("click", async () => {
+        const text = buildCopyText();
+        try {
+          await navigator.clipboard.writeText(text);
+          toast();
+        } catch {
+          // Fallback (older browsers)
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); toast(); } catch {}
+          ta.remove();
+        }
+      });
+
+      // --- Init ---
+      // set default in input (with commas)
+      el.framePrice.value = "5,500";
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
