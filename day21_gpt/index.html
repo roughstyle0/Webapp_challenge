@@ -7,9 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <meta name="theme-color" content="#0f172a" />
   <style>
-    /* iOSのズーム抑制（入力フォント16px以上） */
-    input, select { font-size: 16px; }
-    /* 数値入力のスピナーは使いにくいので非表示（ブラウザ差異あり） */
+    input, button { font-size: 16px; }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
@@ -24,7 +22,7 @@
           コンタクトレンズ処方箋・度数確認ツール
         </h1>
         <p class="text-xs sm:text-sm text-slate-600 truncate">
-          在庫検索用に「大きく・整理して」表示（SPH/CYLは0.25刻みチェック）
+          在庫検索用に「大きく・整理して」表示（0.25刻みチェック）
         </p>
       </div>
       <button id="btnReset"
@@ -46,10 +44,10 @@
           <div class="min-w-0">
             <p class="text-sm text-slate-700">
               <span class="font-semibold">SPHは必須</span>、CYL/AXISは任意です。
-              <span class="font-semibold">CYLを入れたらAXISも推奨</span>（未入力なら警告します）。
+              <span class="font-semibold">CYLがある処方ならAXISも入力</span>してください（未入力は警告します）。
             </p>
             <p class="text-xs text-slate-500 mt-1">
-              片手操作想定：入力欄は大きめ＆数値キーボード優先（type="number" + inputmode）。
+              片手で入力しやすいよう、ボタンと入力欄を大きめにしています（符号は「＋ / −」で切替）。
             </p>
           </div>
         </div>
@@ -69,38 +67,68 @@
           <!-- SPH -->
           <div>
             <label class="block text-sm font-medium text-slate-700" for="r_sph">球面度数（SPH）<span class="text-rose-600"> *</span></label>
-            <div class="mt-1 relative">
-              <input id="r_sph" name="r_sph"
-                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg font-semibold
-                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                type="number" inputmode="decimal" step="0.25" placeholder="-3.00"
-                autocomplete="off" />
-              <button type="button" data-nudge-target="r_sph" data-nudge="-0.25"
-                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-sm font-semibold
-                       bg-slate-900 text-white active:scale-[0.98] transition">
-                −0.25
-              </button>
+
+            <div class="mt-1 flex items-stretch gap-2">
+              <!-- sign toggle -->
+              <div class="inline-flex rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+                <button type="button" data-sign-target="r_sph" data-sign="+"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  ＋
+                </button>
+                <button type="button" data-sign-target="r_sph" data-sign="-"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  −
+                </button>
+              </div>
+
+              <div class="relative flex-1">
+                <input id="r_sph" name="r_sph"
+                  class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg font-semibold
+                         placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                  type="number" inputmode="decimal" step="0.25" placeholder="3.00"
+                  autocomplete="off" />
+                <button type="button" data-nudge-target="r_sph" data-nudge="-0.25"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-sm font-semibold
+                         bg-slate-900 text-white active:scale-[0.98] transition">
+                  −0.25
+                </button>
+              </div>
             </div>
+
+            <p class="mt-1 text-xs text-slate-500">※ 符号は左の「＋ / −」で指定（例：＋3.00 / −3.00）</p>
             <p id="r_sph_err" class="mt-1 text-xs text-rose-600 hidden"></p>
           </div>
 
           <!-- CYL -->
           <div>
             <label class="block text-sm font-medium text-slate-700" for="r_cyl">円柱度数（CYL）<span class="text-slate-400 text-xs">（任意）</span></label>
-            <div class="mt-1 relative">
+
+            <div class="mt-1 flex items-stretch gap-2">
+              <div class="inline-flex rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+                <button type="button" data-sign-target="r_cyl" data-sign="+"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  ＋
+                </button>
+                <button type="button" data-sign-target="r_cyl" data-sign="-"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  −
+                </button>
+              </div>
+
               <input id="r_cyl" name="r_cyl"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
                        placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                type="number" inputmode="decimal" step="0.25" placeholder="-1.25"
+                type="number" inputmode="decimal" step="0.25" placeholder="1.25"
                 autocomplete="off" />
             </div>
+
             <p id="r_cyl_err" class="mt-1 text-xs text-rose-600 hidden"></p>
           </div>
 
           <!-- AXIS -->
           <div>
             <label class="block text-sm font-medium text-slate-700" for="r_axis">乱視軸（AXIS）<span class="text-slate-400 text-xs">（任意）</span></label>
-            <div class="mt-1 relative">
+            <div class="mt-1">
               <input id="r_axis" name="r_axis"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
                        placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
@@ -123,31 +151,60 @@
           <!-- SPH -->
           <div>
             <label class="block text-sm font-medium text-slate-700" for="l_sph">球面度数（SPH）<span class="text-rose-600"> *</span></label>
-            <div class="mt-1 relative">
-              <input id="l_sph" name="l_sph"
-                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg font-semibold
-                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                type="number" inputmode="decimal" step="0.25" placeholder="-2.50"
-                autocomplete="off" />
-              <button type="button" data-nudge-target="l_sph" data-nudge="-0.25"
-                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-sm font-semibold
-                       bg-slate-900 text-white active:scale-[0.98] transition">
-                −0.25
-              </button>
+
+            <div class="mt-1 flex items-stretch gap-2">
+              <div class="inline-flex rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+                <button type="button" data-sign-target="l_sph" data-sign="+"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  ＋
+                </button>
+                <button type="button" data-sign-target="l_sph" data-sign="-"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  −
+                </button>
+              </div>
+
+              <div class="relative flex-1">
+                <input id="l_sph" name="l_sph"
+                  class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg font-semibold
+                         placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                  type="number" inputmode="decimal" step="0.25" placeholder="2.50"
+                  autocomplete="off" />
+                <button type="button" data-nudge-target="l_sph" data-nudge="-0.25"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-sm font-semibold
+                         bg-slate-900 text-white active:scale-[0.98] transition">
+                  −0.25
+                </button>
+              </div>
             </div>
+
+            <p class="mt-1 text-xs text-slate-500">※ 符号は左の「＋ / −」で指定</p>
             <p id="l_sph_err" class="mt-1 text-xs text-rose-600 hidden"></p>
           </div>
 
           <!-- CYL -->
           <div>
             <label class="block text-sm font-medium text-slate-700" for="l_cyl">円柱度数（CYL）<span class="text-slate-400 text-xs">（任意）</span></label>
-            <div class="mt-1">
+
+            <div class="mt-1 flex items-stretch gap-2">
+              <div class="inline-flex rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+                <button type="button" data-sign-target="l_cyl" data-sign="+"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  ＋
+                </button>
+                <button type="button" data-sign-target="l_cyl" data-sign="-"
+                  class="px-4 py-4 text-sm font-extrabold text-slate-700 hover:bg-white active:bg-slate-100 transition">
+                  −
+                </button>
+              </div>
+
               <input id="l_cyl" name="l_cyl"
                 class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
                        placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                type="number" inputmode="decimal" step="0.25" placeholder="-0.75"
+                type="number" inputmode="decimal" step="0.25" placeholder="0.75"
                 autocomplete="off" />
             </div>
+
             <p id="l_cyl_err" class="mt-1 text-xs text-rose-600 hidden"></p>
           </div>
 
@@ -183,7 +240,7 @@
     </section>
   </main>
 
-  <!-- 出力パネル（固定） -->
+  <!-- 出力（固定） -->
   <footer class="fixed bottom-0 inset-x-0 z-30">
     <div class="max-w-3xl mx-auto px-4 pb-4">
       <div class="rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
@@ -210,8 +267,7 @@
 
         <div class="px-4 pb-4">
           <p class="text-xs text-slate-500">
-            表示形式：<span class="font-semibold">右目：SPH -3.00 / CYL -1.25 / AX 180</span>
-            （CYL/AXは未入力なら省略）
+            表示形式：<span class="font-semibold">右目：SPH -3.00 / CYL -1.25 / AX 180</span>（CYL/AXは未入力なら省略）
           </p>
         </div>
       </div>
@@ -235,32 +291,48 @@
     const copyToast = $("copyToast");
     const btnReset = $("btnReset");
 
-    // 0.25刻み判定（浮動小数誤差対策：100倍して25の倍数かを見る）
+    // 入力の符号状態（数値入力だと「＋」が見えないので、UIで状態を保持）
+    const signState = {
+      r_sph: "-", l_sph: "-",
+      r_cyl: "-", l_cyl: "-"
+    };
+
+    function applySignUI(targetId) {
+      const active = signState[targetId] || "-";
+      const btns = document.querySelectorAll(`[data-sign-target="${targetId}"]`);
+      btns.forEach(b => {
+        const isOn = b.getAttribute("data-sign") === active;
+        b.classList.toggle("bg-white", isOn);
+        b.classList.toggle("text-slate-900", isOn);
+        b.classList.toggle("shadow-sm", isOn);
+        b.classList.toggle("text-slate-600", !isOn);
+      });
+    }
+
+    // 0.25刻み判定（浮動小数誤差対策：100倍して25の倍数か）
     function isQuarterStep(value) {
-      if (value === "" || value === null || Number.isNaN(value)) return true; // 空は別チェックで扱う
+      if (value === "" || value === null || Number.isNaN(value)) return true;
       const n = Number(value);
       if (!Number.isFinite(n)) return false;
-      const scaled = Math.round(n * 100); // -300 -> -300
+      const scaled = Math.round(n * 100);
       return scaled % 25 === 0;
     }
 
-    function fmtPower(value) {
-      // 2桁小数固定、符号はマイナスはそのまま、プラスは「+」を付ける（在庫検索で迷いにくい）
-      const n = Number(value);
-      if (!Number.isFinite(n)) return "";
-      const fixed = n.toFixed(2);
-      if (n > 0) return "+" + fixed;
-      // -0.00対策
-      if (Object.is(n, -0)) return "0.00";
-      return fixed;
-    }
-
     function normalizeNumberInput(el) {
-      // 入力中の「-」だけ/「.」だけ等でNaNにならないように
       const v = el.value;
       if (v === "" || v === "-" || v === "." || v === "-.") return null;
       const n = Number(v);
       return Number.isFinite(n) ? n : NaN;
+    }
+
+    function fmtSigned(value, sign) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "";
+      const fixed = Math.abs(n).toFixed(2);
+      if (sign === "+") return "+" + fixed;
+      if (sign === "-") return "-" + fixed;
+      // fallback
+      return (n > 0 ? "+" : "") + n.toFixed(2);
     }
 
     function showFieldError(pEl, msg) {
@@ -276,11 +348,10 @@
 
     function setInvalidStyle(input, invalid) {
       input.classList.toggle("border-rose-300", invalid);
-      input.classList.toggle("ring-rose-100", invalid);
       input.classList.toggle("focus:ring-rose-100", invalid);
     }
 
-    function validateEye(sideLabel, f) {
+    function validateEye(sideLabel, f, ids) {
       const errors = [];
 
       // SPH required
@@ -292,7 +363,7 @@
         setInvalidStyle(f.sph, true);
       } else if (!Number.isFinite(sphNum)) {
         errors.push(`${sideLabel}：SPHは数値で入力してください`);
-        showFieldError(f.err.sph, "数値で入力してください（例：-3.00）");
+        showFieldError(f.err.sph, "数値で入力してください（例：3.00）");
         setInvalidStyle(f.sph, true);
       } else if (!isQuarterStep(sphNum)) {
         errors.push(`${sideLabel}：※度数は0.25刻みで入力してください（SPH）`);
@@ -309,7 +380,7 @@
       if (cylRaw !== "") {
         if (!Number.isFinite(cylNum)) {
           errors.push(`${sideLabel}：CYLは数値で入力してください`);
-          showFieldError(f.err.cyl, "数値で入力してください（例：-1.25）");
+          showFieldError(f.err.cyl, "数値で入力してください（例：1.25）");
           setInvalidStyle(f.cyl, true);
         } else if (!isQuarterStep(cylNum)) {
           errors.push(`${sideLabel}：※度数は0.25刻みで入力してください（CYL）`);
@@ -345,45 +416,49 @@
         setInvalidStyle(f.axis, false);
       }
 
-      // If CYL exists, AXIS is strongly recommended
+      // If CYL exists, AXIS recommended
       if (cylRaw !== "" && axisRaw === "") {
         errors.push(`${sideLabel}：CYLを入力した場合、AXISも入力してください（未入力）`);
-        // AXISに軽い警告表示（エラー扱いで赤枠にするとストレスが大きいので文言で誘導）
-        showFieldError(f.err.axis, "CYLを入れたらAXISも入力してください（推奨）");
-        // ただし枠は注意色に寄せる（赤ほど強くしない）
+        showFieldError(f.err.axis, "CYLがある処方ならAXISも入力（推奨）");
         f.axis.classList.add("border-amber-300");
       } else {
         f.axis.classList.remove("border-amber-300");
       }
 
-      return { errors, sphNum, cylNum, axisNum, sphRaw, cylRaw, axisRaw };
+      return {
+        errors,
+        sphNum, cylNum, axisNum,
+        sphRaw, cylRaw, axisRaw,
+        sphSign: signState[ids.sph] || "-",
+        cylSign: signState[ids.cyl] || "-"
+      };
     }
 
     function buildEyeText(prefix, v) {
-      // CYL/AXは空なら省略。CYLがあるがAXがない場合はAXは省略（現場で誤認を防ぐ）
       const parts = [];
+
       if (v.sphRaw !== "" && Number.isFinite(v.sphNum) && isQuarterStep(v.sphNum)) {
-        parts.push(`SPH ${fmtPower(v.sphNum)}`);
+        parts.push(`SPH ${fmtSigned(v.sphNum, v.sphSign)}`);
       } else {
         parts.push(`SPH —`);
       }
 
       if (v.cylRaw !== "" && Number.isFinite(v.cylNum) && isQuarterStep(v.cylNum)) {
-        parts.push(`CYL ${fmtPower(v.cylNum)}`);
+        parts.push(`CYL ${fmtSigned(v.cylNum, v.cylSign)}`);
         if (v.axisRaw !== "" && Number.isFinite(v.axisNum) && Number.isInteger(v.axisNum) && v.axisNum >= 0 && v.axisNum <= 180) {
           parts.push(`AX ${v.axisNum}`);
         }
       }
+
       return `${prefix}：${parts.join(" / ")}`;
     }
 
     function updateAll() {
-      const r = validateEye("右目", fields.r);
-      const l = validateEye("左目", fields.l);
+      const r = validateEye("右目", fields.r, { sph: "r_sph", cyl: "r_cyl" });
+      const l = validateEye("左目", fields.l, { sph: "l_sph", cyl: "l_cyl" });
 
       const errors = [...r.errors, ...l.errors];
 
-      // Global alert
       globalAlertList.innerHTML = "";
       if (errors.length) {
         for (const e of errors) {
@@ -396,12 +471,8 @@
         globalAlert.classList.add("hidden");
       }
 
-      // Output
-      const rightText = buildEyeText("右目", r);
-      const leftText  = buildEyeText("左目", l);
-      outputText.textContent = `${rightText}\n${leftText}`;
+      outputText.textContent = `${buildEyeText("右目", r)}\n${buildEyeText("左目", l)}`;
 
-      // Copy enabled when both SPH are valid 0.25 step + numeric
       const canCopy =
         (fields.r.sph.value.trim() !== "" && Number.isFinite(r.sphNum) && isQuarterStep(r.sphNum)) &&
         (fields.l.sph.value.trim() !== "" && Number.isFinite(l.sphNum) && isQuarterStep(l.sphNum));
@@ -414,45 +485,54 @@
       for (const key of ["sph", "cyl", "axis"]) {
         fields[side][key].addEventListener("input", updateAll, { passive: true });
         fields[side][key].addEventListener("blur", () => {
-          // blur時に 0.00/2桁整形（ただし入力途中は触らない）
           const el = fields[side][key];
           const v = normalizeNumberInput(el);
           if (v === null || Number.isNaN(v)) return;
 
           if (key === "axis") {
-            // axisは整数に整形
             el.value = String(Math.round(v));
           } else {
-            el.value = fmtPower(v).replace("+", ""); // 入力欄は + を外して自然に（出力だけ + を付与）
+            // 入力欄は絶対値で見せる（符号はボタンで明示）
+            el.value = String(Math.abs(v).toFixed(2)).replace(/^-0\.00$/, "0.00");
           }
           updateAll();
         }, { passive: true });
       }
     }
 
-    // Quick nudge buttons (−0.25)
+    // Sign toggle
     document.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-nudge-target]");
-      if (!btn) return;
+      const sbtn = e.target.closest("[data-sign-target][data-sign]");
+      if (sbtn) {
+        const targetId = sbtn.getAttribute("data-sign-target");
+        const sign = sbtn.getAttribute("data-sign");
+        signState[targetId] = sign;
 
-      const targetId = btn.getAttribute("data-nudge-target");
-      const delta = Number(btn.getAttribute("data-nudge") || "0");
-      const el = $(targetId);
-      if (!el) return;
+        applySignUI(targetId);
+        updateAll();
+        return;
+      }
 
-      const current = normalizeNumberInput(el);
-      const base = (current === null || Number.isNaN(current)) ? 0 : current;
-      const next = base + delta;
+      const nbtn = e.target.closest("[data-nudge-target]");
+      if (nbtn) {
+        const targetId = nbtn.getAttribute("data-nudge-target");
+        const delta = Number(nbtn.getAttribute("data-nudge") || "0");
+        const el = $(targetId);
+        if (!el) return;
 
-      // 0.25刻みに寄せる（誤差対策で丸め）
-      const snapped = Math.round(next * 4) / 4;
-      el.value = String(snapped.toFixed(2)).replace(/^-0\.00$/, "0.00");
-      el.focus({ preventScroll: true });
-      updateAll();
+        const current = normalizeNumberInput(el);
+        const base = (current === null || Number.isNaN(current)) ? 0 : Math.abs(current);
+        const next = base + delta;
+
+        // 0.25にスナップ
+        const snapped = Math.max(0, Math.round(next * 4) / 4);
+        el.value = String(snapped.toFixed(2)).replace(/^-0\.00$/, "0.00");
+        el.focus({ preventScroll: true });
+        updateAll();
+      }
     });
 
     async function copyText(text) {
-      // Clipboard API fallback
       try {
         await navigator.clipboard.writeText(text);
         return true;
@@ -487,7 +567,6 @@
     });
 
     outputBox.addEventListener("click", async () => {
-      // 出力全体をタップでもコピー
       const txt = outputText.textContent.trim();
       const ok = await copyText(txt);
       if (ok) toast();
@@ -499,11 +578,15 @@
         fields[side].cyl.value = "";
         fields[side].axis.value = "";
       }
+      signState.r_sph = signState.l_sph = "-";
+      signState.r_cyl = signState.l_cyl = "-";
+      ["r_sph","l_sph","r_cyl","l_cyl"].forEach(applySignUI);
       updateAll();
       fields.r.sph.focus({ preventScroll: true });
     });
 
-    // Initial
+    // Initial UI state
+    ["r_sph","l_sph","r_cyl","l_cyl"].forEach(applySignUI);
     updateAll();
   </script>
 </body>
