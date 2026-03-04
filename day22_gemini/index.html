@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メガネ修理・パーツ交換 対応チェッカー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0ea5e9', // 信頼感のあるSky Blue
+                        primaryDark: '#0284c7',
+                        success: '#22c55e',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.4s ease-out forwards',
+                        'pulse-light': 'pulseLight 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        pulseLight: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '.7' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* スクロールバーの非表示（モバイルライクな見た目） */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen pb-20">
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-center">
+            <svg class="w-6 h-6 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            <h1 class="text-lg font-bold text-slate-700">修理可否チェッカー</h1>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-6 space-y-8">
+        
+        <!-- Step 1: 購入店選択 -->
+        <section>
+            <h2 class="text-sm font-bold text-slate-500 mb-3 flex items-center">
+                <span class="bg-primary text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs mr-2">1</span>
+                どちらでのご購入ですか？
+            </h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" data-store="当店" class="store-btn relative bg-white border-2 border-slate-200 rounded-xl p-4 text-center font-bold text-slate-600 transition-all active:scale-95 shadow-sm">
+                    <div class="text-2xl mb-1">🏪</div>
+                    当店購入品
+                </button>
+                <button type="button" data-store="他店" class="store-btn relative bg-white border-2 border-slate-200 rounded-xl p-4 text-center font-bold text-slate-600 transition-all active:scale-95 shadow-sm">
+                    <div class="text-2xl mb-1">🏢</div>
+                    他店購入品
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2: 修理メニュー選択 -->
+        <section>
+            <h2 class="text-sm font-bold text-slate-500 mb-3 flex items-center">
+                <span class="bg-primary text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs mr-2">2</span>
+                ご希望の修理内容は？
+            </h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" data-repair="鼻パッド" class="repair-btn bg-white border-2 border-slate-200 rounded-xl p-3 text-center transition-all active:scale-95 shadow-sm flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-8 h-8 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-bold text-slate-700 text-sm">鼻パッド交換</span>
+                </button>
+                <button type="button" data-repair="ネジ" class="repair-btn bg-white border-2 border-slate-200 rounded-xl p-3 text-center transition-all active:scale-95 shadow-sm flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-8 h-8 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="font-bold text-slate-700 text-sm">ネジ取れ・緩み</span>
+                </button>
+                <button type="button" data-repair="ナイロール" class="repair-btn bg-white border-2 border-slate-200 rounded-xl p-3 text-center transition-all active:scale-95 shadow-sm flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-8 h-8 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    <span class="font-bold text-slate-700 text-sm">ナイロールの糸切れ</span>
+                </button>
+                <button type="button" data-repair="フレーム" class="repair-btn bg-white border-2 border-slate-200 rounded-xl p-3 text-center transition-all active:scale-95 shadow-sm flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-8 h-8 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span class="font-bold text-slate-700 text-sm">フレーム折れ・曲がり</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 3: 結果表示エリア -->
+        <section id="result-container" class="mt-8 hidden">
+            <h2 class="text-sm font-bold text-slate-500 mb-2">ご案内内容</h2>
+            <div id="result-card" class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+                <!-- ステータスヘッダー -->
+                <div id="status-header" class="p-4 text-center text-white font-bold text-xl">
+                    <!-- JSでステータスに応じて色とテキストを挿入 -->
+                </div>
+                
+                <!-- 詳細データ -->
+                <div class="p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-slate-500 font-medium">料金の目安</span>
+                        <span id="result-price" class="text-2xl font-bold text-slate-800"></span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="text-slate-500 font-medium">お預かり時間</span>
+                        <span id="result-time" class="text-xl font-bold text-slate-800"></span>
+                    </div>
+                    
+                    <!-- 新人向けのアドバイス/免責 -->
+                    <div class="bg-amber-50 rounded-lg p-3 border border-amber-200 mt-4 flex items-start">
+                        <svg class="w-5 h-5 text-amber-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <div class="text-sm text-amber-800 font-medium" id="result-note">
+                            <!-- JSで注意事項を挿入 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- プレースホルダー (未選択時) -->
+        <div id="placeholder" class="text-center py-10 opacity-60">
+            <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            <p class="text-slate-500 text-sm">購入店と修理内容を選択すると、<br>こちらにご案内内容が表示されます。</p>
+        </div>
+
+    </main>
+
+    <script>
+        // --- データベース定義 ---
+        // 実務では複雑な条件分岐が発生するため、データとロジックを完全に分離する。
+        const repairData = {
+            '当店': {
+                '鼻パッド': { 
+                    status: '即日対応可能', color: 'bg-success', 
+                    price: '無料', time: '約5分', 
+                    note: 'お客様に「特殊な形状の場合はメーカー取り寄せ（有料・お預かり）になる場合がある」旨をお伝えしてください。' 
+                },
+                'ネジ': { 
+                    status: '即日対応可能', color: 'bg-success', 
+                    price: '無料', time: '約5分', 
+                    note: '海外ブランド等で専用ネジが必要な場合は、メーカー修理（有償・お預かり）となる可能性があります。' 
+                },
+                'ナイロール': { 
+                    status: '即日対応可能', color: 'bg-success', 
+                    price: '無料', time: '約15分〜', 
+                    note: '混雑時はお時間を余分に頂くようお伝えください。レンズの欠けがある場合は再加工不可です。' 
+                },
+                'フレーム': { 
+                    status: 'お預かり修理', color: 'bg-warning', 
+                    price: '要見積もり (約5,000円〜)', time: '約2〜3週間', 
+                    note: '破損状況により修理不可の場合があります。一度お預かりして工場での見積もりになることを強調してください。' 
+                }
+            },
+            '他店': {
+                '鼻パッド': { 
+                    status: '即日対応可能', color: 'bg-success', 
+                    price: '550円〜', time: '約5分', 
+                    note: '当店で取り扱いのある規格のパッド（汎用品）に交換となることをご了承いただいてください。' 
+                },
+                'ネジ': { 
+                    status: '即日対応可能', color: 'bg-success', 
+                    price: '550円〜', time: '約5分', 
+                    note: '汎用ネジでの対応となります。特殊ネジの場合は対応不可、または購入店への相談を推奨してください。' 
+                },
+                'ナイロール': { 
+                    status: '即日対応可能', color: 'bg-success', 
+                    price: '1,100円', time: '約15分〜', 
+                    note: '他店レンズの場合、糸張り替え中にレンズが割れるリスクがあります。免責同意書にサインを頂いてください。' 
+                },
+                'フレーム': { 
+                    status: 'お預かり修理', color: 'bg-warning', 
+                    price: '要見積もり (約7,000円〜)', time: '約3〜4週間', 
+                    note: '素材（べっ甲、木製、特殊樹脂など）によっては工場でも受付不可です。購入店へのご相談を第一にお勧めしてください。' 
+                }
+            }
+        };
+
+        // --- アプリケーション状態 ---
+        const state = {
+            store: null,
+            repair: null
+        };
+
+        // --- DOM要素の取得 ---
+        const storeBtns = document.querySelectorAll('.store-btn');
+        const repairBtns = document.querySelectorAll('.repair-btn');
+        const resultContainer = document.getElementById('result-container');
+        const placeholder = document.getElementById('placeholder');
+        
+        const statusHeader = document.getElementById('status-header');
+        const resultPrice = document.getElementById('result-price');
+        const resultTime = document.getElementById('result-time');
+        const resultNote = document.getElementById('result-note');
+
+        // --- イベントリスナーの登録 ---
+        storeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const store = e.currentTarget.dataset.store;
+                state.store = store;
+                
+                // UIの更新
+                updateStoreButtonsUI();
+                checkAndShowResult();
+            });
+        });
+
+        repairBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const repair = e.currentTarget.dataset.repair;
+                state.repair = repair;
+                
+                // UIの更新
+                updateRepairButtonsUI();
+                checkAndShowResult();
+            });
+        });
+
+        // --- UI更新ロジック ---
+        function updateStoreButtonsUI() {
+            storeBtns.forEach(btn => {
+                if (btn.dataset.store === state.store) {
+                    // 選択された状態
+                    btn.classList.add('border-primary', 'bg-sky-50', 'ring-2', 'ring-primary', 'ring-opacity-50');
+                    btn.classList.remove('border-slate-200');
+                    // アイコンにアニメーションを追加して選択を強調
+                    btn.querySelector('div').classList.add('animate-bounce');
+                    setTimeout(() => btn.querySelector('div').classList.remove('animate-bounce'), 1000);
+                } else {
+                    // 非選択状態
+                    btn.classList.remove('border-primary', 'bg-sky-50', 'ring-2', 'ring-primary', 'ring-opacity-50');
+                    btn.classList.add('border-slate-200');
+                }
+            });
+        }
+
+        function updateRepairButtonsUI() {
+            repairBtns.forEach(btn => {
+                if (btn.dataset.repair === state.repair) {
+                    btn.classList.add('border-primary', 'bg-sky-50', 'text-primary');
+                    btn.classList.remove('border-slate-200');
+                    btn.querySelector('svg').classList.add('text-primary');
+                    btn.querySelector('svg').classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('border-primary', 'bg-sky-50', 'text-primary');
+                    btn.classList.add('border-slate-200');
+                    btn.querySelector('svg').classList.remove('text-primary');
+                    btn.querySelector('svg').classList.add('text-slate-400');
+                }
+            });
+        }
+
+        function checkAndShowResult() {
+            if (state.store && state.repair) {
+                renderResult();
+            }
+        }
+
+        function renderResult() {
+            // データの取得
+            const data = repairData[state.store][state.repair];
+            if (!data) return; // エラーハンドリング（通常は発生しない）
+
+            // プレースホルダーを隠し、結果エリアを表示
+            placeholder.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+            
+            // アニメーションのリセット（再選択時に毎回アニメーションさせるため）
+            const card = document.getElementById('result-card');
+            card.classList.remove('animate-fade-in-up');
+            void card.offsetWidth; // リフローを強制してアニメーションを再起動
+            card.classList.add('animate-fade-in-up');
+
+            // データのアサイン
+            // ステータスヘッダーの色とテキストをリセットして適用
+            statusHeader.className = `p-4 text-center text-white font-bold text-xl ${data.color}`;
+            statusHeader.textContent = data.status;
+
+            resultPrice.textContent = data.price;
+            resultTime.textContent = data.time;
+            resultNote.textContent = data.note;
+            
+            // ユーザーの視線を結果エリアにスムーズにスクロール
+            setTimeout(() => {
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
