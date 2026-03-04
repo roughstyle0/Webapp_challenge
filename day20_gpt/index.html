@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>メガネ保証期間サクッと計算ツール</title>
+  <meta name="description" content="購入日（お渡し日）から、見え方（度数）保証6ヶ月とフレーム品質保証1年の期日を自動計算します。" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <div class="mx-auto max-w-3xl p-4 sm:p-8">
+    <!-- Header -->
+    <header class="mb-6 sm:mb-10">
+      <div class="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+        <div class="flex items-start gap-4">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50 ring-1 ring-sky-100">
+            <span class="text-2xl" aria-hidden="true">👓</span>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+              メガネの保証期間サクッと計算ツール
+            </h1>
+            <p class="mt-1 text-base sm:text-lg text-slate-600">
+              購入日（お渡し日）を選ぶだけで、保証の期日がすぐ分かります。
+            </p>
+          </div>
+        </div>
+
+        <!-- Date input -->
+        <div class="mt-6 grid gap-3 sm:grid-cols-[240px_1fr] sm:items-end">
+          <div>
+            <label for="purchaseDate" class="block text-base sm:text-lg font-semibold text-slate-800">
+              購入日（お渡し日）
+            </label>
+            <p class="mt-1 text-sm sm:text-base text-slate-500">
+              カレンダーから日付を選択してください
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <div class="relative">
+              <input
+                id="purchaseDate"
+                type="date"
+                class="w-full rounded-2xl bg-white px-4 py-3 text-lg sm:text-xl font-semibold shadow-sm ring-1 ring-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                aria-describedby="dateHelp dateError"
+              />
+              <div class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400" aria-hidden="true">
+                📅
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <div id="dateHelp" class="text-sm sm:text-base text-slate-500">
+                例：2026-03-04
+              </div>
+              <button
+                id="todayBtn"
+                type="button"
+                class="rounded-xl bg-slate-900 px-4 py-2 text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-slate-800 active:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              >
+                今日に戻す
+              </button>
+            </div>
+
+            <div
+              id="dateError"
+              class="hidden rounded-xl bg-rose-50 px-4 py-3 text-sm sm:text-base font-semibold text-rose-700 ring-1 ring-rose-200"
+              role="alert"
+            >
+              日付が正しく入力されていません。カレンダーから選択してください。
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Results -->
+    <main class="space-y-5 sm:space-y-6">
+      <!-- Card: 6 months -->
+      <section class="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">
+            見え方（度数）保証（6ヶ月間）
+          </h2>
+          <span
+            id="badge6"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 text-sm sm:text-base font-bold text-rose-700 ring-1 ring-rose-200"
+          >
+            <span aria-hidden="true">⚠️</span>
+            ※保証期間外です
+          </span>
+        </div>
+
+        <div class="mt-5 rounded-2xl bg-slate-50 p-5 sm:p-6 ring-1 ring-slate-200">
+          <p class="text-base sm:text-lg text-slate-600 font-semibold">
+            期日
+          </p>
+          <p
+            id="date6"
+            class="mt-2 text-2xl sm:text-4xl font-black tracking-tight text-slate-900"
+            aria-live="polite"
+          >
+            ----年--月--日まで
+          </p>
+          <p id="sub6" class="mt-3 text-sm sm:text-base text-slate-500">
+            （購入日を含めて6ヶ月後の同日まで）
+          </p>
+        </div>
+      </section>
+
+      <!-- Card: 1 year -->
+      <section class="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">
+            フレーム品質保証（1年間）
+          </h2>
+          <span
+            id="badge12"
+            class="hidden inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 text-sm sm:text-base font-bold text-rose-700 ring-1 ring-rose-200"
+          >
+            <span aria-hidden="true">⚠️</span>
+            ※保証期間外です
+          </span>
+        </div>
+
+        <div class="mt-5 rounded-2xl bg-slate-50 p-5 sm:p-6 ring-1 ring-slate-200">
+          <p class="text-base sm:text-lg text-slate-600 font-semibold">
+            期日
+          </p>
+          <p
+            id="date12"
+            class="mt-2 text-2xl sm:text-4xl font-black tracking-tight text-slate-900"
+            aria-live="polite"
+          >
+            ----年--月--日まで
+          </p>
+          <p id="sub12" class="mt-3 text-sm sm:text-base text-slate-500">
+            （購入日を含めて1年後の同日まで）
+          </p>
+        </div>
+      </section>
+
+      <!-- Footer note -->
+      <section class="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-sm sm:text-base text-slate-600">
+            <p class="font-semibold text-slate-800">補足</p>
+            <ul class="mt-1 list-disc pl-5 space-y-1">
+              <li>日付計算は「購入日の同日」を基準に、月/年を加算して算出します。</li>
+              <li>加算先の月に同日が存在しない場合（例：1/31 → 2月）は、その月の末日に補正します。</li>
+            </ul>
+          </div>
+          <div class="mt-2 sm:mt-0">
+            <button
+              id="copyBtn"
+              type="button"
+              class="w-full sm:w-auto rounded-2xl bg-sky-600 px-5 py-3 text-base sm:text-lg font-extrabold text-white shadow-sm hover:bg-sky-500 active:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300"
+            >
+              結果をコピー
+            </button>
+            <p id="copyToast" class="mt-2 hidden text-sm sm:text-base font-semibold text-slate-600">
+              ✅ クリップボードにコピーしました
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const el = {
+        input: document.getElementById('purchaseDate'),
+        todayBtn: document.getElementById('todayBtn'),
+        error: document.getElementById('dateError'),
+        date6: document.getElementById('date6'),
+        date12: document.getElementById('date12'),
+        badge6: document.getElementById('badge6'),
+        badge12: document.getElementById('badge12'),
+        copyBtn: document.getElementById('copyBtn'),
+        copyToast: document.getElementById('copyToast'),
+      };
+
+      // ----- Utilities -----
+      const pad2 = (n) => String(n).padStart(2, '0');
+
+      const toISODate = (d) => {
+        const y = d.getFullYear();
+        const m = pad2(d.getMonth() + 1);
+        const day = pad2(d.getDate());
+        return `${y}-${m}-${day}`;
+      };
+
+      const formatJP = (d) => {
+        return `${d.getFullYear()}年${pad2(d.getMonth() + 1)}月${pad2(d.getDate())}日`;
+      };
+
+      const isValidISODateString = (s) => {
+        // input[type="date"] usually returns YYYY-MM-DD, but we still guard.
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+        const [y, m, d] = s.split('-').map(Number);
+        if (m < 1 || m > 12) return false;
+        if (d < 1 || d > 31) return false;
+        const dt = new Date(y, m - 1, d);
+        return dt.getFullYear() === y && dt.getMonth() === (m - 1) && dt.getDate() === d;
+      };
+
+      const parseLocalDate = (iso) => {
+        // Use local time (not UTC) to avoid timezone off-by-one.
+        const [y, m, d] = iso.split('-').map(Number);
+        return new Date(y, m - 1, d, 12, 0, 0, 0); // midday local to be extra safe
+      };
+
+      const startOfTodayLocal = () => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      };
+
+      const endOfDayLocal = (d) => {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+      };
+
+      const daysInMonth = (y, mIndex) => {
+        // mIndex: 0-11
+        return new Date(y, mIndex + 1, 0).getDate();
+      };
+
+      const addMonthsClamp = (date, monthsToAdd) => {
+        // Adds months keeping the same day when possible; otherwise clamp to end-of-month.
+        const y = date.getFullYear();
+        const m = date.getMonth();
+        const d = date.getDate();
+
+        const total = m + monthsToAdd;
+        const newY = y + Math.floor(total / 12);
+        const newM = ((total % 12) + 12) % 12;
+
+        const dim = daysInMonth(newY, newM);
+        const newD = Math.min(d, dim);
+
+        return new Date(newY, newM, newD, 12, 0, 0, 0);
+      };
+
+      const addYearsClamp = (date, yearsToAdd) => {
+        const y = date.getFullYear() + yearsToAdd;
+        const m = date.getMonth();
+        const d = date.getDate();
+
+        const dim = daysInMonth(y, m);
+        const newD = Math.min(d, dim);
+
+        return new Date(y, m, newD, 12, 0, 0, 0);
+      };
+
+      // ----- Core -----
+      const render = () => {
+        const iso = el.input.value;
+
+        if (!isValidISODateString(iso)) {
+          el.error.classList.remove('hidden');
+          el.date6.textContent = '----年--月--日まで';
+          el.date12.textContent = '----年--月--日まで';
+          el.badge6.classList.add('hidden');
+          el.badge12.classList.add('hidden');
+          return;
+        }
+        el.error.classList.add('hidden');
+
+        const purchase = parseLocalDate(iso);
+        const until6 = addMonthsClamp(purchase, 6);
+        const until12 = addYearsClamp(purchase, 1);
+
+        el.date6.textContent = `${formatJP(until6)}まで`;
+        el.date12.textContent = `${formatJP(until12)}まで`;
+
+        // Determine "out of warranty" at today's date.
+        // If the warranty end date's end-of-day is before today 00:00, it's out.
+        const today0 = startOfTodayLocal();
+        const out6 = endOfDayLocal(until6) < today0;
+        const out12 = endOfDayLocal(until12) < today0;
+
+        el.badge6.classList.toggle('hidden', !out6);
+        el.badge12.classList.toggle('hidden', !out12);
+      };
+
+      const setToday = () => {
+        const today = new Date();
+        el.input.value = toISODate(today);
+        render();
+      };
+
+      const showToast = () => {
+        el.copyToast.classList.remove('hidden');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => el.copyToast.classList.add('hidden'), 1800);
+      };
+
+      const copyResults = async () => {
+        const iso = el.input.value;
+        if (!isValidISODateString(iso)) {
+          el.error.classList.remove('hidden');
+          return;
+        }
+        const purchase = parseLocalDate(iso);
+        const until6 = addMonthsClamp(purchase, 6);
+        const until12 = addYearsClamp(purchase, 1);
+
+        const today0 = startOfTodayLocal();
+        const out6 = endOfDayLocal(until6) < today0;
+        const out12 = endOfDayLocal(until12) < today0;
+
+        const text =
+`購入日（お渡し日）：${formatJP(purchase)}
+見え方（度数）保証（6ヶ月間）：${formatJP(until6)}まで${out6 ? " ※保証期間外です" : ""}
+フレーム品質保証（1年間）：${formatJP(until12)}まで${out12 ? " ※保証期間外です" : ""}`;
+
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast();
+        } catch (e) {
+          // Fallback for older browsers
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast();
+          } catch (err) {
+            el.copyToast.textContent = '❌ コピーに失敗しました（ブラウザ権限をご確認ください）';
+            el.copyToast.classList.remove('hidden');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => {
+              el.copyToast.classList.add('hidden');
+              el.copyToast.textContent = '✅ クリップボードにコピーしました';
+            }, 2200);
+          }
+        }
+      };
+
+      // ----- Events -----
+      el.input.addEventListener('input', render);
+      el.input.addEventListener('change', render);
+      el.todayBtn.addEventListener('click', setToday);
+      el.copyBtn.addEventListener('click', copyResults);
+
+      // Init
+      setToday();
+    })();
+  </script>
+</body>
+</html>
