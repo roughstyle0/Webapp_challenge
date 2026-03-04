@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>コンタクトレンズ処方箋・度数確認ツール（眼鏡屋向け）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    /* iOSのズーム抑制（入力フォント16px以上） */
+    input, select { font-size: 16px; }
+    /* 数値入力のスピナーは使いにくいので非表示（ブラウザ差異あり） */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+  <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div class="min-w-0">
+        <h1 class="text-base sm:text-lg font-semibold leading-tight">
+          コンタクトレンズ処方箋・度数確認ツール
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 truncate">
+          在庫検索用に「大きく・整理して」表示（SPH/CYLは0.25刻みチェック）
+        </p>
+      </div>
+      <button id="btnReset"
+        class="shrink-0 inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium
+               border border-slate-200 bg-white hover:bg-slate-50 active:scale-[0.98] transition">
+        リセット
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-5 pb-28">
+    <!-- ヒント -->
+    <section class="mb-4">
+      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white font-bold">
+            i
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm text-slate-700">
+              <span class="font-semibold">SPHは必須</span>、CYL/AXISは任意です。
+              <span class="font-semibold">CYLを入れたらAXISも推奨</span>（未入力なら警告します）。
+            </p>
+            <p class="text-xs text-slate-500 mt-1">
+              片手操作想定：入力欄は大きめ＆数値キーボード優先（type="number" + inputmode）。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- フォーム -->
+    <section class="grid gap-4">
+      <!-- Right -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">右目（R）</h2>
+          <span class="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">必須：SPH</span>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- SPH -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700" for="r_sph">球面度数（SPH）<span class="text-rose-600"> *</span></label>
+            <div class="mt-1 relative">
+              <input id="r_sph" name="r_sph"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg font-semibold
+                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                type="number" inputmode="decimal" step="0.25" placeholder="-3.00"
+                autocomplete="off" />
+              <button type="button" data-nudge-target="r_sph" data-nudge="-0.25"
+                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-sm font-semibold
+                       bg-slate-900 text-white active:scale-[0.98] transition">
+                −0.25
+              </button>
+            </div>
+            <p id="r_sph_err" class="mt-1 text-xs text-rose-600 hidden"></p>
+          </div>
+
+          <!-- CYL -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700" for="r_cyl">円柱度数（CYL）<span class="text-slate-400 text-xs">（任意）</span></label>
+            <div class="mt-1 relative">
+              <input id="r_cyl" name="r_cyl"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
+                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                type="number" inputmode="decimal" step="0.25" placeholder="-1.25"
+                autocomplete="off" />
+            </div>
+            <p id="r_cyl_err" class="mt-1 text-xs text-rose-600 hidden"></p>
+          </div>
+
+          <!-- AXIS -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700" for="r_axis">乱視軸（AXIS）<span class="text-slate-400 text-xs">（任意）</span></label>
+            <div class="mt-1 relative">
+              <input id="r_axis" name="r_axis"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
+                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                type="number" inputmode="numeric" step="1" min="0" max="180" placeholder="180"
+                autocomplete="off" />
+            </div>
+            <p id="r_axis_err" class="mt-1 text-xs text-rose-600 hidden"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">左目（L）</h2>
+          <span class="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">必須：SPH</span>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- SPH -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700" for="l_sph">球面度数（SPH）<span class="text-rose-600"> *</span></label>
+            <div class="mt-1 relative">
+              <input id="l_sph" name="l_sph"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-lg font-semibold
+                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                type="number" inputmode="decimal" step="0.25" placeholder="-2.50"
+                autocomplete="off" />
+              <button type="button" data-nudge-target="l_sph" data-nudge="-0.25"
+                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-sm font-semibold
+                       bg-slate-900 text-white active:scale-[0.98] transition">
+                −0.25
+              </button>
+            </div>
+            <p id="l_sph_err" class="mt-1 text-xs text-rose-600 hidden"></p>
+          </div>
+
+          <!-- CYL -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700" for="l_cyl">円柱度数（CYL）<span class="text-slate-400 text-xs">（任意）</span></label>
+            <div class="mt-1">
+              <input id="l_cyl" name="l_cyl"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
+                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                type="number" inputmode="decimal" step="0.25" placeholder="-0.75"
+                autocomplete="off" />
+            </div>
+            <p id="l_cyl_err" class="mt-1 text-xs text-rose-600 hidden"></p>
+          </div>
+
+          <!-- AXIS -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700" for="l_axis">乱視軸（AXIS）<span class="text-slate-400 text-xs">（任意）</span></label>
+            <div class="mt-1">
+              <input id="l_axis" name="l_axis"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold
+                       placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                type="number" inputmode="numeric" step="1" min="0" max="180" placeholder="90"
+                autocomplete="off" />
+            </div>
+            <p id="l_axis_err" class="mt-1 text-xs text-rose-600 hidden"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 警告まとめ -->
+    <section class="mt-4">
+      <div id="globalAlert" class="hidden rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white font-bold">
+            !
+          </div>
+          <div class="min-w-0">
+            <p class="font-semibold text-amber-900">入力を確認してください</p>
+            <ul id="globalAlertList" class="mt-1 text-sm text-amber-900 list-disc pl-5 space-y-1"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 出力パネル（固定） -->
+  <footer class="fixed bottom-0 inset-x-0 z-30">
+    <div class="max-w-3xl mx-auto px-4 pb-4">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+          <div class="min-w-0">
+            <p class="text-xs font-medium text-slate-600">在庫検索用データ</p>
+            <p class="text-xs text-slate-500">タップでコピーできます</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="copyToast" class="hidden text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">
+              コピーしました
+            </span>
+            <button id="btnCopy"
+              class="inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium
+                     bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed">
+              まとめてコピー
+            </button>
+          </div>
+        </div>
+
+        <button id="outputBox" class="w-full text-left px-4 py-4 active:bg-slate-50 transition">
+          <pre id="outputText" class="whitespace-pre-wrap leading-snug text-xl sm:text-2xl font-extrabold tracking-wide text-slate-900">右目：SPH — / 左目：SPH —</pre>
+        </button>
+
+        <div class="px-4 pb-4">
+          <p class="text-xs text-slate-500">
+            表示形式：<span class="font-semibold">右目：SPH -3.00 / CYL -1.25 / AX 180</span>
+            （CYL/AXは未入力なら省略）
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ===== Utilities =====
+    const $ = (id) => document.getElementById(id);
+
+    const fields = {
+      r: { sph: $("r_sph"), cyl: $("r_cyl"), axis: $("r_axis"), err: { sph: $("r_sph_err"), cyl: $("r_cyl_err"), axis: $("r_axis_err") } },
+      l: { sph: $("l_sph"), cyl: $("l_cyl"), axis: $("l_axis"), err: { sph: $("l_sph_err"), cyl: $("l_cyl_err"), axis: $("l_axis_err") } },
+    };
+
+    const globalAlert = $("globalAlert");
+    const globalAlertList = $("globalAlertList");
+    const outputText = $("outputText");
+    const outputBox = $("outputBox");
+    const btnCopy = $("btnCopy");
+    const copyToast = $("copyToast");
+    const btnReset = $("btnReset");
+
+    // 0.25刻み判定（浮動小数誤差対策：100倍して25の倍数かを見る）
+    function isQuarterStep(value) {
+      if (value === "" || value === null || Number.isNaN(value)) return true; // 空は別チェックで扱う
+      const n = Number(value);
+      if (!Number.isFinite(n)) return false;
+      const scaled = Math.round(n * 100); // -300 -> -300
+      return scaled % 25 === 0;
+    }
+
+    function fmtPower(value) {
+      // 2桁小数固定、符号はマイナスはそのまま、プラスは「+」を付ける（在庫検索で迷いにくい）
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "";
+      const fixed = n.toFixed(2);
+      if (n > 0) return "+" + fixed;
+      // -0.00対策
+      if (Object.is(n, -0)) return "0.00";
+      return fixed;
+    }
+
+    function normalizeNumberInput(el) {
+      // 入力中の「-」だけ/「.」だけ等でNaNにならないように
+      const v = el.value;
+      if (v === "" || v === "-" || v === "." || v === "-.") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function showFieldError(pEl, msg) {
+      if (!pEl) return;
+      if (!msg) {
+        pEl.textContent = "";
+        pEl.classList.add("hidden");
+      } else {
+        pEl.textContent = msg;
+        pEl.classList.remove("hidden");
+      }
+    }
+
+    function setInvalidStyle(input, invalid) {
+      input.classList.toggle("border-rose-300", invalid);
+      input.classList.toggle("ring-rose-100", invalid);
+      input.classList.toggle("focus:ring-rose-100", invalid);
+    }
+
+    function validateEye(sideLabel, f) {
+      const errors = [];
+
+      // SPH required
+      const sphRaw = f.sph.value.trim();
+      const sphNum = normalizeNumberInput(f.sph);
+      if (sphRaw === "") {
+        errors.push(`${sideLabel}：SPHは必須です`);
+        showFieldError(f.err.sph, "SPHは必須です");
+        setInvalidStyle(f.sph, true);
+      } else if (!Number.isFinite(sphNum)) {
+        errors.push(`${sideLabel}：SPHは数値で入力してください`);
+        showFieldError(f.err.sph, "数値で入力してください（例：-3.00）");
+        setInvalidStyle(f.sph, true);
+      } else if (!isQuarterStep(sphNum)) {
+        errors.push(`${sideLabel}：※度数は0.25刻みで入力してください（SPH）`);
+        showFieldError(f.err.sph, "※度数は0.25刻みで入力してください");
+        setInvalidStyle(f.sph, true);
+      } else {
+        showFieldError(f.err.sph, "");
+        setInvalidStyle(f.sph, false);
+      }
+
+      // CYL optional
+      const cylRaw = f.cyl.value.trim();
+      const cylNum = normalizeNumberInput(f.cyl);
+      if (cylRaw !== "") {
+        if (!Number.isFinite(cylNum)) {
+          errors.push(`${sideLabel}：CYLは数値で入力してください`);
+          showFieldError(f.err.cyl, "数値で入力してください（例：-1.25）");
+          setInvalidStyle(f.cyl, true);
+        } else if (!isQuarterStep(cylNum)) {
+          errors.push(`${sideLabel}：※度数は0.25刻みで入力してください（CYL）`);
+          showFieldError(f.err.cyl, "※度数は0.25刻みで入力してください");
+          setInvalidStyle(f.cyl, true);
+        } else {
+          showFieldError(f.err.cyl, "");
+          setInvalidStyle(f.cyl, false);
+        }
+      } else {
+        showFieldError(f.err.cyl, "");
+        setInvalidStyle(f.cyl, false);
+      }
+
+      // AXIS optional (0-180)
+      const axisRaw = f.axis.value.trim();
+      const axisNum = normalizeNumberInput(f.axis);
+      if (axisRaw !== "") {
+        if (!Number.isFinite(axisNum) || !Number.isInteger(axisNum)) {
+          errors.push(`${sideLabel}：AXISは整数で入力してください（0〜180）`);
+          showFieldError(f.err.axis, "整数で入力してください（0〜180）");
+          setInvalidStyle(f.axis, true);
+        } else if (axisNum < 0 || axisNum > 180) {
+          errors.push(`${sideLabel}：AXISは0〜180の範囲です`);
+          showFieldError(f.err.axis, "0〜180の範囲で入力してください");
+          setInvalidStyle(f.axis, true);
+        } else {
+          showFieldError(f.err.axis, "");
+          setInvalidStyle(f.axis, false);
+        }
+      } else {
+        showFieldError(f.err.axis, "");
+        setInvalidStyle(f.axis, false);
+      }
+
+      // If CYL exists, AXIS is strongly recommended
+      if (cylRaw !== "" && axisRaw === "") {
+        errors.push(`${sideLabel}：CYLを入力した場合、AXISも入力してください（未入力）`);
+        // AXISに軽い警告表示（エラー扱いで赤枠にするとストレスが大きいので文言で誘導）
+        showFieldError(f.err.axis, "CYLを入れたらAXISも入力してください（推奨）");
+        // ただし枠は注意色に寄せる（赤ほど強くしない）
+        f.axis.classList.add("border-amber-300");
+      } else {
+        f.axis.classList.remove("border-amber-300");
+      }
+
+      return { errors, sphNum, cylNum, axisNum, sphRaw, cylRaw, axisRaw };
+    }
+
+    function buildEyeText(prefix, v) {
+      // CYL/AXは空なら省略。CYLがあるがAXがない場合はAXは省略（現場で誤認を防ぐ）
+      const parts = [];
+      if (v.sphRaw !== "" && Number.isFinite(v.sphNum) && isQuarterStep(v.sphNum)) {
+        parts.push(`SPH ${fmtPower(v.sphNum)}`);
+      } else {
+        parts.push(`SPH —`);
+      }
+
+      if (v.cylRaw !== "" && Number.isFinite(v.cylNum) && isQuarterStep(v.cylNum)) {
+        parts.push(`CYL ${fmtPower(v.cylNum)}`);
+        if (v.axisRaw !== "" && Number.isFinite(v.axisNum) && Number.isInteger(v.axisNum) && v.axisNum >= 0 && v.axisNum <= 180) {
+          parts.push(`AX ${v.axisNum}`);
+        }
+      }
+      return `${prefix}：${parts.join(" / ")}`;
+    }
+
+    function updateAll() {
+      const r = validateEye("右目", fields.r);
+      const l = validateEye("左目", fields.l);
+
+      const errors = [...r.errors, ...l.errors];
+
+      // Global alert
+      globalAlertList.innerHTML = "";
+      if (errors.length) {
+        for (const e of errors) {
+          const li = document.createElement("li");
+          li.textContent = e;
+          globalAlertList.appendChild(li);
+        }
+        globalAlert.classList.remove("hidden");
+      } else {
+        globalAlert.classList.add("hidden");
+      }
+
+      // Output
+      const rightText = buildEyeText("右目", r);
+      const leftText  = buildEyeText("左目", l);
+      outputText.textContent = `${rightText}\n${leftText}`;
+
+      // Copy enabled when both SPH are valid 0.25 step + numeric
+      const canCopy =
+        (fields.r.sph.value.trim() !== "" && Number.isFinite(r.sphNum) && isQuarterStep(r.sphNum)) &&
+        (fields.l.sph.value.trim() !== "" && Number.isFinite(l.sphNum) && isQuarterStep(l.sphNum));
+
+      btnCopy.disabled = !canCopy;
+    }
+
+    // ===== Events =====
+    for (const side of ["r", "l"]) {
+      for (const key of ["sph", "cyl", "axis"]) {
+        fields[side][key].addEventListener("input", updateAll, { passive: true });
+        fields[side][key].addEventListener("blur", () => {
+          // blur時に 0.00/2桁整形（ただし入力途中は触らない）
+          const el = fields[side][key];
+          const v = normalizeNumberInput(el);
+          if (v === null || Number.isNaN(v)) return;
+
+          if (key === "axis") {
+            // axisは整数に整形
+            el.value = String(Math.round(v));
+          } else {
+            el.value = fmtPower(v).replace("+", ""); // 入力欄は + を外して自然に（出力だけ + を付与）
+          }
+          updateAll();
+        }, { passive: true });
+      }
+    }
+
+    // Quick nudge buttons (−0.25)
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-nudge-target]");
+      if (!btn) return;
+
+      const targetId = btn.getAttribute("data-nudge-target");
+      const delta = Number(btn.getAttribute("data-nudge") || "0");
+      const el = $(targetId);
+      if (!el) return;
+
+      const current = normalizeNumberInput(el);
+      const base = (current === null || Number.isNaN(current)) ? 0 : current;
+      const next = base + delta;
+
+      // 0.25刻みに寄せる（誤差対策で丸め）
+      const snapped = Math.round(next * 4) / 4;
+      el.value = String(snapped.toFixed(2)).replace(/^-0\.00$/, "0.00");
+      el.focus({ preventScroll: true });
+      updateAll();
+    });
+
+    async function copyText(text) {
+      // Clipboard API fallback
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return ok;
+        } catch (_) {
+          return false;
+        }
+      }
+    }
+
+    function toast() {
+      copyToast.classList.remove("hidden");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => copyToast.classList.add("hidden"), 1200);
+    }
+
+    btnCopy.addEventListener("click", async () => {
+      const txt = outputText.textContent.trim();
+      const ok = await copyText(txt);
+      if (ok) toast();
+    });
+
+    outputBox.addEventListener("click", async () => {
+      // 出力全体をタップでもコピー
+      const txt = outputText.textContent.trim();
+      const ok = await copyText(txt);
+      if (ok) toast();
+    });
+
+    btnReset.addEventListener("click", () => {
+      for (const side of ["r", "l"]) {
+        fields[side].sph.value = "";
+        fields[side].cyl.value = "";
+        fields[side].axis.value = "";
+      }
+      updateAll();
+      fields.r.sph.focus({ preventScroll: true });
+    });
+
+    // Initial
+    updateAll();
+  </script>
+</body>
+</html>
