@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>メガネ修理・パーツ交換 対応可否チェッカー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#0f172a"/>
+  <style>
+    /* 押しやすさ（タップ領域）をさらに強化 */
+    .tap-xl { min-height: 56px; }
+    .tap-2xl { min-height: 64px; }
+    /* 結果カードを「目に入る」ように */
+    .glow {
+      box-shadow: 0 10px 30px rgba(2,6,23,.22), 0 2px 10px rgba(2,6,23,.14);
+    }
+    /* iOSのタップハイライト軽減 */
+    * { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 selection:bg-cyan-400/30">
+  <div class="max-w-3xl mx-auto p-4 sm:p-6">
+    <!-- Header -->
+    <header class="mb-4 sm:mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/20 grid place-items-center">
+          <span class="text-xl" aria-hidden="true">👓</span>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight">
+            修理・パーツ交換 対応可否チェッカー
+          </h1>
+          <p class="text-slate-300 text-sm sm:text-base leading-snug">
+            お客様の目の前でも迷わない：①購入元 → ②修理メニュー の順に押すだけ
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="space-y-4 sm:space-y-6">
+      <!-- Step 1: Purchase Source -->
+      <section class="bg-slate-900/50 border border-slate-800 rounded-3xl p-4 sm:p-5">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-semibold">① 購入元</h2>
+            <p class="text-slate-300 text-sm">まずどちらかを選択してください</p>
+          </div>
+          <button id="btnReset" class="shrink-0 tap-xl px-4 rounded-2xl border border-slate-700 bg-slate-900 hover:bg-slate-800 active:scale-[0.99] transition font-semibold">
+            リセット
+          </button>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            class="sourceBtn tap-2xl rounded-2xl border bg-slate-900 hover:bg-slate-800 active:scale-[0.99] transition px-3 sm:px-4 text-left"
+            data-source="inhouse"
+            aria-pressed="false"
+            id="sourceInhouse"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="text-sm text-slate-300">当店購入品</div>
+                <div class="text-lg sm:text-xl font-bold">当店</div>
+              </div>
+              <span class="text-2xl" aria-hidden="true">🏬</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="sourceBtn tap-2xl rounded-2xl border bg-slate-900 hover:bg-slate-800 active:scale-[0.99] transition px-3 sm:px-4 text-left"
+            data-source="other"
+            aria-pressed="false"
+            id="sourceOther"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="text-sm text-slate-300">他店購入品</div>
+                <div class="text-lg sm:text-xl font-bold">他店</div>
+              </div>
+              <span class="text-2xl" aria-hidden="true">🛍️</span>
+            </div>
+          </button>
+        </div>
+
+        <div id="sourceHint" class="mt-3 text-sm text-slate-300">
+          <span class="inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>
+            購入元を選ぶと、次の修理メニューが押せるようになります
+          </span>
+        </div>
+      </section>
+
+      <!-- Step 2: Repair Menu -->
+      <section class="bg-slate-900/50 border border-slate-800 rounded-3xl p-4 sm:p-5">
+        <div>
+          <h2 class="text-base sm:text-lg font-semibold">② 修理メニュー</h2>
+          <p class="text-slate-300 text-sm">該当する症状を1つ選択してください</p>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button type="button" class="menuBtn tap-2xl rounded-2xl border border-slate-800 bg-slate-900 px-4 text-left hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            data-menu="nosepads" disabled aria-pressed="false">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-base sm:text-lg font-bold">鼻パッド交換</div>
+                <div class="text-sm text-slate-300">黄ばみ・割れ・ズレ</div>
+              </div>
+              <span class="text-2xl" aria-hidden="true">🧩</span>
+            </div>
+          </button>
+
+          <button type="button" class="menuBtn tap-2xl rounded-2xl border border-slate-800 bg-slate-900 px-4 text-left hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            data-menu="screws" disabled aria-pressed="false">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-base sm:text-lg font-bold">ネジ取れ・緩み</div>
+                <div class="text-sm text-slate-300">テンプルのガタつき</div>
+              </div>
+              <span class="text-2xl" aria-hidden="true">🔩</span>
+            </div>
+          </button>
+
+          <button type="button" class="menuBtn tap-2xl rounded-2xl border border-slate-800 bg-slate-900 px-4 text-left hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            data-menu="nylor" disabled aria-pressed="false">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-base sm:text-lg font-bold">ナイロール糸切れ</div>
+                <div class="text-sm text-slate-300">下半分フチなし</div>
+              </div>
+              <span class="text-2xl" aria-hidden="true">🧵</span>
+            </div>
+          </button>
+
+          <button type="button" class="menuBtn tap-2xl rounded-2xl border border-slate-800 bg-slate-900 px-4 text-left hover:bg-slate-800 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed"
+            data-menu="frame" disabled aria-pressed="false">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-base sm:text-lg font-bold">フレームの折れ・曲がり</div>
+                <div class="text-sm text-slate-300">破損・大きな変形</div>
+              </div>
+              <span class="text-2xl" aria-hidden="true">🛠️</span>
+            </div>
+          </button>
+        </div>
+
+        <div id="menuHint" class="mt-3 text-sm text-slate-300">
+          <span class="inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>
+            まず上で購入元を選んでください
+          </span>
+        </div>
+      </section>
+
+      <!-- Result -->
+      <section class="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/60 to-slate-950 p-4 sm:p-6 glow">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-semibold">結果</h2>
+            <p class="text-slate-300 text-sm">大きく表示されます（お客様に見せてもOK）</p>
+          </div>
+
+          <div class="hidden sm:flex items-center gap-2 text-xs text-slate-300">
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-400" aria-hidden="true"></span> 即日
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1">
+              <span class="w-2 h-2 rounded-full bg-amber-400" aria-hidden="true"></span> お預かり
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1">
+              <span class="w-2 h-2 rounded-full bg-rose-400" aria-hidden="true"></span> 不可
+            </span>
+          </div>
+        </div>
+
+        <!-- Big status -->
+        <div class="mt-4 sm:mt-5 grid gap-3">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+            <div class="text-sm text-slate-300">対応可否</div>
+            <div id="resultStatus" class="mt-1 text-2xl sm:text-3xl font-black tracking-tight">
+              ①購入元 → ②修理メニュー を選択してください
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+              <div class="text-sm text-slate-300">料金の目安</div>
+              <div id="resultPrice" class="mt-1 text-xl sm:text-2xl font-extrabold">
+                —
+              </div>
+              <div id="resultPriceNote" class="mt-1 text-sm text-slate-300">
+                —
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+              <div class="text-sm text-slate-300">お預かり時間の目安</div>
+              <div id="resultTime" class="mt-1 text-xl sm:text-2xl font-extrabold">
+                —
+              </div>
+              <div id="resultTimeNote" class="mt-1 text-sm text-slate-300">
+                —
+              </div>
+            </div>
+          </div>
+
+          <!-- Guidance -->
+          <div id="resultGuidance" class="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 sm:p-5 text-slate-200">
+            <div class="flex items-start gap-3">
+              <div class="mt-0.5 w-9 h-9 shrink-0 rounded-2xl bg-cyan-500/15 border border-cyan-400/20 grid place-items-center">
+                <span aria-hidden="true">💡</span>
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold">操作のコツ</div>
+                <ul class="mt-1 text-sm text-slate-300 space-y-1 list-disc pl-5">
+                  <li>「他店」の場合は、状態・素材・在庫次第で変動するため“目安”表示になります</li>
+                  <li>迷ったら「お預かり」表示を選び、先輩確認ルートへ（メモが下に出ます）</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Edge warning -->
+          <div id="softError" class="hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100">
+            <div class="font-bold">入力が不足しています</div>
+            <div class="text-sm mt-1 text-amber-100/90" id="softErrorText">—</div>
+          </div>
+
+          <!-- Footer note -->
+          <div class="text-xs text-slate-400 leading-relaxed">
+            ※このチェッカーは「店内一次判断」を速くするためのものです。最終可否は実物状態・メーカー可否・在庫で変わります。
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // -----------------------------
+    // Data (ルールは現場に合わせて後で差し替えやすい形)
+    // -----------------------------
+    const RULES = {
+      nosepads: {
+        label: "鼻パッド交換",
+        inhouse: {
+          status: { text: "即日対応可能", tone: "ok" },
+          price:  { main: "無料〜", note: "保証/サービス範囲は規定に従う（特殊パッドは有料の場合あり）" },
+          time:   { main: "5〜10分", note: "混雑時は順番待ち" },
+          memo:   "パッド形状（ネジ式/差し込み/一体型）を確認。特殊形状・在庫なしはお預かり提案。"
+        },
+        other: {
+          status: { text: "即日対応可能（目安）", tone: "ok" },
+          price:  { main: "500円〜", note: "形状・素材・在庫で変動（持ち込みは有料が基本）" },
+          time:   { main: "5〜15分", note: "合うパッドが無い場合はお預かり" },
+          memo:   "他店品は規格違いが多い。合致しない場合は無理せずお預かり/提案変更。"
+        }
+      },
+      screws: {
+        label: "ネジ取れ・緩み",
+        inhouse: {
+          status: { text: "即日対応可能", tone: "ok" },
+          price:  { main: "無料〜", note: "ネジ交換が必要でも軽微なら店内対応可能" },
+          time:   { main: "3〜10分", note: "ネジ径が合わない場合はお預かり" },
+          memo:   "ネジ欠損はサイズ確認。ネジ山潰れ/丁番破損はお預かりへ。"
+        },
+        other: {
+          status: { text: "即日対応可能（目安）", tone: "ok" },
+          price:  { main: "300円〜", note: "ネジ交換・調整範囲により変動" },
+          time:   { main: "5〜15分", note: "丁番不良はお預かり" },
+          memo:   "他店品はネジ規格が合わないことがある。丁番ガタはお預かり提案。"
+        }
+      },
+      nylor: {
+        label: "ナイロール糸切れ",
+        inhouse: {
+          status: { text: "お預かり修理", tone: "hold" },
+          price:  { main: "1,500円〜", note: "糸交換＋レンズ固定の再調整" },
+          time:   { main: "3日〜2週間", note: "在庫・レンズ状態で変動" },
+          memo:   "レンズ欠け/溝不良があると不可またはメーカー対応。まずレンズ状態確認。"
+        },
+        other: {
+          status: { text: "お預かり修理（要確認）", tone: "hold" },
+          price:  { main: "2,000円〜", note: "規格不明・レンズ溝不良は追加費用/不可の可能性" },
+          time:   { main: "1〜3週間", note: "パーツ手配/適合確認が必要" },
+          memo:   "他店品は糸規格・固定方式が違う場合あり。無理に通さずお預かり＋先輩確認。"
+        }
+      },
+      frame: {
+        label: "フレームの折れ・曲がり",
+        inhouse: {
+          status: { text: "お預かり修理（要状態確認）", tone: "hold" },
+          price:  { main: "3,000円〜", note: "素材（チタン/セル等）や破損箇所で大きく変動" },
+          time:   { main: "1〜4週間", note: "メーカー送付になることがあります" },
+          memo:   "折れは店内で不可の場合多い。写真/状態メモを残し、メーカー可否を確認。"
+        },
+        other: {
+          status: { text: "対応不可〜お預かり（要確認）", tone: "ng" },
+          price:  { main: "—", note: "他店品はメーカー対応不可の場合あり。代替提案（買替・同等品）も視野" },
+          time:   { main: "—", note: "修理不可の場合はその場で説明できるよう準備" },
+          memo:   "他店品の折れ・大曲がりは基本不可寄り。可能性があればお預かりで確認。"
+        }
+      }
+    };
+
+    // -----------------------------
+    // State
+    // -----------------------------
+    const state = {
+      source: null,  // 'inhouse' | 'other'
+      menu: null     // keys of RULES
+    };
+
+    // -----------------------------
+    // Elements
+    // -----------------------------
+    const el = {
+      sourceBtns: document.querySelectorAll(".sourceBtn"),
+      menuBtns: document.querySelectorAll(".menuBtn"),
+      btnReset: document.getElementById("btnReset"),
+      sourceHint: document.getElementById("sourceHint"),
+      menuHint: document.getElementById("menuHint"),
+
+      resultStatus: document.getElementById("resultStatus"),
+      resultPrice: document.getElementById("resultPrice"),
+      resultPriceNote: document.getElementById("resultPriceNote"),
+      resultTime: document.getElementById("resultTime"),
+      resultTimeNote: document.getElementById("resultTimeNote"),
+      resultGuidance: document.getElementById("resultGuidance"),
+
+      softError: document.getElementById("softError"),
+      softErrorText: document.getElementById("softErrorText"),
+    };
+
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    function safeText(v, fallback = "—") {
+      return (typeof v === "string" && v.trim().length) ? v : fallback;
+    }
+
+    function toneClasses(tone) {
+      // 目立つが“怖くない”トーンに
+      if (tone === "ok")   return "text-emerald-300";
+      if (tone === "hold") return "text-amber-300";
+      if (tone === "ng")   return "text-rose-300";
+      return "text-slate-100";
+    }
+
+    function setPressed(btns, activeBtn) {
+      btns.forEach(b => {
+        const isActive = (b === activeBtn);
+        b.setAttribute("aria-pressed", isActive ? "true" : "false");
+        b.classList.toggle("border-cyan-400/60", isActive);
+        b.classList.toggle("bg-cyan-500/10", isActive);
+        b.classList.toggle("border-slate-800", !isActive);
+      });
+    }
+
+    function enableMenus(enabled) {
+      el.menuBtns.forEach(b => {
+        b.disabled = !enabled;
+      });
+      el.menuHint.innerHTML = enabled
+        ? `<span class="inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400" aria-hidden="true"></span>
+            修理メニューを選んでください
+          </span>`
+        : `<span class="inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>
+            まず上で購入元を選んでください
+          </span>`;
+    }
+
+    function showSoftError(msg) {
+      el.softErrorText.textContent = msg;
+      el.softError.classList.remove("hidden");
+    }
+
+    function hideSoftError() {
+      el.softError.classList.add("hidden");
+      el.softErrorText.textContent = "—";
+    }
+
+    function updateResult() {
+      hideSoftError();
+
+      // 未選択時ガイド
+      if (!state.source && !state.menu) {
+        el.resultStatus.className = "mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-100";
+        el.resultStatus.textContent = "①購入元 → ②修理メニュー を選択してください";
+        el.resultPrice.textContent = "—";
+        el.resultPriceNote.textContent = "—";
+        el.resultTime.textContent = "—";
+        el.resultTimeNote.textContent = "—";
+        return;
+      }
+
+      if (!state.source) {
+        showSoftError("購入元（当店 / 他店）を選択してください。");
+        el.resultStatus.className = "mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-100";
+        el.resultStatus.textContent = "購入元が未選択です";
+        return;
+      }
+
+      if (!state.menu) {
+        showSoftError("修理メニューを選択してください。");
+        el.resultStatus.className = "mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-100";
+        el.resultStatus.textContent = "修理メニューが未選択です";
+        return;
+      }
+
+      const rule = RULES[state.menu];
+      const detail = rule?.[state.source];
+
+      if (!rule || !detail) {
+        // ありえない状態でも壊れないように
+        el.resultStatus.className = "mt-1 text-2xl sm:text-3xl font-black tracking-tight text-rose-300";
+        el.resultStatus.textContent = "判定データが見つかりません（リセットしてください）";
+        el.resultPrice.textContent = "—";
+        el.resultPriceNote.textContent = "—";
+        el.resultTime.textContent = "—";
+        el.resultTimeNote.textContent = "—";
+        showSoftError("内部データに不整合がありました。リセットで復帰します。");
+        return;
+      }
+
+      // Render
+      el.resultStatus.className = "mt-1 text-2xl sm:text-3xl font-black tracking-tight " + toneClasses(detail.status.tone);
+      el.resultStatus.textContent = safeText(detail.status.text);
+
+      el.resultPrice.textContent = safeText(detail.price.main);
+      el.resultPriceNote.textContent = safeText(detail.price.note);
+
+      el.resultTime.textContent = safeText(detail.time.main);
+      el.resultTimeNote.textContent = safeText(detail.time.note);
+
+      // guidance: 新人向けに「次の一手」がすぐ見える
+      const srcLabel = state.source === "inhouse" ? "当店購入品" : "他店購入品";
+      const menuLabel = rule.label;
+
+      el.resultGuidance.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5 w-9 h-9 shrink-0 rounded-2xl bg-slate-800/70 border border-slate-700 grid place-items-center">
+            <span aria-hidden="true">📝</span>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold">
+              選択中：<span class="text-slate-100">${srcLabel}</span> × <span class="text-slate-100">${menuLabel}</span>
+            </div>
+            <div class="mt-1 text-sm text-slate-300 leading-relaxed">
+              <span class="font-semibold text-slate-200">次の確認ポイント：</span>
+              ${safeText(detail.memo, "—")}
+            </div>
+            <div class="mt-2 text-xs text-slate-400">
+              ※表示は目安。迷ったら「お預かり」判断で先輩へ確認してOK。
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function resetAll() {
+      state.source = null;
+      state.menu = null;
+
+      // Buttons UI reset
+      el.sourceBtns.forEach(b => {
+        b.setAttribute("aria-pressed", "false");
+        b.classList.remove("border-cyan-400/60", "bg-cyan-500/10");
+        b.classList.add("border-slate-800");
+      });
+      el.menuBtns.forEach(b => {
+        b.setAttribute("aria-pressed", "false");
+        b.classList.remove("border-cyan-400/60", "bg-cyan-500/10");
+        b.classList.add("border-slate-800");
+      });
+
+      enableMenus(false);
+
+      el.sourceHint.innerHTML = `
+        <span class="inline-flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>
+          購入元を選ぶと、次の修理メニューが押せるようになります
+        </span>
+      `;
+
+      updateResult();
+    }
+
+    // -----------------------------
+    // Events
+    // -----------------------------
+    el.sourceBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const val = btn.dataset.source;
+        if (val !== "inhouse" && val !== "other") return;
+
+        state.source = val;
+        setPressed(el.sourceBtns, btn);
+
+        // source hint
+        const msg = (val === "inhouse")
+          ? "当店購入品：サービス/保証の可能性があります"
+          : "他店購入品：規格差があるため“目安”表示になります";
+        el.sourceHint.innerHTML = `
+          <span class="inline-flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${val === "inhouse" ? "bg-emerald-400" : "bg-amber-400"}" aria-hidden="true"></span>
+            ${msg}
+          </span>
+        `;
+
+        enableMenus(true);
+
+        // menuがすでに選ばれていればそのまま更新
+        updateResult();
+      });
+    });
+
+    el.menuBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (btn.disabled) {
+          // 念のため：disabledでもイベントが起きた場合
+          showSoftError("先に購入元（当店 / 他店）を選んでください。");
+          return;
+        }
+
+        const key = btn.dataset.menu;
+        if (!RULES[key]) {
+          el.resultStatus.className = "mt-1 text-2xl sm:text-3xl font-black tracking-tight text-rose-300";
+          el.resultStatus.textContent = "未対応のメニューです（リセットしてください）";
+          showSoftError("メニュー定義がありません。リセットで復帰します。");
+          return;
+        }
+
+        state.menu = key;
+        setPressed(el.menuBtns, btn);
+        updateResult();
+      });
+    });
+
+    el.btnReset.addEventListener("click", resetAll);
+
+    // 初期化
+    resetAll();
+  </script>
+</body>
+</html>
