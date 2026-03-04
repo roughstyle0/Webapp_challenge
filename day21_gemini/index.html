@@ -43,10 +43,13 @@
             <div class="space-y-5">
                 <!-- R: SPH -->
                 <div>
-                    <label class="block text-sm font-bold text-slate-600 mb-1">SPH <span class="text-xs font-normal text-slate-400">(球面度数)</span></label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-bold text-slate-600">SPH <span class="text-xs font-normal text-slate-400">(球面度数)</span></label>
+                        <button type="button" onclick="toggleSign('r-sph')" class="text-xs bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 px-2 py-1 rounded font-bold shadow-sm transition">+/- 反転</button>
+                    </div>
                     <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition">
                         <button type="button" onclick="adjustValue('r-sph', -0.25)" class="w-14 h-14 bg-slate-100 text-slate-600 text-2xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">-</button>
-                        <input type="number" id="r-sph" inputmode="decimal" step="0.25" placeholder="0.00" 
+                        <input type="text" id="r-sph" inputmode="decimal" placeholder="0.00" 
                             class="w-full h-14 text-center text-2xl font-num focus:outline-none bg-white text-slate-800">
                         <button type="button" onclick="adjustValue('r-sph', 0.25)" class="w-14 h-14 bg-slate-100 text-slate-600 text-2xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">+</button>
                     </div>
@@ -59,10 +62,13 @@
                 <div class="grid grid-cols-2 gap-4">
                     <!-- R: CYL -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-600 mb-1">CYL <span class="text-xs font-normal text-slate-400">(乱視)</span></label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-bold text-slate-600">CYL <span class="text-xs font-normal text-slate-400">(乱視)</span></label>
+                            <button type="button" onclick="toggleSign('r-cyl')" class="text-[10px] bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 px-1.5 py-1 rounded font-bold shadow-sm transition">+/- 反転</button>
+                        </div>
                         <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition">
                             <button type="button" onclick="adjustValue('r-cyl', -0.25)" class="w-10 h-12 bg-slate-100 text-slate-600 text-xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">-</button>
-                            <input type="number" id="r-cyl" inputmode="decimal" step="0.25" placeholder="任意" 
+                            <input type="text" id="r-cyl" inputmode="decimal" placeholder="任意" 
                                 class="w-full h-12 text-center text-lg font-num focus:outline-none bg-white text-slate-800">
                             <button type="button" onclick="adjustValue('r-cyl', 0.25)" class="w-10 h-12 bg-slate-100 text-slate-600 text-xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">+</button>
                         </div>
@@ -72,7 +78,7 @@
                     <div>
                         <label class="block text-sm font-bold text-slate-600 mb-1">AXIS <span class="text-xs font-normal text-slate-400">(軸)</span></label>
                         <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition">
-                            <input type="number" id="r-ax" inputmode="numeric" step="10" min="0" max="180" placeholder="角度" 
+                            <input type="text" id="r-ax" inputmode="numeric" placeholder="角度" 
                                 class="w-full h-12 text-center text-lg font-num focus:outline-none bg-white text-slate-800">
                         </div>
                         <p id="err-r-ax" class="text-red-500 text-xs mt-1 hidden font-medium">※0〜180の整数</p>
@@ -91,10 +97,13 @@
             <div class="space-y-5">
                 <!-- L: SPH -->
                 <div>
-                    <label class="block text-sm font-bold text-slate-600 mb-1">SPH <span class="text-xs font-normal text-slate-400">(球面度数)</span></label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-bold text-slate-600">SPH <span class="text-xs font-normal text-slate-400">(球面度数)</span></label>
+                        <button type="button" onclick="toggleSign('l-sph')" class="text-xs bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 px-2 py-1 rounded font-bold shadow-sm transition">+/- 反転</button>
+                    </div>
                     <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition">
                         <button type="button" onclick="adjustValue('l-sph', -0.25)" class="w-14 h-14 bg-slate-100 text-slate-600 text-2xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">-</button>
-                        <input type="number" id="l-sph" inputmode="decimal" step="0.25" placeholder="0.00" 
+                        <input type="text" id="l-sph" inputmode="decimal" placeholder="0.00" 
                             class="w-full h-14 text-center text-2xl font-num focus:outline-none bg-white text-slate-800">
                         <button type="button" onclick="adjustValue('l-sph', 0.25)" class="w-14 h-14 bg-slate-100 text-slate-600 text-2xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">+</button>
                     </div>
@@ -107,10 +116,13 @@
                 <div class="grid grid-cols-2 gap-4">
                     <!-- L: CYL -->
                     <div>
-                        <label class="block text-sm font-bold text-slate-600 mb-1">CYL <span class="text-xs font-normal text-slate-400">(乱視)</span></label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-bold text-slate-600">CYL <span class="text-xs font-normal text-slate-400">(乱視)</span></label>
+                            <button type="button" onclick="toggleSign('l-cyl')" class="text-[10px] bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 px-1.5 py-1 rounded font-bold shadow-sm transition">+/- 反転</button>
+                        </div>
                         <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition">
                             <button type="button" onclick="adjustValue('l-cyl', -0.25)" class="w-10 h-12 bg-slate-100 text-slate-600 text-xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">-</button>
-                            <input type="number" id="l-cyl" inputmode="decimal" step="0.25" placeholder="任意" 
+                            <input type="text" id="l-cyl" inputmode="decimal" placeholder="任意" 
                                 class="w-full h-12 text-center text-lg font-num focus:outline-none bg-white text-slate-800">
                             <button type="button" onclick="adjustValue('l-cyl', 0.25)" class="w-10 h-12 bg-slate-100 text-slate-600 text-xl hover:bg-slate-200 active:bg-slate-300 flex-shrink-0 touch-manipulation">+</button>
                         </div>
@@ -120,7 +132,7 @@
                     <div>
                         <label class="block text-sm font-bold text-slate-600 mb-1">AXIS <span class="text-xs font-normal text-slate-400">(軸)</span></label>
                         <div class="flex items-center shadow-sm rounded-lg overflow-hidden border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition">
-                            <input type="number" id="l-ax" inputmode="numeric" step="10" min="0" max="180" placeholder="角度" 
+                            <input type="text" id="l-ax" inputmode="numeric" placeholder="角度" 
                                 class="w-full h-12 text-center text-lg font-num focus:outline-none bg-white text-slate-800">
                         </div>
                         <p id="err-l-ax" class="text-red-500 text-xs mt-1 hidden font-medium">※0〜180の整数</p>
@@ -176,14 +188,35 @@
             
             // 浮動小数点誤差を防ぐため、100倍して整数で計算
             const newVal = (Math.round(val * 100) + (delta * 100)) / 100;
-            el.value = (newVal > 0 ? '+' : '') + newVal.toFixed(2); // 自動で + と .00 を付与
+            if (newVal === 0) {
+                el.value = "0.00";
+            } else {
+                el.value = (newVal > 0 ? '+' : '') + newVal.toFixed(2);
+            }
             
             updateUI(); // 値が変わったのでUI更新
+        }
+
+        // +/- 反転機能
+        function toggleSign(id) {
+            const el = document.getElementById(id);
+            if (!el.value || el.value === '+' || el.value === '-') return;
+            let val = parseFloat(el.value);
+            if (isNaN(val) || val === 0) return;
+            
+            val = val * -1;
+            el.value = (val > 0 ? '+' : '') + val.toFixed(2);
+            updateUI();
         }
 
         // フォーカスが外れた際のフォーマット処理（手入力された値の補正）
         function formatInputOnBlur(el) {
             if (el.value === '') return;
+            if (el.value === '+' || el.value === '-') {
+                el.value = '';
+                updateUI();
+                return;
+            }
             const val = parseFloat(el.value);
             if (isNaN(val)) return;
 
@@ -191,7 +224,11 @@
             if (el.id.includes('ax')) {
                 el.value = Math.round(val);
             } else {
-                el.value = (val > 0 ? '+' : '') + val.toFixed(2);
+                if (val === 0) {
+                    el.value = "0.00";
+                } else {
+                    el.value = (val > 0 ? '+' : '') + val.toFixed(2);
+                }
             }
             updateUI();
         }
