@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>眼鏡屋向け 度数変化・お客様向けトーク翻訳機</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            warm: {
+              50: '#fffaf5',
+              100: '#fff2e8',
+              200: '#ffd9b8',
+              300: '#ffc08a',
+              400: '#ffa255',
+              500: '#f98524',
+              600: '#e26d12',
+              700: '#b8560d',
+              800: '#8e430d',
+              900: '#6f360f'
+            }
+          },
+          boxShadow: {
+            soft: '0 10px 30px rgba(249, 133, 36, 0.10)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at top right, rgba(255, 192, 138, 0.25), transparent 22%),
+        linear-gradient(180deg, #fffaf5 0%, #fff7f0 100%);
+    }
+    .glass-card {
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.88);
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    .speakable-text {
+      line-height: 1.9;
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+    <header class="mb-8">
+      <div class="glass-card rounded-3xl shadow-soft border border-white/70 p-6 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p class="inline-flex items-center rounded-full bg-warm-100 text-warm-800 px-3 py-1 text-sm font-semibold">
+              新人スタッフ向け 接客サポート
+            </p>
+            <h1 class="mt-3 text-3xl md:text-5xl font-black tracking-tight text-slate-900">
+              度数変化・お客様向けトーク翻訳機
+            </h1>
+            <p class="mt-3 text-base md:text-lg text-slate-600">
+              旧メガネと新処方を比べるだけで、<span class="font-bold text-warm-700">そのまま読み上げられる説明文</span>を自動生成します。
+            </p>
+          </div>
+          <div class="grid grid-cols-2 gap-3 text-sm md:text-base">
+            <div class="rounded-2xl bg-white border border-warm-100 px-4 py-3">
+              <div class="text-slate-500">入力刻み</div>
+              <div class="font-bold text-xl text-warm-700">0.25</div>
+            </div>
+            <div class="rounded-2xl bg-white border border-warm-100 px-4 py-3">
+              <div class="text-slate-500">説明対象</div>
+              <div class="font-bold text-xl text-warm-700">SPH / CYL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
+      <section class="space-y-6">
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- OLD -->
+          <div class="glass-card rounded-3xl shadow-soft border border-white/70 p-5 md:p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-2xl font-extrabold text-slate-900">現在のメガネ（旧）</h2>
+              <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-sm font-semibold">Before</span>
+            </div>
+
+            <div class="space-y-5">
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <h3 class="text-lg font-bold mb-4">右目</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="old-r-sph" class="block text-sm font-semibold text-slate-600 mb-2">SPH</label>
+                    <input id="old-r-sph" type="number" step="0.25" inputmode="decimal" placeholder="-3.00"
+                      class="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-400 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="old-r-cyl" class="block text-sm font-semibold text-slate-600 mb-2">CYL</label>
+                    <input id="old-r-cyl" type="number" step="0.25" inputmode="decimal" placeholder="0.00"
+                      class="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-400 focus:outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <h3 class="text-lg font-bold mb-4">左目</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="old-l-sph" class="block text-sm font-semibold text-slate-600 mb-2">SPH</label>
+                    <input id="old-l-sph" type="number" step="0.25" inputmode="decimal" placeholder="-2.50"
+                      class="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-400 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="old-l-cyl" class="block text-sm font-semibold text-slate-600 mb-2">CYL</label>
+                    <input id="old-l-cyl" type="number" step="0.25" inputmode="decimal" placeholder="-0.50"
+                      class="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-400 focus:outline-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEW -->
+          <div class="glass-card rounded-3xl shadow-soft border border-white/70 p-5 md:p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-2xl font-extrabold text-slate-900">今回の処方（新）</h2>
+              <span class="rounded-full bg-warm-100 text-warm-800 px-3 py-1 text-sm font-semibold">After</span>
+            </div>
+
+            <div class="space-y-5">
+              <div class="rounded-2xl border border-warm-200 bg-warm-50/60 p-4">
+                <h3 class="text-lg font-bold mb-4">右目</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="new-r-sph" class="block text-sm font-semibold text-slate-600 mb-2">SPH</label>
+                    <input id="new-r-sph" type="number" step="0.25" inputmode="decimal" placeholder="-3.50"
+                      class="w-full rounded-2xl border-2 border-warm-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="new-r-cyl" class="block text-sm font-semibold text-slate-600 mb-2">CYL</label>
+                    <input id="new-r-cyl" type="number" step="0.25" inputmode="decimal" placeholder="-0.50"
+                      class="w-full rounded-2xl border-2 border-warm-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-500 focus:outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-warm-200 bg-warm-50/60 p-4">
+                <h3 class="text-lg font-bold mb-4">左目</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="new-l-sph" class="block text-sm font-semibold text-slate-600 mb-2">SPH</label>
+                    <input id="new-l-sph" type="number" step="0.25" inputmode="decimal" placeholder="-2.25"
+                      class="w-full rounded-2xl border-2 border-warm-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="new-l-cyl" class="block text-sm font-semibold text-slate-600 mb-2">CYL</label>
+                    <input id="new-l-cyl" type="number" step="0.25" inputmode="decimal" placeholder="-0.75"
+                      class="w-full rounded-2xl border-2 border-warm-200 bg-white px-4 py-4 text-2xl font-bold focus:border-warm-500 focus:outline-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-3xl shadow-soft border border-white/70 p-5 md:p-6">
+          <div class="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <div>
+              <h2 class="text-xl md:text-2xl font-extrabold">操作</h2>
+              <p class="text-slate-600 mt-1">数値を入れてボタンを押すと、お客様向けの説明文を生成します。</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <button id="sampleBtn"
+                class="rounded-2xl border-2 border-warm-200 bg-white px-5 py-3 text-base md:text-lg font-bold text-warm-800 hover:bg-warm-50 active:scale-[0.99] transition">
+                サンプルを入力
+              </button>
+              <button id="resetBtn"
+                class="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-base md:text-lg font-bold text-slate-700 hover:bg-slate-50 active:scale-[0.99] transition">
+                リセット
+              </button>
+              <button id="generateBtn"
+                class="rounded-2xl bg-warm-500 px-6 py-3 text-base md:text-lg font-black text-white shadow-lg shadow-warm-500/25 hover:bg-warm-600 active:scale-[0.99] transition">
+                説明文を作成する
+              </button>
+            </div>
+          </div>
+
+          <div id="errorBox" class="hidden mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-red-700 font-semibold"></div>
+
+          <div class="mt-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-2xl bg-slate-50 px-4 py-3 border border-slate-200">
+              <span class="font-bold">入力ルール：</span>0.25刻みで入力
+            </div>
+            <div class="rounded-2xl bg-slate-50 px-4 py-3 border border-slate-200">
+              <span class="font-bold">空欄不可：</span>すべての項目を入力
+            </div>
+            <div class="rounded-2xl bg-slate-50 px-4 py-3 border border-slate-200">
+              <span class="font-bold">SPH：</span>近視 / 遠視の変化を説明
+            </div>
+            <div class="rounded-2xl bg-slate-50 px-4 py-3 border border-slate-200">
+              <span class="font-bold">CYL：</span>乱視の有無と強さを説明
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="space-y-6">
+        <div class="glass-card rounded-3xl shadow-soft border border-white/70 p-5 md:p-6 sticky top-6">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-warm-700">お客様にそのまま読める</p>
+              <h2 class="text-2xl md:text-3xl font-black text-slate-900">トークスクリプト</h2>
+            </div>
+            <div class="h-12 w-12 rounded-2xl bg-warm-100 text-warm-700 flex items-center justify-center text-2xl">💬</div>
+          </div>
+
+          <div id="summaryChips" class="mt-4 flex flex-wrap gap-2"></div>
+
+          <div id="resultBox"
+            class="mt-4 rounded-3xl border-2 border-dashed border-warm-200 bg-gradient-to-br from-white to-warm-50 p-5 md:p-6 min-h-[360px] flex items-center">
+            <div id="resultText" class="w-full speakable-text text-lg md:text-2xl font-semibold text-slate-600">
+              ここに説明文が表示されます。<br />
+              まずは度数を入力して、<span class="text-warm-700 font-extrabold">「説明文を作成する」</span>を押してください。
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-2xl bg-warm-50 border border-warm-200 p-4">
+            <h3 class="font-extrabold text-warm-900 mb-2">読み上げのコツ</h3>
+            <p class="text-slate-700 leading-7">
+              数字だけでなく、最後に「見え方を合わせながら微調整しますのでご安心くださいね」と一言添えると、より安心感のある接客になります。
+            </p>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const ids = {
+      oldRSph: document.getElementById('old-r-sph'),
+      oldRCyl: document.getElementById('old-r-cyl'),
+      oldLSph: document.getElementById('old-l-sph'),
+      oldLCyl: document.getElementById('old-l-cyl'),
+      newRSph: document.getElementById('new-r-sph'),
+      newRCyl: document.getElementById('new-r-cyl'),
+      newLSph: document.getElementById('new-l-sph'),
+      newLCyl: document.getElementById('new-l-cyl'),
+      generateBtn: document.getElementById('generateBtn'),
+      sampleBtn: document.getElementById('sampleBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      errorBox: document.getElementById('errorBox'),
+      resultText: document.getElementById('resultText'),
+      resultBox: document.getElementById('resultBox'),
+      summaryChips: document.getElementById('summaryChips')
+    };
+
+    function normalizeQuarter(value) {
+      return Math.round(value * 4) / 4;
+    }
+
+    function isQuarterStep(value) {
+      const multiplied = value * 4;
+      return Math.abs(multiplied - Math.round(multiplied)) < 0.000001;
+    }
+
+    function formatPower(value) {
+      const n = normalizeQuarter(Number(value));
+      const sign = n > 0 ? '+' : '';
+      return sign + n.toFixed(2);
+    }
+
+    function diffSteps(oldValue, newValue) {
+      return Math.round(Math.abs(newValue - oldValue) / 0.25);
+    }
+
+    function diffText(oldValue, newValue) {
+      return Math.abs(newValue - oldValue).toFixed(2);
+    }
+
+    function getSphType(value) {
+      if (value < 0) return '近視';
+      if (value > 0) return '遠視';
+      return '度なし';
+    }
+
+    function strongerDirection(type, oldValue, newValue) {
+      if (type === '近視') {
+        return newValue < oldValue ? '強く' : '弱く';
+      }
+      if (type === '遠視') {
+        return newValue > oldValue ? '強く' : '弱く';
+      }
+      return '';
+    }
+
+    function createChip(label, tone = 'default') {
+      const palette = {
+        default: 'bg-white border-slate-200 text-slate-700',
+        warm: 'bg-warm-50 border-warm-200 text-warm-800',
+        green: 'bg-emerald-50 border-emerald-200 text-emerald-700'
+      };
+      return `<span class="rounded-full border px-3 py-1 text-sm font-bold ${palette[tone] || palette.default}">${label}</span>`;
+    }
+
+    function showError(message) {
+      ids.errorBox.textContent = message;
+      ids.errorBox.classList.remove('hidden');
+    }
+
+    function clearError() {
+      ids.errorBox.textContent = '';
+      ids.errorBox.classList.add('hidden');
+    }
+
+    function readValue(input, label) {
+      const raw = input.value.trim();
+
+      if (raw === '') {
+        throw new Error(`「${label}」が未入力です。すべての項目を入力してください。`);
+      }
+
+      const value = Number(raw);
+      if (!Number.isFinite(value)) {
+        throw new Error(`「${label}」は数値で入力してください。`);
+      }
+
+      if (!isQuarterStep(value)) {
+        throw new Error(`「${label}」は0.25刻みで入力してください。`);
+      }
+
+      if (value < -20 || value > 20) {
+        throw new Error(`「${label}」は -20.00 〜 +20.00 の範囲で入力してください。`);
+      }
+
+      return normalizeQuarter(value);
+    }
+
+    function getFormData() {
+      return {
+        old: {
+          right: {
+            sph: readValue(ids.oldRSph, '現在のメガネ（旧）右目 SPH'),
+            cyl: readValue(ids.oldRCyl, '現在のメガネ（旧）右目 CYL')
+          },
+          left: {
+            sph: readValue(ids.oldLSph, '現在のメガネ（旧）左目 SPH'),
+            cyl: readValue(ids.oldLCyl, '現在のメガネ（旧）左目 CYL')
+          }
+        },
+        next: {
+          right: {
+            sph: readValue(ids.newRSph, '今回の処方（新）右目 SPH'),
+            cyl: readValue(ids.newRCyl, '今回の処方（新）右目 CYL')
+          },
+          left: {
+            sph: readValue(ids.newLSph, '今回の処方（新）左目 SPH'),
+            cyl: readValue(ids.newLCyl, '今回の処方（新）左目 CYL')
+          }
+        }
+      };
+    }
+
+    function describeSph(eyeLabel, oldSph, newSph) {
+      if (oldSph === newSph) return null;
+
+      const oldType = getSphType(oldSph);
+      const newType = getSphType(newSph);
+      const steps = diffSteps(oldSph, newSph);
+      const amount = diffText(oldSph, newSph);
+
+      if (oldType === '近視' && newType === '近視') {
+        const direction = strongerDirection('近視', oldSph, newSph);
+        return `${eyeLabel}は、近視の度数が${steps}段階（${amount}）${direction}なりましたね。`;
+      }
+
+      if (oldType === '遠視' && newType === '遠視') {
+        const direction = strongerDirection('遠視', oldSph, newSph);
+        return `${eyeLabel}は、遠視の度数が${steps}段階（${amount}）${direction}なりましたね。`;
+      }
+
+      if (oldType === '度なし' && newType === '近視') {
+        return `${eyeLabel}は、今回から近視の度数が${steps}段階（${amount}）入りましたね。`;
+      }
+
+      if (oldType === '度なし' && newType === '遠視') {
+        return `${eyeLabel}は、今回から遠視の度数が${steps}段階（${amount}）入りましたね。`;
+      }
+
+      if (oldType === '近視' && newType === '度なし') {
+        return `${eyeLabel}は、近視の度数が抜けて、より自然な見え方に近づく調整ですね。`;
+      }
+
+      if (oldType === '遠視' && newType === '度なし') {
+        return `${eyeLabel}は、遠視の度数が抜けて、負担を抑える方向の調整ですね。`;
+      }
+
+      if (oldType !== newType) {
+        return `${eyeLabel}は、SPHが ${formatPower(oldSph)} から ${formatPower(newSph)} に変わっています。見え方の性質が変わるため、実際の見え方を確認しながら合わせていきましょう。`;
+      }
+
+      return null;
+    }
+
+    function describeCyl(eyeLabel, oldCyl, newCyl) {
+      if (oldCyl === newCyl) return null;
+
+      const oldAbs = Math.abs(oldCyl);
+      const newAbs = Math.abs(newCyl);
+      const steps = diffSteps(oldAbs, newAbs);
+      const amount = Math.abs(newAbs - oldAbs).toFixed(2);
+
+      if (oldAbs === 0 && newAbs > 0) {
+        return `${eyeLabel}は、今回から新しく乱視の度数が入りました。`;
+      }
+
+      if (oldAbs > 0 && newAbs === 0) {
+        return `${eyeLabel}は、今回は乱視の度数が抜けています。`;
+      }
+
+      if (newAbs > oldAbs) {
+        return `${eyeLabel}の乱視は、${steps}段階（${amount}）強くなりました。`;
+      }
+
+      if (newAbs < oldAbs) {
+        return `${eyeLabel}の乱視は、${steps}段階（${amount}）弱くなりました。`;
+      }
+
+      if (oldCyl !== newCyl) {
+        return `${eyeLabel}の乱視の数値表記は変わっていますので、見え方も確認しながら合わせていきましょう。`;
+      }
+
+      return null;
+    }
+
+    function buildEyeScript(eyeLabel, oldData, newData) {
+      const parts = [];
+      const sphLine = describeSph(eyeLabel, oldData.sph, newData.sph);
+      const cylLine = describeCyl(eyeLabel, oldData.cyl, newData.cyl);
+
+      if (sphLine) parts.push(sphLine);
+      if (cylLine) parts.push(cylLine);
+
+      return parts;
+    }
+
+    function allSame(data) {
+      return (
+        data.old.right.sph === data.next.right.sph &&
+        data.old.right.cyl === data.next.right.cyl &&
+        data.old.left.sph === data.next.left.sph &&
+        data.old.left.cyl === data.next.left.cyl
+      );
+    }
+
+    function buildSummaryChips(data) {
+      const chips = [];
+      const changes = [
+        data.old.right.sph !== data.next.right.sph || data.old.left.sph !== data.next.left.sph,
+        data.old.right.cyl !== data.next.right.cyl || data.old.left.cyl !== data.next.left.cyl
+      ];
+
+      chips.push(createChip('右目・左目を自動比較', 'default'));
+
+      if (changes[0]) {
+        chips.push(createChip('SPH変化あり', 'warm'));
+      } else {
+        chips.push(createChip('SPH変化なし', 'green'));
+      }
+
+      if (changes[1]) {
+        chips.push(createChip('CYL変化あり', 'warm'));
+      } else {
+        chips.push(createChip('CYL変化なし', 'green'));
+      }
+
+      return chips.join('');
+    }
+
+    function buildScript(data) {
+      if (allSame(data)) {
+        return [
+          '今のメガネと全く同じ見え方でお作りできますよ。',
+          '慣れている見え方に近いので、違和感も少なく使っていただきやすいと思います。'
+        ];
+      }
+
+      const lines = [];
+      const rightLines = buildEyeScript('右目', data.old.right, data.next.right);
+      const leftLines = buildEyeScript('左目', data.old.left, data.next.left);
+
+      if (rightLines.length) lines.push(...rightLines);
+      if (leftLines.length) lines.push(...leftLines);
+
+      if (!lines.length) {
+        lines.push('大きな度数の変化はありませんので、今の見え方に近い印象でお作りできますよ。');
+      }
+
+      lines.push('実際の見え方は最終確認しながら、ちょうど良いバランスに調整していきますのでご安心くださいね。');
+      return lines;
+    }
+
+    function renderResult(lines, data) {
+      ids.summaryChips.innerHTML = buildSummaryChips(data);
+      ids.resultText.innerHTML = lines.map(line => `<p class="mb-4 last:mb-0">${line}</p>`).join('');
+      ids.resultText.className = 'w-full speakable-text text-xl md:text-3xl font-bold text-slate-800';
+      ids.resultBox.classList.remove('border-dashed');
+      ids.resultBox.classList.add('border-solid');
+    }
+
+    function generateScript() {
+      clearError();
+
+      try {
+        const data = getFormData();
+        const lines = buildScript(data);
+        renderResult(lines, data);
+      } catch (error) {
+        showError(error.message || '入力内容を確認してください。');
+      }
+    }
+
+    function fillSample() {
+      ids.oldRSph.value = '-3.00';
+      ids.oldRCyl.value = '0.00';
+      ids.oldLSph.value = '-2.50';
+      ids.oldLCyl.value = '-0.50';
+      ids.newRSph.value = '-3.50';
+      ids.newRCyl.value = '-0.50';
+      ids.newLSph.value = '-2.25';
+      ids.newLCyl.value = '-0.75';
+      clearError();
+      generateScript();
+    }
+
+    function resetForm() {
+      [
+        ids.oldRSph, ids.oldRCyl, ids.oldLSph, ids.oldLCyl,
+        ids.newRSph, ids.newRCyl, ids.newLSph, ids.newLCyl
+      ].forEach(input => input.value = '');
+
+      clearError();
+      ids.summaryChips.innerHTML = '';
+      ids.resultText.innerHTML = `
+        ここに説明文が表示されます。<br />
+        まずは度数を入力して、<span class="text-warm-700 font-extrabold">「説明文を作成する」</span>を押してください。
+      `;
+      ids.resultText.className = 'w-full speakable-text text-lg md:text-2xl font-semibold text-slate-600';
+      ids.resultBox.classList.add('border-dashed');
+      ids.resultBox.classList.remove('border-solid');
+    }
+
+    ids.generateBtn.addEventListener('click', generateScript);
+    ids.sampleBtn.addEventListener('click', fillSample);
+    ids.resetBtn.addEventListener('click', resetForm);
+
+    document.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        generateScript();
+      }
+    });
+  </script>
+</body>
+</html>
