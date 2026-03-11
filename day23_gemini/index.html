@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>度数変化・お客様向けトーク翻訳機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', '"Hiragino Kaku Gothic ProN"', 'Meiryo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 入力欄のスピナーを非表示にして、すっきり見せる */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        /* 吹き出しのしっぽ部分 */
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 2rem;
+            border-width: 12px;
+            border-style: solid;
+            border-color: transparent transparent white transparent;
+        }
+        
+        /* スムーズなフェードインアニメーション */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-brand-50 text-gray-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto">
+        <!-- ヘッダー -->
+        <header class="text-center mb-8">
+            <div class="inline-block bg-white p-4 rounded-full shadow-sm mb-4 text-brand-500">
+                <i class="fas fa-glasses text-4xl"></i>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">度数変化トーク翻訳機</h1>
+            <p class="text-gray-600 text-sm md:text-base">専門用語を、お客様に伝わる「優しい言葉」に変換します</p>
+        </header>
+
+        <main class="space-y-6">
+            <!-- 入力エリア -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 現在のメガネ (旧) -->
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gray-300"></div>
+                    <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                        <i class="fas fa-history mr-2 text-gray-400"></i> 現在のメガネ（旧）
+                    </h2>
+                    
+                    <!-- 右目 -->
+                    <div class="mb-5 bg-gray-50 rounded-xl p-4">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded mr-2">右 R</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">SPH (球面)</label>
+                                <input type="number" id="old-r-s" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">CYL (乱視)</label>
+                                <input type="number" id="old-r-c" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 左目 -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded mr-2">左 L</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">SPH (球面)</label>
+                                <input type="number" id="old-l-s" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">CYL (乱視)</label>
+                                <input type="number" id="old-l-c" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 今回の処方 (新) -->
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-brand-500"></div>
+                    <h2 class="text-lg font-bold text-brand-600 mb-4 flex items-center">
+                        <i class="fas fa-eye mr-2"></i> 今回の処方（新）
+                    </h2>
+                    
+                    <!-- 右目 -->
+                    <div class="mb-5 bg-brand-50/50 rounded-xl p-4 border border-brand-100">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded mr-2">右 R</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-brand-600 mb-1">SPH (球面)</label>
+                                <input type="number" id="new-r-s" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-brand-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-brand-600 mb-1">CYL (乱視)</label>
+                                <input type="number" id="new-r-c" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-brand-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 左目 -->
+                    <div class="bg-brand-50/50 rounded-xl p-4 border border-brand-100">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded mr-2">左 L</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-brand-600 mb-1">SPH (球面)</label>
+                                <input type="number" id="new-l-s" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-brand-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-brand-600 mb-1">CYL (乱視)</label>
+                                <input type="number" id="new-l-c" step="0.25" placeholder="0.00" class="w-full text-lg p-3 border border-brand-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- エラーメッセージ表示エリア -->
+            <div id="error-message" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-r shadow-sm flex items-center" role="alert">
+                <i class="fas fa-exclamation-circle mr-3 text-lg"></i>
+                <span id="error-text" class="text-sm font-medium"></span>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="text-center py-4">
+                <button id="generate-btn" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 px-10 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 text-lg flex items-center mx-auto">
+                    <i class="fas fa-comment-dots mr-2 text-xl"></i>
+                    お客様への説明文を作成する
+                </button>
+            </div>
+
+            <!-- 結果表示エリア -->
+            <div id="result-area" class="hidden mt-8">
+                <div class="flex items-end mb-2 ml-4">
+                    <div class="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 shadow-sm border-2 border-white z-10">
+                        <i class="fas fa-user-tie text-xl"></i>
+                    </div>
+                    <span class="text-sm text-gray-500 ml-2 mb-1 font-bold">あなた（スタッフ）のセリフ</span>
+                </div>
+                <div class="relative bg-white rounded-2xl rounded-tl-none shadow-md p-6 md:p-8 speech-bubble border border-gray-100">
+                    <p id="script-content" class="text-gray-800 text-xl md:text-2xl leading-relaxed font-medium tracking-wide"></p>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button id="reset-btn" class="text-gray-500 hover:text-brand-600 text-sm font-medium transition-colors underline decoration-dotted">
+                        入力をリセットして最初からやり直す
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generate-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const resultArea = document.getElementById('result-area');
+            const scriptContent = document.getElementById('script-content');
+            const errorArea = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+            // 数値入力の補助（Enterキーで次の項目へ）
+            const inputs = document.querySelectorAll('input[type="number"]');
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        } else {
+                            generateBtn.click();
+                        }
+                    }
+                });
+            });
+
+            generateBtn.addEventListener('click', () => {
+                // エラーと結果をリセット
+                errorArea.classList.add('hidden');
+                resultArea.classList.add('hidden');
+                resultArea.classList.remove('fade-in');
+
+                try {
+                    const data = getAndValidateInput();
+                    const script = generateTalkScript(data);
+                    
+                    // 結果を表示
+                    scriptContent.innerHTML = script;
+                    resultArea.classList.remove('hidden');
+                    // アニメーションをトリガー
+                    void resultArea.offsetWidth; 
+                    resultArea.classList.add('fade-in');
+                    
+                    // スクロールして結果を見やすくする
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                } catch (error) {
+                    showError(error.message);
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                inputs.forEach(input => input.value = '');
+                resultArea.classList.add('hidden');
+                errorArea.classList.add('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                inputs[0].focus();
+            });
+
+            // --- 入力取得とバリデーション ---
+            function getAndValidateInput() {
+                const vals = {
+                    oldRS: parseVal('old-r-s'), oldRC: parseVal('old-r-c'),
+                    oldLS: parseVal('old-l-s'), oldLC: parseVal('old-l-c'),
+                    newRS: parseVal('new-r-s'), newRC: parseVal('new-r-c'),
+                    newLS: parseVal('new-l-s'), newLC: parseVal('new-l-c')
+                };
+
+                // 0.25刻みチェック (JavaScriptの浮動小数点誤差を避けるため100倍して剰余チェック)
+                for (const [key, value] of Object.entries(vals)) {
+                    if (Math.abs(Math.round(value * 100) % 25) !== 0) {
+                        throw new Error("度数は「0.25」刻みで入力してください（例: -3.00, -3.25）");
+                    }
+                }
+                return vals;
+            }
+
+            // 空文字は 0.00 として扱う
+            function parseVal(id) {
+                const val = document.getElementById(id).value;
+                if (val === '') return 0.00;
+                const parsed = parseFloat(val);
+                if (isNaN(parsed)) throw new Error("正しい数値を入力してください。");
+                return parsed;
+            }
+
+            // --- トークスクリプト生成ロジック ---
+            function generateTalkScript(d) {
+                const msgR = generateEyeMessage('右目', d.oldRS, d.oldRC, d.newRS, d.newRC);
+                const msgL = generateEyeMessage('左目', d.oldLS, d.oldLC, d.newLS, d.newLC);
+
+                // 全く同じ場合
+                if (!msgR && !msgL) {
+                    return `今のメガネと<strong class="text-brand-600">全く同じ見え方</strong>でお作りできますよ。<br>慣れた見え方で安心ですね。`;
+                }
+
+                // 変化がある場合
+                let scriptParts = ["今回の測定結果ですが、"];
+                
+                if (msgR) scriptParts.push(`<div class="mt-3 pl-4 border-l-4 border-red-300">` + msgR + `</div>`);
+                if (msgL) scriptParts.push(`<div class="mt-3 pl-4 border-l-4 border-blue-300">` + msgL + `</div>`);
+                
+                scriptParts.push(`<div class="mt-5 font-bold">新しく度数を合わせたレンズをお試しいただきましょう。</div>`);
+
+                return scriptParts.join('');
+            }
+
+            function generateEyeMessage(side, oldS, oldC, newS, newC) {
+                let messages = [];
+
+                // SPH (球面) の比較
+                if (oldS !== newS) {
+                    const diffS = Math.abs(newS - oldS);
+                    const stepsS = Math.round(diffS / 0.25);
+                    const absOldS = Math.abs(oldS);
+                    const absNewS = Math.abs(newS);
+                    
+                    // 近視か遠視かの判定（マイナス=近視、プラス=遠視）
+                    let type = newS < 0 ? '近視' : (newS > 0 ? '遠視' : '度数');
+                    if (newS === 0) type = oldS < 0 ? '近視' : '遠視';
+
+                    if (newS === 0) {
+                        messages.push(`${side}の${type}の度数がなくなりましたね。`);
+                    } else if (oldS === 0) {
+                        messages.push(`${side}に新しく${type}の度数が <strong class="text-brand-600 text-2xl">${stepsS}段階</strong>（${diffS.toFixed(2)}）入りました。`);
+                    } else {
+                        if (absNewS > absOldS) {
+                            messages.push(`${side}の${type}が <strong class="text-brand-600 text-2xl">${stepsS}段階</strong>（${diffS.toFixed(2)}）進みましたね。`);
+                        } else {
+                            messages.push(`${side}の${type}が <strong class="text-green-600 text-2xl">${stepsS}段階</strong>（${diffS.toFixed(2)}）弱くなりました。`);
+                        }
+                    }
+                }
+
+                // CYL (乱視) の比較
+                if (oldC !== newC) {
+                    const diffC = Math.abs(newC - oldC);
+                    const stepsC = Math.round(diffC / 0.25);
+                    const absOldC = Math.abs(oldC);
+                    const absNewC = Math.abs(newC);
+
+                    if (oldC === 0 && newC !== 0) {
+                        messages.push(`${side}は、今回から<strong class="text-brand-600">新しく乱視の度数</strong>が入りました。`);
+                    } else if (oldC !== 0 && newC === 0) {
+                        messages.push(`${side}は、乱視の度数がなくなりました。スッキリしますね。`);
+                    } else {
+                        if (absNewC > absOldC) {
+                            messages.push(`${side}の乱視が <strong class="text-brand-600 text-2xl">${stepsC}段階</strong> 強くなりました。`);
+                        } else {
+                            messages.push(`${side}の乱視が <strong class="text-green-600 text-2xl">${stepsC}段階</strong> 弱くなりました。`);
+                        }
+                    }
+                }
+
+                if (messages.length === 0) return null;
+                return messages.join('<br>');
+            }
+
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorArea.classList.remove('hidden');
+                errorArea.classList.add('fade-in');
+            }
+        });
+    </script>
+</body>
+</html>
