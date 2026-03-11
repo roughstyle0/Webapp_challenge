@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大人のレンズ ライフスタイル診断＆提案ナビ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eef7ff",
+              100: "#d8ecff",
+              500: "#1d4ed8",
+              600: "#1e40af",
+              700: "#1e3a8a",
+              900: "#0f172a"
+            },
+            accent: {
+              50: "#fff8eb",
+              100: "#feefc8",
+              500: "#d97706",
+              600: "#b45309"
+            }
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(15, 23, 42, 0.08)",
+            focus: "0 0 0 4px rgba(30, 64, 175, 0.15)"
+          },
+          keyframes: {
+            resultIn: {
+              "0%": { opacity: "0", transform: "translateY(18px) scale(0.98)" },
+              "100%": { opacity: "1", transform: "translateY(0) scale(1)" }
+            },
+            toastIn: {
+              "0%": { opacity: "0", transform: "translateY(12px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" }
+            },
+            pulseRing: {
+              "0%, 100%": { boxShadow: "0 0 0 0 rgba(30,64,175,0.16)" },
+              "50%": { boxShadow: "0 0 0 10px rgba(30,64,175,0.00)" }
+            }
+          },
+          animation: {
+            resultIn: "resultIn 420ms cubic-bezier(.2,.8,.2,1)",
+            toastIn: "toastIn 260ms ease-out",
+            pulseRing: "pulseRing 1.8s ease-out infinite"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .scene-btn[aria-pressed="true"] {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <header class="mb-6 rounded-3xl bg-white p-6 shadow-soft ring-1 ring-slate-200 md:p-8">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div class="mb-3 inline-flex items-center rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700">
+            新人スタッフ向け / そのまま読める提案トーク付き
+          </div>
+          <h1 class="text-3xl font-black tracking-tight text-slate-900 md:text-5xl">
+            大人のレンズ ライフスタイル診断＆提案ナビ
+          </h1>
+          <p class="mt-3 max-w-3xl text-lg leading-relaxed text-slate-700 md:text-xl">
+            お客様と一緒に「一番長く見ているシーン」を選ぶだけで、
+            おすすめレンズと伝えやすいご案内トークをすぐ表示します。
+          </p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 px-5 py-4 ring-1 ring-slate-200">
+          <p class="text-base font-bold text-slate-900 md:text-lg">使い方</p>
+          <p class="mt-1 text-base leading-relaxed text-slate-700">
+            まずは下の大きなボタンから、<span class="font-bold text-brand-700">一番長く使う場面</span>を選んでください。
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section class="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-200 md:p-6">
+        <div class="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-black text-slate-900 md:text-3xl">1日の中で一番長く見ているものは？</h2>
+            <p class="mt-2 text-lg text-slate-700">お客様が近いものを見る時間が長いか、遠くまで見る時間が長いかでご提案が変わります。</p>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <button
+            type="button"
+            class="scene-btn group rounded-3xl border-2 border-slate-200 bg-slate-50 p-5 text-left transition duration-200 hover:border-brand-500 hover:bg-brand-50 focus:outline-none focus-visible:shadow-focus"
+            data-scene="outdoor"
+            aria-pressed="false"
+          >
+            <div class="flex items-start gap-4">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-3xl" aria-hidden="true">🚗</div>
+              <div>
+                <p class="text-2xl font-black leading-tight text-slate-900">運転・外出がメイン</p>
+                <p class="mt-2 text-lg leading-relaxed text-slate-700">スマホも少し見る / 外での見え方を重視したい方に</p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="scene-btn group rounded-3xl border-2 border-slate-200 bg-slate-50 p-5 text-left transition duration-200 hover:border-brand-500 hover:bg-brand-50 focus:outline-none focus-visible:shadow-focus"
+            data-scene="indoor"
+            aria-pressed="false"
+          >
+            <div class="flex items-start gap-4">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-3xl" aria-hidden="true">🏠</div>
+              <div>
+                <p class="text-2xl font-black leading-tight text-slate-900">家事・テレビ・室内での移動がメイン</p>
+                <p class="mt-2 text-lg leading-relaxed text-slate-700">お家の中で過ごす時間が長い / 室内の見やすさを重視</p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="scene-btn group rounded-3xl border-2 border-slate-200 bg-slate-50 p-5 text-left transition duration-200 hover:border-brand-500 hover:bg-brand-50 focus:outline-none focus-visible:shadow-focus"
+            data-scene="pc"
+            aria-pressed="false"
+          >
+            <div class="flex items-start gap-4">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-3xl" aria-hidden="true">💻</div>
+              <div>
+                <p class="text-2xl font-black leading-tight text-slate-900">長時間のデスクワーク・パソコン作業がメイン</p>
+                <p class="mt-2 text-lg leading-relaxed text-slate-700">仕事や学習で、画面と手元を行き来する時間が長い方に</p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="scene-btn group rounded-3xl border-2 border-slate-200 bg-slate-50 p-5 text-left transition duration-200 hover:border-brand-500 hover:bg-brand-50 focus:outline-none focus-visible:shadow-focus"
+            data-scene="near"
+            aria-pressed="false"
+          >
+            <div class="flex items-start gap-4">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-3xl" aria-hidden="true">📖</div>
+              <div>
+                <p class="text-2xl font-black leading-tight text-slate-900">ベッドでの読書・手芸など、手元だけの作業がメイン</p>
+                <p class="mt-2 text-lg leading-relaxed text-slate-700">近くの見やすさを一番大切にしたい方に</p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div id="errorBox" class="mt-5 hidden rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-lg font-bold text-red-700" role="alert"></div>
+      </section>
+
+      <aside class="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-200 md:p-6">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-black text-slate-900 md:text-3xl">診断結果</h2>
+            <p class="mt-2 text-lg text-slate-700">選んだシーンに合わせて、最適なご提案を表示します。</p>
+          </div>
+          <button
+            id="resetBtn"
+            type="button"
+            class="rounded-2xl border border-slate-300 px-4 py-3 text-base font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:shadow-focus"
+          >
+            リセット
+          </button>
+        </div>
+
+        <div id="emptyState" class="rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
+          <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-4xl shadow-soft" aria-hidden="true">✨</div>
+          <p class="mt-5 text-2xl font-black text-slate-900">まだ診断されていません</p>
+          <p class="mt-3 text-lg leading-relaxed text-slate-700">
+            左のボタンからシーンをひとつ選ぶと、<br class="hidden sm:block" />
+            おすすめレンズとそのまま使えるトークがここに表示されます。
+          </p>
+        </div>
+
+        <section id="resultCard" class="hidden" aria-live="polite">
+          <div class="rounded-3xl bg-brand-700 p-5 text-white">
+            <p class="text-base font-bold uppercase tracking-[0.2em] text-brand-100">おすすめレンズ</p>
+            <h3 id="lensName" class="mt-3 text-3xl font-black md:text-4xl">—</h3>
+            <p id="lensCatch" class="mt-3 text-lg leading-relaxed text-brand-50">—</p>
+          </div>
+
+          <div class="mt-4 grid gap-4">
+            <div class="rounded-3xl border border-slate-200 bg-white p-5">
+              <p class="text-base font-bold uppercase tracking-[0.2em] text-slate-500">ピントが合う距離の目安</p>
+              <p id="focusRange" class="mt-3 text-2xl font-black leading-snug text-slate-900 md:text-3xl">—</p>
+              <p class="mt-2 text-base leading-relaxed text-slate-600">※見え方の目安です。最終的な設計は度数や用途に応じて調整します。</p>
+            </div>
+
+            <div class="rounded-3xl border border-accent-100 bg-accent-50 p-5">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-base font-bold uppercase tracking-[0.2em] text-accent-600">そのまま読み上げられる提案トーク</p>
+                <button
+                  id="copyBtn"
+                  type="button"
+                  class="rounded-2xl bg-white px-4 py-3 text-base font-bold text-accent-600 ring-1 ring-accent-200 transition hover:-translate-y-0.5 hover:shadow-soft focus:outline-none focus-visible:shadow-focus"
+                >
+                  トークをコピー
+                </button>
+              </div>
+              <blockquote id="talkScript" class="mt-4 text-xl font-bold leading-relaxed text-slate-900 md:text-2xl">
+                —
+              </blockquote>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <p class="text-base font-bold uppercase tracking-[0.2em] text-slate-500">ひとことで伝える使い方</p>
+              <div id="quickTags" class="mt-4 flex flex-wrap gap-3"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mt-5 rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
+          <h3 class="text-xl font-black text-slate-900">接客のコツ</h3>
+          <ul class="mt-3 space-y-3 text-lg leading-relaxed text-slate-700">
+            <li>「どこを見る時間が一番長いですか？」と聞くと、レンズの違いが伝えやすくなります。</li>
+            <li>「掛けっぱなし向き」か「作業専用」かを添えると、お客様がイメージしやすくなります。</li>
+            <li>専門用語よりも、生活シーンに置き換えて説明すると安心感につながります。</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="toast" class="pointer-events-none fixed bottom-5 right-5 hidden rounded-2xl bg-slate-900 px-5 py-4 text-base font-bold text-white shadow-2xl">
+    コピーしました
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const diagnoses = {
+        outdoor: {
+          lens: "遠近両用",
+          catch: "遠くを見る時間が長く、手元のスマホも自然につなげたい方に向いています。",
+          range: "遠方（5m以上） 〜 手元 約30〜40cm",
+          script: "お出かけや運転が多いとのことですので、遠くから手元のスマホまでカバーできる『遠近両用』が最適です。一日中掛けっぱなしで快適に過ごせますよ！",
+          tags: ["掛けっぱなし向き", "運転しやすい", "外出メイン向き"]
+        },
+        indoor: {
+          lens: "中近両用",
+          catch: "お家の中での見え方を広く、ゆったり見せたい方にぴったりです。",
+          range: "手元 約40cm 〜 室内の数メートル先",
+          script: "お家の中での時間が長いとのことですので、テレビから手元の新聞まで、室内空間が一番広くスッキリ見える『中近両用』がおすすめです。遠近両用よりも足元の揺れが少なく、家事がぐっと楽になりますよ！",
+          tags: ["室内が見やすい", "足元が安定しやすい", "家事に向く"]
+        },
+        pc: {
+          lens: "近々両用",
+          catch: "パソコン画面と手元の資料を長時間見る、デスクワーク中心の方向けです。",
+          range: "手元 約40cm 〜 デスク周り 1〜2m前後",
+          script: "パソコン作業が長いとのことですので、デスク周りに特化した『近々両用』が圧倒的に快適です。遠近両用だとアゴを上げて画面を見ることになり首が疲れてしまうので、お仕事専用のこのレンズが一番体が楽になります！",
+          tags: ["PC作業向き", "首が楽になりやすい", "仕事専用に最適"]
+        },
+        near: {
+          lens: "手元専用レンズ（単焦点）",
+          catch: "読書や手芸など、近くをじっくり見たい作業に最もクリアで広い視野を確保しやすい設計です。",
+          range: "手元 約30〜40cm前後",
+          script: "読書や手芸など、手元にしっかり集中したいとのことですので、手元専用の『単焦点レンズ』が最も視野が広くクリアに見えます。掛けっぱなしで歩くことはできませんが、作業のしやすさはナンバーワンです！",
+          tags: ["手元が広く見やすい", "作業専用", "読書・手芸向き"]
+        }
+      };
+
+      const sceneButtons = [...document.querySelectorAll(".scene-btn")];
+      const resultCard = document.getElementById("resultCard");
+      const emptyState = document.getElementById("emptyState");
+      const lensName = document.getElementById("lensName");
+      const lensCatch = document.getElementById("lensCatch");
+      const focusRange = document.getElementById("focusRange");
+      const talkScript = document.getElementById("talkScript");
+      const quickTags = document.getElementById("quickTags");
+      const copyBtn = document.getElementById("copyBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const errorBox = document.getElementById("errorBox");
+      const toast = document.getElementById("toast");
+
+      let currentKey = null;
+      let toastTimer = null;
+
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.classList.remove("hidden");
+      }
+
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.classList.add("hidden");
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.remove("hidden");
+        toast.classList.add("animate-toastIn");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.classList.add("hidden");
+          toast.classList.remove("animate-toastIn");
+        }, 1800);
+      }
+
+      function setActiveButton(selectedKey) {
+        sceneButtons.forEach((btn) => {
+          const isActive = btn.dataset.scene === selectedKey;
+          btn.setAttribute("aria-pressed", String(isActive));
+          btn.classList.toggle("border-brand-600", isActive);
+          btn.classList.toggle("bg-brand-50", isActive);
+          btn.classList.toggle("shadow-soft", isActive);
+          btn.classList.toggle("animate-pulseRing", isActive);
+          btn.classList.toggle("border-slate-200", !isActive);
+          btn.classList.toggle("bg-slate-50", !isActive);
+        });
+      }
+
+      function saveLastSelection(key) {
+        try {
+          localStorage.setItem("adultLensLastScene", key);
+        } catch (_) {
+          // 保存できなくてもアプリは動作継続
+        }
+      }
+
+      function loadLastSelection() {
+        try {
+          return localStorage.getItem("adultLensLastScene");
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function clearLastSelection() {
+        try {
+          localStorage.removeItem("adultLensLastScene");
+        } catch (_) {
+          // 削除できなくてもアプリは動作継続
+        }
+      }
+
+      function renderTags(tags) {
+        quickTags.innerHTML = "";
+        tags.forEach((tag) => {
+          const chip = document.createElement("span");
+          chip.className = "inline-flex items-center rounded-full bg-white px-4 py-2 text-base font-bold text-slate-800 ring-1 ring-slate-200";
+          chip.textContent = tag;
+          quickTags.appendChild(chip);
+        });
+      }
+
+      function renderDiagnosis(key, shouldScroll = true) {
+        clearError();
+
+        if (!key || !diagnoses[key]) {
+          showError("診断データの読み込みに失敗しました。もう一度シーンを選び直してください。");
+          return;
+        }
+
+        const item = diagnoses[key];
+        currentKey = key;
+
+        lensName.textContent = item.lens;
+        lensCatch.textContent = item.catch;
+        focusRange.textContent = item.range;
+        talkScript.textContent = item.script;
+        renderTags(item.tags);
+
+        emptyState.classList.add("hidden");
+        resultCard.classList.remove("hidden");
+        resultCard.classList.remove("animate-resultIn");
+        void resultCard.offsetWidth;
+        resultCard.classList.add("animate-resultIn");
+
+        setActiveButton(key);
+        saveLastSelection(key);
+
+        if (shouldScroll && window.innerWidth < 1280) {
+          resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      function resetDiagnosis() {
+        currentKey = null;
+        resultCard.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        clearError();
+        clearLastSelection();
+
+        sceneButtons.forEach((btn) => {
+          btn.setAttribute("aria-pressed", "false");
+          btn.classList.remove("border-brand-600", "bg-brand-50", "shadow-soft", "animate-pulseRing");
+          btn.classList.add("border-slate-200", "bg-slate-50");
+        });
+      }
+
+      async function copyTalk() {
+        if (!currentKey || !diagnoses[currentKey]) {
+          showError("先にシーンを選んで、提案トークを表示してください。");
+          return;
+        }
+
+        const text = diagnoses[currentKey].script;
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const area = document.createElement("textarea");
+            area.value = text;
+            area.setAttribute("readonly", "");
+            area.style.position = "absolute";
+            area.style.left = "-9999px";
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand("copy");
+            document.body.removeChild(area);
+          }
+          showToast("提案トークをコピーしました");
+        } catch (error) {
+          showError("コピーに失敗しました。テキストを長押しまたは選択してご利用ください。");
+          console.error(error);
+        }
+      }
+
+      sceneButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          try {
+            renderDiagnosis(btn.dataset.scene);
+          } catch (error) {
+            showError("予期しないエラーが発生しました。もう一度お試しください。");
+            console.error(error);
+          }
+        });
+      });
+
+      copyBtn.addEventListener("click", copyTalk);
+      resetBtn.addEventListener("click", resetDiagnosis);
+
+      const last = loadLastSelection();
+      if (last && diagnoses[last]) {
+        renderDiagnosis(last, false);
+      }
+    })();
+  </script>
+</body>
+</html>
