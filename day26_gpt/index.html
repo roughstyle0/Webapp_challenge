@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>カラーレンズ濃度・用途ナビ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            soft: "0 20px 60px rgba(15, 23, 42, 0.12)",
+            pop: "0 12px 30px rgba(244, 63, 94, 0.18)"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --lens-left: rgba(56, 189, 248, 0.18);
+      --lens-right: rgba(99, 102, 241, 0.18);
+      --lens-glow: rgba(255, 255, 255, 0.55);
+    }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .floating-orb {
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .floating-orb.delay-1 {
+      animation-delay: -2s;
+    }
+
+    .floating-orb.delay-2 {
+      animation-delay: -4s;
+    }
+
+    .card-enter {
+      animation: cardEnter 0.35s ease;
+    }
+
+    .lens {
+      background:
+        radial-gradient(circle at 30% 25%, var(--lens-glow), transparent 35%),
+        linear-gradient(135deg, var(--lens-left), var(--lens-right));
+      transition: all 0.35s ease;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.14);
+    }
+
+    .ring-pulse {
+      animation: pulseRing 2.6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(4deg); }
+    }
+
+    @keyframes cardEnter {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes pulseRing {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25);
+      }
+      50% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+      }
+    }
+
+    .btn-selected {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-900">
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="floating-orb absolute -top-10 left-[8%] h-40 w-40 rounded-full bg-pink-400/25 blur-3xl"></div>
+    <div class="floating-orb delay-1 absolute top-[22%] right-[10%] h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl"></div>
+    <div class="floating-orb delay-2 absolute bottom-[8%] left-[20%] h-48 w-48 rounded-full bg-violet-500/20 blur-3xl"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_35%),linear-gradient(180deg,#0f172a_0%,#111827_45%,#0b1120_100%)]"></div>
+  </div>
+
+  <main class="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <section class="mb-6 rounded-[32px] border border-white/10 bg-white/90 p-5 shadow-soft backdrop-blur xl:p-8">
+      <div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+        <div>
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-sm font-semibold text-pink-700">
+            <span>✨</span>
+            <span>新人スタッフ向け接客サポート</span>
+          </div>
+          <h1 class="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+            眼鏡屋向け
+            <span class="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
+              「カラーレンズ濃度・用途ナビ」
+            </span>
+          </h1>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+            濃度ごとの見え方・夜間運転の可否・提案トークを、ひと目で説明できる接客用ミニアプリです。
+            ボタンを押すだけで、用途と注意点をカード形式で分かりやすく表示します。
+          </p>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <button
+              type="button"
+              data-level="15"
+              class="lens-btn group rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition duration-200 hover:border-cyan-300 hover:shadow-pop focus:outline-none focus:ring-4 focus:ring-cyan-200"
+              aria-pressed="false"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">15%前後</div>
+                  <div class="mt-1 text-xs text-slate-500">ほんのり自然</div>
+                </div>
+                <div class="rounded-2xl bg-cyan-50 px-2 py-1 text-xs font-bold text-cyan-700">夜OK</div>
+              </div>
+              <div class="mt-3 h-3 rounded-full bg-slate-100">
+                <div class="h-3 rounded-full bg-gradient-to-r from-cyan-300 to-sky-400" style="width: 20%"></div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              data-level="25"
+              class="lens-btn group rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition duration-200 hover:border-rose-300 hover:shadow-pop focus:outline-none focus:ring-4 focus:ring-rose-200"
+              aria-pressed="false"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">25%前後</div>
+                  <div class="mt-1 text-xs text-slate-500">少しおしゃれ感</div>
+                </div>
+                <div class="rounded-2xl bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">夜NG</div>
+              </div>
+              <div class="mt-3 h-3 rounded-full bg-slate-100">
+                <div class="h-3 rounded-full bg-gradient-to-r from-rose-300 to-orange-400" style="width: 38%"></div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              data-level="35"
+              class="lens-btn group rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition duration-200 hover:border-violet-300 hover:shadow-pop focus:outline-none focus:ring-4 focus:ring-violet-200"
+              aria-pressed="false"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">35%前後</div>
+                  <div class="mt-1 text-xs text-slate-500">しっかり眩しさ対策</div>
+                </div>
+                <div class="rounded-2xl bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">夜NG</div>
+              </div>
+              <div class="mt-3 h-3 rounded-full bg-slate-100">
+                <div class="h-3 rounded-full bg-gradient-to-r from-violet-400 to-fuchsia-500" style="width: 58%"></div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              data-level="50"
+              class="lens-btn group rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition duration-200 hover:border-amber-300 hover:shadow-pop focus:outline-none focus:ring-4 focus:ring-amber-200"
+              aria-pressed="false"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">50%以上</div>
+                  <div class="mt-1 text-xs text-slate-500">本格サングラス</div>
+                </div>
+                <div class="rounded-2xl bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">夜NG</div>
+              </div>
+              <div class="mt-3 h-3 rounded-full bg-slate-100">
+                <div class="h-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style="width: 82%"></div>
+              </div>
+            </button>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <span class="font-bold text-slate-800">使い方:</span>
+            上の濃度ボタンを選ぶと、右側のレンズ見え方と下の提案カードが切り替わります。
+          </div>
+        </div>
+
+        <div class="rounded-[28px] border border-white/60 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white shadow-soft">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs uppercase tracking-[0.24em] text-slate-300">Lens Preview</p>
+              <h2 id="previewTitle" class="mt-1 text-2xl font-black">まずは濃度を選択</h2>
+            </div>
+            <div id="previewBadge" class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white/90">
+              Ready
+            </div>
+          </div>
+
+          <div class="mt-6 rounded-[28px] border border-white/10 bg-white/5 p-5">
+            <div class="mx-auto flex max-w-sm items-center justify-center gap-3">
+              <div class="lens relative h-28 w-28 rounded-[40%] border-[6px] border-slate-200/90" id="lensLeft"></div>
+              <div class="h-3 w-10 rounded-full bg-slate-200/90"></div>
+              <div class="lens relative h-28 w-28 rounded-[40%] border-[6px] border-slate-200/90" id="lensRight"></div>
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div class="text-xs text-slate-300">目元の見え方</div>
+                <div id="eyeVisibility" class="mt-1 text-lg font-bold">未選択</div>
+                <p id="visibilityDesc" class="mt-2 text-sm leading-6 text-slate-300">
+                  濃度を選ぶと、接客時に伝えやすい見え方の表現がここに出ます。
+                </p>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div class="text-xs text-slate-300">接客の主役ワード</div>
+                <div id="mainKeyword" class="mt-1 text-lg font-bold">提案ワード待機中</div>
+                <p id="keywordDesc" class="mt-2 text-sm leading-6 text-slate-300">
+                  「自然」「おしゃれ」「レジャー向け」などの一言で、会話を始めやすくします。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="errorBox" class="mb-6 hidden rounded-3xl border border-rose-300 bg-rose-50 px-4 py-4 text-rose-700 shadow-sm"></section>
+
+    <section id="contentArea" class="grid gap-5 lg:grid-cols-12">
+      <div class="lg:col-span-12">
+        <div class="card-enter rounded-[32px] border border-dashed border-white/20 bg-white/10 p-8 text-center text-white/90 backdrop-blur">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl ring-1 ring-white/20">🕶️</div>
+          <h3 class="mt-4 text-2xl font-black">濃度を選ぶと、接客トークがすぐ使えます</h3>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base">
+            新人スタッフが迷いやすい
+            <span class="font-bold text-white">「どの濃さがどんな用途に向いているか」</span>
+            と
+            <span class="font-bold text-white">「夜間運転の注意」</span>
+            を、
+            そのままお客様へ伝えやすい形で表示します。
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 hidden -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg">
+    コピーしました
+  </div>
+
+  <script>
+    const lensData = {
+      "15": {
+        label: "15%前後",
+        badge: "夜間運転OK",
+        badgeClass: "border-cyan-200 bg-cyan-50 text-cyan-700",
+        accentClass: "from-cyan-400 via-sky-400 to-indigo-500",
+        surfaceClass: "border-cyan-100 bg-cyan-50/70",
+        lensLeft: "rgba(56, 189, 248, 0.20)",
+        lensRight: "rgba(99, 102, 241, 0.24)",
+        glow: "rgba(255,255,255,0.58)",
+        visibility: "目元がしっかり見える",
+        visibilityDesc: "ほんのり色づく程度なので、表情が伝わりやすく、オフィスや接客シーンにもなじみやすい濃さです。",
+        keyword: "自然・軽やか・万能",
+        keywordDesc: "“色は欲しいけど、濃すぎるのは避けたい方”に提案しやすい濃度です。",
+        scenes: [
+          { icon: "💼", title: "オフィス", text: "悪目立ちしにくく、きちんと感を保ちやすい。" },
+          { icon: "💻", title: "PC作業", text: "眩しさを少し和らげたい方へ提案しやすい。" },
+          { icon: "🚗", title: "日常使い", text: "シーンを選びにくく、掛け替えの負担が少ない。" }
+        ],
+        night: {
+          status: "ok",
+          title: "夜間・夕暮れ時の運転も案内しやすい濃度",
+          desc: "薄めのため、日中から夜まで使いたい方に話をつなげやすい定番です。"
+        },
+        script: "ほんのり色づく程度なので、オフィスでも悪目立ちせず、パソコンの眩しさも和らげてくれます。夜の運転もそのままで大丈夫ですよ！",
+        tips: [
+          "初めてのカラーレンズ提案に向いています",
+          "『自然に印象を変えたい』という要望と相性が良いです",
+          "迷っているお客様には最初の候補として出しやすいです"
+        ],
+        questions: [
+          "お仕事でも掛けたいですか？",
+          "夜の運転もそのまましたいですか？",
+          "まずは自然な色づきから試したいですか？"
+        ]
+      },
+      "25": {
+        label: "25%前後",
+        badge: "夜間運転NG",
+        badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
+        accentClass: "from-rose-400 via-pink-500 to-orange-400",
+        surfaceClass: "border-rose-100 bg-rose-50/70",
+        lensLeft: "rgba(244, 63, 94, 0.34)",
+        lensRight: "rgba(251, 146, 60, 0.30)",
+        glow: "rgba(255,255,255,0.46)",
+        visibility: "目元が少し隠れておしゃれ",
+        visibilityDesc: "自然さを残しつつ、ファッション感も出しやすいバランスの良い濃さです。",
+        keyword: "おしゃれ・普段使い・人気",
+        keywordDesc: "“雰囲気を変えたいけど濃すぎるのは避けたい”という方に刺さりやすい濃度です。",
+        scenes: [
+          { icon: "🛍️", title: "街歩き", text: "ファッション性が上がり、程よく印象を変えられる。" },
+          { icon: "🚙", title: "日中ドライブ", text: "日差しを抑えつつ、普段使いもしやすい。" },
+          { icon: "☕", title: "休日のお出かけ", text: "気負いすぎないおしゃれ感を出せる。" }
+        ],
+        night: {
+          status: "ng",
+          title: "夜間・夕暮れ時の運転は不可",
+          desc: "日中は使いやすい人気ゾーンですが、夜の運転用としては案内しない前提で伝えると安全です。"
+        },
+        script: "目元が少し隠れてオシャレな濃さですが、夜の運転には使えない明るさになります。日中のドライブや普段使いにとても人気です！",
+        tips: [
+          "『日中メインで使うか』を先に確認すると提案しやすいです",
+          "夜間運転NGは先に伝えると信頼感が上がります",
+          "ファッション性と実用性のバランス提案に向いています"
+        ],
+        questions: [
+          "主に日中の使用を考えていますか？",
+          "夜や夕方に運転する機会はありますか？",
+          "自然さよりも少しおしゃれ感を出したいですか？"
+        ]
+      },
+      "35": {
+        label: "35%前後",
+        badge: "夜間運転NG",
+        badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
+        accentClass: "from-violet-500 via-fuchsia-500 to-pink-500",
+        surfaceClass: "border-violet-100 bg-violet-50/70",
+        lensLeft: "rgba(139, 92, 246, 0.44)",
+        lensRight: "rgba(217, 70, 239, 0.42)",
+        glow: "rgba(255,255,255,0.40)",
+        visibility: "相手からギリギリ目が見える",
+        visibilityDesc: "しっかり眩しさを抑えながら、サングラス感が出すぎない絶妙なラインです。",
+        keyword: "レジャー・眩しさ対策・存在感",
+        keywordDesc: "“外で使う時間が長い方”へ、機能面をしっかり伝えやすい濃度です。",
+        scenes: [
+          { icon: "🌳", title: "屋外レジャー", text: "眩しさが気になる日中の外出に向いている。" },
+          { icon: "⚾", title: "スポーツ観戦", text: "強い日差しの下でも視界の快適さを保ちやすい。" },
+          { icon: "🚶", title: "アウトドア散策", text: "屋外中心の使い方に説得力のある濃さ。" }
+        ],
+        night: {
+          status: "ng",
+          title: "夜間・夕暮れ時の運転は不可",
+          desc: "日中の快適さが高いぶん、薄暗い時間帯の運転用途では案内しないのが基本です。"
+        },
+        script: "しっかり眩しさを抑えつつ、相手からギリギリ目が見える濃さです。屋外のレジャーにぴったりですね！",
+        tips: [
+          "『どこで一番使うか』を聞くと、屋外提案に自然につながります",
+          "普段使いより“日差し対策”を重視するお客様に相性が良いです",
+          "見た目と機能の両立を求める方におすすめしやすいです"
+        ],
+        questions: [
+          "屋外で過ごす時間は長いですか？",
+          "眩しさ対策をしっかり重視したいですか？",
+          "夜の運転用ではない、で問題ないですか？"
+        ]
+      },
+      "50": {
+        label: "50%以上",
+        badge: "夜間運転NG",
+        badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
+        accentClass: "from-amber-400 via-orange-500 to-rose-500",
+        surfaceClass: "border-amber-100 bg-amber-50/70",
+        lensLeft: "rgba(245, 158, 11, 0.56)",
+        lensRight: "rgba(239, 68, 68, 0.52)",
+        glow: "rgba(255,255,255,0.28)",
+        visibility: "目元はかなり見えにくい",
+        visibilityDesc: "本格サングラスらしい濃さで、強い日差しの中で存在感を発揮します。",
+        keyword: "本格派・強い日差し・アクティブ",
+        keywordDesc: "“夏場の強い光がつらい”“アウトドアでしっかり使いたい”方に提案しやすいです。",
+        scenes: [
+          { icon: "🏖️", title: "海・リゾート", text: "照り返しが強い環境で快適さを出しやすい。" },
+          { icon: "⛰️", title: "山・高原", text: "強い日差しに備えたいアウトドア用途に向いている。" },
+          { icon: "☀️", title: "真夏の外出", text: "眩しさ対策を重視する方へ分かりやすく提案できる。" }
+        ],
+        night: {
+          status: "ng",
+          title: "夜間・夕暮れ時の運転は不可",
+          desc: "昼間の強い日差し向けとして提案し、時間帯の注意をはっきり伝えることが大切です。"
+        },
+        script: "本格的なサングラスの濃さです。真夏の強い日差しや海・山でのアクティビティに最適ですよ！",
+        tips: [
+          "用途がはっきりしているお客様に強く刺さる濃度です",
+          "“いつ・どこで使うか”を明確に聞くと提案精度が上がります",
+          "ファッションというより機能性重視の説明がハマりやすいです"
+        ],
+        questions: [
+          "海や山など、強い日差しの場所で使いますか？",
+          "日常よりもレジャー用途がメインですか？",
+          "夜間運転では使わない前提で問題ないですか？"
+        ]
+      }
+    };
+
+    const buttons = document.querySelectorAll(".lens-btn");
+    const contentArea = document.getElementById("contentArea");
+    const errorBox = document.getElementById("errorBox");
+    const toast = document.getElementById("toast");
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 1800);
+    }
+
+    async function copyScript(text) {
+      try {
+        if (!text) {
+          showToast("コピーする内容がありません");
+          return;
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const area = document.createElement("textarea");
+          area.value = text;
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.focus();
+          area.select();
+          document.execCommand("copy");
+          document.body.removeChild(area);
+        }
+        showToast("トークをコピーしました");
+      } catch (error) {
+        showToast("コピーできませんでした");
+      }
+    }
+
+    function clearError() {
+      errorBox.classList.add("hidden");
+      errorBox.textContent = "";
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.remove("hidden");
+    }
+
+    function setPreview(item) {
+      document.documentElement.style.setProperty("--lens-left", item.lensLeft);
+      document.documentElement.style.setProperty("--lens-right", item.lensRight);
+      document.documentElement.style.setProperty("--lens-glow", item.glow);
+
+      document.getElementById("previewTitle").textContent = item.label;
+      document.getElementById("previewBadge").textContent = item.badge;
+      document.getElementById("previewBadge").className =
+        "rounded-full border px-3 py-1 text-xs font-bold " + item.badgeClass;
+
+      document.getElementById("eyeVisibility").textContent = item.visibility;
+      document.getElementById("visibilityDesc").textContent = item.visibilityDesc;
+      document.getElementById("mainKeyword").textContent = item.keyword;
+      document.getElementById("keywordDesc").textContent = item.keywordDesc;
+    }
+
+    function updateButtonState(level) {
+      buttons.forEach((btn) => {
+        const active = btn.dataset.level === level;
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+        btn.classList.toggle("btn-selected", active);
+        btn.classList.toggle("ring-4", active);
+        btn.classList.toggle("ring-offset-2", active);
+        btn.classList.toggle("ring-offset-white", active);
+
+        if (active) {
+          btn.classList.add("shadow-pop", "border-slate-900");
+        } else {
+          btn.classList.remove("shadow-pop", "border-slate-900", "ring-rose-200", "ring-cyan-200", "ring-violet-200", "ring-amber-200");
+        }
+
+        if (active && level === "15") btn.classList.add("ring-cyan-200");
+        if (active && level === "25") btn.classList.add("ring-rose-200");
+        if (active && level === "35") btn.classList.add("ring-violet-200");
+        if (active && level === "50") btn.classList.add("ring-amber-200");
+      });
+    }
+
+    function render(level) {
+      clearError();
+
+      try {
+        const item = lensData[level];
+        if (!item) {
+          throw new Error("選択された濃度データが見つかりませんでした。");
+        }
+
+        updateButtonState(level);
+        setPreview(item);
+
+        const scenesHtml = item.scenes.map(scene => `
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">${scene.icon}</div>
+              <div>
+                <h4 class="font-bold text-slate-900">${scene.title}</h4>
+                <p class="mt-1 text-sm leading-6 text-slate-600">${scene.text}</p>
+              </div>
+            </div>
+          </div>
+        `).join("");
+
+        const tipsHtml = item.tips.map(tip => `
+          <li class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+            ${tip}
+          </li>
+        `).join("");
+
+        const questionsHtml = item.questions.map(question => `
+          <li class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
+            <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">Q</span>
+            <span>${question}</span>
+          </li>
+        `).join("");
+
+        const nightHtml = item.night.status === "ok"
+          ? `
+            <div class="rounded-[28px] border border-emerald-200 bg-emerald-50 p-6 shadow-sm card-enter">
+              <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-sm font-bold text-emerald-700">
+                <span>🌙</span><span>夜間運転OK</span>
+              </div>
+              <h3 class="text-2xl font-black text-slate-900">${item.night.title}</h3>
+              <p class="mt-3 text-sm leading-7 text-slate-700">${item.night.desc}</p>
+              <div class="mt-5 rounded-2xl border border-emerald-200 bg-white px-4 py-4 text-sm leading-7 text-slate-700">
+                <span class="font-bold text-emerald-700">伝え方のコツ:</span>
+                「自然さ」と「夜も使いやすい安心感」をセットで伝えると、お客様が選びやすくなります。
+              </div>
+            </div>
+          `
+          : `
+            <div class="rounded-[28px] border border-rose-300 bg-rose-50 p-6 shadow-sm card-enter">
+              <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1 text-sm font-bold text-rose-700 ring-pulse">
+                <span>⚠️</span><span>最重要: 夜間・夕暮れ時の運転は不可</span>
+              </div>
+              <h3 class="text-2xl font-black text-slate-900">${item.night.title}</h3>
+              <p class="mt-3 text-sm leading-7 text-slate-700">${item.night.desc}</p>
+              <div class="mt-5 rounded-2xl border border-rose-300 bg-white px-4 py-4 text-sm leading-7 text-slate-700">
+                <span class="font-bold text-rose-700">接客で先に伝える一言:</span>
+                「こちらは日中向けで、夜間や夕暮れ時の運転には使えない濃さです」
+              </div>
+            </div>
+          `;
+
+        contentArea.innerHTML = `
+          <div class="lg:col-span-7 space-y-5">
+            <div class="card-enter rounded-[28px] border border-white/50 bg-white p-6 shadow-soft">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Selected Density</p>
+                  <h2 class="mt-1 text-3xl font-black text-slate-900">${item.label}</h2>
+                </div>
+                <div class="rounded-full border px-4 py-2 text-sm font-bold ${item.badgeClass}">
+                  ${item.badge}
+                </div>
+              </div>
+
+              <div class="mt-5 rounded-[24px] border ${item.surfaceClass} p-5">
+                <div class="flex flex-wrap gap-2">
+                  <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700">接客キーワード</span>
+                  <span class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600">${item.keyword}</span>
+                </div>
+                <p class="mt-3 text-sm leading-7 text-slate-700">
+                  ${item.keywordDesc}
+                </p>
+              </div>
+
+              <div class="mt-6">
+                <h3 class="text-lg font-black text-slate-900">おすすめの利用シーン</h3>
+                <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                  ${scenesHtml}
+                </div>
+              </div>
+            </div>
+
+            ${nightHtml}
+          </div>
+
+          <div class="lg:col-span-5 space-y-5">
+            <div class="card-enter rounded-[28px] border border-white/50 bg-white p-6 shadow-soft">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Talk Script</p>
+                  <h3 class="mt-1 text-2xl font-black text-slate-900">そのまま使える提案トーク</h3>
+                </div>
+                <button
+                  type="button"
+                  id="copyBtn"
+                  class="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:scale-[1.02] hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                >
+                  コピー
+                </button>
+              </div>
+
+              <div class="mt-5 rounded-[24px] bg-gradient-to-br ${item.accentClass} p-[1px]">
+                <div class="rounded-[23px] bg-white/95 p-5">
+                  <p class="text-sm leading-8 text-slate-700">「${item.script}」</p>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <h4 class="text-sm font-black text-slate-900">販売時のひとことメモ</h4>
+                <ul class="mt-3 space-y-3">
+                  ${tipsHtml}
+                </ul>
+              </div>
+            </div>
+
+            <div class="card-enter rounded-[28px] border border-white/50 bg-white p-6 shadow-soft">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Quick Questions</p>
+              <h3 class="mt-1 text-2xl font-black text-slate-900">確認すると提案しやすい質問</h3>
+              <ul class="mt-5 space-y-3">
+                ${questionsHtml}
+              </ul>
+            </div>
+          </div>
+        `;
+
+        const copyBtn = document.getElementById("copyBtn");
+        if (copyBtn) {
+          copyBtn.addEventListener("click", () => copyScript(item.script));
+        }
+      } catch (error) {
+        contentArea.innerHTML = `
+          <div class="lg:col-span-12">
+            <div class="rounded-[28px] border border-rose-300 bg-white p-6 shadow-soft">
+              <h3 class="text-xl font-black text-rose-700">表示エラー</h3>
+              <p class="mt-2 text-sm leading-7 text-slate-700">
+                データの読み込みに失敗しました。もう一度濃度ボタンを押してください。
+              </p>
+            </div>
+          </div>
+        `;
+        showError(error.message || "不明なエラーが発生しました。");
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => render(button.dataset.level));
+      button.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          render(button.dataset.level);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
