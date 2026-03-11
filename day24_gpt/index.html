@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>顔型×似合うフレーム 提案ナビ</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            luxe: "0 20px 60px rgba(24, 24, 27, 0.10)",
+            soft: "0 12px 32px rgba(24, 24, 27, 0.08)"
+          },
+          colors: {
+            ink: "#1f2937",
+            sand: "#f6f2eb",
+            blush: "#f2ebe4",
+            accent: "#68594f",
+            accentLight: "#ece4dc",
+            success: "#1f7a62"
+          }
+        }
+      }
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-1: #faf7f2;
+      --bg-2: #f3ede5;
+      --line: rgba(104, 89, 79, 0.14);
+      --text-soft: #6b7280;
+      --accent: #68594f;
+      --accent-deep: #4f433b;
+      --card: rgba(255, 255, 255, 0.78);
+    }
+
+    body {
+      font-family: "Noto Sans JP", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.95), rgba(255,255,255,0) 32%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      color: #1f2937;
+    }
+
+    .font-display {
+      font-family: "Playfair Display", "Noto Sans JP", serif;
+    }
+
+    .glass {
+      background: var(--card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .fade-up {
+      animation: fadeUp 0.55s cubic-bezier(.2, .65, .2, 1) both;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .button-sheen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.28) 50%, transparent 80%);
+      transform: translateX(-150%);
+      transition: transform .7s ease;
+      pointer-events: none;
+    }
+
+    .button-sheen:hover::after {
+      transform: translateX(150%);
+    }
+
+    .toast-show {
+      animation: toastIn 2.2s ease forwards;
+    }
+
+    @keyframes toastIn {
+      0%   { opacity: 0; transform: translateY(12px); }
+      10%  { opacity: 1; transform: translateY(0); }
+      80%  { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(10px); }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-ink">
+  <main class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+    <section class="glass overflow-hidden rounded-[2rem] border border-white/70 shadow-luxe">
+      <div class="border-b border-stone-200/70 px-6 py-7 sm:px-8 lg:px-10">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl">
+            <p class="mb-2 inline-flex items-center rounded-full border border-stone-300/70 bg-white/70 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-stone-500 uppercase">
+              Eyewear suggestion assistant
+            </p>
+            <h1 class="font-display text-3xl leading-tight text-stone-800 sm:text-4xl">
+              顔型×似合うフレーム 提案ナビ
+            </h1>
+            <p class="mt-3 text-sm leading-7 text-stone-600 sm:text-base">
+              新人スタッフ向けに、<span class="font-semibold text-stone-800">「おすすめ」「避けたい傾向」「そのまま使える提案トーク」</span>を一瞬で表示。
+              お客様と一緒に画面を見ても自然な、落ち着いた接客用UIです。
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-stone-200 bg-white/70 px-4 py-3 text-sm text-stone-600 shadow-soft">
+            <p class="font-semibold text-stone-800">使い方</p>
+            <p class="mt-1">上の顔型を選ぶだけ。迷ったら、まずは「おすすめ」から1本ご案内してください。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid gap-8 px-6 py-6 sm:px-8 lg:grid-cols-[1.08fr_1fr] lg:gap-10 lg:px-10 lg:py-10">
+        <!-- Left -->
+        <section>
+          <div class="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold tracking-[0.16em] text-stone-500 uppercase">Step 1</p>
+              <h2 class="mt-1 text-xl font-bold text-stone-800">お客様の顔型を選択</h2>
+            </div>
+            <span id="selectedBadge" class="hidden rounded-full bg-accentLight px-3 py-1 text-sm font-semibold text-accent">
+              選択中: <span id="selectedFaceName"></span>
+            </span>
+          </div>
+
+          <div id="faceButtons" class="grid grid-cols-2 gap-4">
+            <!-- Buttons injected by JS -->
+          </div>
+
+          <div class="mt-5 rounded-3xl border border-dashed border-stone-300/80 bg-white/50 p-5 text-sm leading-7 text-stone-600">
+            <p class="font-semibold text-stone-800">接客メモ</p>
+            <p class="mt-2">
+              顔型はあくまで会話の入り口です。最終提案では、
+              <span class="font-semibold">サイズ感・鼻幅・カラー・なりたい印象</span>も合わせて確認すると、提案の納得感が上がります。
+            </p>
+          </div>
+        </section>
+
+        <!-- Right -->
+        <section>
+          <div class="mb-5">
+            <p class="text-sm font-semibold tracking-[0.16em] text-stone-500 uppercase">Step 2</p>
+            <h2 class="mt-1 text-xl font-bold text-stone-800">提案内容</h2>
+          </div>
+
+          <div id="resultArea" class="min-h-[460px] rounded-[1.75rem] border border-stone-200/80 bg-white/70 p-5 shadow-soft sm:p-6">
+            <div class="flex h-full min-h-[380px] flex-col items-center justify-center rounded-[1.4rem] border border-dashed border-stone-300/80 bg-stone-50/70 px-6 text-center">
+              <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-soft">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" class="text-stone-600">
+                  <path d="M2.5 12.2C2.5 10.99 3.48 10 4.7 10h3.1c1.02 0 1.9.7 2.14 1.69l.05.21c.1.42.48.7.91.7h2.2c.43 0 .81-.28.91-.7l.05-.21A2.2 2.2 0 0 1 16.2 10h3.1c1.22 0 2.2.99 2.2 2.2v.6c0 1.22-.98 2.2-2.2 2.2h-2.6a2.2 2.2 0 0 1-2.17-1.8l-.02-.1a.93.93 0 0 0-.91-.75h-3.2a.93.93 0 0 0-.91.75l-.02.1A2.2 2.2 0 0 1 7.3 15H4.7a2.2 2.2 0 0 1-2.2-2.2v-.6Z" stroke="currentColor" stroke-width="1.6"/>
+                  <path d="M8.2 11.2h-1a1.6 1.6 0 1 0 0 3.2h1a1.6 1.6 0 1 0 0-3.2ZM16.8 11.2h-1a1.6 1.6 0 1 0 0 3.2h1a1.6 1.6 0 1 0 0-3.2Z" stroke="currentColor" stroke-width="1.6"/>
+                </svg>
+              </div>
+              <h3 class="text-lg font-bold text-stone-800">顔型を選ぶと、ここに提案が表示されます</h3>
+              <p class="mt-2 max-w-md text-sm leading-7 text-stone-600">
+                「おすすめフレーム」「避けたい傾向」「提案トークスクリプト」が、接客ですぐ使える形でふわっと表示されます。
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 hidden -translate-x-1/2 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white shadow-lg">
+      トークをコピーしました
+    </div>
+  </main>
+
+  <script>
+    const faceData = {
+      round: {
+        name: "丸顔",
+        nuance: "ふんわり・やさしい印象",
+        recommend: ["スクエア", "ハーフリム"],
+        avoid: ["ラウンド", "丸みが強すぎる小ぶりフレーム"],
+        talk: "ふんわりとした優しい輪郭でいらっしゃるので、直線的なスクエア型を合わせると、お顔全体がスッキリと引き締まって見えてとてもお似合いですよ！",
+        accent: "直線を足して、印象を引き締める"
+      },
+      square: {
+        name: "四角顔",
+        nuance: "知的・凛とした印象",
+        recommend: ["オーバル", "ボストン"],
+        avoid: ["スクエア", "直線が強すぎるシャープなフレーム"],
+        talk: "直線的で知的な輪郭でいらっしゃるので、丸みのあるオーバルやボストン型を掛けると、お顔の印象がグッと柔らかくなり親しみやすさが出ます！",
+        accent: "丸みを足して、印象をやわらげる"
+      },
+      long: {
+        name: "面長",
+        nuance: "すっきり・大人っぽい印象",
+        recommend: ["ウェリントン"],
+        avoid: ["縦幅が浅い細身フレーム", "小さすぎるデザイン"],
+        talk: "シュッとしたお顔立ちですので、天地幅（縦幅）がしっかりあるウェリントン型を掛けると、お顔全体のバランスが綺麗に整って小顔効果も抜群です！",
+        accent: "縦幅を補って、全体バランスを整える"
+      },
+      triangle: {
+        name: "逆三角形",
+        nuance: "シャープ・洗練された印象",
+        recommend: ["ボストン", "オーバル"],
+        avoid: ["上部が重く見える太めスクエア", "ブロウ感が強すぎるデザイン"],
+        talk: "シャープで綺麗なアゴのラインをお持ちですので、下のラインが丸いボストン型を合わせると、全体のバランスが調和してとても優しい印象になりますよ！",
+        accent: "下側にやわらかさを足して、バランスを調和させる"
+      }
+    };
+
+    const faceButtons = document.getElementById("faceButtons");
+    const resultArea = document.getElementById("resultArea");
+    const selectedBadge = document.getElementById("selectedBadge");
+    const selectedFaceName = document.getElementById("selectedFaceName");
+    const toast = document.getElementById("toast");
+
+    const buttonOrder = ["round", "square", "long", "triangle"];
+
+    function createButtons() {
+      faceButtons.innerHTML = buttonOrder.map((key) => {
+        const item = faceData[key];
+        return `
+          <button
+            type="button"
+            data-face="${key}"
+            aria-pressed="false"
+            class="button-sheen group relative overflow-hidden rounded-[1.5rem] border border-stone-200/80 bg-white/80 p-5 text-left shadow-soft transition duration-300 hover:-translate-y-1 hover:border-stone-300 hover:shadow-luxe focus:outline-none focus:ring-4 focus:ring-stone-300/50"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-lg font-bold text-stone-800 sm:text-xl">${item.name}</p>
+                <p class="mt-2 text-sm text-stone-500">${item.nuance}</p>
+              </div>
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 text-stone-600 transition group-hover:bg-stone-100">
+                <span class="text-sm font-bold">${item.name.charAt(0)}</span>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center justify-between">
+              <span class="inline-flex items-center rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-600">
+                タップして提案を見る
+              </span>
+              <span class="text-stone-400 transition group-hover:translate-x-1 group-hover:text-stone-600">→</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+
+      faceButtons.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => handleFaceSelect(button.dataset.face));
+      });
+    }
+
+    function renderTagList(list, tone = "default") {
+      const toneClasses = {
+        default: "bg-stone-100 text-stone-700 border-stone-200",
+        warn: "bg-rose-50 text-rose-700 border-rose-100",
+        good: "bg-emerald-50 text-emerald-700 border-emerald-100"
+      };
+
+      return list.map(item => `
+        <span class="inline-flex rounded-full border px-3 py-2 text-sm font-medium ${toneClasses[tone]}">
+          ${escapeHTML(item)}
+        </span>
+      `).join("");
+    }
+
+    function handleFaceSelect(faceKey) {
+      const data = faceData[faceKey];
+
+      faceButtons.querySelectorAll("button").forEach((btn) => {
+        const active = btn.dataset.face === faceKey;
+        btn.setAttribute("aria-pressed", String(active));
+        btn.classList.toggle("border-stone-800", active);
+        btn.classList.toggle("bg-stone-900", active);
+        btn.classList.toggle("text-white", active);
+        btn.classList.toggle("shadow-luxe", active);
+
+        const name = btn.querySelector("p");
+        const sub = btn.querySelectorAll("p")[1];
+        const chip = btn.querySelector("span.inline-flex");
+        const iconBox = btn.querySelector("div.flex.h-11");
+
+        if (active) {
+          if (name) name.classList.add("text-white");
+          if (sub) sub.classList.add("text-stone-300");
+          if (chip) {
+            chip.classList.remove("bg-stone-100", "text-stone-600");
+            chip.classList.add("bg-white/10", "text-white");
+          }
+          if (iconBox) {
+            iconBox.classList.remove("border-stone-200", "bg-stone-50", "text-stone-600");
+            iconBox.classList.add("border-white/15", "bg-white/10", "text-white");
+          }
+        } else {
+          if (name) name.classList.remove("text-white");
+          if (sub) sub.classList.remove("text-stone-300");
+          if (chip) {
+            chip.classList.add("bg-stone-100", "text-stone-600");
+            chip.classList.remove("bg-white/10", "text-white");
+          }
+          if (iconBox) {
+            iconBox.classList.add("border-stone-200", "bg-stone-50", "text-stone-600");
+            iconBox.classList.remove("border-white/15", "bg-white/10", "text-white");
+          }
+        }
+      });
+
+      if (!data) {
+        resultArea.innerHTML = `
+          <div class="fade-up flex min-h-[380px] flex-col items-center justify-center rounded-[1.4rem] border border-rose-100 bg-rose-50 px-6 text-center">
+            <p class="text-lg font-bold text-rose-700">表示エラー</p>
+            <p class="mt-2 max-w-md text-sm leading-7 text-rose-600">
+              提案データの読み込みに失敗しました。もう一度、顔型を選び直してください。
+            </p>
+          </div>
+        `;
+        selectedBadge.classList.add("hidden");
+        return;
+      }
+
+      selectedFaceName.textContent = data.name;
+      selectedBadge.classList.remove("hidden");
+
+      resultArea.innerHTML = `
+        <div class="space-y-4">
+          <div class="fade-up rounded-[1.5rem] border border-stone-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,237,228,0.92))] p-5 shadow-soft" style="animation-delay: 0ms;">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-sm font-semibold tracking-[0.16em] text-stone-500 uppercase">Selected face type</p>
+                <h3 class="mt-1 text-2xl font-bold text-stone-800">${escapeHTML(data.name)}</h3>
+                <p class="mt-2 text-sm leading-7 text-stone-600">${escapeHTML(data.accent)}</p>
+              </div>
+              <span class="inline-flex h-fit rounded-full bg-white/80 px-3 py-2 text-xs font-semibold text-stone-600 shadow-sm">
+                ${escapeHTML(data.nuance)}
+              </span>
+            </div>
+          </div>
+
+          <div class="fade-up rounded-[1.5rem] border border-emerald-100 bg-white p-5 shadow-soft" style="animation-delay: 80ms;">
+            <div class="mb-3 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                ✓
+              </div>
+              <div>
+                <p class="text-sm font-semibold tracking-[0.16em] text-stone-500 uppercase">おすすめ</p>
+                <h4 class="text-lg font-bold text-stone-800">似合いやすいフレーム形状</h4>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${renderTagList(data.recommend, "good")}
+            </div>
+          </div>
+
+          <div class="fade-up rounded-[1.5rem] border border-rose-100 bg-white p-5 shadow-soft" style="animation-delay: 140ms;">
+            <div class="mb-3 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-700">
+                !
+              </div>
+              <div>
+                <p class="text-sm font-semibold tracking-[0.16em] text-stone-500 uppercase">避けたい傾向</p>
+                <h4 class="text-lg font-bold text-stone-800">避けた方がいいフレーム形状</h4>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${renderTagList(data.avoid, "warn")}
+            </div>
+          </div>
+
+          <div class="fade-up rounded-[1.5rem] border border-stone-200 bg-stone-950 p-5 text-white shadow-soft" style="animation-delay: 200ms;">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-sm font-semibold tracking-[0.16em] text-stone-300 uppercase">Talk script</p>
+                <h4 class="text-lg font-bold">そのまま使える提案トーク</h4>
+              </div>
+              <button
+                id="copyTalkBtn"
+                type="button"
+                class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/20"
+              >
+                トークをコピー
+              </button>
+            </div>
+
+            <blockquote id="talkText" class="rounded-[1.25rem] border border-white/10 bg-white/5 p-4 text-sm leading-8 text-stone-100 sm:text-base">
+              「${escapeHTML(data.talk)}」
+            </blockquote>
+
+            <p class="mt-3 text-xs leading-6 text-stone-300">
+              そのまま読み上げても、語尾だけ調整して自然に使ってもOKです。
+            </p>
+          </div>
+        </div>
+      `;
+
+      const copyButton = document.getElementById("copyTalkBtn");
+      if (copyButton) {
+        copyButton.addEventListener("click", () => copyTalk(data.talk));
+      }
+    }
+
+    async function copyTalk(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          showToast("トークをコピーしました");
+          return;
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        if (copied) {
+          showToast("トークをコピーしました");
+        } else {
+          showToast("コピーできない環境です");
+        }
+      } catch (error) {
+        console.error(error);
+        showToast("コピーに失敗しました");
+      }
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.remove("hidden", "toast-show");
+      void toast.offsetWidth;
+      toast.classList.add("toast-show");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+        toast.classList.remove("toast-show");
+      }, 2200);
+    }
+
+    function escapeHTML(value) {
+      if (typeof value !== "string") return "";
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    createButtons();
+  </script>
+</body>
+</html>
