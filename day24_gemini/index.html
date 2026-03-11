@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frame Fitting Navigator | 眼鏡提案アシスト</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        serif: ['"Noto Serif JP"', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fcfcfc',
+                            100: '#f5f4f2',
+                            200: '#e6e3dd',
+                            300: '#d1cbbd',
+                            400: '#b5ab99',
+                            500: '#9b8e78',
+                            600: '#8c7b6c', // Main Accent
+                            700: '#736458',
+                            800: '#5c524a',
+                            900: '#332f2a',
+                        }
+                    },
+                    boxShadow: {
+                        'elegant': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'elegant-hover': '0 8px 30px -4px rgba(0, 0, 0, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Smooth fade-in animation */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-in-up.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Custom scrollbar for elegant look */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1cbbd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-brand-50 text-brand-900 font-sans min-h-screen antialiased flex flex-col items-center p-4 sm:p-8">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl mb-10 text-center space-y-2 fade-in-up active">
+        <p class="text-brand-500 text-sm tracking-widest uppercase font-serif">Staff Assist Tool</p>
+        <h1 class="text-2xl sm:text-3xl font-serif text-brand-800 tracking-wide">顔型×フレーム 提案ナビ</h1>
+        <p class="text-gray-500 text-sm sm:text-base font-light">お客様の顔の輪郭に最も近いものを選択してください。</p>
+    </header>
+
+    <main class="w-full max-w-4xl flex flex-col gap-10">
+        
+        <!-- Selection Area -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6" id="face-shape-container">
+            <!-- Buttons will be injected here by JS -->
+        </section>
+
+        <!-- Result Area Container -->
+        <section id="result-area" class="w-full relative min-h-[400px]">
+            
+            <!-- Placeholder (Before selection) -->
+            <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-brand-200 rounded-2xl bg-brand-50/50 transition-opacity duration-500">
+                <i data-lucide="glasses" class="w-12 h-12 text-brand-300 mb-4"></i>
+                <p class="text-brand-500 font-light tracking-wide text-center">
+                    顔型を選択すると、<br class="sm:hidden">こちらに提案内容が表示されます。
+                </p>
+            </div>
+
+            <!-- Result Content (Hidden by default) -->
+            <div id="result-content" class="bg-white rounded-2xl p-6 sm:p-10 shadow-elegant border border-brand-100 hidden fade-in-up">
+                
+                <div class="flex items-center gap-3 mb-8 border-b border-brand-100 pb-4">
+                    <div id="result-icon-container" class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700">
+                        <!-- Icon injected here -->
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-serif text-brand-800">
+                        <span id="result-shape-name" class="font-bold"></span>の提案セオリー
+                    </h2>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Recommend -->
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-green-700">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                            <h3 class="font-bold tracking-wide">おすすめのフレーム形状</h3>
+                        </div>
+                        <ul id="recommend-list" class="flex flex-wrap gap-2">
+                            <!-- Tags injected here -->
+                        </ul>
+                    </div>
+
+                    <!-- Avoid -->
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 text-red-700/80">
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                            <h3 class="font-bold tracking-wide">避けた方がいい形状</h3>
+                        </div>
+                        <ul id="avoid-list" class="flex flex-wrap gap-2">
+                            <!-- Tags injected here -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Talk Script -->
+                <div class="bg-brand-50 rounded-xl p-6 sm:p-8 relative">
+                    <div class="absolute -top-3 left-6 bg-brand-600 text-white text-xs px-3 py-1 rounded-full font-bold tracking-wider flex items-center gap-1 shadow-sm">
+                        <i data-lucide="message-circle" class="w-3 h-3"></i>
+                        そのまま使える！提案トーク
+                    </div>
+                    <div class="mt-2 text-brand-800 leading-relaxed sm:text-lg font-serif">
+                        「<span id="talk-script" class="italic"></span>」
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="mt-auto pt-12 pb-6 text-center text-xs text-brand-400 font-light w-full">
+        &copy; Frame Fitting Navigator. Internal Use Only.
+    </footer>
+
+    <script>
+        // --- Data Definition ---
+        const faceData = {
+            round: {
+                id: 'round',
+                label: '丸顔',
+                svgPath: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" fill="none"/>',
+                recommend: ['スクエア', 'ハーフリム'],
+                avoid: ['ラウンド', 'オーバル'],
+                script: 'ふんわりとした優しい輪郭でいらっしゃるので、直線的なスクエア型を合わせると、お顔全体がスッキリと引き締まって見えてとてもお似合いですよ！'
+            },
+            square: {
+                id: 'square',
+                label: '四角顔',
+                svgPath: '<rect x="5" y="4" width="14" height="16" rx="4" stroke="currentColor" stroke-width="1.5" fill="none"/>',
+                recommend: ['オーバル', 'ボストン'],
+                avoid: ['スクエア', 'ウェリントン'],
+                script: '直線的で知的な輪郭でいらっしゃるので、丸みのあるオーバルやボストン型を掛けると、お顔の印象がグッと柔らかくなり親しみやすさが出ます！'
+            },
+            long: {
+                id: 'long',
+                label: '面長',
+                svgPath: '<ellipse cx="12" cy="12" rx="7" ry="10" stroke="currentColor" stroke-width="1.5" fill="none"/>',
+                recommend: ['ウェリントン', 'ボストン'],
+                avoid: ['ハーフリム', '天地幅の狭いフレーム'],
+                script: 'シュッとしたお顔立ちですので、天地幅（縦幅）がしっかりあるウェリントン型を掛けると、お顔全体のバランスが綺麗に整って小顔効果も抜群です！'
+            },
+            triangle: {
+                id: 'triangle',
+                label: '逆三角形',
+                svgPath: '<path d="M4 6h16L12 20z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>',
+                recommend: ['ボストン', 'オーバル'],
+                avoid: ['フォックス', 'リムレス'],
+                script: 'シャープで綺麗なアゴのラインをお持ちですので、下のラインが丸いボストン型を合わせると、全体のバランスが調和してとても優しい印象になりますよ！'
+            }
+        };
+
+        // --- State ---
+        let selectedShapeId = null;
+
+        // --- DOM Elements ---
+        const container = document.getElementById('face-shape-container');
+        const placeholder = document.getElementById('placeholder');
+        const resultContent = document.getElementById('result-content');
+        
+        // --- Initialize ---
+        function init() {
+            try {
+                renderButtons();
+                lucide.createIcons();
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                alert("アプリの初期化に失敗しました。ページをリロードしてください。");
+            }
+        }
+
+        // --- Render UI ---
+        function renderButtons() {
+            container.innerHTML = '';
+            Object.values(faceData).forEach(shape => {
+                const isSelected = selectedShapeId === shape.id;
+                
+                const btn = document.createElement('button');
+                // Styling based on state for elegant UI
+                btn.className = `
+                    relative flex flex-col items-center justify-center p-6 rounded-2xl 
+                    transition-all duration-300 ease-out group
+                    ${isSelected 
+                        ? 'bg-white border-2 border-brand-600 shadow-elegant transform -translate-y-1' 
+                        : 'bg-white border border-brand-200 hover:border-brand-400 hover:shadow-elegant-hover hover:-translate-y-1'}
+                `;
+                btn.onclick = () => handleSelect(shape.id);
+
+                // Add active indicator
+                const indicator = document.createElement('div');
+                indicator.className = `absolute top-3 right-3 w-3 h-3 rounded-full transition-colors duration-300 ${isSelected ? 'bg-brand-600' : 'bg-transparent'}`;
+                btn.appendChild(indicator);
+
+                // Icon
+                const svgIcon = `
+                    <svg class="w-12 h-12 mb-3 transition-colors duration-300 ${isSelected ? 'text-brand-600' : 'text-brand-400 group-hover:text-brand-600'}" viewBox="0 0 24 24">
+                        ${shape.svgPath}
+                    </svg>
+                `;
+                
+                const label = document.createElement('span');
+                label.className = `font-medium tracking-wide transition-colors duration-300 ${isSelected ? 'text-brand-800' : 'text-gray-600 group-hover:text-brand-800'}`;
+                label.innerText = shape.label;
+
+                btn.innerHTML += svgIcon;
+                btn.appendChild(label);
+                
+                container.appendChild(btn);
+            });
+        }
+
+        function createTagHTML(text, type) {
+            const colors = type === 'recommend' 
+                ? 'bg-green-50 text-green-700 border-green-200' 
+                : 'bg-red-50 text-red-700 border-red-200';
+            return `<li class="px-4 py-1.5 rounded-full border ${colors} text-sm font-medium tracking-wide shadow-sm">${text}</li>`;
+        }
+
+        // --- Event Handlers ---
+        function handleSelect(shapeId) {
+            if (!faceData[shapeId]) return; // Resiliency check
+
+            // If clicking the already selected button, do nothing (or toggle off, but here we keep it selected)
+            if (selectedShapeId === shapeId) return;
+
+            selectedShapeId = shapeId;
+            renderButtons(); // Update button states
+            
+            showResult(faceData[shapeId]);
+        }
+
+        function showResult(data) {
+            // 1. Hide placeholder and current result with animation
+            if (!placeholder.classList.contains('hidden')) {
+                placeholder.style.opacity = '0';
+                setTimeout(() => {
+                    placeholder.classList.add('hidden');
+                }, 300); // Wait for opacity transition
+            }
+            
+            resultContent.classList.remove('active');
+
+            // 2. Update content after a short delay to allow fade out
+            setTimeout(() => {
+                // Remove hidden if it's the first time
+                resultContent.classList.remove('hidden');
+
+                // Update DOM
+                document.getElementById('result-shape-name').innerText = data.label;
+                document.getElementById('result-icon-container').innerHTML = `
+                    <svg class="w-6 h-6" viewBox="0 0 24 24">
+                        ${data.svgPath}
+                    </svg>
+                `;
+                
+                document.getElementById('recommend-list').innerHTML = 
+                    data.recommend.map(r => createTagHTML(r, 'recommend')).join('');
+                document.getElementById('avoid-list').innerHTML = 
+                    data.avoid.map(a => createTagHTML(a, 'avoid')).join('');
+                
+                document.getElementById('talk-script').innerText = data.script;
+
+                // Re-render lucide icons if any were dynamically added inside the container (though we used svg directly mostly)
+                lucide.createIcons();
+
+                // 3. Fade in new content
+                // Trigger reflow to restart animation
+                void resultContent.offsetWidth; 
+                resultContent.classList.add('active');
+
+            }, 150); // Small delay feels more natural
+        }
+
+        // Boot
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
