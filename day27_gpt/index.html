@@ -11,7 +11,8 @@
         extend: {
           boxShadow: {
             glow: "0 0 0 1px rgba(255,255,255,.08), 0 20px 60px rgba(16,185,129,.22)",
-            gold: "0 0 0 1px rgba(255,255,255,.08), 0 24px 80px rgba(251,191,36,.22)"
+            gold: "0 0 0 1px rgba(255,255,255,.08), 0 24px 80px rgba(251,191,36,.22)",
+            soft: "0 10px 40px rgba(2,6,23,.28)"
           },
           keyframes: {
             floaty: {
@@ -34,6 +35,10 @@
               "0%": { transform: "scale(.85)", opacity: "0" },
               "70%": { transform: "scale(1.05)", opacity: "1" },
               "100%": { transform: "scale(1)", opacity: "1" }
+            },
+            ringPulse: {
+              "0%,100%": { boxShadow: "0 0 0 0 rgba(16,185,129,.18)" },
+              "50%": { boxShadow: "0 0 0 10px rgba(16,185,129,0)" }
             }
           },
           animation: {
@@ -41,14 +46,20 @@
             pulseSoft: "pulseSoft 2.8s ease-in-out infinite",
             riseIn: "riseIn .7s ease forwards",
             shimmer: "shimmer 2.4s linear infinite",
-            pop: "pop .7s cubic-bezier(.2,.8,.2,1) forwards"
+            pop: "pop .7s cubic-bezier(.2,.8,.2,1) forwards",
+            ringPulse: "ringPulse 2s infinite"
           }
         }
       }
     };
   </script>
   <style>
+    :root {
+      color-scheme: dark;
+    }
+
     html { scroll-behavior: smooth; }
+
     body {
       background:
         radial-gradient(circle at 15% 20%, rgba(251,191,36,.18), transparent 20%),
@@ -57,11 +68,13 @@
         linear-gradient(135deg, #061019 0%, #0b1324 45%, #101b34 100%);
       min-height: 100vh;
     }
+
     .glass {
       backdrop-filter: blur(16px);
       background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.07));
       border: 1px solid rgba(255,255,255,.12);
     }
+
     .shine-text {
       background-image: linear-gradient(90deg, #fef3c7 0%, #fde68a 25%, #ffffff 50%, #fde68a 75%, #fef3c7 100%);
       background-size: 200% 100%;
@@ -69,9 +82,127 @@
       background-clip: text;
       color: transparent;
     }
+
     .number-tabular { font-variant-numeric: tabular-nums; }
-    .hidden-until-ready { opacity: 0; transform: translateY(14px); pointer-events: none; }
-    .reveal { opacity: 1 !important; transform: translateY(0) !important; pointer-events: auto !important; }
+
+    .hidden-until-ready {
+      opacity: 0;
+      transform: translateY(14px);
+      pointer-events: none;
+    }
+
+    .reveal {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+      pointer-events: auto !important;
+    }
+
+    .input-shell {
+      position: relative;
+      border-radius: 1rem;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.10);
+      transition: .22s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    .input-shell:hover {
+      border-color: rgba(255,255,255,.18);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.07));
+    }
+
+    .input-shell.focused {
+      border-color: rgba(110,231,183,.45);
+      box-shadow:
+        0 0 0 1px rgba(110,231,183,.10),
+        0 0 0 6px rgba(16,185,129,.08),
+        inset 0 1px 0 rgba(255,255,255,.06);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+    }
+
+    .money-input,
+    .smart-select {
+      width: 100%;
+      background: transparent !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      caret-color: #fcd34d;
+      outline: none;
+      border: none;
+      box-shadow: none;
+      appearance: none;
+    }
+
+    .money-input::placeholder {
+      color: rgba(255,255,255,.34);
+      -webkit-text-fill-color: rgba(255,255,255,.34);
+    }
+
+    .money-input:disabled,
+    .smart-select:disabled {
+      opacity: .7;
+      cursor: not-allowed;
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active,
+    select:-webkit-autofill,
+    select:-webkit-autofill:hover,
+    select:-webkit-autofill:focus,
+    select:-webkit-autofill:active {
+      -webkit-text-fill-color: #ffffff !important;
+      -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,.02) inset !important;
+      box-shadow: 0 0 0 1000px rgba(255,255,255,.02) inset !important;
+      transition: background-color 9999s ease-in-out 0s;
+      border: none;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .result-glow {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .result-glow::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 1.75rem;
+      background: linear-gradient(120deg, rgba(16,185,129,.30), rgba(251,191,36,.20), rgba(59,130,246,.24));
+      filter: blur(24px);
+      z-index: -1;
+      opacity: .65;
+    }
+
+    .bar-shine {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bar-shine::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 2.8s linear infinite;
+      opacity: .7;
+    }
   </style>
 </head>
 <body class="text-white selection:bg-emerald-300/30">
@@ -100,7 +231,7 @@
 
           <p class="mt-4 max-w-2xl text-sm leading-7 text-white/75 md:text-base">
             毎月なんとなく払っているコンタクト代を、数年単位の“見える金額”に変換。
-            お客様が「そんなに差が出るの？」と前向きになれる、リッチでエンタメ感のあるシミュレーターです。
+            お客様が「えっ、そんなに差が出るの？」と前向きになれる、リッチでエンタメ感のあるシミュレーターです。
           </p>
 
           <div class="mt-6 grid gap-3 sm:grid-cols-3">
@@ -114,7 +245,7 @@
             </div>
             <div class="rounded-2xl border border-white/10 bg-white/6 p-4">
               <div class="text-xs text-white/55">ポイント 3</div>
-              <div class="mt-1 font-bold">スマホでも即提案</div>
+              <div class="mt-1 font-bold">現場で即使える視認性</div>
             </div>
           </div>
         </div>
@@ -151,20 +282,23 @@
         </div>
       </section>
 
-      <section class="grid gap-6 xl:grid-cols-[460px_1fr]">
+      <section class="grid gap-6 xl:grid-cols-[470px_1fr]">
         <div class="glass rounded-[2rem] p-5 shadow-glow md:p-6">
           <div class="mb-5">
             <h3 class="text-xl font-black md:text-2xl">入力エリア</h3>
             <p class="mt-1 text-sm text-white/65">
-              スタッフの方がその場で素早く提示できるよう、選びやすさを優先しています。
+              接客中でも一瞬で入力できるよう、選択しやすさと視認性を優先しています。
             </p>
           </div>
 
           <form id="simulatorForm" class="space-y-5" novalidate>
             <div>
-              <label class="mb-2 block text-sm font-semibold text-white/90">
-                現在のコンタクト代（1ヶ月分）
-              </label>
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <label class="block text-sm font-semibold text-white/90">
+                  現在のコンタクト代（1ヶ月分）
+                </label>
+                <div class="text-xs text-white/45">よくある価格をタップ</div>
+              </div>
 
               <div id="presetWrap" class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <button type="button" class="preset-btn rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-bold transition hover:bg-white/12" data-value="3000">3,000円</button>
@@ -173,17 +307,21 @@
                 <button type="button" class="preset-btn rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-bold transition hover:bg-white/12" data-value="12000">12,000円</button>
               </div>
 
-              <div class="mt-3 relative">
+              <div class="mt-3 input-shell" data-shell>
+                <div class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-[11px] font-bold text-emerald-100">
+                  毎月
+                </div>
                 <input
                   id="contactMonthly"
+                  class="money-input pl-20 pr-16 py-4 text-lg font-black"
                   inputmode="numeric"
                   autocomplete="off"
                   placeholder="例: 5000"
-                  class="w-full rounded-2xl border border-white/10 bg-white/8 px-4 py-4 pr-16 text-lg font-bold text-white outline-none transition placeholder:text-white/35 focus:border-emerald-300/40 focus:bg-white/10"
+                  aria-describedby="contactHint contactError"
                 />
-                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-white/45">円 / 月</span>
+                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/55">円 / 月</span>
               </div>
-              <p class="mt-2 text-xs text-white/50">よくある価格を上から選ぶか、直接入力してください。</p>
+              <p id="contactHint" class="mt-2 text-xs text-white/50">数字のみ入力できます。カンマは自動整形されます。</p>
               <p id="contactError" class="mt-2 hidden text-sm font-semibold text-rose-300"></p>
             </div>
 
@@ -191,15 +329,19 @@
               <label for="glassesPrice" class="mb-2 block text-sm font-semibold text-white/90">
                 検討中のメガネの金額
               </label>
-              <div class="relative">
+              <div class="input-shell" data-shell>
+                <div class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 rounded-full border border-amber-300/20 bg-amber-300/10 px-2.5 py-1 text-[11px] font-bold text-amber-100">
+                  本体
+                </div>
                 <input
                   id="glassesPrice"
+                  class="money-input pl-20 pr-14 py-4 text-lg font-black"
                   inputmode="numeric"
                   autocomplete="off"
                   placeholder="例: 30000"
-                  class="w-full rounded-2xl border border-white/10 bg-white/8 px-4 py-4 pr-16 text-lg font-bold text-white outline-none transition placeholder:text-white/35 focus:border-amber-300/40 focus:bg-white/10"
+                  aria-describedby="glassesError"
                 />
-                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-white/45">円</span>
+                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/55">円</span>
               </div>
               <p id="glassesError" class="mt-2 hidden text-sm font-semibold text-rose-300"></p>
             </div>
@@ -208,24 +350,25 @@
               <label for="years" class="mb-2 block text-sm font-semibold text-white/90">
                 メガネの使用想定年数
               </label>
-              <div class="relative">
+              <div class="input-shell" data-shell>
                 <select
                   id="years"
-                  class="w-full appearance-none rounded-2xl border border-white/10 bg-white/8 px-4 py-4 text-lg font-bold text-white outline-none transition focus:border-sky-300/40 focus:bg-white/10"
+                  class="smart-select px-4 py-4 pr-12 text-lg font-black"
+                  aria-label="メガネの使用想定年数"
                 >
                   <option value="2" class="text-slate-900">2年</option>
                   <option value="3" class="text-slate-900" selected>3年</option>
                   <option value="4" class="text-slate-900">4年</option>
                   <option value="5" class="text-slate-900">5年</option>
                 </select>
-                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/40">▼</span>
+                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-white/55">▼</span>
               </div>
             </div>
 
             <button
               id="calcBtn"
               type="submit"
-              class="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-amber-300 px-5 py-4 text-lg font-black text-slate-950 transition hover:scale-[1.01] active:scale-[.99]"
+              class="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-amber-300 px-5 py-4 text-lg font-black text-slate-950 shadow-soft transition hover:scale-[1.01] active:scale-[.99]"
             >
               <span class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition duration-700 group-hover:translate-x-full"></span>
               <span class="relative">計算する</span>
@@ -234,7 +377,7 @@
         </div>
 
         <div class="space-y-6">
-          <section id="resultPanel" class="glass hidden-until-ready rounded-[2rem] p-5 shadow-gold md:p-8">
+          <section id="resultPanel" class="glass result-glow hidden-until-ready rounded-[2rem] p-5 shadow-gold md:p-8">
             <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div>
                 <p class="text-sm font-semibold tracking-wide text-emerald-200">SIMULATION RESULT</p>
@@ -250,7 +393,7 @@
                 <div class="text-sm text-white/60">コンタクトを使い続けた場合</div>
                 <div id="contactTotalDisplay" class="number-tabular mt-2 text-3xl font-black md:text-5xl">0円</div>
                 <div class="mt-3 h-3 overflow-hidden rounded-full bg-white/8">
-                  <div id="contactBar" class="h-full w-0 rounded-full bg-gradient-to-r from-rose-300 to-rose-500 transition-all duration-1000"></div>
+                  <div id="contactBar" class="bar-shine h-full w-0 rounded-full bg-gradient-to-r from-rose-300 to-rose-500 transition-all duration-1000"></div>
                 </div>
               </div>
 
@@ -258,7 +401,7 @@
                 <div class="text-sm text-white/60">メガネの総額</div>
                 <div id="glassesTotalDisplay" class="number-tabular mt-2 text-3xl font-black md:text-5xl">0円</div>
                 <div class="mt-3 h-3 overflow-hidden rounded-full bg-white/8">
-                  <div id="glassesBar" class="h-full w-0 rounded-full bg-gradient-to-r from-sky-300 to-sky-500 transition-all duration-1000"></div>
+                  <div id="glassesBar" class="bar-shine h-full w-0 rounded-full bg-gradient-to-r from-sky-300 to-sky-500 transition-all duration-1000"></div>
                 </div>
               </div>
             </div>
@@ -332,52 +475,96 @@
 
     const formatYen = (value) => `${Math.round(value).toLocaleString('ja-JP')}円`;
 
-    const parseMoney = (value) => {
-      const normalized = String(value || '').replace(/[^\d]/g, '');
-      if (!normalized) return NaN;
-      return Number(normalized);
-    };
-
-    const sanitizeOnInput = (input) => {
-      input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^\d]/g, '').slice(0, 7);
-      });
-    };
-
-    sanitizeOnInput(contactInput);
-    sanitizeOnInput(glassesInput);
-
-    presetButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const value = btn.dataset.value;
-        contactInput.value = value;
-        highlightPreset(value);
-        clearError(contactError);
-      });
-    });
-
-    function highlightPreset(selectedValue) {
-      presetButtons.forEach((btn) => {
-        const active = btn.dataset.value === String(selectedValue);
-        btn.classList.toggle('bg-emerald-300/20', active);
-        btn.classList.toggle('border-emerald-300/40', active);
-        btn.classList.toggle('text-emerald-100', active);
-      });
+    function digitsOnly(value) {
+      return String(value || '').replace(/[^\d]/g, '');
     }
 
-    contactInput.addEventListener('input', () => {
-      highlightPreset(contactInput.value);
-    });
+    function parseMoney(value) {
+      const numeric = digitsOnly(value);
+      if (!numeric) return NaN;
+      return Number(numeric);
+    }
 
-    function showError(el, message) {
-      el.textContent = message;
-      el.classList.remove('hidden');
+    function formatInputValue(value) {
+      const numeric = digitsOnly(value);
+      return numeric ? Number(numeric).toLocaleString('ja-JP') : '';
     }
 
     function clearError(el) {
       el.textContent = '';
       el.classList.add('hidden');
     }
+
+    function showError(el, message) {
+      el.textContent = message;
+      el.classList.remove('hidden');
+    }
+
+    function highlightPreset(selectedValue) {
+      const normalized = digitsOnly(selectedValue);
+      presetButtons.forEach((btn) => {
+        const active = btn.dataset.value === normalized;
+        btn.classList.toggle('bg-emerald-300/20', active);
+        btn.classList.toggle('border-emerald-300/40', active);
+        btn.classList.toggle('text-emerald-100', active);
+        btn.classList.toggle('shadow-soft', active);
+      });
+    }
+
+    function setupInputBehavior(input) {
+      const shell = input.closest('[data-shell]');
+
+      input.addEventListener('focus', () => {
+        shell?.classList.add('focused');
+      });
+
+      input.addEventListener('blur', () => {
+        shell?.classList.remove('focused');
+        input.value = formatInputValue(input.value);
+      });
+
+      input.addEventListener('input', () => {
+        const cursorFromEnd = input.value.length - input.selectionStart;
+        const raw = digitsOnly(input.value).slice(0, 7);
+        const formatted = raw ? Number(raw).toLocaleString('ja-JP') : '';
+        input.value = formatted;
+
+        try {
+          const nextPos = Math.max(0, input.value.length - cursorFromEnd);
+          input.setSelectionRange(nextPos, nextPos);
+        } catch (_) {}
+
+        if (input === contactInput) {
+          highlightPreset(raw);
+          clearError(contactError);
+        }
+
+        if (input === glassesInput) {
+          clearError(glassesError);
+        }
+      });
+    }
+
+    function setupSelectBehavior(select) {
+      const shell = select.closest('[data-shell]');
+      select.addEventListener('focus', () => shell?.classList.add('focused'));
+      select.addEventListener('blur', () => shell?.classList.remove('focused'));
+      select.addEventListener('change', () => shell?.classList.remove('focused'));
+    }
+
+    setupInputBehavior(contactInput);
+    setupInputBehavior(glassesInput);
+    setupSelectBehavior(yearsSelect);
+
+    presetButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const value = btn.dataset.value;
+        contactInput.value = Number(value).toLocaleString('ja-JP');
+        highlightPreset(value);
+        clearError(contactError);
+        contactInput.focus();
+      });
+    });
 
     function validateInputs() {
       let valid = true;
@@ -408,6 +595,7 @@
 
     function animateValue(element, start, end, duration, formatter, withPop = false) {
       const startTime = performance.now();
+
       if (withPop) {
         element.classList.remove('animate-pop');
         void element.offsetWidth;
@@ -436,13 +624,15 @@
       const premiumRoom = savings - glasses;
 
       const opening = strongSavings
-        ? ` ${years}年間で計算すると、なんとコンタクト代より${formatYen(savings)}も差が出ます。`
-        : ` ${years}年間で見ると、コンタクトを続けるより${formatYen(savings)}お得になります。`;
+        ? `${years}年間で計算すると、なんとコンタクト代より${formatYen(savings)}も差が出ます。`
+        : `${years}年間で見ると、コンタクトを続けるより${formatYen(savings)}お得になります。`;
 
       const yearlyLine = `毎月${formatYen(monthly)}でも、年間では${formatYen(yearly)}、${years}年だと合計${formatYen(contactTotal)}になります。`;
 
       let closing = '';
-      if (premiumRoom > 0) {
+      if (savings <= 0) {
+        closing = `今回の条件では金額差は大きく出ませんが、目の負担軽減や使い分けの快適さという価値も十分あります。`;
+      } else if (premiumRoom > 0) {
         closing = `今回ご検討中の${formatYen(glasses)}のメガネを選んでも、長い目で見ると十分に納得感があります。少し良いフレームや快適性まで含めて考えられるのが大きな魅力です。`;
       } else {
         closing = `今回のメガネは見た目だけでなく、日々のコストを抑える選択としても非常に合理的です。`;
@@ -520,9 +710,8 @@ ${closing}`;
       }
     });
 
-    // 初期値
-    contactInput.value = '5000';
-    glassesInput.value = '30000';
+    contactInput.value = Number(5000).toLocaleString('ja-JP');
+    glassesInput.value = Number(30000).toLocaleString('ja-JP');
     highlightPreset('5000');
   </script>
 </body>
