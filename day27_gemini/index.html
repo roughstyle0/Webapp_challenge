@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圧倒的コスパ証明シミュレーター | Premium Lens & Frame</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            navy: '#0F172A',
+                            gold: '#F59E0B',
+                            green: '#10B981',
+                            light: '#F8FAFC',
+                            accent: '#3B82F6'
+                        }
+                    },
+                    animation: {
+                        'pop-in': 'popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.9) translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+                        },
+                        glow: {
+                            '0%': { textShadow: '0 0 10px rgba(16, 185, 129, 0.2)' },
+                            '100%': { textShadow: '0 0 20px rgba(16, 185, 129, 0.6), 0 0 30px rgba(16, 185, 129, 0.4)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #F8FAFC; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+        .bar-transition { transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-black text-brand-navy tracking-tight mb-2">
+                圧倒的コスパ証明<span class="text-brand-accent">シミュレーター</span>
+            </h1>
+            <p class="text-sm sm:text-base text-gray-500 font-medium">お客様に「良いメガネ」の本当の価値をお伝えするツール</p>
+        </header>
+
+        <!-- Main Input Section -->
+        <main id="input-section" class="glass-card rounded-3xl p-6 sm:p-10 transition-all duration-500">
+            <form id="calc-form" class="space-y-8">
+                
+                <!-- Q1. Contact Lens Cost -->
+                <div class="space-y-3">
+                    <label class="block text-lg font-bold text-gray-700">
+                        <span class="inline-block bg-brand-accent text-white rounded-full w-6 h-6 text-center text-sm leading-6 mr-2">1</span>
+                        現在のコンタクト代（1ヶ月）は？
+                    </label>
+                    <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-2">
+                        <button type="button" class="preset-btn border-2 border-gray-200 rounded-xl py-3 text-sm sm:text-base font-bold text-gray-600 hover:border-brand-accent hover:text-brand-accent transition-colors focus:outline-none" data-val="3000">約3,000円</button>
+                        <button type="button" class="preset-btn border-2 border-brand-accent bg-blue-50 rounded-xl py-3 text-sm sm:text-base font-bold text-brand-accent transition-colors focus:outline-none" data-val="5000">約5,000円</button>
+                        <button type="button" class="preset-btn border-2 border-gray-200 rounded-xl py-3 text-sm sm:text-base font-bold text-gray-600 hover:border-brand-accent hover:text-brand-accent transition-colors focus:outline-none" data-val="8000">約8,000円</button>
+                    </div>
+                    <div class="relative">
+                        <input type="number" id="contact-cost" value="5000" class="w-full text-right text-xl font-bold p-4 border-2 border-gray-200 rounded-xl focus:border-brand-accent focus:ring-0 transition-colors" placeholder="その他の金額" required min="0">
+                        <span class="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">円 / 月</span>
+                    </div>
+                </div>
+
+                <!-- Q2. Glasses Price -->
+                <div class="space-y-3">
+                    <label class="block text-lg font-bold text-gray-700" for="glasses-cost">
+                        <span class="inline-block bg-brand-accent text-white rounded-full w-6 h-6 text-center text-sm leading-6 mr-2">2</span>
+                        検討中のメガネの金額は？
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="glasses-cost" value="30000" class="w-full text-right text-2xl text-brand-navy font-black p-5 border-2 border-gray-200 rounded-xl focus:border-brand-accent focus:ring-0 transition-colors shadow-inner" placeholder="例: 30000" required min="0">
+                        <span class="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold text-lg">円</span>
+                    </div>
+                    <p id="error-msg" class="text-red-500 text-sm font-bold hidden mt-1">※金額を正しく入力してください</p>
+                </div>
+
+                <!-- Q3. Years of Use -->
+                <div class="space-y-3">
+                    <label class="block text-lg font-bold text-gray-700">
+                        <span class="inline-block bg-brand-accent text-white rounded-full w-6 h-6 text-center text-sm leading-6 mr-2">3</span>
+                        メガネの使用想定年数は？
+                    </label>
+                    <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="years" value="2" class="peer sr-only">
+                            <div class="rounded-xl border-2 border-gray-200 p-4 text-center font-bold text-gray-600 peer-checked:border-brand-accent peer-checked:bg-blue-50 peer-checked:text-brand-accent transition-all">2年</div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="years" value="3" class="peer sr-only" checked>
+                            <div class="rounded-xl border-2 border-gray-200 p-4 text-center font-bold text-gray-600 peer-checked:border-brand-accent peer-checked:bg-blue-50 peer-checked:text-brand-accent transition-all">3年</div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="years" value="5" class="peer sr-only">
+                            <div class="rounded-xl border-2 border-gray-200 p-4 text-center font-bold text-gray-600 peer-checked:border-brand-accent peer-checked:bg-blue-50 peer-checked:text-brand-accent transition-all">5年</div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-brand-navy text-white font-black text-xl py-5 rounded-2xl hover:bg-gray-800 transform hover:-translate-y-1 transition-all shadow-lg hover:shadow-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        生涯コストを比較する
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <!-- Results Section (Hidden by default) -->
+        <main id="result-section" class="hidden opacity-0 transform scale-95 transition-all duration-700 mt-8 w-full">
+            <div class="glass-card rounded-3xl overflow-hidden shadow-2xl">
+                <!-- Header part -->
+                <div class="bg-brand-navy text-white text-center py-6">
+                    <h2 class="text-2xl font-black">シミュレーション結果</h2>
+                    <p class="text-gray-300 text-sm mt-1"><span id="res-years" class="font-bold text-brand-gold text-lg">3</span>年間使い続けた場合の総額比較</p>
+                </div>
+
+                <div class="p-6 sm:p-10 space-y-10">
+                    
+                    <!-- Graph Chart -->
+                    <div class="space-y-6">
+                        <!-- Contact Bar -->
+                        <div>
+                            <div class="flex justify-between text-sm font-bold mb-1">
+                                <span class="text-gray-500">コンタクトレンズ（継続）</span>
+                                <span class="text-gray-700"><span id="res-contact-total" class="text-xl">0</span> 円</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-6 overflow-hidden">
+                                <div id="bar-contact" class="bg-gray-400 h-6 rounded-full bar-transition w-0 relative"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Glasses Bar -->
+                        <div>
+                            <div class="flex justify-between text-sm font-bold mb-1">
+                                <span class="text-brand-accent">今回ご検討のメガネ</span>
+                                <span class="text-brand-navy"><span id="res-glasses-total" class="text-xl">0</span> 円</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-6 overflow-hidden">
+                                <div id="bar-glasses" class="bg-brand-accent h-6 rounded-full bar-transition w-0 relative"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- The Big Reveal -->
+                    <div class="text-center bg-green-50 rounded-2xl p-6 sm:p-8 border-2 border-green-100 animate-pop-in shadow-inner" style="animation-delay: 0.5s;">
+                        <p class="text-sm sm:text-base text-green-700 font-bold mb-2">メガネに切り替える（併用する）ことで…</p>
+                        <h3 class="text-3xl sm:text-5xl font-black text-brand-green tracking-tight leading-tight animate-glow">
+                            <span class="text-2xl sm:text-3xl text-green-600 block sm:inline mb-2 sm:mb-0">節約できる金額</span><br class="sm:hidden">
+                            <span id="res-saved" class="text-5xl sm:text-7xl">0</span><span class="text-3xl sm:text-4xl text-green-600 ml-1">円</span>
+                        </h3>
+                    </div>
+
+                    <!-- AI Generated Sales Talk -->
+                    <div class="bg-white border-l-4 border-brand-gold rounded-r-xl p-5 shadow-sm">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-5 h-5 text-brand-gold mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+                            <span class="font-bold text-gray-700 text-sm">おすすめ提案トーク</span>
+                        </div>
+                        <p id="res-script" class="text-gray-600 text-sm sm:text-base font-medium leading-relaxed">
+                            <!-- Script injected by JS -->
+                        </p>
+                    </div>
+
+                    <!-- Reset Button -->
+                    <div class="text-center pt-4">
+                        <button type="button" id="reset-btn" class="text-gray-500 font-bold text-sm hover:text-brand-accent transition-colors underline decoration-2 underline-offset-4">
+                            条件を変えて再計算する
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const form = document.getElementById('calc-form');
+            const inputSection = document.getElementById('input-section');
+            const resultSection = document.getElementById('result-section');
+            const errorMsg = document.getElementById('error-msg');
+            
+            const inputContact = document.getElementById('contact-cost');
+            const inputGlasses = document.getElementById('glasses-cost');
+            const presetBtns = document.querySelectorAll('.preset-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            const resYears = document.getElementById('res-years');
+            const resContactTotal = document.getElementById('res-contact-total');
+            const resGlassesTotal = document.getElementById('res-glasses-total');
+            const resSaved = document.getElementById('res-saved');
+            const resScript = document.getElementById('res-script');
+            const barContact = document.getElementById('bar-contact');
+            const barGlasses = document.getElementById('bar-glasses');
+
+            // --- UX Interactions ---
+            // Preset Button Logic
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Reset styling
+                    presetBtns.forEach(b => {
+                        b.classList.remove('border-brand-accent', 'bg-blue-50', 'text-brand-accent');
+                        b.classList.add('border-gray-200', 'text-gray-600');
+                    });
+                    // Apply styling to clicked
+                    const target = e.target;
+                    target.classList.remove('border-gray-200', 'text-gray-600');
+                    target.classList.add('border-brand-accent', 'bg-blue-50', 'text-brand-accent');
+                    // Update input
+                    inputContact.value = target.getAttribute('data-val');
+                });
+            });
+
+            // Sync manual input with preset buttons visually
+            inputContact.addEventListener('input', (e) => {
+                const val = e.target.value;
+                presetBtns.forEach(b => {
+                    if(b.getAttribute('data-val') === val) {
+                        b.classList.remove('border-gray-200', 'text-gray-600');
+                        b.classList.add('border-brand-accent', 'bg-blue-50', 'text-brand-accent');
+                    } else {
+                        b.classList.remove('border-brand-accent', 'bg-blue-50', 'text-brand-accent');
+                        b.classList.add('border-gray-200', 'text-gray-600');
+                    }
+                });
+            });
+
+            // --- Number Animation Function ---
+            const animateValue = (obj, start, end, duration) => {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    // easeOutQuart
+                    const easeProgress = 1 - Math.pow(1 - progress, 4); 
+                    const currentVal = Math.floor(easeProgress * (end - start) + start);
+                    obj.innerHTML = currentVal.toLocaleString();
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    } else {
+                        obj.innerHTML = end.toLocaleString();
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            // --- Main Calculation Logic ---
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                errorMsg.classList.add('hidden');
+
+                const contactMonthly = parseInt(inputContact.value, 10);
+                const glassesPrice = parseInt(inputGlasses.value, 10);
+                const years = parseInt(document.querySelector('input[name="years"]:checked').value, 10);
+
+                // Resilience: basic validation
+                if (isNaN(contactMonthly) || isNaN(glassesPrice) || contactMonthly < 0 || glassesPrice <= 0) {
+                    errorMsg.classList.remove('hidden');
+                    inputGlasses.focus();
+                    return;
+                }
+
+                // Calculations
+                const contactYearly = contactMonthly * 12;
+                const contactTotal = contactYearly * years;
+                const saved = contactTotal - glassesPrice;
+
+                // Update UI Values
+                resYears.innerText = years;
+                resScript.innerHTML = generateScript(years, saved, glassesPrice);
+
+                // UI Transition
+                inputSection.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+                
+                // Allow display:none to process before adding visible classes
+                setTimeout(() => {
+                    resultSection.classList.remove('opacity-0', 'scale-95');
+                    resultSection.classList.add('opacity-100', 'scale-100');
+                    
+                    // Trigger Bar Animations
+                    // Calculate relative widths (max 100%)
+                    const maxVal = Math.max(contactTotal, glassesPrice);
+                    const contactWidth = (contactTotal / maxVal) * 100;
+                    const glassesWidth = (glassesPrice / maxVal) * 100;
+
+                    barContact.style.width = `${contactWidth}%`;
+                    barGlasses.style.width = `${glassesWidth}%`;
+
+                    // Trigger Number Animations
+                    animateValue(resContactTotal, 0, contactTotal, 1500);
+                    animateValue(resGlassesTotal, 0, glassesPrice, 1500);
+                    
+                    // Delay the "Saved" amount animation for dramatic effect
+                    setTimeout(() => {
+                        if(saved >= 0){
+                            animateValue(resSaved, 0, saved, 2000);
+                        } else {
+                            resSaved.innerText = "0"; // Handle negative saving gracefully in UI
+                            document.querySelector('#res-saved').parentElement.innerHTML = `<span class="text-3xl text-gray-600">費用はほぼ同等です</span>`;
+                        }
+                    }, 500);
+
+                }, 50);
+            });
+
+            // --- Script Generator ---
+            const generateScript = (years, saved, glassesPrice) => {
+                const formattedSaved = (saved / 10000).toFixed(1); // Convert to 万
+                const formattedPrice = glassesPrice.toLocaleString();
+
+                if (saved >= 50000) {
+                    return `「${years}年間で計算すると、なんとコンタクト代より<span class="text-brand-gold font-bold text-lg">約${formattedSaved}万円</span>も節約になります！これなら、今回気になっている${formattedPrice}円の少し良いフレームを選んでも、お釣りが来るくらい圧倒的にお得ですよ。目の負担も減らせて一石二鳥ですね！」`;
+                } else if (saved > 0) {
+                    return `「${years}年間で計算すると、コンタクト代より<span class="text-brand-gold font-bold text-lg">約${formattedSaved}万円</span>浮く計算になります。今回ご検討の${formattedPrice}円のメガネをご購入いただいても、トータルで見れば確実にプラスになりますよ！」`;
+                } else {
+                    return `「${years}年間で計算すると、費用はほぼ同じ水準です。しかし、目の健康や毎日のケアの時間を考えると、一生モノとなる上質なメガネを一つ持っておくことは非常に賢い選択です。ぜひ${formattedPrice}円の価値を体感してください。」`;
+                }
+            };
+
+            // --- Reset Logic ---
+            resetBtn.addEventListener('click', () => {
+                resultSection.classList.add('opacity-0', 'scale-95');
+                
+                setTimeout(() => {
+                    resultSection.classList.add('hidden');
+                    inputSection.classList.remove('hidden');
+                    
+                    // Reset visual states
+                    barContact.style.width = '0%';
+                    barGlasses.style.width = '0%';
+                    resContactTotal.innerText = '0';
+                    resGlassesTotal.innerText = '0';
+                    resSaved.innerText = '0';
+                    // restore saved HTML if it was overwritten
+                    if(!document.getElementById('res-saved')){
+                        const h3 = document.querySelector('.animate-glow');
+                        h3.innerHTML = `<span class="text-2xl sm:text-3xl text-green-600 block sm:inline mb-2 sm:mb-0">節約できる金額</span><br class="sm:hidden"><span id="res-saved" class="text-5xl sm:text-7xl">0</span><span class="text-3xl sm:text-4xl text-green-600 ml-1">円</span>`;
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 500); // Wait for fade out
+            });
+        });
+    </script>
+</body>
+</html>
