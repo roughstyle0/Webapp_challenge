@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical Fitting Ratio Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans JP', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f9f9f9',
+                            100: '#f3f4f6',
+                            800: '#1f2937',
+                            900: '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Hide spin buttons for number inputs */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+        
+        /* Custom Input Focus */
+        .glass-input:focus-within {
+            box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.1);
+            border-color: #111827;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8 antialiased text-gray-800">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.06)] overflow-hidden">
+        <!-- Header -->
+        <div class="bg-brand-900 text-white p-8 text-center relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
+            <div class="absolute -left-10 -bottom-10 w-24 h-24 bg-white opacity-5 rounded-full blur-xl"></div>
+            <h1 class="text-2xl font-medium tracking-widest uppercase mb-1">Fit Measure</h1>
+            <p class="text-xs text-gray-400 tracking-[0.2em] font-serif italic">Golden Ratio Checker</p>
+        </div>
+
+        <div class="p-8">
+            <!-- Form -->
+            <form id="checkerForm" class="space-y-6">
+                <!-- PD Input -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-600">お客様のPD <span class="text-xs font-normal text-gray-400">(瞳孔間距離)</span></label>
+                    <div class="relative glass-input transition-all duration-300 rounded-xl border border-gray-200 bg-brand-50">
+                        <input type="number" id="inputPd" inputmode="decimal" placeholder="例: 62" step="0.1" required
+                            class="block w-full px-5 py-4 bg-transparent border-none focus:ring-0 text-xl font-medium text-brand-900 placeholder-gray-300">
+                        <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 font-medium">mm</span>
+                    </div>
+                </div>
+
+                <!-- Frame Inputs -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-600">レンズ幅</label>
+                        <div class="relative glass-input transition-all duration-300 rounded-xl border border-gray-200 bg-brand-50">
+                            <input type="number" id="inputLens" inputmode="decimal" placeholder="例: 48" step="0.1" required
+                                class="block w-full px-4 py-4 bg-transparent border-none focus:ring-0 text-xl font-medium text-brand-900 placeholder-gray-300">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">mm</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-600">ブリッジ幅</label>
+                        <div class="relative glass-input transition-all duration-300 rounded-xl border border-gray-200 bg-brand-50">
+                            <input type="number" id="inputBridge" inputmode="decimal" placeholder="例: 20" step="0.1" required
+                                class="block w-full px-4 py-4 bg-transparent border-none focus:ring-0 text-xl font-medium text-brand-900 placeholder-gray-300">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">mm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="errorArea" class="hidden text-red-500 text-sm font-medium py-2 px-3 bg-red-50 rounded-lg border border-red-100"></div>
+
+                <button type="submit" 
+                    class="w-full mt-2 bg-brand-900 text-white py-4 px-6 rounded-xl font-medium tracking-wider hover:bg-brand-800 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-all active:scale-[0.98] shadow-lg shadow-gray-900/10 flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    黄金比をチェック
+                </button>
+            </form>
+
+            <!-- Result Area -->
+            <div id="resultArea" class="hidden mt-10 pt-8 border-t border-gray-100">
+                <div class="text-center mb-6">
+                    <span class="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">Analysis Result</span>
+                </div>
+
+                <!-- Status Header -->
+                <div class="flex flex-col items-center justify-center mb-8">
+                    <div id="statusIcon" class="w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors duration-500">
+                        <!-- SVG injected by JS -->
+                    </div>
+                    <h2 id="statusTitle" class="text-2xl font-bold tracking-tight text-center"></h2>
+                </div>
+
+                <!-- Data Display -->
+                <div class="bg-brand-50 rounded-2xl p-5 mb-8 flex justify-between items-center text-sm border border-gray-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-900" id="dataAccent"></div>
+                    <div class="text-center flex-1">
+                        <p class="text-gray-500 text-xs font-medium mb-1">フレームPD</p>
+                        <p class="font-bold text-xl text-gray-800"><span id="outFpd">0</span><span class="text-xs font-normal text-gray-400 ml-0.5">mm</span></p>
+                    </div>
+                    <div class="w-px h-10 bg-gray-200 mx-1"></div>
+                    <div class="text-center flex-1">
+                        <p class="text-gray-500 text-xs font-medium mb-1">お客様PD</p>
+                        <p class="font-bold text-xl text-gray-800"><span id="outPd">0</span><span class="text-xs font-normal text-gray-400 ml-0.5">mm</span></p>
+                    </div>
+                    <div class="w-px h-10 bg-gray-200 mx-1"></div>
+                    <div class="text-center flex-1">
+                        <p class="text-gray-500 text-xs font-medium mb-1">差分 (FPD-PD)</p>
+                        <p class="font-bold text-xl" id="outDiff"><span id="diffVal">0</span><span class="text-xs font-normal ml-0.5">mm</span></p>
+                    </div>
+                </div>
+
+                <!-- Talk Script Area -->
+                <div id="talkBox" class="relative bg-white border-2 rounded-2xl p-6 shadow-sm transition-colors duration-300">
+                    <div class="absolute -top-3 left-6 bg-white px-3 text-[10px] font-bold tracking-wider rounded-full border border-gray-200 text-gray-500 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        SUGGESTION
+                    </div>
+                    <p id="talkText" class="text-gray-700 text-[15px] leading-relaxed font-medium"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('checkerForm');
+            const resultArea = document.getElementById('resultArea');
+            const errorArea = document.getElementById('errorArea');
+
+            // SVGs
+            const iconPerfect = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+            const iconWarning = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+            const iconSmall = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                errorArea.classList.add('hidden');
+                
+                // Get values
+                const pd = parseFloat(document.getElementById('inputPd').value);
+                const lens = parseFloat(document.getElementById('inputLens').value);
+                const bridge = parseFloat(document.getElementById('inputBridge').value);
+
+                // Validation
+                if (isNaN(pd) || isNaN(lens) || isNaN(bridge) || pd <= 0 || lens <= 0 || bridge <= 0) {
+                    errorArea.textContent = '正しい数値を入力してください。';
+                    errorArea.classList.remove('hidden');
+                    return;
+                }
+
+                // Calculate
+                const fpd = lens + bridge;
+                const diff = fpd - pd;
+                const absDiff = Math.abs(diff);
+
+                // Update UI Data
+                document.getElementById('outFpd').textContent = fpd.toFixed(1).replace(/\.0$/, '');
+                document.getElementById('outPd').textContent = pd.toFixed(1).replace(/\.0$/, '');
+                
+                const diffElem = document.getElementById('outDiff');
+                const diffValElem = document.getElementById('diffVal');
+                const formattedDiff = (diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, '');
+                diffValElem.textContent = formattedDiff;
+
+                // Logic & Content
+                const statusIcon = document.getElementById('statusIcon');
+                const statusTitle = document.getElementById('statusTitle');
+                const talkText = document.getElementById('talkText');
+                const talkBox = document.getElementById('talkBox');
+                const dataAccent = document.getElementById('dataAccent');
+
+                // Reset classes
+                statusIcon.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors duration-500';
+                statusTitle.className = 'text-2xl font-bold tracking-tight text-center';
+                diffElem.className = 'font-bold text-xl';
+                talkBox.className = 'relative bg-white border-2 rounded-2xl p-6 shadow-sm transition-colors duration-300';
+                dataAccent.className = 'absolute left-0 top-0 bottom-0 w-1';
+
+                if (diff >= 2 && diff <= 6) {
+                    // Ideal
+                    statusIcon.innerHTML = iconPerfect;
+                    statusIcon.classList.add('bg-emerald-100');
+                    statusTitle.textContent = '✨ 黄金比ピタリ！ ✨';
+                    statusTitle.classList.add('text-emerald-700');
+                    diffElem.classList.add('text-emerald-600');
+                    talkBox.classList.add('border-emerald-100', 'bg-emerald-50/30');
+                    dataAccent.classList.add('bg-emerald-500');
+                    talkText.textContent = 'お客様の黒目の位置がレンズのちょうど真ん中（やや内側）にくる、最も美しく見える完璧なサイズ感です！';
+                } else if (diff >= 7) {
+                    // Too Large
+                    statusIcon.innerHTML = iconWarning;
+                    statusIcon.classList.add('bg-amber-100');
+                    statusTitle.textContent = '⚠️ 少しフレームが大きめです';
+                    statusTitle.classList.add('text-amber-700');
+                    diffElem.classList.add('text-amber-600');
+                    talkBox.classList.add('border-amber-100', 'bg-amber-50/30');
+                    dataAccent.classList.add('bg-amber-500');
+                    talkText.textContent = 'デザインはとても素敵なのですが、お客様のお顔の小ささに対して少しだけメガネが大きく、黒目が内側に寄って見えやすいサイズ感です。もう少しだけ小ぶりな〇〇型のフレームも掛けて比較してみませんか？';
+                } else {
+                    // Too Small (diff <= 1)
+                    statusIcon.innerHTML = iconSmall;
+                    statusIcon.classList.add('bg-blue-100');
+                    statusTitle.textContent = '⚠️ 少しフレームが小さめです';
+                    statusTitle.classList.add('text-blue-700');
+                    diffElem.classList.add('text-blue-600');
+                    talkBox.classList.add('border-blue-100', 'bg-blue-50/30');
+                    dataAccent.classList.add('bg-blue-500');
+                    talkText.textContent = 'お客様のしっかりとした瞳の印象に対して、フレームが少し窮屈になってしまうサイズ感です。もう少しだけゆとりのあるサイズにすると、お顔全体のバランスがグッと引き締まりますよ！';
+                }
+
+                // Show result with animation
+                resultArea.classList.remove('hidden');
+                
+                // Retrigger animation
+                resultArea.classList.remove('fade-in');
+                void resultArea.offsetWidth; // trigger reflow
+                resultArea.classList.add('fade-in');
+
+                // Scroll to result smoothly if needed
+                setTimeout(() => {
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
