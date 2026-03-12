@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PD × フレーム黄金比チェッカー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg1: #f6f7fb;
+      --bg2: #eef2ff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: rgba(15, 23, 42, 0.08);
+      --glass: rgba(255, 255, 255, 0.72);
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.10);
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #ffffff 0%, #f8fafc 28%, transparent 55%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.55);
+      box-shadow: var(--shadow);
+    }
+
+    .metric-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.68), rgba(255,255,255,0.18));
+      pointer-events: none;
+    }
+
+    .status-ideal {
+      background: linear-gradient(135deg, rgba(16,185,129,0.16), rgba(6,182,212,0.12));
+      border-color: rgba(16,185,129,0.28);
+    }
+
+    .status-large {
+      background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(251,191,36,0.12));
+      border-color: rgba(245,158,11,0.28);
+    }
+
+    .status-small {
+      background: linear-gradient(135deg, rgba(244,63,94,0.14), rgba(251,113,133,0.10));
+      border-color: rgba(244,63,94,0.25);
+    }
+
+    .measure-line {
+      background-image:
+        repeating-linear-gradient(
+          to right,
+          rgba(15,23,42,0.14) 0,
+          rgba(15,23,42,0.14) 1px,
+          transparent 1px,
+          transparent 16px
+        );
+    }
+
+    .input-highlight:focus {
+      box-shadow:
+        0 0 0 4px rgba(99, 102, 241, 0.10),
+        0 10px 30px rgba(99, 102, 241, 0.10);
+    }
+
+    .fade-up {
+      animation: fadeUp .35s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.64);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <!-- Left -->
+      <section class="glass rounded-3xl p-5 sm:p-7">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Optical Sizing Assistant
+            </p>
+            <h1 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              黒目の位置（PD）× フレーム黄金比チェッカー
+            </h1>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+              お客様のPDとフレームPDを客観比較し、
+              <span class="font-semibold text-slate-800">「ちょうど良い」「少し大きめ」「少し小さめ」</span>
+              をその場でスマートに説明できます。
+            </p>
+          </div>
+
+          <div class="pill inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-slate-700">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            客観判定モード
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-slate-200/70 bg-white/70 p-4 sm:p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900 sm:text-base">入力項目</h2>
+              <p class="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                単位はすべて mm。スマホでも打ちやすい数値入力に最適化しています。
+              </p>
+            </div>
+            <div class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 sm:block">
+              3項目だけ
+            </div>
+          </div>
+
+          <form id="checkerForm" class="mt-5 space-y-4" novalidate>
+            <div class="grid gap-4">
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-800">
+                  お客様のPD（瞳孔間距離）
+                </span>
+                <div class="relative">
+                  <input
+                    id="pd"
+                    name="pd"
+                    type="number"
+                    inputmode="decimal"
+                    min="40"
+                    max="90"
+                    step="0.5"
+                    placeholder="例：62"
+                    class="input-highlight w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-16 text-lg font-semibold text-slate-900 outline-none transition"
+                    aria-describedby="pdError"
+                  />
+                  <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">mm</span>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">一般的な入力目安：55〜70 mm 前後</p>
+                <p id="pdError" class="mt-1 min-h-[1.25rem] text-sm font-medium text-rose-600"></p>
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-800">
+                  フレームのレンズ幅
+                </span>
+                <div class="relative">
+                  <input
+                    id="lens"
+                    name="lens"
+                    type="number"
+                    inputmode="numeric"
+                    min="30"
+                    max="80"
+                    step="1"
+                    placeholder="例：48"
+                    class="input-highlight w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-16 text-lg font-semibold text-slate-900 outline-none transition"
+                    aria-describedby="lensError"
+                  />
+                  <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">mm</span>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">テンプル印字の「48□20」ならレンズ幅は 48</p>
+                <p id="lensError" class="mt-1 min-h-[1.25rem] text-sm font-medium text-rose-600"></p>
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-sm font-semibold text-slate-800">
+                  フレームのブリッジ幅
+                </span>
+                <div class="relative">
+                  <input
+                    id="bridge"
+                    name="bridge"
+                    type="number"
+                    inputmode="numeric"
+                    min="10"
+                    max="30"
+                    step="1"
+                    placeholder="例：20"
+                    class="input-highlight w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-16 text-lg font-semibold text-slate-900 outline-none transition"
+                    aria-describedby="bridgeError"
+                  />
+                  <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">mm</span>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">テンプル印字の「48□20」ならブリッジ幅は 20</p>
+                <p id="bridgeError" class="mt-1 min-h-[1.25rem] text-sm font-medium text-rose-600"></p>
+              </label>
+            </div>
+
+            <div class="pt-2">
+              <button
+                type="submit"
+                class="w-full rounded-2xl bg-slate-950 px-5 py-4 text-base font-semibold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300"
+              >
+                黄金比をチェックする
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-slate-200/70 bg-white/60 p-4 sm:p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-900 sm:text-base">判定の見方</h3>
+              <p class="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                FPD = レンズ幅 + ブリッジ幅。PDとの差でサイズバランスを判定します。
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+              <p class="text-sm font-semibold text-emerald-800">差が 2〜6 mm：理想的</p>
+              <p class="mt-1 text-xs leading-5 text-emerald-700">
+                黒目がレンズ中央よりやや内側に収まり、美しく自然に見えやすいゾーンです。
+              </p>
+            </div>
+            <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+              <p class="text-sm font-semibold text-amber-800">差が 7 mm以上：少し大きめ</p>
+              <p class="mt-1 text-xs leading-5 text-amber-700">
+                黒目が内側に寄って見えやすく、顔に対してフレームが大きく感じられる可能性があります。
+              </p>
+            </div>
+            <div class="rounded-2xl border border-rose-200 bg-rose-50/80 p-4">
+              <p class="text-sm font-semibold text-rose-800">差が 1 mm以下：少し小さめ</p>
+              <p class="mt-1 text-xs leading-5 text-rose-700">
+                黒目位置に対して窮屈に見えやすく、目元が外側に張って見える可能性があります。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right -->
+      <section class="glass metric-card rounded-3xl p-5 sm:p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Result Dashboard
+            </p>
+            <h2 class="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
+              判定結果
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              お客様にも見せやすい、数値ベースの説明パネルです。
+            </p>
+          </div>
+
+          <button
+            id="sampleBtn"
+            type="button"
+            class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white"
+          >
+            サンプル入力
+          </button>
+        </div>
+
+        <div class="mt-6 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-2xl border border-slate-200 bg-white/75 p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">PD</p>
+            <p id="pdValue" class="mt-3 text-3xl font-bold tracking-tight text-slate-900">--</p>
+            <p class="mt-1 text-sm text-slate-500">お客様の瞳孔間距離</p>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white/75 p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">FPD</p>
+            <p id="fpdValue" class="mt-3 text-3xl font-bold tracking-tight text-slate-900">--</p>
+            <p class="mt-1 text-sm text-slate-500">フレームPD</p>
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white/75 p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Diff</p>
+            <p id="diffValue" class="mt-3 text-3xl font-bold tracking-tight text-slate-900">--</p>
+            <p class="mt-1 text-sm text-slate-500">FPD - PD</p>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-slate-200 bg-white/72 p-4 sm:p-5">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold text-slate-900">バランススケール</p>
+            <p id="scaleHint" class="text-xs font-medium text-slate-500">未計算</p>
+          </div>
+
+          <div class="mt-4">
+            <div class="measure-line relative h-16 rounded-2xl border border-slate-200 bg-slate-50">
+              <div class="absolute inset-y-0 left-[20%] w-px bg-slate-300"></div>
+              <div class="absolute inset-y-0 left-1/2 w-px bg-slate-400"></div>
+              <div class="absolute inset-y-0 left-[80%] w-px bg-slate-300"></div>
+
+              <div class="absolute left-[8%] top-3 text-[11px] font-medium text-slate-400">小さめ</div>
+              <div class="absolute left-1/2 top-3 -translate-x-1/2 text-[11px] font-medium text-slate-500">理想</div>
+              <div class="absolute right-[8%] top-3 text-[11px] font-medium text-slate-400">大きめ</div>
+
+              <div
+                id="scaleNeedle"
+                class="absolute top-7 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white bg-slate-900 shadow-lg transition-all duration-500"
+                style="left: 50%;"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="resultCard"
+          class="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white/45 p-5 sm:p-6"
+        >
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white shadow">
+              <span class="text-lg">👓</span>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-slate-900">判定待ち</p>
+              <p class="text-xs text-slate-500">数値を入力してチェックしてください</p>
+            </div>
+          </div>
+
+          <div class="mt-5 space-y-4">
+            <div>
+              <p id="resultHeadline" class="text-2xl font-bold tracking-tight text-slate-900">
+                まだ判定されていません
+              </p>
+              <p id="resultSummary" class="mt-2 text-sm leading-6 text-slate-600">
+                左の3項目を入力すると、黄金比判定と接客トークがここに表示されます。
+              </p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white/80 p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                接客トーク提案
+              </p>
+              <p id="talkText" class="mt-3 text-sm leading-7 text-slate-700">
+                「システム上でも、サイズのバランスを客観的に確認できます。」という見せ方で、
+                お客様の納得感を高められます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-950 p-4 text-slate-100 sm:p-5">
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mini Script</p>
+          <p class="mt-2 text-sm leading-6 text-slate-200">
+            「デザインの好み」と「似合うサイズ感」は別で見られます。今のデザイン軸はそのままに、
+            もう少しだけサイズ違いを比べると、黒目位置がさらにきれいに整います。
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const form = document.getElementById('checkerForm');
+      const pdInput = document.getElementById('pd');
+      const lensInput = document.getElementById('lens');
+      const bridgeInput = document.getElementById('bridge');
+      const sampleBtn = document.getElementById('sampleBtn');
+
+      const pdError = document.getElementById('pdError');
+      const lensError = document.getElementById('lensError');
+      const bridgeError = document.getElementById('bridgeError');
+
+      const pdValue = document.getElementById('pdValue');
+      const fpdValue = document.getElementById('fpdValue');
+      const diffValue = document.getElementById('diffValue');
+      const resultCard = document.getElementById('resultCard');
+      const resultHeadline = document.getElementById('resultHeadline');
+      const resultSummary = document.getElementById('resultSummary');
+      const talkText = document.getElementById('talkText');
+      const scaleNeedle = document.getElementById('scaleNeedle');
+      const scaleHint = document.getElementById('scaleHint');
+
+      function parseNumber(value) {
+        const normalized = String(value).trim().replace(',', '.');
+        if (normalized === '') return NaN;
+        return Number(normalized);
+      }
+
+      function clearErrors() {
+        pdError.textContent = '';
+        lensError.textContent = '';
+        bridgeError.textContent = '';
+
+        [pdInput, lensInput, bridgeInput].forEach((input) => {
+          input.classList.remove('border-rose-300', 'bg-rose-50');
+          input.classList.add('border-slate-200', 'bg-white');
+        });
+      }
+
+      function setFieldError(input, errorElement, message) {
+        errorElement.textContent = message;
+        input.classList.remove('border-slate-200', 'bg-white');
+        input.classList.add('border-rose-300', 'bg-rose-50');
+      }
+
+      function formatMm(value, allowDecimal = false) {
+        if (!Number.isFinite(value)) return '--';
+        if (allowDecimal && !Number.isInteger(value)) {
+          return value.toFixed(1) + ' mm';
+        }
+        return Math.round(value) + ' mm';
+      }
+
+      function updateScale(diff) {
+        if (!Number.isFinite(diff)) {
+          scaleNeedle.style.left = '50%';
+          scaleHint.textContent = '未計算';
+          return;
+        }
+
+        const min = -2;
+        const max = 12;
+        const clamped = Math.max(min, Math.min(max, diff));
+        const percent = ((clamped - min) / (max - min)) * 100;
+        scaleNeedle.style.left = percent + '%';
+
+        if (diff <= 1) {
+          scaleHint.textContent = '小さめ寄り';
+        } else if (diff >= 2 && diff <= 6) {
+          scaleHint.textContent = '理想ゾーン';
+        } else {
+          scaleHint.textContent = '大きめ寄り';
+        }
+      }
+
+      function validateInputs(pd, lens, bridge) {
+        let isValid = true;
+        clearErrors();
+
+        if (!Number.isFinite(pd)) {
+          setFieldError(pdInput, pdError, 'PDを入力してください。');
+          isValid = false;
+        } else if (pd < 40 || pd > 90) {
+          setFieldError(pdInput, pdError, 'PDは 40〜90 mm の範囲で入力してください。');
+          isValid = false;
+        }
+
+        if (!Number.isFinite(lens)) {
+          setFieldError(lensInput, lensError, 'レンズ幅を入力してください。');
+          isValid = false;
+        } else if (lens < 30 || lens > 80) {
+          setFieldError(lensInput, lensError, 'レンズ幅は 30〜80 mm の範囲で入力してください。');
+          isValid = false;
+        }
+
+        if (!Number.isFinite(bridge)) {
+          setFieldError(bridgeInput, bridgeError, 'ブリッジ幅を入力してください。');
+          isValid = false;
+        } else if (bridge < 10 || bridge > 30) {
+          setFieldError(bridgeInput, bridgeError, 'ブリッジ幅は 10〜30 mm の範囲で入力してください。');
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function getJudgement(diff) {
+        if (diff >= 2 && diff <= 6) {
+          return {
+            headline: '✨黄金比ピタリ！✨',
+            summary: 'お客様の黒目の位置がレンズのちょうど真ん中（やや内側）にくる、最も美しく見える完璧なサイズ感です！',
+            talk: 'お客様の黒目の位置がレンズのちょうど真ん中（やや内側）にくる、最も美しく見える完璧なサイズ感です！',
+            className: 'status-ideal',
+            badgeTone: '理想的なサイズバランス'
+          };
+        }
+
+        if (diff >= 7) {
+          return {
+            headline: '⚠️少しフレームが大きめです',
+            summary: 'フレームPDが広めで、黒目がやや内側に寄って見えやすいサイズ感です。',
+            talk: 'デザインはとても素敵なのですが、お客様のお顔の小ささに対して少しだけメガネが大きく、黒目が内側に寄って見えやすいサイズ感です。もう少しだけ小ぶりな〇〇型のフレームも掛けて比較してみませんか？',
+            className: 'status-large',
+            badgeTone: '大きめのサイズバランス'
+          };
+        }
+
+        return {
+          headline: '⚠️少しフレームが小さめです',
+          summary: 'フレームPDにゆとりが少なく、目元がやや窮屈に見えやすいサイズ感です。',
+          talk: 'お客様のしっかりとした瞳の印象に対して、フレームが少し窮屈になってしまうサイズ感です。もう少しだけゆとりのあるサイズにすると、お顔全体のバランスがグッと引き締まりますよ！',
+          className: 'status-small',
+          badgeTone: '小さめのサイズバランス'
+        };
+      }
+
+      function renderResult(pd, lens, bridge) {
+        const fpd = lens + bridge;
+        const diff = fpd - pd;
+        const judgement = getJudgement(diff);
+
+        pdValue.textContent = formatMm(pd, true);
+        fpdValue.textContent = formatMm(fpd, true);
+        diffValue.textContent = formatMm(diff, true);
+
+        resultHeadline.textContent = judgement.headline;
+        resultSummary.textContent = judgement.summary;
+        talkText.textContent = judgement.talk;
+
+        resultCard.className =
+          'mt-6 rounded-3xl border p-5 sm:p-6 fade-up ' + judgement.className;
+
+        updateScale(diff);
+      }
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const pd = parseNumber(pdInput.value);
+        const lens = parseNumber(lensInput.value);
+        const bridge = parseNumber(bridgeInput.value);
+
+        if (!validateInputs(pd, lens, bridge)) {
+          pdValue.textContent = '--';
+          fpdValue.textContent = '--';
+          diffValue.textContent = '--';
+          updateScale(NaN);
+
+          resultCard.className =
+            'mt-6 rounded-3xl border border-rose-200 bg-rose-50/80 p-5 sm:p-6 fade-up';
+          resultHeadline.textContent = '入力内容を確認してください';
+          resultSummary.textContent = '未入力または現実的でない数値があります。赤いメッセージをご確認ください。';
+          talkText.textContent = 'まずは正しい数値を入れてからご案内すると、お客様にもより客観的に説明できます。';
+          return;
+        }
+
+        renderResult(pd, lens, bridge);
+      });
+
+      sampleBtn.addEventListener('click', function () {
+        pdInput.value = '62';
+        lensInput.value = '48';
+        bridgeInput.value = '20';
+        clearErrors();
+        renderResult(62, 48, 20);
+      });
+
+      [pdInput, lensInput, bridgeInput].forEach((input) => {
+        input.addEventListener('input', function () {
+          input.classList.remove('border-rose-300', 'bg-rose-50');
+          input.classList.add('border-slate-200', 'bg-white');
+
+          if (input === pdInput) pdError.textContent = '';
+          if (input === lensInput) lensError.textContent = '';
+          if (input === bridgeInput) bridgeError.textContent = '';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
