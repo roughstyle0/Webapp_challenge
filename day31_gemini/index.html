@@ -290,14 +290,19 @@
             
             buttons.forEach(btn => {
                 const value = btn.getAttribute('data-value');
+                // Lucideアイコンはロード時に<i>から<svg>に置換されるため、svgを取得します
+                const icon = btn.querySelector('svg');
+                
                 if (value === selectedValue) {
                     btn.classList.add(activeBorderClass, activeBgClass);
                     btn.classList.remove('border-transparent', 'bg-white');
                     // アイコンの色を変える
-                    btn.querySelector('i').classList.add('text-current');
+                    if (icon) icon.classList.add('text-current');
                 } else {
                     btn.classList.remove(activeBorderClass, activeBgClass);
                     btn.classList.add('border-transparent', 'bg-white');
+                    // 非選択時は色を元に戻す
+                    if (icon) icon.classList.remove('text-current');
                 }
             });
         }
