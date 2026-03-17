@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>裸眼視力「見えている距離」リアル解説ツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg1:#06131e;
+      --bg2:#0d2233;
+      --panel:rgba(10, 20, 32, 0.72);
+      --line:rgba(255,255,255,0.1);
+      --glow:rgba(56, 189, 248, 0.28);
+    }
+
+    html, body {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(34,197,94,0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(56,189,248,0.14), transparent 32%),
+        linear-gradient(180deg, var(--bg2), var(--bg1));
+    }
+
+    .glass-panel {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--line);
+      box-shadow:
+        0 10px 40px rgba(0,0,0,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .c-ring {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      border-radius: 9999px;
+      border: 16px solid rgba(255,255,255,0.92);
+      transform: rotate(var(--rot, 0deg));
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 36px rgba(255,255,255,0.08);
+    }
+    .c-ring::after {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: 26px;
+      width: 30px;
+      height: 18px;
+      background: #0d2233;
+      border-radius: 9999px;
+    }
+
+    .c-mini {
+      width: 28px;
+      height: 28px;
+      border-width: 6px;
+    }
+    .c-mid {
+      width: 44px;
+      height: 44px;
+      border-width: 8px;
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .vision-stage {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.5rem;
+      min-height: 260px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(56,189,248,0.14), transparent 40%),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .horizon-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 58%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    }
+
+    .distance-zone {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .focus-cut {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: var(--focus-width, 18%);
+      background: linear-gradient(90deg, rgba(34,197,94,0.16), rgba(34,197,94,0.04));
+      border-right: 1px dashed rgba(34,197,94,0.58);
+      box-shadow: 20px 0 60px rgba(34,197,94,0.08);
+    }
+
+    .blur-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--focus-width, 18%);
+      right: 0;
+      background:
+        linear-gradient(90deg, rgba(248,113,113,0.08), rgba(248,113,113,0.02));
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      padding: 1.25rem;
+    }
+
+    .scene-blur {
+      filter: blur(var(--blur-level, 4px)) saturate(0.84);
+      transform: scale(1.015);
+      opacity: 0.95;
+    }
+
+    .marker {
+      position: absolute;
+      bottom: 1rem;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 110px;
+    }
+
+    .marker .stem {
+      width: 1px;
+      height: 48px;
+      margin: 0 auto 0.5rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), transparent);
+    }
+
+    .acuity-btn {
+      transition: all 0.22s ease;
+    }
+
+    .acuity-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(0,0,0,0.18);
+    }
+
+    .acuity-btn.active {
+      background: linear-gradient(135deg, rgba(14,165,233,0.28), rgba(34,197,94,0.18));
+      border-color: rgba(125,211,252,0.8);
+      color: white;
+      box-shadow: 0 0 0 1px rgba(125,211,252,0.28), 0 14px 34px rgba(56,189,248,0.18);
+    }
+
+    .appear {
+      animation: popIn 0.35s ease;
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .talk-highlight {
+      background: linear-gradient(90deg, rgba(14,165,233,0.16), rgba(34,197,94,0.12));
+      border-left: 4px solid rgba(125,211,252,0.9);
+    }
+
+    .risk-dot {
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.03);
+    }
+
+    .screen-label {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      border-radius: 9999px;
+      padding: .35rem .75rem;
+    }
+
+    .soft-text {
+      color: rgba(226,232,240,0.84);
+    }
+
+    .danger-glow {
+      box-shadow: 0 0 0 1px rgba(248,113,113,0.12), 0 12px 32px rgba(248,113,113,0.12);
+    }
+
+    @media (max-width: 640px) {
+      .marker {
+        width: 84px;
+      }
+      .marker .stem {
+        height: 36px;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-50 antialiased">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    <header class="glass-panel rounded-3xl p-5 sm:p-8 overflow-hidden relative">
+      <div class="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-sky-400/10 blur-3xl"></div>
+      <div class="absolute -bottom-10 -left-8 w-40 h-40 rounded-full bg-emerald-400/10 blur-3xl"></div>
+
+      <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-3 mb-4">
+            <div class="c-ring" style="--rot: 0deg;"></div>
+            <div>
+              <p class="text-sky-300 text-sm font-semibold tracking-[0.2em] uppercase">Optical Sales Assist</p>
+              <h1 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+                裸眼視力「見えている距離」
+                <span class="text-sky-300">リアル解説ツール</span>
+              </h1>
+            </div>
+          </div>
+          <p class="text-slate-300 leading-relaxed text-sm sm:text-base">
+            新人スタッフ向けに、
+            <span class="font-semibold text-white">「裸眼だとどこから先が危険になるのか」</span>
+            を直感的に伝える接客支援ツールです。視力を選ぶだけで、
+            距離の目安・具体的な困りごと・そのまま使える提案トークまで、すぐに説明できます。
+          </p>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-4 sm:p-5 min-w-[280px] max-w-xl">
+          <div class="flex items-center justify-between gap-4 mb-3">
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Step 1</p>
+              <p class="font-bold">お客様の裸眼視力を選択</p>
+            </div>
+            <div class="screen-label text-xs sm:text-sm">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 risk-dot"></span>
+              目安を即表示
+            </div>
+          </div>
+
+          <label for="acuitySelect" class="block text-sm text-slate-300 mb-2">セレクトでも選べます</label>
+          <select id="acuitySelect" class="w-full rounded-2xl bg-slate-950/50 border border-white/10 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-300 text-white">
+            <option value="">裸眼視力を選択してください</option>
+            <option value="0.05">0.05以下</option>
+            <option value="0.1">0.1</option>
+            <option value="0.3">0.3</option>
+            <option value="0.5">0.5</option>
+            <option value="0.7">0.7</option>
+          </select>
+
+          <p id="selectError" class="mt-2 text-sm text-rose-300 hidden">視力を選択すると、接客用の解説カードが表示されます。</p>
+        </div>
+      </div>
+
+      <div class="mt-6 sm:mt-8">
+        <div class="flex flex-wrap gap-3" id="acuityButtons" aria-label="裸眼視力クイック選択">
+          <button type="button" class="acuity-btn rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base font-semibold text-slate-200" data-value="0.05">0.05以下</button>
+          <button type="button" class="acuity-btn rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base font-semibold text-slate-200" data-value="0.1">0.1</button>
+          <button type="button" class="acuity-btn rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base font-semibold text-slate-200" data-value="0.3">0.3</button>
+          <button type="button" class="acuity-btn rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base font-semibold text-slate-200" data-value="0.5">0.5</button>
+          <button type="button" class="acuity-btn rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm sm:text-base font-semibold text-slate-200" data-value="0.7">0.7</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mt-6 sm:mt-8 grid grid-cols-1 2xl:grid-cols-[1.2fr_0.8fr] gap-6">
+      <section class="glass-panel rounded-3xl p-5 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+          <div>
+            <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Visual Impact</p>
+            <h2 class="text-xl sm:text-2xl font-black">どこから先が、もう「危険なぼやけ」か</h2>
+          </div>
+          <div id="statusPill" class="inline-flex items-center gap-2 rounded-full px-4 py-2 border border-white/10 bg-white/5 text-slate-300 text-sm">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+            まだ未選択です
+          </div>
+        </div>
+
+        <div class="vision-stage grid-bg">
+          <div class="distance-zone">
+            <div id="focusCut" class="focus-cut"></div>
+            <div class="blur-zone"></div>
+          </div>
+
+          <div class="scene scene-blur" id="blurScene" aria-hidden="true">
+            <div class="absolute left-[8%] top-[22%]">
+              <div class="c-ring c-mini" style="--rot: 90deg;"></div>
+            </div>
+            <div class="absolute left-[24%] top-[18%]">
+              <div class="c-ring c-mid" style="--rot: 180deg;"></div>
+            </div>
+            <div class="absolute left-[45%] top-[26%]">
+              <div class="c-ring" style="--rot: 270deg;"></div>
+            </div>
+            <div class="absolute right-[8%] top-[16%] text-center">
+              <div class="mx-auto w-28 h-16 rounded-2xl border border-white/20 bg-white/10"></div>
+              <p class="mt-2 text-xs tracking-wide text-white/90">標識・テロップ・表情</p>
+            </div>
+            <div class="absolute bottom-16 left-[12%] w-16 h-24 rounded-t-full bg-white/20"></div>
+            <div class="absolute bottom-16 left-[28%] w-16 h-24 rounded-t-full bg-white/20"></div>
+            <div class="absolute bottom-16 right-[16%] w-20 h-28 rounded-t-full bg-white/20"></div>
+          </div>
+
+          <div class="scene" id="clearScene">
+            <div class="absolute left-[8%] top-[22%]">
+              <div class="c-ring c-mini" style="--rot: 90deg;"></div>
+            </div>
+            <div class="absolute left-[24%] top-[18%]">
+              <div class="c-ring c-mid" style="--rot: 180deg;"></div>
+            </div>
+            <div class="absolute left-[45%] top-[26%]">
+              <div class="c-ring" style="--rot: 270deg;"></div>
+            </div>
+
+            <div class="absolute right-[8%] top-[16%] text-center">
+              <div class="mx-auto w-28 h-16 rounded-2xl border border-white/30 bg-white/10 flex items-center justify-center text-[11px] font-bold tracking-widest">
+                EXIT 24A
+              </div>
+              <p class="mt-2 text-xs tracking-wide text-white/90">標識・テロップ・表情</p>
+            </div>
+
+            <div class="absolute bottom-16 left-[12%] flex flex-col items-center">
+              <div class="w-16 h-16 rounded-full bg-white/25 border border-white/20"></div>
+              <div class="w-16 h-24 rounded-t-3xl bg-white/18 mt-1"></div>
+            </div>
+
+            <div class="absolute bottom-16 left-[28%] flex flex-col items-center">
+              <div class="w-16 h-16 rounded-full bg-white/25 border border-white/20"></div>
+              <div class="w-16 h-24 rounded-t-3xl bg-white/18 mt-1"></div>
+            </div>
+
+            <div class="absolute bottom-16 right-[16%] flex flex-col items-center">
+              <div class="w-20 h-20 rounded-full bg-white/25 border border-white/20"></div>
+              <div class="w-20 h-28 rounded-t-3xl bg-white/18 mt-1"></div>
+            </div>
+          </div>
+
+          <div class="horizon-line"></div>
+
+          <div class="marker left-[18%]" id="marker">
+            <div class="stem"></div>
+            <div class="rounded-2xl bg-slate-950/70 border border-white/10 px-3 py-2">
+              <p class="text-[10px] tracking-[0.18em] text-slate-400 uppercase">Blur Starts</p>
+              <p id="markerValue" class="font-black text-sm sm:text-base text-white">未選択</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+          <div class="rounded-2xl bg-emerald-400/10 border border-emerald-300/15 p-4">
+            <p class="text-emerald-300 font-semibold mb-1">見えている範囲</p>
+            <p class="soft-text">この範囲は比較的認識しやすく、生活動作がしやすいゾーンです。</p>
+          </div>
+          <div class="rounded-2xl bg-rose-400/10 border border-rose-300/15 p-4 danger-glow">
+            <p class="text-rose-300 font-semibold mb-1">ぼやけ始める先</p>
+            <p class="soft-text">人の表情・標識・段差・文字情報の認識が急に不安定になります。</p>
+          </div>
+          <div class="rounded-2xl bg-sky-400/10 border border-sky-300/15 p-4">
+            <p class="text-sky-300 font-semibold mb-1">接客のコツ</p>
+            <p class="soft-text">「見えていない事実」を距離に言い換えると、お客様が納得しやすくなります。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="space-y-6">
+        <div id="emptyState" class="glass-panel rounded-3xl p-6 sm:p-7 appear">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="c-ring c-mid" style="--rot: 0deg;"></div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Ready</p>
+              <h3 class="text-xl font-black">視力を選ぶと、解説カードが表示されます</h3>
+            </div>
+          </div>
+          <p class="text-slate-300 leading-relaxed">
+            「なんとなく見えにくい」ではなく、
+            <span class="text-white font-semibold">“何メートル先から危険か”</span>
+            に変換して伝えると、お客様の理解が一気に深まります。
+          </p>
+          <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="font-bold">1. 距離の目安</p>
+              <p class="text-sm text-slate-400 mt-1">「どこからぼやけるか」を即説明</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="font-bold">2. 生活上の不便</p>
+              <p class="text-sm text-slate-400 mt-1">危険や不便を具体例で提示</p>
+            </div>
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="font-bold">3. 提案トーク</p>
+              <p class="text-sm text-slate-400 mt-1">そのまま接客で使える言い回し</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultCards" class="hidden space-y-6">
+          <div class="glass-panel rounded-3xl p-6 sm:p-7 appear">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Selected Acuity</p>
+                <h3 class="text-2xl font-black" id="selectedLabel">0.3</h3>
+              </div>
+              <div id="severityBadge" class="rounded-full px-4 py-2 text-sm font-semibold border border-white/10 bg-white/5 text-white">
+                要注意
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-3xl bg-white/5 border border-white/10 p-5">
+              <p class="text-sm text-slate-400 mb-2">ピントが合う限界の距離の目安</p>
+              <p id="distanceLead" class="text-2xl sm:text-3xl font-black leading-tight">約10m先からぼやけ始めます</p>
+              <p id="distanceSub" class="mt-3 text-slate-300 leading-relaxed"></p>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-3xl p-6 sm:p-7 appear">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-rose-400/15 border border-rose-300/20 text-rose-200 text-lg">!</span>
+              <div>
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Daily Life</p>
+                <h3 class="text-xl font-black">日常生活での見え方</h3>
+              </div>
+            </div>
+
+            <div class="grid gap-3" id="lifeExamples"></div>
+          </div>
+
+          <div class="glass-panel rounded-3xl p-6 sm:p-7 appear">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-sky-400/15 border border-sky-300/20 text-sky-200 text-lg">💬</span>
+              <div>
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Sales Script</p>
+                <h3 class="text-xl font-black">背中を押す提案トーク</h3>
+              </div>
+            </div>
+
+            <div class="talk-highlight rounded-3xl p-5">
+              <p id="talkScript" class="text-slate-100 leading-8 text-[15px] sm:text-base"></p>
+            </div>
+
+            <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="text-sm text-slate-300">
+                <span class="font-semibold text-white">伝え方のコツ：</span>
+                まず「見えていない事実」を距離で伝え、その後に「だから危険・不便なんです」とつなげると、お客様が納得しやすくなります。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-slate-400 pb-3">
+      ※ 本ツールの距離・見え方は接客用の目安です。医学的診断ではなく、説明を補助するためのガイドとしてご利用ください。
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const visionData = {
+        "0.05": {
+          label: "0.05以下",
+          distanceTitle: "約50cm先からぼやけ始めます",
+          distanceDetail: "手を伸ばした先の顔や室内の段差でも、認識がかなり不安定になりやすい状態です。",
+          dailyExamples: [
+            "手を伸ばした距離の人の顔もぼやけて見えやすいです。",
+            "室内でも段差・床の物・足元の障害物に気づくのが遅れやすくなります。",
+            "外出時は看板・案内表示・信号などの情報取得がかなり難しくなります。"
+          ],
+          talk: "裸眼だとご自身の腕の長さより先がぼやけてしまう状態です。外出時はもちろん、室内でも段差などで危険が伴いますので、メガネの常用（掛けっぱなし）が絶対に必要です！",
+          focusWidth: "8%",
+          blurLevel: "8px",
+          markerLeft: "10%",
+          badge: "常用が必要",
+          badgeClass: "bg-rose-400/15 text-rose-200 border-rose-300/20",
+          tone: "danger"
+        },
+        "0.1": {
+          label: "0.1",
+          distanceTitle: "約3m先からぼやけ始めます",
+          distanceDetail: "室内では何とか見えているように感じても、少し離れた相手の表情や文字情報は急に曖昧になります。",
+          dailyExamples: [
+            "少し離れたテレビのテロップや、部屋の向こう側の人の表情が分かりづらいです。",
+            "目を細めて見る癖がつきやすく、疲れやすさにつながります。",
+            "受付表示や案内表示など、ちょっと離れた情報を見落としやすくなります。"
+          ],
+          talk: "室内ならなんとかなると思いがちですが、3m先の人の表情が読み取れない状態です。目を細めて見る癖がついて余計に目が疲れるので、室内用でもメガネがあった方が圧倒的に楽になりますよ！",
+          focusWidth: "18%",
+          blurLevel: "6px",
+          markerLeft: "20%",
+          badge: "室内でも不便",
+          badgeClass: "bg-amber-400/15 text-amber-100 border-amber-300/20",
+          tone: "warning"
+        },
+        "0.3": {
+          label: "0.3",
+          distanceTitle: "約10m先からぼやけ始めます",
+          distanceDetail: "手元は問題なくても、運転や教室・会議室など“遠くの情報が大事な場面”では支障が目立ちます。",
+          dailyExamples: [
+            "運転時の標識の文字や、黒板・スクリーンの文字が見えづらいです。",
+            "駅や商業施設の遠くの案内表示を見逃しやすくなります。",
+            "日常生活では気にならなくても、必要な時に急に困る典型的な視力です。"
+          ],
+          talk: "手元や日常生活は不便がないかもしれませんが、運転免許の基準には満たない視力です。いざという時にサッと掛けられるよう、お出かけ用のメガネを1本持っておくことを強くおすすめします！",
+          focusWidth: "34%",
+          blurLevel: "4px",
+          markerLeft: "36%",
+          badge: "外出時は要注意",
+          badgeClass: "bg-sky-400/15 text-sky-100 border-sky-300/20",
+          tone: "notice"
+        },
+        "0.5": {
+          label: "0.5",
+          distanceTitle: "約20m先の細かい情報が怪しくなります",
+          distanceDetail: "近距離では困りにくい一方、離れた場所の文字や瞬時の判断が必要な場面では“思った以上に見えていない”ことがあります。",
+          dailyExamples: [
+            "駅のホームや道路上で、少し遠い案内表示・標識の細かい文字が読みづらくなります。",
+            "映画館・舞台・講義室などで、遠くの文字情報や細部がにじみやすいです。",
+            "昼間は平気でも、夜間や雨天では見えにくさを強く感じやすくなります。"
+          ],
+          talk: "普段の生活では困りにくい視力ですが、遠くの細かい文字や夜間の見え方では差がはっきり出やすい状態です。運転や外出、映画・観劇の時だけでも使える1本があると、とても安心ですよ！",
+          focusWidth: "52%",
+          blurLevel: "2.5px",
+          markerLeft: "54%",
+          badge: "場面によって必要",
+          badgeClass: "bg-emerald-400/15 text-emerald-100 border-emerald-300/20",
+          tone: "mild"
+        },
+        "0.7": {
+          label: "0.7",
+          distanceTitle: "遠くの細かい文字が少しにじむ程度です",
+          distanceDetail: "普段の生活では大きな不自由は少ないものの、夜間運転や長時間の遠方注視では“見え方の差”を実感しやすい視力です。",
+          dailyExamples: [
+            "普段は裸眼でも大きな問題は起こりにくいです。",
+            "夜間の運転や雨の日は、標識や路面情報の見え方に差が出やすいです。",
+            "映画・観劇・旅行先の案内表示など、遠くを長く見る場面で快適さが変わります。"
+          ],
+          talk: "普段は裸眼でも全く問題ありませんが、夜間の運転や、長時間の映画・観劇の際だけはメガネがあると『こんなに景色がクリアだったんだ！』と感動しますよ。お守り代わりに1本いかがですか？",
+          focusWidth: "74%",
+          blurLevel: "1.2px",
+          markerLeft: "76%",
+          badge: "あると快適",
+          badgeClass: "bg-violet-400/15 text-violet-100 border-violet-300/20",
+          tone: "soft"
+        }
+      };
+
+      const acuitySelect = document.getElementById("acuitySelect");
+      const selectError = document.getElementById("selectError");
+      const acuityButtons = Array.from(document.querySelectorAll(".acuity-btn"));
+      const emptyState = document.getElementById("emptyState");
+      const resultCards = document.getElementById("resultCards");
+      const selectedLabel = document.getElementById("selectedLabel");
+      const distanceLead = document.getElementById("distanceLead");
+      const distanceSub = document.getElementById("distanceSub");
+      const lifeExamples = document.getElementById("lifeExamples");
+      const talkScript = document.getElementById("talkScript");
+      const focusCut = document.getElementById("focusCut");
+      const marker = document.getElementById("marker");
+      const markerValue = document.getElementById("markerValue");
+      const blurScene = document.getElementById("blurScene");
+      const statusPill = document.getElementById("statusPill");
+      const severityBadge = document.getElementById("severityBadge");
+
+      const badgeBase = "rounded-full px-4 py-2 text-sm font-semibold border";
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function setActiveButton(value) {
+        acuityButtons.forEach(btn => {
+          btn.classList.toggle("active", btn.dataset.value === value);
+        });
+      }
+
+      function renderExamples(examples) {
+        if (!Array.isArray(examples) || examples.length === 0) {
+          lifeExamples.innerHTML = `
+            <div class="rounded-2xl bg-amber-400/10 border border-amber-300/15 p-4 text-amber-100">
+              具体例データの表示に失敗しました。もう一度選び直してください。
+            </div>
+          `;
+          return;
+        }
+
+        lifeExamples.innerHTML = examples.map((item, index) => `
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 shrink-0 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-black text-sky-200">${index + 1}</div>
+              <p class="text-slate-200 leading-7">${escapeHtml(item)}</p>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function updateStatus(label, tone) {
+        const toneMap = {
+          danger: {
+            text: `${label}：かなり危険な見え方`,
+            cls: "border-rose-300/20 bg-rose-400/15 text-rose-100"
+          },
+          warning: {
+            text: `${label}：日常でも不便が出やすい`,
+            cls: "border-amber-300/20 bg-amber-400/15 text-amber-100"
+          },
+          notice: {
+            text: `${label}：外出・運転で注意`,
+            cls: "border-sky-300/20 bg-sky-400/15 text-sky-100"
+          },
+          mild: {
+            text: `${label}：遠方や夜間で差が出る`,
+            cls: "border-emerald-300/20 bg-emerald-400/15 text-emerald-100"
+          },
+          soft: {
+            text: `${label}：普段は平気でも備えが有効`,
+            cls: "border-violet-300/20 bg-violet-400/15 text-violet-100"
+          }
+        };
+
+        const t = toneMap[tone] || toneMap.notice;
+        statusPill.className = `inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm border ${t.cls}`;
+        statusPill.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-current opacity-90"></span>${escapeHtml(t.text)}`;
+      }
+
+      function renderVision(value) {
+        const data = visionData[value];
+
+        if (!data) {
+          emptyState.classList.remove("hidden");
+          resultCards.classList.add("hidden");
+          selectError.classList.remove("hidden");
+          statusPill.className = "inline-flex items-center gap-2 rounded-full px-4 py-2 border border-white/10 bg-white/5 text-slate-300 text-sm";
+          statusPill.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>まだ未選択です`;
+          return;
+        }
+
+        selectError.classList.add("hidden");
+        emptyState.classList.add("hidden");
+        resultCards.classList.remove("hidden");
+
+        selectedLabel.textContent = data.label;
+        distanceLead.textContent = data.distanceTitle;
+        distanceSub.textContent = data.distanceDetail;
+        talkScript.textContent = data.talk;
+        markerValue.textContent = data.distanceTitle;
+        renderExamples(data.dailyExamples);
+        updateStatus(data.label, data.tone);
+
+        severityBadge.textContent = data.badge;
+        severityBadge.className = `${badgeBase} ${data.badgeClass}`;
+
+        focusCut.style.setProperty("--focus-width", data.focusWidth);
+        marker.style.left = data.markerLeft;
+        blurScene.style.setProperty("--blur-level", data.blurLevel);
+
+        resultCards.querySelectorAll(".appear").forEach(card => {
+          card.classList.remove("appear");
+          void card.offsetWidth;
+          card.classList.add("appear");
+        });
+      }
+
+      function handleSelection(value) {
+        const safeValue = typeof value === "string" ? value.trim() : "";
+        acuitySelect.value = safeValue;
+        setActiveButton(safeValue);
+        renderVision(safeValue);
+      }
+
+      acuityButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          handleSelection(btn.dataset.value);
+        });
+      });
+
+      acuitySelect.addEventListener("change", (e) => {
+        handleSelection(e.target.value);
+      });
+
+      renderVision("");
+    })();
+  </script>
+</body>
+</html>
