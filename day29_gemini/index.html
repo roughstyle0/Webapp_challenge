@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リーディンググラス最適度数ナビ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* フェードインアニメーション */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 選択ボタンのトランジション */
+        .select-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .select-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+    <!-- ヘッダー -->
+    <header class="bg-brand-900 text-white p-4 shadow-md sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <h1 class="text-xl md:text-2xl font-bold tracking-wider flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                最適度数ナビ <span class="text-sm font-normal text-brand-100 hidden md:inline ml-2">〜お客様と一緒に見る接客ツール〜</span>
+            </h1>
+            <button onclick="resetApp()" class="text-sm bg-brand-700 hover:bg-brand-600 px-4 py-2 rounded-full font-medium transition-colors">
+                リセット
+            </button>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-8">
+        
+        <!-- Step 1: 年齢 -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h2 class="text-xl md:text-2xl font-bold text-brand-900 mb-4 flex items-center gap-2">
+                <span class="bg-brand-100 text-brand-700 rounded-full w-8 h-8 flex items-center justify-center text-lg">1</span>
+                お客様の年齢層は？
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4" id="age-buttons">
+                <!-- JSでレンダリング -->
+            </div>
+        </section>
+
+        <!-- Step 2: 距離 -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 opacity-50 pointer-events-none transition-opacity duration-300" id="step-distance">
+            <h2 class="text-xl md:text-2xl font-bold text-brand-900 mb-4 flex items-center gap-2">
+                <span class="bg-brand-100 text-brand-700 rounded-full w-8 h-8 flex items-center justify-center text-lg">2</span>
+                一番見たいものは？
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4" id="distance-buttons">
+                <!-- JSでレンダリング -->
+            </div>
+        </section>
+
+        <!-- 結果表示エリア -->
+        <section id="result-area" class="hidden">
+            <!-- JSでレンダリング -->
+        </section>
+
+    </main>
+
+    <script>
+        /**
+         * アプリケーションのデータ定義
+         */
+        const BASE_SPH = { '45': '+1.50', '50': '+2.00', '55': '+2.50', '60': '+3.00' };
+        
+        const MATRIX_DATA = {
+            '45': { '30': '+1.50', '50': '+1.00', '70': '+0.50' },
+            '50': { '30': '+2.00', '50': '+1.50', '70': '+1.00' },
+            '55': { '30': '+2.50', '50': '+2.00', '70': '+1.50' },
+            '60': { '30': '+3.00', '50': '+2.50', '70': '+2.00' }
+        };
+
+        const AGE_OPTIONS = [
+            { id: '45', label: '45歳前後' },
+            { id: '50', label: '50歳前後' },
+            { id: '55', label: '55歳前後' },
+            { id: '60', label: '60歳以上' }
+        ];
+
+        const DISTANCE_OPTIONS = [
+            { id: '30', label: 'スマホ・文庫本', desc: '約30cm (近い)' },
+            { id: '50', label: 'デスクトップPC', desc: '約50cm (少し離れる)' },
+            { id: '70', label: '楽譜・料理の手元', desc: '約70cm (さらに離れる)' }
+        ];
+
+        /**
+         * アプリケーションの状態（State）
+         */
+        let state = {
+            selectedAge: null,
+            selectedDistance: null
+        };
+
+        /**
+         * DOM要素の取得
+         */
+        const els = {
+            ageButtons: document.getElementById('age-buttons'),
+            distanceButtons: document.getElementById('distance-buttons'),
+            stepDistance: document.getElementById('step-distance'),
+            resultArea: document.getElementById('result-area')
+        };
+
+        /**
+         * 初期化処理
+         */
+        function init() {
+            renderAgeButtons();
+            renderDistanceButtons();
+        }
+
+        /**
+         * ボタンのレンダリング（年齢）
+         */
+        function renderAgeButtons() {
+            els.ageButtons.innerHTML = AGE_OPTIONS.map(opt => `
+                <button 
+                    onclick="handleAgeSelect('${opt.id}')"
+                    class="select-btn w-full py-4 px-2 md:py-6 rounded-xl border-2 text-lg md:text-xl font-bold flex flex-col items-center justify-center gap-1
+                    ${state.selectedAge === opt.id 
+                        ? 'border-brand-600 bg-brand-50 text-brand-700 shadow-md ring-2 ring-brand-500 ring-offset-2' 
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:bg-gray-50'}"
+                >
+                    ${opt.label}
+                    ${state.selectedAge === opt.id ? '<svg class="w-6 h-6 text-brand-600 absolute top-2 right-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                </button>
+            `).join('');
+        }
+
+        /**
+         * ボタンのレンダリング（距離）
+         */
+        function renderDistanceButtons() {
+            els.distanceButtons.innerHTML = DISTANCE_OPTIONS.map(opt => `
+                <button 
+                    onclick="handleDistanceSelect('${opt.id}')"
+                    class="select-btn w-full py-4 px-2 md:py-6 rounded-xl border-2 flex flex-col items-center justify-center gap-2
+                    ${state.selectedDistance === opt.id 
+                        ? 'border-brand-600 bg-brand-50 text-brand-700 shadow-md ring-2 ring-brand-500 ring-offset-2' 
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:bg-gray-50'}"
+                >
+                    <span class="text-lg md:text-xl font-bold">${opt.label}</span>
+                    <span class="text-sm ${state.selectedDistance === opt.id ? 'text-brand-600 font-medium' : 'text-gray-400'}">${opt.desc}</span>
+                    ${state.selectedDistance === opt.id ? '<svg class="w-6 h-6 text-brand-600 absolute top-2 right-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                </button>
+            `).join('');
+        }
+
+        /**
+         * イベントハンドラー: 年齢選択
+         */
+        function handleAgeSelect(ageId) {
+            state.selectedAge = ageId;
+            renderAgeButtons();
+            
+            // Step2をアクティブにする
+            els.stepDistance.classList.remove('opacity-50', 'pointer-events-none');
+            
+            checkAndRenderResult();
+        }
+
+        /**
+         * イベントハンドラー: 距離選択
+         */
+        function handleDistanceSelect(distanceId) {
+            state.selectedDistance = distanceId;
+            renderDistanceButtons();
+            checkAndRenderResult();
+        }
+
+        /**
+         * 結果の判定と表示
+         */
+        function checkAndRenderResult() {
+            if (!state.selectedAge || !state.selectedDistance) {
+                els.resultArea.classList.add('hidden');
+                return;
+            }
+
+            const ageLabel = AGE_OPTIONS.find(a => a.id === state.selectedAge).label;
+            const distLabel = DISTANCE_OPTIONS.find(d => d.id === state.selectedDistance).label;
+            const distDesc = DISTANCE_OPTIONS.find(d => d.id === state.selectedDistance).desc;
+            
+            const baseSph = BASE_SPH[state.selectedAge];
+            const recommendedSph = MATRIX_DATA[state.selectedAge][state.selectedDistance];
+
+            // トークスクリプトの動的生成
+            let talkScript = "";
+            if (state.selectedDistance === '30') {
+                talkScript = `お客様の年齢（${ageLabel}）の一般的な目安は<span class="font-bold text-gray-900">【${baseSph}】</span>です。<br>
+                スマホや文庫本など、お手元（約30cm）をしっかり見るのに最適な度数になりますので、こちらの度数が一番おすすめですよ！`;
+            } else {
+                talkScript = `お客様の年齢（${ageLabel}）の一般的な目安は<span class="font-bold text-gray-900">${baseSph}</span>ですが、それはスマホなどの近い距離用です。<br>
+                今回は少し離れた <span class="font-bold text-brand-700 underline decoration-brand-300 decoration-4 underline-offset-4">${distLabel}（${distDesc}）</span> を楽に見たいとのことですので、<br>
+                少し度数を弱めた <span class="text-3xl font-black text-red-600 bg-red-50 px-2 rounded">【${recommendedSph}】</span> が一番ピントが合いやすく、目も疲れませんよ！`;
+            }
+
+            // HTMLの構築
+            els.resultArea.innerHTML = `
+                <div class="fade-in bg-gradient-to-br from-brand-900 to-brand-700 rounded-3xl p-1 shadow-2xl mt-4">
+                    <div class="bg-white rounded-[1.4rem] p-6 md:p-8">
+                        <div class="text-center mb-8">
+                            <p class="text-gray-500 font-bold mb-2">おすすめの目安度数</p>
+                            <div class="inline-block bg-brand-50 border-2 border-brand-200 rounded-2xl px-8 py-4">
+                                <span class="text-xl text-gray-600 font-bold mr-2">SPH</span>
+                                <span class="text-5xl md:text-6xl font-black text-brand-700 tracking-tighter">${recommendedSph}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 md:p-6 relative">
+                            <div class="absolute -top-3 left-6 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                                提案トーク（そのままお読みください）
+                            </div>
+                            <p class="text-lg md:text-xl text-gray-700 leading-relaxed font-medium mt-2">
+                                ${talkScript}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            els.resultArea.classList.remove('hidden');
+            
+            // 少し遅延させて結果エリアにスクロール
+            setTimeout(() => {
+                els.resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        /**
+         * アプリのリセット
+         */
+        function resetApp() {
+            state.selectedAge = null;
+            state.selectedDistance = null;
+            els.stepDistance.classList.add('opacity-50', 'pointer-events-none');
+            els.resultArea.classList.add('hidden');
+            init();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 初回実行
+        init();
+    </script>
+</body>
+</html>
