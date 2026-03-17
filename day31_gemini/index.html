@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キッズメガネ 安心素材＆保証ナビ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Zen Maru Gothic (温かみのある丸ゴシック) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Zen Maru Gothic"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        },
+                        accent: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+                        'bounce-slight': 'bounceSlight 2s infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        bounceSlight: {
+                            '0%, 100%': { transform: 'translateY(-2%)' },
+                            '50%': { transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスクロールバー等、Tailwindでカバーしきれない微調整 */
+        body { background-color: #fffbeb; background-image: radial-gradient(#fde68a 1px, transparent 1px); background-size: 20px 20px; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(217, 119, 6, 0.1); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .hide { display: none !important; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen p-4 md:p-8">
+
+    <main class="max-w-3xl mx-auto space-y-8 pb-16">
+        
+        <!-- ヘッダー -->
+        <header class="text-center space-y-3 pt-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-md text-brand-500 mb-2 animate-bounce-slight">
+                <i data-lucide="glasses" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-brand-600">キッズメガネ 安心ナビ</h1>
+            <p class="text-sm md:text-base text-gray-600 font-medium">お子様にぴったりのメガネと、親御さんの安心をご提案します</p>
+        </header>
+
+        <!-- ステップ1: 年齢層の選択 -->
+        <section class="glass-card rounded-3xl p-6 md:p-8">
+            <div class="flex items-center gap-3 mb-5">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-brand-100 text-brand-600 font-bold">1</span>
+                <h2 class="text-lg md:text-xl font-bold">お子様の年齢層は？</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="age-buttons">
+                <button onclick="selectAge('preschool')" class="selection-btn group relative w-full p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center gap-2 text-gray-600 hover:text-brand-600 hover:border-brand-200" data-value="preschool">
+                    <i data-lucide="baby" class="w-8 h-8 transition-transform group-hover:scale-110"></i>
+                    <span class="font-bold">未就学児</span>
+                    <span class="text-xs text-gray-400">元気いっぱいでよく転ぶ</span>
+                </button>
+                <button onclick="selectAge('early_elementary')" class="selection-btn group relative w-full p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center gap-2 text-gray-600 hover:text-brand-600 hover:border-brand-200" data-value="early_elementary">
+                    <i data-lucide="smile" class="w-8 h-8 transition-transform group-hover:scale-110"></i>
+                    <span class="font-bold">小学校低学年</span>
+                    <span class="text-xs text-gray-400">体育や外遊びが激しい</span>
+                </button>
+                <button onclick="selectAge('late_elementary')" class="selection-btn group relative w-full p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center gap-2 text-gray-600 hover:text-brand-600 hover:border-brand-200" data-value="late_elementary">
+                    <i data-lucide="book-open" class="w-8 h-8 transition-transform group-hover:scale-110"></i>
+                    <span class="font-bold">高学年〜中学生</span>
+                    <span class="text-xs text-gray-400">部活やスマホで度数変化</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ステップ2: 心配事の選択 (初期状態では少し薄くして非アクティブ感を出す) -->
+        <section id="step2-container" class="glass-card rounded-3xl p-6 md:p-8 opacity-50 transition-opacity duration-500">
+            <div class="flex items-center gap-3 mb-5">
+                <span class="flex items-center justify-center w-8 h-8 rounded-full bg-brand-100 text-brand-600 font-bold">2</span>
+                <h2 class="text-lg md:text-xl font-bold">一番心配なことは何ですか？</h2>
+            </div>
+            <!-- エラーメッセージプレースホルダー -->
+            <p id="step2-warning" class="text-sm text-red-500 font-bold mb-4 hide">※先に「お子様の年齢層」を選択してください</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="worry-buttons">
+                <button onclick="selectWorry('durability')" class="selection-btn group w-full p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center gap-2 text-gray-600 hover:text-accent-600 hover:border-accent-200" data-value="durability">
+                    <i data-lucide="shield-check" class="w-8 h-8 transition-transform group-hover:scale-110"></i>
+                    <span class="font-bold">耐久性が心配</span>
+                    <span class="text-xs text-gray-400 text-center">すぐ壊したり<br>曲げたりしないか</span>
+                </button>
+                <button onclick="selectWorry('vision_change')" class="selection-btn group w-full p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center gap-2 text-gray-600 hover:text-accent-600 hover:border-accent-200" data-value="vision_change">
+                    <i data-lucide="eye" class="w-8 h-8 transition-transform group-hover:scale-110"></i>
+                    <span class="font-bold">度数変化が心配</span>
+                    <span class="text-xs text-gray-400 text-center">視力が落ちて<br>すぐ合わなくならないか</span>
+                </button>
+                <button onclick="selectWorry('safety')" class="selection-btn group w-full p-4 rounded-2xl border-2 border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center gap-2 text-gray-600 hover:text-accent-600 hover:border-accent-200" data-value="safety">
+                    <i data-lucide="heart-handshake" class="w-8 h-8 transition-transform group-hover:scale-110"></i>
+                    <span class="font-bold">安全性が心配</span>
+                    <span class="text-xs text-gray-400 text-center">転んだりボールが<br>ぶつかった時の怪我</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 結果表示エリア (初期非表示) -->
+        <section id="result-area" class="hide animate-fade-in-up">
+            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border-t-8 border-brand-400 relative overflow-hidden">
+                <!-- 装飾用背景 -->
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-brand-50 rounded-full opacity-50 pointer-events-none"></div>
+                <div class="absolute -bottom-8 -left-8 w-24 h-24 bg-accent-50 rounded-full opacity-50 pointer-events-none"></div>
+                
+                <div class="relative z-10 space-y-8">
+                    <div class="text-center border-b border-gray-100 pb-4">
+                        <span class="inline-block px-4 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-bold mb-2" id="result-tags">未就学児 × 耐久性</span>
+                        <h2 class="text-2xl font-bold text-gray-800">おすすめの提案プラン</h2>
+                    </div>
+
+                    <!-- 素材と保証のカード -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-brand-50 rounded-2xl p-5 border border-brand-100">
+                            <div class="flex items-center gap-2 text-brand-600 font-bold mb-2">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                <h3>おすすめフレーム素材</h3>
+                            </div>
+                            <p id="result-material" class="text-lg font-bold text-gray-800 leading-tight">超弾性樹脂（TR-90など）</p>
+                        </div>
+                        <div class="bg-accent-50 rounded-2xl p-5 border border-accent-100">
+                            <div class="flex items-center gap-2 text-accent-600 font-bold mb-2">
+                                <i data-lucide="award" class="w-5 h-5"></i>
+                                <h3>安心の保証制度</h3>
+                            </div>
+                            <p id="result-warranty" class="text-lg font-bold text-gray-800 leading-tight">1年以内のフレーム破損〇回無料交換</p>
+                        </div>
+                    </div>
+
+                    <!-- トークスクリプト -->
+                    <div class="bg-gray-50 rounded-2xl p-6 relative">
+                        <!-- 吹き出しのしっぽ -->
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-gray-50 rotate-45"></div>
+                        
+                        <div class="flex items-center gap-2 text-gray-700 font-bold mb-3">
+                            <i data-lucide="message-circle-heart" class="w-5 h-5 text-pink-500"></i>
+                            <h3>親御さんを安心させるトーク例</h3>
+                        </div>
+                        <p id="result-script" class="text-gray-700 leading-relaxed font-medium">
+                            （ここにトークスクリプトが表示されます）
+                        </p>
+                        <div class="mt-4 pt-4 border-t border-gray-200 flex items-start gap-2 text-sm text-gray-500">
+                            <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0 mt-0.5 text-brand-500"></i>
+                            <p>新人スタッフへのアドバイス：このトークをそのまま読み上げるだけでも、お客様の不安に寄り添うことができます。笑顔でお伝えしましょう！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Lucideアイコンの初期化
+        lucide.createIcons();
+
+        // 提案ロジックのデータ定義 (年齢 × 心配事 = 9パターン)
+        const adviceData = {
+            preschool: {
+                label: "未就学児",
+                durability: {
+                    material: "超弾性樹脂（TR-90など）",
+                    warranty: "1年以内のフレーム破損〇回まで無料交換",
+                    script: "まだ力の加減が難しい時期ですので、引っ張っても折れにくい超弾性樹脂のフレームが一番安心です。万が一壊してしまっても、当店のキッズ保証で無料交換できますから、どうか怒らずに、思いっきり遊ばせてあげてくださいね！"
+                },
+                vision_change: {
+                    material: "こまめに調整可能なメタル/樹脂コンビ",
+                    warranty: "1年以内の度数進行によるレンズ交換〇回無料",
+                    script: "小さいうちは視力の発達期なので、こまめなチェックがとても重要です。度数が変わっても〇回まで無料でレンズ交換できる保証がついていますので、お子様が見えづらそうにしていたら、いつでもお気軽にご来店ください。"
+                },
+                safety: {
+                    material: "金属パーツ不使用のオール樹脂フレーム",
+                    warranty: "ノーズパッド等の消耗・安全パーツ無料交換",
+                    script: "お顔にぶつかった時の怪我が一番心配ですよね。金属のネジや硬いパーツを一切使っていないフレームなら、万が一の転倒時も安全です。鼻あてなどの柔らかいパーツは傷んだらすぐ無料で交換しますよ。"
+                }
+            },
+            early_elementary: {
+                label: "小学校低学年",
+                durability: {
+                    material: "形状記憶合金",
+                    warranty: "1年以内のフレーム破損・曲がり修理対応",
+                    script: "小学校低学年のお子様は、メガネを掛けたまま寝転がったりぶつかったりすることが多い時期です。ですので、グニャッと曲げても元に戻る『形状記憶合金』のフレームが絶対におすすめです。結果的に買い替えが減るので一番コスパが良いですよ！"
+                },
+                vision_change: {
+                    material: "ズレにくいスポーツ対応の軽量樹脂",
+                    warranty: "1年以内の度数進行によるレンズ交換〇回無料",
+                    script: "学校の黒板が見えにくくなると、授業への集中力に関わってしまいます。当店のキッズ保証なら〇年以内は度数変更によるレンズ交換が〇回まで無料です。少しでも目を細めるしぐさを見せたら、すぐにお持ちくださいね！"
+                },
+                safety: {
+                    material: "シリコン製鼻あて ＋ スポーツバンド対応モデル",
+                    warranty: "1年以内のフレーム破損無料交換",
+                    script: "ドッジボールや鬼ごっこなど、激しい動きが多い時期ですよね。衝撃を吸収するシリコン製の鼻あてと、ズレを防止する専用バンドをつければ、お顔を守りながら安全に思い切り遊べますよ！"
+                }
+            },
+            late_elementary: {
+                label: "高学年〜中学生",
+                durability: {
+                    material: "チタン／ウルテム等の高耐久・軽量素材",
+                    warranty: "1年以内のフレーム修理・交換保証",
+                    script: "部活などでハードに使うようになると、どうしてもフレームへの負担が大きくなります。大人顔負けの丈夫なチタンやウルテム素材なら、毎日の激しい使用にもしっかり耐えてくれます。デザインも大人っぽくてかっこいいですよ。"
+                },
+                vision_change: {
+                    material: "軽量チタン・TRコンビネーション",
+                    warranty: "〇年以内、度数変更によるレンズ交換〇回無料",
+                    script: "成長期やスマホの使用で、半年でグッと度数が進むことがよくあります。でもご安心ください！当店のキッズ保証なら、〇年以内は度数変更によるレンズ交換が〇回まで無料です。見えづらくなったら我慢させずにすぐいらしてくださいね！"
+                },
+                safety: {
+                    material: "スポーツ専用ゴーグル ／ 柔軟樹脂フレーム",
+                    warranty: "専用パーツの交換・調整サポート",
+                    script: "部活動での接触プレーやボールの直撃には、日常用のメガネでは危険な場合があります。部活用として衝撃に強いスポーツ専用ゴーグルを一本持っておくと、お子様も怪我を恐れず、親御さんも安心して競技に集中させてあげられますよ！"
+                }
+            }
+        };
+
+        const worryLabels = {
+            durability: "耐久性が心配",
+            vision_change: "度数変化が心配",
+            safety: "安全性が心配"
+        };
+
+        // 状態管理
+        let state = {
+            age: null,
+            worry: null
+        };
+
+        // 年齢選択
+        function selectAge(age) {
+            state.age = age;
+            updateButtons('age-buttons', age, 'border-brand-500', 'bg-brand-50');
+            
+            // ステップ2をアクティブにする
+            const step2Container = document.getElementById('step2-container');
+            step2Container.classList.remove('opacity-50');
+            document.getElementById('step2-warning').classList.add('hide');
+
+            checkAndShowResult();
+        }
+
+        // 心配事選択
+        function selectWorry(worry) {
+            if (!state.age) {
+                // エラーハンドリング: 年齢が未選択の場合は警告を出す
+                const warning = document.getElementById('step2-warning');
+                warning.classList.remove('hide');
+                // 少し揺らすアニメーションを追加して注意を引く
+                warning.classList.add('animate-pulse');
+                setTimeout(() => warning.classList.remove('animate-pulse'), 1000);
+                return;
+            }
+
+            state.worry = worry;
+            updateButtons('worry-buttons', worry, 'border-accent-500', 'bg-accent-50');
+            checkAndShowResult();
+        }
+
+        // UIボタンのハイライト更新
+        function updateButtons(containerId, selectedValue, activeBorderClass, activeBgClass) {
+            const container = document.getElementById(containerId);
+            const buttons = container.querySelectorAll('.selection-btn');
+            
+            buttons.forEach(btn => {
+                const value = btn.getAttribute('data-value');
+                if (value === selectedValue) {
+                    btn.classList.add(activeBorderClass, activeBgClass);
+                    btn.classList.remove('border-transparent', 'bg-white');
+                    // アイコンの色を変える
+                    btn.querySelector('i').classList.add('text-current');
+                } else {
+                    btn.classList.remove(activeBorderClass, activeBgClass);
+                    btn.classList.add('border-transparent', 'bg-white');
+                }
+            });
+        }
+
+        // 結果の判定と表示
+        function checkAndShowResult() {
+            if (state.age && state.worry) {
+                const result = adviceData[state.age][state.worry];
+                const ageLabel = adviceData[state.age].label;
+                const worryLabel = worryLabels[state.worry];
+
+                // DOM要素の更新
+                document.getElementById('result-tags').textContent = `${ageLabel} × ${worryLabel}`;
+                document.getElementById('result-material').textContent = result.material;
+                document.getElementById('result-warranty').textContent = result.warranty;
+                document.getElementById('result-script').textContent = result.script;
+
+                // エリアの表示とアニメーションリセット
+                const resultArea = document.getElementById('result-area');
+                resultArea.classList.remove('hide');
+                
+                // アニメーションを再発火させるためのハック
+                resultArea.classList.remove('animate-fade-in-up');
+                void resultArea.offsetWidth; // リフローを強制
+                resultArea.classList.add('animate-fade-in-up');
+
+                // スムーズスクロールで結果エリアを見せる
+                setTimeout(() => {
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+    </script>
+</body>
+</html>
