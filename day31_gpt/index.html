@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>キッズメガネ 安心素材＆保証ナビ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: "#FFF9F3",
+            skysoft: "#EAF7FF",
+            mintsoft: "#EEFFF7",
+            lilacsoft: "#F5F1FF",
+            peachsoft: "#FFF1E8",
+            inksoft: "#45607D"
+          },
+          boxShadow: {
+            soft: "0 12px 36px rgba(88, 116, 146, 0.14)"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 10% 10%, rgba(255, 217, 217, 0.55), transparent 28%),
+        radial-gradient(circle at 90% 12%, rgba(200, 238, 255, 0.60), transparent 24%),
+        radial-gradient(circle at 18% 88%, rgba(215, 255, 232, 0.58), transparent 26%),
+        linear-gradient(180deg, #fffdf9 0%, #f7fbff 52%, #fffaf6 100%);
+      min-height: 100vh;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.84);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+    }
+
+    .option-btn {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 8px 22px rgba(148, 163, 184, 0.10);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .option-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(148, 163, 184, 0.16);
+    }
+
+    .option-btn[aria-pressed="true"] {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(120, 140, 160, 0.18);
+    }
+
+    .option-btn[data-tone="sky"][aria-pressed="true"] {
+      border-color: rgba(56, 189, 248, 0.50);
+      background: linear-gradient(135deg, rgba(224, 242, 254, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .option-btn[data-tone="mint"][aria-pressed="true"] {
+      border-color: rgba(52, 211, 153, 0.42);
+      background: linear-gradient(135deg, rgba(220, 252, 231, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .option-btn[data-tone="lilac"][aria-pressed="true"] {
+      border-color: rgba(167, 139, 250, 0.42);
+      background: linear-gradient(135deg, rgba(237, 233, 254, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .option-btn[data-tone="peach"][aria-pressed="true"] {
+      border-color: rgba(251, 146, 60, 0.42);
+      background: linear-gradient(135deg, rgba(255, 237, 213, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .option-btn[data-tone="rose"][aria-pressed="true"] {
+      border-color: rgba(244, 114, 182, 0.40);
+      background: linear-gradient(135deg, rgba(252, 231, 243, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .option-btn[data-tone="teal"][aria-pressed="true"] {
+      border-color: rgba(45, 212, 191, 0.42);
+      background: linear-gradient(135deg, rgba(204, 251, 241, 0.98), rgba(255, 255, 255, 0.95));
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.86rem;
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.20);
+      color: #4f647f;
+    }
+
+    .mini-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.7rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      line-height: 1;
+      color: #526985;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .fade-up {
+      animation: fadeUp 0.35s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .toast {
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.24s ease, transform 0.24s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .soft-ring {
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 10px 24px rgba(125, 148, 180, 0.10);
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="text-slate-700">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    <header class="panel rounded-[30px] shadow-soft overflow-hidden relative">
+      <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-sky-100/70 blur-2xl"></div>
+      <div class="absolute -bottom-10 left-8 w-32 h-32 rounded-full bg-emerald-100/70 blur-2xl"></div>
+
+      <div class="relative p-6 sm:p-8 lg:p-10">
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <span class="chip">👓 新人スタッフ向け</span>
+          <span class="chip">🛡️ 素材・保証・トークを一括表示</span>
+          <span class="chip">🌈 親御さんに安心感が伝わる設計</span>
+        </div>
+
+        <div class="grid lg:grid-cols-[1.25fr_0.75fr] gap-6 items-start">
+          <div>
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 tracking-tight">
+              キッズメガネ<br class="sm:hidden"> 安心素材＆保証ナビ
+            </h1>
+            <p class="mt-3 text-[15px] sm:text-base leading-7 text-slate-600 max-w-2xl">
+              お子様の年齢層と、親御さんの一番の心配事を選ぶだけ。
+              おすすめ素材・保証の伝え方・そのまま使える提案トークを、やさしいカード形式で整理します。
+            </p>
+          </div>
+
+          <div class="rounded-[26px] bg-white/80 border border-white/70 p-5 soft-ring">
+            <p class="text-sm font-semibold text-slate-700">このアプリでできること</p>
+            <div class="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+              <div class="flex gap-3">
+                <span class="w-7 h-7 rounded-full bg-sky-100 flex items-center justify-center shrink-0">1</span>
+                <p>年齢に合った「壊れにくさ」「軽さ」「安全性」の軸がすぐわかる</p>
+              </div>
+              <div class="flex gap-3">
+                <span class="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">2</span>
+                <p>保証の価値を、親御さんの不安に沿った言葉で説明できる</p>
+              </div>
+              <div class="flex gap-3">
+                <span class="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center shrink-0">3</span>
+                <p>提案トークをコピーして、接客の型としてすぐ使える</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mt-6 grid lg:grid-cols-[1.35fr_0.65fr] gap-6">
+      <section class="panel rounded-[28px] p-5 sm:p-7 shadow-soft">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-slate-800">選択ステップ</p>
+            <p id="helperText" class="mt-1 text-sm text-slate-600">
+              まずは年齢層と心配事を1つずつ選ぶと、案内カードが表示されます。
+            </p>
+          </div>
+          <button
+            id="resetSelections"
+            type="button"
+            class="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium bg-white/90 border border-slate-200 text-slate-700 hover:bg-slate-50 transition"
+          >
+            選択をリセット
+          </button>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-2">
+          <span id="ageChip" class="chip">🧒 年齢層：未選択</span>
+          <span id="concernChip" class="chip">💭 心配事：未選択</span>
+        </div>
+
+        <div class="mt-7 space-y-7">
+          <section>
+            <div class="flex items-center gap-3 mb-3">
+              <span class="w-9 h-9 rounded-2xl bg-sky-100 flex items-center justify-center text-lg">①</span>
+              <div>
+                <h2 class="text-lg font-bold text-slate-800">お客様（お子様）の年齢層</h2>
+                <p class="text-sm text-slate-600">年齢によって、壊れ方・ズレ方・見え方の変化ポイントが変わります。</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-3">
+              <button type="button" class="option-btn rounded-[24px] p-4 text-left" data-group="age" data-value="preschool" data-tone="sky" aria-pressed="false">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800">未就学児</p>
+                    <p class="mt-1 text-xs text-slate-500">元気いっぱいでよく転ぶ</p>
+                  </div>
+                  <span class="text-xl">🧸</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                  軽さ・やわらかさ・掛け続けやすさが特に大切な時期。
+                </p>
+              </button>
+
+              <button type="button" class="option-btn rounded-[24px] p-4 text-left" data-group="age" data-value="lower" data-tone="mint" aria-pressed="false">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800">小学校低学年</p>
+                    <p class="mt-1 text-xs text-slate-500">体育や外遊びが激しい</p>
+                  </div>
+                  <span class="text-xl">🏃</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                  曲がりにくさと、毎日の扱いに耐える丈夫さが伝わりやすい時期。
+                </p>
+              </button>
+
+              <button type="button" class="option-btn rounded-[24px] p-4 text-left" data-group="age" data-value="upper" data-tone="lilac" aria-pressed="false">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800">小学校高学年〜中学生</p>
+                    <p class="mt-1 text-xs text-slate-500">部活やスマホで度数が変わりやすい</p>
+                  </div>
+                  <span class="text-xl">📚</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                  長時間の掛け心地と、度数変化や持ち運びへの備えが鍵になります。
+                </p>
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <div class="flex items-center gap-3 mb-3">
+              <span class="w-9 h-9 rounded-2xl bg-rose-100 flex items-center justify-center text-lg">②</span>
+              <div>
+                <h2 class="text-lg font-bold text-slate-800">親御さんの一番の心配事</h2>
+                <p class="text-sm text-slate-600">不安の種類に合わせて、素材の見せ方と保証の言葉を切り替えます。</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-3">
+              <button type="button" class="option-btn rounded-[24px] p-4 text-left" data-group="concern" data-value="durability" data-tone="peach" aria-pressed="false">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800">耐久性</p>
+                    <p class="mt-1 text-xs text-slate-500">すぐに壊したり曲げたりしないか心配</p>
+                  </div>
+                  <span class="text-xl">🛠️</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                  「長持ちしやすい」「買い替え負担を減らせる」が刺さりやすいテーマです。
+                </p>
+              </button>
+
+              <button type="button" class="option-btn rounded-[24px] p-4 text-left" data-group="concern" data-value="degree" data-tone="rose" aria-pressed="false">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800">度数変化</p>
+                    <p class="mt-1 text-xs text-slate-500">視力がどんどん落ちないか心配</p>
+                  </div>
+                  <span class="text-xl">📈</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                  素材だけでなく、「見えづらくなった時すぐ相談できる安心感」が重要です。
+                </p>
+              </button>
+
+              <button type="button" class="option-btn rounded-[24px] p-4 text-left" data-group="concern" data-value="safety" data-tone="teal" aria-pressed="false">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-800">安全性</p>
+                    <p class="mt-1 text-xs text-slate-500">転倒やボールで怪我をしないか心配</p>
+                  </div>
+                  <span class="text-xl">🛡️</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                  柔らかさ・顔あたり・ズレにくさ・調整無料まで一緒に伝えると安心感が増します。
+                </p>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="panel rounded-[28px] p-5 sm:p-6 shadow-soft">
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 rounded-2xl bg-violet-100 flex items-center justify-center text-lg shrink-0">⚙️</span>
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">自店の保証テンプレート調整</h2>
+            <p class="mt-1 text-sm leading-6 text-slate-600">
+              数字を書き換えると、保証カードと提案トークの文言が自店向けに変わります。
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-5 space-y-4">
+          <div class="rounded-[22px] bg-sky-50/80 border border-sky-100 p-4">
+            <p class="text-sm font-semibold text-slate-800">度数変更保証</p>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+              <label class="block">
+                <span class="text-xs text-slate-500">年数</span>
+                <div class="mt-1 relative">
+                  <input id="lensYears" type="number" min="1" max="5" inputmode="numeric" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-800 outline-none focus:ring-2 focus:ring-sky-200" />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">年</span>
+                </div>
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-500">無料交換回数</span>
+                <div class="mt-1 relative">
+                  <input id="lensChanges" type="number" min="1" max="5" inputmode="numeric" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-800 outline-none focus:ring-2 focus:ring-sky-200" />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">回</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="rounded-[22px] bg-orange-50/80 border border-orange-100 p-4">
+            <p class="text-sm font-semibold text-slate-800">破損・変形サポート</p>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+              <label class="block">
+                <span class="text-xs text-slate-500">年数</span>
+                <div class="mt-1 relative">
+                  <input id="breakageYears" type="number" min="1" max="5" inputmode="numeric" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-800 outline-none focus:ring-2 focus:ring-orange-200" />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">年</span>
+                </div>
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-500">交換サポート回数</span>
+                <div class="mt-1 relative">
+                  <input id="breakageExchanges" type="number" min="1" max="3" inputmode="numeric" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-slate-800 outline-none focus:ring-2 focus:ring-orange-200" />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">回</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-3">
+          <button id="savePolicy" type="button" class="inline-flex items-center justify-center rounded-full px-4 py-3 bg-slate-800 text-white font-medium hover:bg-slate-700 transition">
+            保証文言を更新
+          </button>
+          <button id="resetPolicy" type="button" class="inline-flex items-center justify-center rounded-full px-4 py-3 bg-white border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">
+            初期値に戻す
+          </button>
+        </div>
+
+        <div class="mt-4 rounded-[22px] bg-white/85 border border-slate-200 p-4">
+          <p class="text-xs font-semibold tracking-wide text-slate-500">使い方のコツ</p>
+          <p class="mt-2 text-sm leading-6 text-slate-600">
+            親御さんには「素材が強いから安心」だけで終わらず、
+            「もしもの時も、この保証内容なら大丈夫です」とセットで伝えると納得感が上がります。
+          </p>
+        </div>
+      </aside>
+    </main>
+
+    <section id="emptyState" class="mt-6 panel rounded-[28px] p-6 sm:p-8 shadow-soft">
+      <div class="flex flex-col md:flex-row md:items-center gap-5">
+        <div class="flex items-center justify-center w-20 h-20 rounded-[28px] bg-gradient-to-br from-sky-100 via-pink-50 to-emerald-100 text-4xl shrink-0">
+          🌼
+        </div>
+        <div>
+          <h2 id="emptyTitle" class="text-xl font-bold text-slate-800">
+            まだ組み合わせが選ばれていません
+          </h2>
+          <p id="emptyText" class="mt-2 text-sm sm:text-base leading-7 text-slate-600">
+            年齢層と心配事をそれぞれ1つ選ぶと、おすすめ素材・保証の見せ方・提案トークが表示されます。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultSection" class="hidden mt-6">
+      <div class="panel rounded-[28px] p-5 sm:p-7 shadow-soft">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <span id="matchBadge" class="chip">診断結果</span>
+            <h2 id="resultTitle" class="mt-3 text-2xl sm:text-[28px] font-bold text-slate-800">
+              おすすめのご案内
+            </h2>
+            <p id="resultSummary" class="mt-2 text-sm sm:text-base leading-7 text-slate-600 max-w-3xl">
+              選択に合わせた案内がここに表示されます。
+            </p>
+          </div>
+
+          <button id="copyScriptBtn" type="button" class="inline-flex items-center justify-center rounded-full px-5 py-3 bg-slate-800 text-white font-medium hover:bg-slate-700 transition whitespace-nowrap">
+            提案トークをコピー
+          </button>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4 mt-6">
+          <article class="rounded-[24px] bg-sky-50/80 border border-sky-100 p-5">
+            <div class="flex items-center gap-3">
+              <span class="w-11 h-11 rounded-2xl bg-white/80 flex items-center justify-center text-xl shadow-sm">🧩</span>
+              <div>
+                <p class="text-sm font-semibold text-slate-800">おすすめ素材</p>
+                <p class="text-xs text-slate-500">まず伝えるべき価値</p>
+              </div>
+            </div>
+
+            <h3 id="materialName" class="mt-4 text-xl font-bold text-slate-800"></h3>
+            <p id="materialReason" class="mt-3 text-sm leading-7 text-slate-600"></p>
+
+            <div id="materialTags" class="mt-4 flex flex-wrap gap-2"></div>
+
+            <div class="mt-4 rounded-[18px] bg-white/85 border border-white/70 p-4">
+              <p class="text-xs font-semibold tracking-wide text-slate-500">接客メモ</p>
+              <p id="fitTip" class="mt-2 text-sm leading-6 text-slate-600"></p>
+            </div>
+          </article>
+
+          <article class="rounded-[24px] bg-orange-50/80 border border-orange-100 p-5">
+            <div class="flex items-center gap-3">
+              <span class="w-11 h-11 rounded-2xl bg-white/80 flex items-center justify-center text-xl shadow-sm">🛡️</span>
+              <div>
+                <p class="text-sm font-semibold text-slate-800">保証制度の案内</p>
+                <p class="text-xs text-slate-500">安心感を最後に上乗せ</p>
+              </div>
+            </div>
+
+            <span id="guaranteeLabel" class="inline-flex mt-4 mini-tag"></span>
+            <p id="guaranteeText" class="mt-3 text-sm leading-7 text-slate-600"></p>
+
+            <div class="mt-4 rounded-[18px] bg-white/85 border border-white/70 p-4">
+              <p class="text-xs font-semibold tracking-wide text-slate-500">伝え方の順番</p>
+              <p id="guaranteeHint" class="mt-2 text-sm leading-6 text-slate-600"></p>
+            </div>
+          </article>
+
+          <article class="rounded-[24px] bg-violet-50/80 border border-violet-100 p-5">
+            <div class="flex items-center gap-3">
+              <span class="w-11 h-11 rounded-2xl bg-white/80 flex items-center justify-center text-xl shadow-sm">💬</span>
+              <div>
+                <p class="text-sm font-semibold text-slate-800">提案トークスクリプト</p>
+                <p class="text-xs text-slate-500">そのまま読み上げやすい形</p>
+              </div>
+            </div>
+
+            <div id="talkFlow" class="mt-4 flex flex-wrap gap-2"></div>
+
+            <div class="mt-4 rounded-[18px] bg-white/85 border border-white/70 p-4">
+              <p id="talkScript" class="text-sm leading-7 text-slate-700 whitespace-pre-line"></p>
+            </div>
+          </article>
+        </div>
+
+        <p class="mt-4 text-xs leading-6 text-slate-500">
+          ※ 保証の数字や文言はテンプレートです。必ず自店の実際の保証条件に合わせて調整してください。
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast fixed bottom-5 left-1/2 -translate-x-1/2 rounded-full px-4 py-3 text-sm font-medium shadow-lg z-50"></div>
+
+  <script>
+    const DEFAULT_POLICY = {
+      lensYears: 1,
+      lensChanges: 2,
+      breakageYears: 1,
+      breakageExchanges: 1
+    };
+
+    const LABELS = {
+      age: {
+        preschool: "未就学児",
+        lower: "小学校低学年",
+        upper: "小学校高学年〜中学生"
+      },
+      concern: {
+        durability: "耐久性",
+        degree: "度数変化",
+        safety: "安全性"
+      }
+    };
+
+    const TALK_FLOW = ["共感", "素材の理由", "保証で安心", "背中押し"];
+
+    const DATA = {
+      preschool: {
+        durability: {
+          material: "超弾性樹脂（TR系）",
+          reason: "軽くてしなりがあり、転んだり踏んだりした時の負担を逃がしやすい素材です。顔あたりがやさしく、初めての1本にも向きます。",
+          fitTip: "鼻あて一体型や耳かけのフィット調整も合わせると、ズレにくさまで説明できます。",
+          tags: ["軽量", "しなやか", "初めてでも掛けやすい"],
+          summary: "まずは『掛け続けられる軽さ』と『壊れにくさ』をセットで伝えると、親御さんの不安を受け止めやすい組み合わせです。",
+          talkStarter: "元気いっぱいで、走ったり転んだりする時期ですから、『すぐ壊れないかな』と心配になりますよね。",
+          talkCore: "この年代は、軽くてしなる超弾性樹脂が相性抜群です。押されても力を逃がしやすいので、毎日使いやすく、親御さんのヒヤッとする場面を減らしやすいです。",
+          talkClose: "まずは“嫌がらず掛けられる丈夫さ”を優先すると、結果的に長く使いやすいですよ。"
+        },
+        degree: {
+          material: "超軽量樹脂フレーム",
+          reason: "小さいお子様は『見えづらい』を言葉にしづらいため、掛け心地が軽く、こまめな掛け外しでも負担の少ない素材が向いています。",
+          fitTip: "定期フィッティングと視力チェックをセットで案内すると、度数変化への不安を受け止めやすくなります。",
+          tags: ["軽い", "習慣化しやすい", "再来店につなげやすい"],
+          summary: "この組み合わせでは『まず掛ける習慣を作る』ことと、『度数が変わっても相談しやすい』ことを一緒に伝えるのがポイントです。",
+          talkStarter: "小さいお子様は、見え方の変化を自分で伝えにくいので、親御さんは度数が合っているか不安ですよね。",
+          talkCore: "軽くて負担の少ないフレームだと、まず“ちゃんと掛ける習慣”がつきやすくなります。習慣がつくと、見えづらさの変化にも気づきやすくなります。",
+          talkClose: "素材選びに加えて、度数変更の保証を先にお伝えすると、安心してスタートしていただきやすいです。"
+        },
+        safety: {
+          material: "超弾性樹脂 × 丸みのある設計",
+          reason: "しなりがあり、角の当たりがやさしい設計を選ぶことで、転倒時の不安に配慮しやすくなります。",
+          fitTip: "ズレたままだと危ないので、『定期調整無料』まで一緒に伝えると説得力が増します。",
+          tags: ["顔あたりがやさしい", "ズレにくさ重視", "転倒時に配慮"],
+          summary: "安全性の不安には、素材のやわらかさだけでなく、ズレにくさと定期調整まで含めて話すと安心感が強まります。",
+          talkStarter: "転んだ時のお顔まわりの安全性、やっぱり一番気になりますよね。",
+          talkCore: "この年代は、軽くてしなりがあり、角の当たりがやさしいフレーム設計だと安心感が高いです。フィット感が合うとズレにくく、日常のヒヤッとする場面も減らしやすいです。",
+          talkClose: "安全性は素材だけでなく、掛け具合の調整まで含めてご案内すると、親御さんに伝わりやすいです。"
+        }
+      },
+      lower: {
+        durability: {
+          material: "形状記憶合金",
+          reason: "体育や外遊びでぶつかったり、掛けたまま寝転がったりしやすい時期でも、曲がりにくく元に戻りやすいのが強みです。",
+          fitTip: "『グニャッとしても戻りやすい』と実感しやすい言葉で説明すると響きます。",
+          tags: ["曲がりにくい", "外遊びに強い", "コスパが高い"],
+          summary: "この年代は、丈夫さの価値がいちばん伝わりやすい時期。『買い替えが減る＝結果的にコスパが良い』までつなげると強いです。",
+          talkStarter: "小学校低学年のお子様は、体育や外遊びでメガネへの負担が一気に増えますよね。",
+          talkCore: "だからこそ、グニャッと曲がっても元に戻りやすい形状記憶合金がとてもおすすめです。日常のぶつかりや押しつぶしに強く、買い替えリスクを抑えやすいです。",
+          talkClose: "結果的に長持ちしやすいので、一番コスパのいい選び方としてご提案できます。"
+        },
+        degree: {
+          material: "超弾性樹脂 / 形状記憶合金",
+          reason: "学校生活で見え方のチェック頻度が上がる一方、扱いはまだ荒くなりがちなので、丈夫さと軽さの両立がしやすい素材が向きます。",
+          fitTip: "『黒板・タブレット・読書』など学校シーンに言い換えると、親御さんが想像しやすくなります。",
+          tags: ["学校生活に合わせやすい", "丈夫さと軽さ", "度数管理しやすい"],
+          summary: "度数変化を気にされる親御さんには、『見え方の変化に気づきやすい生活導線』と『相談しやすい保証』を一緒に見せるのが効果的です。",
+          talkStarter: "学校が始まると、黒板・読書・タブレットで見え方の差が出やすくなるので、度数変化が気になりますよね。",
+          talkCore: "この年代は、毎日使っても負担が少なく、なおかつ扱いが少し雑でも耐えやすい素材がおすすめです。丈夫なフレームだと、見え方の見直しに集中しやすいのも利点です。",
+          talkClose: "“壊れにくい素材”と“度数変更保証”をセットでお伝えすると、不安を先回りして解消できます。"
+        },
+        safety: {
+          material: "超弾性樹脂 × ホールド感の高いテンプル",
+          reason: "体育や外遊びで動きが激しい時期は、衝撃を逃がせる柔らかさとズレにくさの両方が重要です。",
+          fitTip: "耳まわりのフィットと定期調整の話まで入れると、ただ柔らかいだけで終わりません。",
+          tags: ["体育に配慮", "ズレにくい", "動きに強い"],
+          summary: "安全性は『やわらかい素材』だけでは弱いので、『ズレにくい設計』までセットで伝えると説得力が増します。",
+          talkStarter: "体育や外遊びでぶつかったり、走った時にズレたりしないか心配ですよね。",
+          talkCore: "この年代は、しなりのある素材に加えて、耳まわりまでしっかり支えられる設計が安心です。ズレにくいと視界も安定しやすく、ケガの不安も減らせます。",
+          talkClose: "安全性は“柔らかさ”だけでなく、“しっかり合っているか”まで含めてご提案するのがポイントです。"
+        }
+      },
+      upper: {
+        durability: {
+          material: "ベータチタン / 形状記憶合金",
+          reason: "部活、通学、持ち運びでメガネの使用時間も負荷も増えるため、軽さとタフさの両立がしやすい素材が向いています。",
+          fitTip: "『部活バッグに入れる』『外して机に置く』など、壊れやすい場面を具体化すると刺さります。",
+          tags: ["軽量", "長時間でも快適", "持ち運びに強い"],
+          summary: "高学年〜中学生は『丈夫さ』と同時に『見た目の受け入れやすさ』も重要。軽くてタフな素材は、その両方を取りに行けます。",
+          talkStarter: "高学年から中学生になると、部活や通学でメガネの扱い方が一気に増えて、壊れ方も変わってきますよね。",
+          talkCore: "この時期は、軽いのにタフなベータチタンや形状記憶合金が使いやすいです。長時間掛けても疲れにくく、カバンの出し入れにも比較的強いのが魅力です。",
+          talkClose: "見た目のすっきり感と丈夫さを両立しやすいので、年齢が上がっても受け入れられやすいですよ。"
+        },
+        degree: {
+          material: "軽量ベータチタン",
+          reason: "成長期は度数が変わりやすく、毎日長時間掛けるため、負担の少ない軽さと調整のしやすさが重要です。",
+          fitTip: "“今の度数が合うか”だけでなく、“半年後もすぐ相談できるか”まで言葉にすると安心感が出ます。",
+          tags: ["成長期に合わせやすい", "長時間でも楽", "保証訴求がしやすい"],
+          summary: "このケースは保証訴求が主役。『成長期だから変わるのは自然、でも保証があるから焦らなくて大丈夫』という流れが最も安心感につながります。",
+          talkStarter: "成長期は、半年でグッと度数が進むこともあるので、親御さんはそこが一番不安ですよね。",
+          talkCore: "だからこそ、まずは毎日無理なく掛けられる軽量フレームを選んでおいて、見えづらくなったらすぐ相談できる体制をセットでご案内するのが安心です。",
+          talkClose: "“今の掛け心地”と“これからの度数変化への備え”を両方お渡しするイメージでご提案できます。"
+        },
+        safety: {
+          material: "超弾性樹脂 / スポーツ対応フレーム",
+          reason: "部活や登下校で接触や落下のリスクがあるため、しなりとホールド感のある設計が安心感につながります。",
+          fitTip: "運動量が多い子には、使用シーン別に『学校用・運動用』の考え方を添えると納得感が上がります。",
+          tags: ["部活に配慮", "ホールド感重視", "接触時の不安を軽減"],
+          summary: "高学年以降の安全性は、単なる『柔らかい素材』ではなく、『動く生活に合った設計』として提案するのがコツです。",
+          talkStarter: "部活や登下校でぶつかったり、走ってズレたりする場面を考えると、安全性は気になりますよね。",
+          talkCore: "この年代は、しなりのある素材に加えて、しっかりホールドできる設計が大切です。ズレにくいと視界が安定しやすく、動く場面でも安心感が出ます。",
+          talkClose: "必要に応じて、運動時の使い方や調整頻度まで一緒にご案内すると、より信頼していただきやすいです。"
+        }
+      }
+    };
+
+    const state = {
+      age: null,
+      concern: null,
+      policy: loadPolicy()
+    };
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function safeNumber(value, min, max, fallback) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return fallback;
+      return Math.min(max, Math.max(min, Math.round(num)));
+    }
+
+    function loadPolicy() {
+      try {
+        const raw = localStorage.getItem("kidsGlassesPolicy");
+        if (!raw) return { ...DEFAULT_POLICY };
+        const parsed = JSON.parse(raw);
+        return {
+          lensYears: safeNumber(parsed.lensYears, 1, 5, DEFAULT_POLICY.lensYears),
+          lensChanges: safeNumber(parsed.lensChanges, 1, 5, DEFAULT_POLICY.lensChanges),
+          breakageYears: safeNumber(parsed.breakageYears, 1, 5, DEFAULT_POLICY.breakageYears),
+          breakageExchanges: safeNumber(parsed.breakageExchanges, 1, 3, DEFAULT_POLICY.breakageExchanges)
+        };
+      } catch (error) {
+        return { ...DEFAULT_POLICY };
+      }
+    }
+
+    function savePolicyToStorage(policy) {
+      try {
+        localStorage.setItem("kidsGlassesPolicy", JSON.stringify(policy));
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function applyPolicyToInputs() {
+      document.getElementById("lensYears").value = state.policy.lensYears;
+      document.getElementById("lensChanges").value = state.policy.lensChanges;
+      document.getElementById("breakageYears").value = state.policy.breakageYears;
+      document.getElementById("breakageExchanges").value = state.policy.breakageExchanges;
+    }
+
+    function collectPolicyFromInputs() {
+      let adjusted = false;
+
+      function normalize(id, min, max, fallback) {
+        const input = document.getElementById(id);
+        const original = input.value;
+        const normalized = safeNumber(original, min, max, fallback);
+        if (String(normalized) !== String(original).trim()) adjusted = true;
+        input.value = normalized;
+        return normalized;
+      }
+
+      return {
+        policy: {
+          lensYears: normalize("lensYears", 1, 5, state.policy.lensYears),
+          lensChanges: normalize("lensChanges", 1, 5, state.policy.lensChanges),
+          breakageYears: normalize("breakageYears", 1, 5, state.policy.breakageYears),
+          breakageExchanges: normalize("breakageExchanges", 1, 3, state.policy.breakageExchanges)
+        },
+        adjusted
+      };
+    }
+
+    function getGuaranteeBlock(concern, policy) {
+      if (concern === "degree") {
+        return {
+          label: "度数変更保証を主役に",
+          text: `ご購入から${policy.lensYears}年以内は、度数進行によるレンズ交換を${policy.lensChanges}回まで無料でご案内するテンプレートです。見えづらさを我慢させず、早めの再来店につなげやすくなります。`,
+          hint: "見え方の変化 → 保証 → 来店しやすさ、の順に伝えると安心感が高まります。"
+        };
+      }
+
+      if (concern === "safety") {
+        return {
+          label: "安全性＋もしもの備え",
+          text: `転倒や接触による変形・破損は、まず無料点検。そのうえで、ご購入から${policy.breakageYears}年以内は交換サポートを${policy.breakageExchanges}回までご案内するテンプレートにすると、『もしもの時も相談できる』安心感につながります。`,
+          hint: "安全設計 → フィット調整 → もしものサポート、の順番で話すと納得されやすいです。"
+        };
+      }
+
+      return {
+        label: "破損サポートを主役に",
+        text: `ご購入から${policy.breakageYears}年以内は、通常使用での破損・大きな変形について交換サポートを${policy.breakageExchanges}回までご案内するテンプレートです。ネジゆるみや掛け具合の微調整はいつでも無料、という言い方も相性が良いです。`,
+        hint: "素材の強さ → 長持ち → 交換サポート、の順に話すとコスパの良さが伝わります。"
+      };
+    }
+
+    function getGuaranteeLineForTalk(concern, policy) {
+      if (concern === "degree") {
+        return `でもご安心ください。ご購入から${policy.lensYears}年以内の度数変更は${policy.lensChanges}回まで無料交換できるご案内にしておくと、見えづらさを我慢せず相談していただきやすいです。`;
+      }
+
+      if (concern === "safety") {
+        return `さらに、もしぶつけたり転んだりして変形が気になった時も、ご購入から${policy.breakageYears}年以内は交換サポートを${policy.breakageExchanges}回までご案内できる形にしておくと、『もしもの時も大丈夫』と感じていただきやすいです。`;
+      }
+
+      return `さらに、万が一の時もご安心ください。ご購入から${policy.breakageYears}年以内は破損や大きな変形に対して交換サポートを${policy.breakageExchanges}回までご案内できる形にしておくと、毎日使うハードルを下げられます。`;
+    }
+
+    function buildTalkScript(entry, concern, policy) {
+      return [
+        entry.talkStarter,
+        entry.talkCore,
+        getGuaranteeLineForTalk(concern, policy),
+        entry.talkClose
+      ].join("\n");
+    }
+
+    function updateOptionStates() {
+      document.querySelectorAll('[data-group="age"]').forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.value === state.age));
+      });
+
+      document.querySelectorAll('[data-group="concern"]').forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.value === state.concern));
+      });
+    }
+
+    function updateSelectionChips() {
+      document.getElementById("ageChip").textContent = `🧒 年齢層：${state.age ? LABELS.age[state.age] : "未選択"}`;
+      document.getElementById("concernChip").textContent = `💭 心配事：${state.concern ? LABELS.concern[state.concern] : "未選択"}`;
+    }
+
+    function updateHelperText() {
+      const helperText = document.getElementById("helperText");
+      const emptyTitle = document.getElementById("emptyTitle");
+      const emptyText = document.getElementById("emptyText");
+
+      if (!state.age && !state.concern) {
+        helperText.textContent = "まずは年齢層と心配事を1つずつ選ぶと、案内カードが表示されます。";
+        emptyTitle.textContent = "まだ組み合わせが選ばれていません";
+        emptyText.textContent = "年齢層と心配事をそれぞれ1つ選ぶと、おすすめ素材・保証の見せ方・提案トークが表示されます。";
+        return;
+      }
+
+      if (state.age && !state.concern) {
+        helperText.textContent = "つぎに親御さんの心配事を選ぶと、保証の言い方まで絞り込めます。";
+        emptyTitle.textContent = "あと1つで、案内カードが完成します";
+        emptyText.textContent = "お子様の年齢層は選ばれています。次は、親御さんがいちばん気にしている不安を選んでください。";
+        return;
+      }
+
+      if (!state.age && state.concern) {
+        helperText.textContent = "つぎに年齢層を選ぶと、素材選びの理由まで具体的になります。";
+        emptyTitle.textContent = "あと1つで、ぴったりの提案に変わります";
+        emptyText.textContent = "心配事は選ばれています。次は、お子様の年齢層を選ぶと、おすすめ素材とトークが具体化されます。";
+        return;
+      }
+
+      helperText.textContent = "組み合わせに合った案内が表示されています。トークはそのままコピーして使えます。";
+    }
+
+    function updateResult() {
+      const emptyState = document.getElementById("emptyState");
+      const resultSection = document.getElementById("resultSection");
+
+      if (!state.age || !state.concern) {
+        resultSection.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      const entry = DATA[state.age][state.concern];
+      const guarantee = getGuaranteeBlock(state.concern, state.policy);
+      const talkScript = buildTalkScript(entry, state.concern, state.policy);
+
+      document.getElementById("matchBadge").textContent = `${LABELS.age[state.age]} × ${LABELS.concern[state.concern]}`;
+      document.getElementById("resultTitle").textContent = `${LABELS.age[state.age]}におすすめのご案内`;
+      document.getElementById("resultSummary").textContent = entry.summary;
+
+      document.getElementById("materialName").textContent = entry.material;
+      document.getElementById("materialReason").textContent = entry.reason;
+      document.getElementById("fitTip").textContent = entry.fitTip;
+      document.getElementById("materialTags").innerHTML = entry.tags
+        .map((tag) => `<span class="mini-tag">${escapeHtml(tag)}</span>`)
+        .join("");
+
+      document.getElementById("guaranteeLabel").textContent = guarantee.label;
+      document.getElementById("guaranteeText").textContent = guarantee.text;
+      document.getElementById("guaranteeHint").textContent = guarantee.hint;
+
+      document.getElementById("talkFlow").innerHTML = TALK_FLOW
+        .map((step) => `<span class="mini-tag">${escapeHtml(step)}</span>`)
+        .join("");
+
+      document.getElementById("talkScript").textContent = talkScript;
+      document.getElementById("copyScriptBtn").dataset.script = talkScript;
+
+      emptyState.classList.add("hidden");
+      resultSection.classList.remove("hidden");
+      resultSection.classList.remove("fade-up");
+      void resultSection.offsetWidth;
+      resultSection.classList.add("fade-up");
+    }
+
+    function render() {
+      updateOptionStates();
+      updateSelectionChips();
+      updateHelperText();
+      updateResult();
+    }
+
+    let toastTimer = null;
+
+    function showToast(message, type = "info") {
+      const toast = document.getElementById("toast");
+      const themes = {
+        info: { bg: "rgba(79, 70, 229, 0.95)", color: "#ffffff" },
+        success: { bg: "rgba(15, 118, 110, 0.95)", color: "#ffffff" },
+        warn: { bg: "rgba(194, 65, 12, 0.95)", color: "#ffffff" }
+      };
+
+      const theme = themes[type] || themes.info;
+      toast.textContent = message;
+      toast.style.background = theme.bg;
+      toast.style.color = theme.color;
+      toast.classList.add("show");
+
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2200);
+    }
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+
+      try {
+        const ok = document.execCommand("copy");
+        if (ok) {
+          showToast("提案トークをコピーしました。", "success");
+        } else {
+          showToast("コピーに失敗しました。手動でコピーしてください。", "warn");
+        }
+      } catch (error) {
+        showToast("コピーに失敗しました。手動でコピーしてください。", "warn");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function copyScript() {
+      const button = document.getElementById("copyScriptBtn");
+      const text = button.dataset.script || "";
+
+      if (!text) {
+        showToast("コピーする提案トークがまだありません。", "warn");
+        return;
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+          .then(() => showToast("提案トークをコピーしました。", "success"))
+          .catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function resetSelections() {
+      state.age = null;
+      state.concern = null;
+      render();
+      showToast("選択をリセットしました。", "info");
+    }
+
+    function resetPolicy() {
+      state.policy = { ...DEFAULT_POLICY };
+      applyPolicyToInputs();
+      savePolicyToStorage(state.policy);
+      render();
+      showToast("保証テンプレートを初期値に戻しました。", "info");
+    }
+
+    function savePolicy() {
+      const { policy, adjusted } = collectPolicyFromInputs();
+      state.policy = policy;
+      const saved = savePolicyToStorage(policy);
+      render();
+
+      if (adjusted) {
+        showToast("入力値を安全な範囲に調整して更新しました。", "warn");
+        return;
+      }
+
+      if (!saved) {
+        showToast("文言は更新しましたが、ブラウザ保存はできませんでした。", "warn");
+        return;
+      }
+
+      showToast("保証テンプレートを更新しました。", "success");
+    }
+
+    function bindEvents() {
+      document.querySelectorAll(".option-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          const group = button.dataset.group;
+          const value = button.dataset.value;
+
+          if (group === "age") {
+            state.age = value;
+          } else if (group === "concern") {
+            state.concern = value;
+          }
+
+          render();
+        });
+      });
+
+      document.getElementById("resetSelections").addEventListener("click", resetSelections);
+      document.getElementById("copyScriptBtn").addEventListener("click", copyScript);
+      document.getElementById("savePolicy").addEventListener("click", savePolicy);
+      document.getElementById("resetPolicy").addEventListener("click", resetPolicy);
+    }
+
+    function init() {
+      applyPolicyToInputs();
+      bindEvents();
+      render();
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
