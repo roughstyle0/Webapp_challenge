@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>レンズコーティング提案ナビ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pearl: "#f7f3ee",
+            champagne: "#e9decd",
+            gold: "#b79a68",
+            ink: "#203042",
+            smoke: "#6b7280"
+          },
+          fontFamily: {
+            sans: ['"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', '"Yu Gothic"', '"Noto Sans JP"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.92), rgba(255,255,255,0) 38%),
+        radial-gradient(circle at bottom right, rgba(205,184,145,.18), rgba(205,184,145,0) 34%),
+        linear-gradient(180deg, #f7f3ee 0%, #f1ece4 54%, #ebe5db 100%);
+    }
+    .luxury-panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.68) 100%);
+      backdrop-filter: blur(14px);
+    }
+    .sheen {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .sheen::before {
+      content: "";
+      position: absolute;
+      inset: -30% auto auto -10%;
+      width: 46%;
+      height: 180%;
+      transform: rotate(18deg);
+      background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.38), rgba(255,255,255,0));
+      pointer-events: none;
+      z-index: -1;
+    }
+    .fade-in {
+      animation: fadeIn .38s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fine-grid {
+      background-image:
+        linear-gradient(rgba(32,48,66,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(32,48,66,.04) 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-position: center;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased">
+  <div class="pointer-events-none fixed inset-0 overflow-hidden">
+    <div class="absolute -left-24 top-16 h-72 w-72 rounded-full bg-white/50 blur-3xl"></div>
+    <div class="absolute right-0 top-0 h-80 w-80 rounded-full bg-[#d7c2a1]/25 blur-3xl"></div>
+    <div class="absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-white/35 blur-3xl"></div>
+  </div>
+
+  <main class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <section class="grid gap-6 lg:grid-cols-[1.25fr_0.85fr]">
+      <div class="luxury-panel rounded-[32px] border border-white/80 p-8 shadow-[0_24px_80px_rgba(31,41,55,0.10)] sm:p-10">
+        <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-[#b79a68]/30 bg-white/70 px-4 py-2 text-xs font-medium tracking-[0.24em] text-[#7d6540] uppercase">
+          Consulting Navigator
+        </div>
+        <div class="space-y-5">
+          <h1 class="text-3xl font-semibold leading-tight text-ink sm:text-[2.65rem]">
+            眼鏡屋向け<br class="hidden sm:block" />
+            レンズコーティング（オプション）提案ナビ
+          </h1>
+          <p class="max-w-3xl text-[15px] leading-8 text-slate-600 sm:text-base">
+            お客様の“悩み”から会話を始めれば、オプション提案は押し売りではなく
+            <span class="font-semibold text-ink">解決のためのコンサルティング</span>になります。
+            新人スタッフでも迷わず使えるように、悩み別のおすすめコーティングと、
+            そのまま使える自然な提案トークを一枚のカードにまとめました。
+          </p>
+        </div>
+
+        <div class="mt-8 grid gap-4 sm:grid-cols-3">
+          <div class="rounded-3xl border border-white/90 bg-white/70 p-5 shadow-[0_12px_36px_rgba(31,41,55,0.07)]">
+            <p class="text-xs font-semibold tracking-[0.22em] text-[#8b6b3f] uppercase">Step 1</p>
+            <p class="mt-2 text-lg font-semibold text-ink">悩みを選ぶ</p>
+            <p class="mt-2 text-sm leading-7 text-slate-600">まずは機能ではなく、日常のストレスから会話を始めます。</p>
+          </div>
+          <div class="rounded-3xl border border-white/90 bg-white/70 p-5 shadow-[0_12px_36px_rgba(31,41,55,0.07)]">
+            <p class="text-xs font-semibold tracking-[0.22em] text-[#8b6b3f] uppercase">Step 2</p>
+            <p class="mt-2 text-lg font-semibold text-ink">ベネフィットで伝える</p>
+            <p class="mt-2 text-sm leading-7 text-slate-600">性能説明よりも「どう快適になるか」を中心に提案します。</p>
+          </div>
+          <div class="rounded-3xl border border-white/90 bg-white/70 p-5 shadow-[0_12px_36px_rgba(31,41,55,0.07)]">
+            <p class="text-xs font-semibold tracking-[0.22em] text-[#8b6b3f] uppercase">Step 3</p>
+            <p class="mt-2 text-lg font-semibold text-ink">選択権を残す</p>
+            <p class="mt-2 text-sm leading-7 text-slate-600">最後は「候補に入れますか？」で締めると自然で上品です。</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="luxury-panel fine-grid rounded-[32px] border border-white/80 p-6 shadow-[0_24px_80px_rgba(31,41,55,0.10)] sm:p-7">
+        <div class="flex items-center gap-3">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#203042] text-white shadow-lg">
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364 6.364-2.121-2.121M8.757 8.757 6.636 6.636m11.728 0-2.121 2.121M8.757 15.243l-2.121 2.121"/>
+              <circle cx="12" cy="12" r="4.5" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs font-semibold tracking-[0.22em] text-[#8b6b3f] uppercase">For New Staff</p>
+            <h2 class="text-xl font-semibold text-ink">押し売り感を減らす接客メモ</h2>
+          </div>
+        </div>
+
+        <div class="mt-6 space-y-4">
+          <div class="rounded-[24px] border border-white/80 bg-white/80 p-5">
+            <p class="text-sm font-semibold text-ink">NGになりやすい入り方</p>
+            <p class="mt-2 text-sm leading-7 text-slate-600">「こちらも人気です」「皆さん付けます」だけで勧めると、売り込み感が強くなります。</p>
+          </div>
+          <div class="rounded-[24px] border border-white/80 bg-white/80 p-5">
+            <p class="text-sm font-semibold text-ink">おすすめの入り方</p>
+            <p class="mt-2 text-sm leading-7 text-slate-600">「そのお悩みなら」「普段の使い方だと」のように、お客様の生活に結びつけて提案すると自然です。</p>
+          </div>
+          <div class="rounded-[24px] border border-white/80 bg-white/80 p-5">
+            <p class="text-sm font-semibold text-ink">最後のひと言</p>
+            <p class="mt-2 text-sm leading-7 text-slate-600">「必要でしたら候補に入れて比較しましょうか？」で締めると、選択権をお客様に残せます。</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="mt-8">
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="text-xs font-semibold tracking-[0.22em] text-[#8b6b3f] uppercase">Customer Stress Selector</p>
+          <h2 class="mt-1 text-2xl font-semibold text-ink">お客様の日常の悩みを選んでください</h2>
+        </div>
+        <div class="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm text-slate-600 shadow-sm">
+          選択中:
+          <span id="selected-status" class="font-semibold text-ink">まだ選択されていません</span>
+        </div>
+      </div>
+
+      <div id="problem-buttons" role="tablist" aria-label="お客様の悩み" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="result-panel"
+          tabindex="0"
+          data-problem="digital-eye"
+          class="group rounded-[28px] border border-white/80 bg-white/60 p-5 text-left shadow-[0_12px_36px_rgba(31,41,55,0.08)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[0_18px_48px_rgba(31,41,55,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b79a68]/50"
+        >
+          <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#203042] text-white shadow-lg">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <rect x="4" y="5" width="16" height="11" rx="2"></rect>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 19h8M12 16v3"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold leading-7 text-ink">パソコンやスマホを長時間見ると目が疲れる</p>
+              <p class="mt-2 text-xs leading-6 text-slate-500">デジタル作業の負担に配慮した提案</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="result-panel"
+          tabindex="-1"
+          data-problem="scratch"
+          class="group rounded-[28px] border border-white/80 bg-white/60 p-5 text-left shadow-[0_12px_36px_rgba(31,41,55,0.08)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[0_18px_48px_rgba(31,41,55,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b79a68]/50"
+        >
+          <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#203042] text-white shadow-lg">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3 5 6v5c0 4.5 2.9 8.7 7 10 4.1-1.3 7-5.5 7-10V6l-7-3Z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold leading-7 text-ink">レンズにすぐ傷がついてしまい、長持ちしない</p>
+              <p class="mt-2 text-xs leading-6 text-slate-500">長くきれいに使いたい方向けの提案</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="result-panel"
+          tabindex="-1"
+          data-problem="reflection"
+          class="group rounded-[28px] border border-white/80 bg-white/60 p-5 text-left shadow-[0_12px_36px_rgba(31,41,55,0.08)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[0_18px_48px_rgba(31,41,55,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b79a68]/50"
+        >
+          <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#203042] text-white shadow-lg">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m12 3 1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3Z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 14v2m0 4v-2m3-1h-2m-2 0h-2"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold leading-7 text-ink">夜の運転中のライトや、写真撮影時のレンズ反射が気になる</p>
+              <p class="mt-2 text-xs leading-6 text-slate-500">視界のクリアさと見た目の印象を両立</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="result-panel"
+          tabindex="-1"
+          data-problem="fog"
+          class="group rounded-[28px] border border-white/80 bg-white/60 p-5 text-left shadow-[0_12px_36px_rgba(31,41,55,0.08)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[0_18px_48px_rgba(31,41,55,0.12)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b79a68]/50"
+        >
+          <div class="flex items-start gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#203042] text-white shadow-lg">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 18h8a4 4 0 1 0-.8-7.9A5.5 5.5 0 0 0 5 11.5 3.5 3.5 0 0 0 8 18Z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold leading-7 text-ink">マスク着用時や、温かい飲み物を飲む時にレンズが曇る</p>
+              <p class="mt-2 text-xs leading-6 text-slate-500">毎日の煩わしさを減らす快適提案</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <section class="mt-8">
+      <div
+        id="result-panel"
+        role="tabpanel"
+        aria-live="polite"
+        class="luxury-panel min-h-[420px] rounded-[36px] border border-white/80 p-4 shadow-[0_28px_90px_rgba(31,41,55,0.12)] sm:p-6 lg:p-8"
+      >
+        <div class="flex h-full min-h-[360px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[#b79a68]/30 bg-white/55 px-6 py-10 text-center">
+          <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#203042] text-white shadow-xl">
+            <svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <p class="mt-6 text-xs font-semibold tracking-[0.24em] text-[#8b6b3f] uppercase">Ready for Consulting</p>
+          <h3 class="mt-3 text-2xl font-semibold text-ink">上の悩みボタンを選ぶと、提案カードが表示されます</h3>
+          <p class="mt-4 max-w-2xl text-sm leading-8 text-slate-600 sm:text-base">
+            おすすめコーティング、自然なトークスクリプト、押し売りに見せないコツをまとめて表示します。
+            まずはお客様が口にしたストレスに一番近いものを選んでください。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-6 px-1 text-xs leading-6 text-slate-500">
+      ※ コーティング名称や性能表現はメーカーごとに異なる場合があります。実際の店頭提案では、取り扱いレンズの仕様に合わせて言い回しを調整してください。
+    </footer>
+  </main>
+
+  <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 translate-y-4 rounded-2xl border border-white/80 bg-[#203042]/95 px-4 py-3 text-sm text-white opacity-0 shadow-2xl transition duration-300"></div>
+  <div id="announcer" aria-live="polite" class="sr-only"></div>
+
+  <script>
+    const concerns = {
+      "digital-eye": {
+        label: "パソコンやスマホを長時間見ると目が疲れる",
+        coating: "ブルーライトカット",
+        tagline: "長時間のデジタル作業を、毎日の快適さで支える定番提案",
+        insight: "「機能」よりも「夕方のつらさが少しラクになるかも」という日常メリットで伝えると、押し売り感が出にくくなります。",
+        benefits: [
+          "長時間の画面作業に配慮しやすい",
+          "夕方の疲れ感を相談しやすい",
+          "デスクワークのお客様に提案しやすい"
+        ],
+        empathy: "お仕事や日常で、画面を見る時間が長いんですね。",
+        reason: "ブルーライトカットを付けておくと、長時間使用時の負担感に配慮しやすく、普段使いの快適さにつながりやすいです。",
+        softClose: "必要でしたら、このレンズ設計と一緒に候補に入れて比べてみましょうか。",
+        talk: "お仕事でPCを長く使われるんですね。それでしたら、ブルーライトカットを追加しておくと、夕方の目の疲れ感に配慮しやすく、毎日使うメガネとして快適さが上がりやすいです。画面を見る時間が長い方に人気のある組み合わせなので、候補のひとつとして一緒に見てみましょうか。",
+        tip: "最初に生活背景へ共感してから提案すると、機能の売り込みではなく“悩み相談への回答”に聞こえます。",
+        followUp: "特に目がつらくなるのは、夕方ですか？ それとも作業の直後ですか？",
+        note: "学生、在宅勤務、事務職など、使用シーンが想像しやすいお客様に自然につなげやすい提案です。",
+        icon: `
+          <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <rect x="4" y="5" width="16" height="11" rx="2"></rect>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 19h8M12 16v3"></path>
+          </svg>
+        `
+      },
+      "scratch": {
+        label: "レンズにすぐ傷がついてしまい、長持ちしない",
+        coating: "超硬質（キズ防止）コート",
+        tagline: "レンズを長くきれいに使いたい方に向く、耐久性重視の提案",
+        insight: "「傷に強い」だけでなく、「買い替えストレスを減らしやすい」「きれいな見た目を保ちやすい」と伝えると価値が伝わりやすいです。",
+        benefits: [
+          "日常使いの細かな擦れに配慮",
+          "見た目のきれいさを保ちやすい",
+          "結果的に長持ちしやすい"
+        ],
+        empathy: "レンズの傷、気になりますよね。",
+        reason: "超硬質のキズ防止コートなら、普段使いで起こりやすい小傷に配慮しやすく、長く気持ちよく使いやすくなります。",
+        softClose: "毎日使うメガネだからこそ、長持ち重視なら相性の良い選択肢だと思います。",
+        talk: "レンズの傷、気になりますよね。それでしたら、超硬質のキズ防止コートを付けておくと、普段使いでの細かな傷に配慮しやすく、きれいな状態を長く保ちやすくなります。結果的にメガネが長持ちしやすいので、コスパを重視される方にも選ばれやすいオプションです。",
+        tip: "“高い機能”として売るより、“長く気持ちよく使える”という生活メリットで伝えるとやわらかい印象になります。",
+        followUp: "お仕事や外出でも毎日しっかり使われることが多いですか？",
+        note: "アクティブなお客様や、お子さま用、予備メガネを作らない方にも相性が良い提案です。",
+        icon: `
+          <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3 5 6v5c0 4.5 2.9 8.7 7 10 4.1-1.3 7-5.5 7-10V6l-7-3Z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="m9 12 2 2 4-4"></path>
+          </svg>
+        `
+      },
+      "reflection": {
+        label: "夜の運転中の対向車のライトや、写真撮影時のレンズの反射が気になる",
+        coating: "超低反射コート",
+        tagline: "視界のクリアさと見た目の自然さを両立しやすい上質提案",
+        insight: "夜間の見え方と、写真に写る印象の両方に触れると、お客様自身が“自分ごと”としてイメージしやすくなります。",
+        benefits: [
+          "夜間のギラつき感に配慮しやすい",
+          "写真写りの反射を抑えやすい",
+          "レンズの存在感が自然に見えやすい"
+        ],
+        empathy: "反射やライトのギラつき、気になりますよね。",
+        reason: "超低反射コートはレンズ表面の反射を抑えやすく、視界のクリアさや見た目の自然さにつながりやすいです。",
+        softClose: "運転や写真のシーンが多いようでしたら、かなり相性の良い候補になります。",
+        talk: "夜の運転や写真の反射が気になるようでしたら、超低反射コートが相性の良い選択肢です。レンズのギラつきを抑えやすいので、視界がよりクリアに感じやすくなりますし、写真に写ったときも目元が自然に見えやすくなります。見え方と見た目の両方を重視される方に人気のあるタイプです。",
+        tip: "“高級機能”ではなく、“夜の運転がしやすい・写真で目元が見えやすい”という具体的な生活シーンで話すと刺さりやすいです。",
+        followUp: "運転と写真、どちらの場面で特に気になりやすいですか？",
+        note: "運転頻度が高い方、接客業、営業職、写真を撮る機会が多い方に提案しやすいです。",
+        icon: `
+          <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m12 3 1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3Z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14v2m0 4v-2m3-1h-2m-2 0h-2"></path>
+          </svg>
+        `
+      },
+      "fog": {
+        label: "マスク着用時や、温かい飲み物を飲む時にレンズが曇るのがストレス",
+        coating: "くもり止めコート",
+        tagline: "毎日の煩わしさを減らす、体感価値の高い快適提案",
+        insight: "“毎朝スプレーを塗る手間”“マスクのたびに曇るわずらわしさ”など、行動のストレスを言語化すると納得感が高まります。",
+        benefits: [
+          "マスク着用時の曇り対策に相性◎",
+          "日常の手間を減らしやすい",
+          "快適さを体感しやすい"
+        ],
+        empathy: "マスクの曇り、本当にストレスですよね。",
+        reason: "くもり止めコートを最初から選んでおくと、毎日のケアの手間を減らしながら、曇りへの対策をしやすくなります。",
+        softClose: "毎日感じるストレスが減るので、快適さ重視の方にはかなり満足度の高い候補です。",
+        talk: "マスクの曇り、本当にストレスですよね。そういうお悩みでしたら、くもり止めコートを最初から付けておくと、毎朝スプレーを塗る手間を減らしながら、日常の曇り対策がしやすくなります。通勤や接客などでマスクを使う時間が長い方には、快適さを実感しやすいオプションです。",
+        tip: "“機能の説明”よりも、“毎日の面倒が減る”と伝える方が、必要性を自然に理解してもらいやすいです。",
+        followUp: "通勤中やお仕事中など、特に曇りやすい場面はどのタイミングですか？",
+        note: "マスク着用が多い職種、寒暖差のある環境、飲食シーンが多い方に効果的な提案です。",
+        icon: `
+          <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 18h8a4 4 0 1 0-.8-7.9A5.5 5.5 0 0 0 5 11.5 3.5 3.5 0 0 0 8 18Z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8"></path>
+          </svg>
+        `
+      }
+    };
+
+    const buttons = Array.from(document.querySelectorAll("[data-problem]"));
+    const resultPanel = document.getElementById("result-panel");
+    const selectedStatus = document.getElementById("selected-status");
+    const toast = document.getElementById("toast");
+    const announcer = document.getElementById("announcer");
+    let toastTimer = null;
+    let currentProblem = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function setActiveButton(activeId) {
+      buttons.forEach((button, index) => {
+        const isActive = button.dataset.problem === activeId;
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
+        button.tabIndex = isActive ? 0 : (activeId ? -1 : index === 0 ? 0 : -1);
+
+        button.classList.toggle("bg-white/95", isActive);
+        button.classList.toggle("border-[#b79a68]/45", isActive);
+        button.classList.toggle("shadow-[0_20px_55px_rgba(71,55,33,0.15)]", isActive);
+        button.classList.toggle("-translate-y-0.5", isActive);
+        button.classList.toggle("ring-2", isActive);
+        button.classList.toggle("ring-[#b79a68]/45", isActive);
+
+        if (!isActive) {
+          button.classList.remove("bg-white/95", "border-[#b79a68]/45", "shadow-[0_20px_55px_rgba(71,55,33,0.15)]", "-translate-y-0.5", "ring-2", "ring-[#b79a68]/45");
+        }
+      });
+    }
+
+    function renderEmpty() {
+      currentProblem = null;
+      selectedStatus.textContent = "まだ選択されていません";
+      setActiveButton(null);
+      try {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+        localStorage.removeItem("lens-coating-problem");
+      } catch (_) {}
+      resultPanel.innerHTML = `
+        <div class="flex h-full min-h-[360px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[#b79a68]/30 bg-white/55 px-6 py-10 text-center fade-in">
+          <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#203042] text-white shadow-xl">
+            <svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <p class="mt-6 text-xs font-semibold tracking-[0.24em] text-[#8b6b3f] uppercase">Ready for Consulting</p>
+          <h3 class="mt-3 text-2xl font-semibold text-ink">上の悩みボタンを選ぶと、提案カードが表示されます</h3>
+          <p class="mt-4 max-w-2xl text-sm leading-8 text-slate-600 sm:text-base">
+            おすすめコーティング、自然なトークスクリプト、押し売りに見せないコツをまとめて表示します。
+            まずはお客様が口にしたストレスに一番近いものを選んでください。
+          </p>
+        </div>
+      `;
+      announcer.textContent = "悩みの選択を待機しています。";
+    }
+
+    function renderError() {
+      currentProblem = null;
+      selectedStatus.textContent = "読み込みに失敗しました";
+      setActiveButton(null);
+      resultPanel.innerHTML = `
+        <div class="fade-in flex min-h-[360px] flex-col items-center justify-center rounded-[28px] border border-[#d5bfa0]/40 bg-white/70 px-6 py-10 text-center">
+          <div class="flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-amber-700 shadow-lg">
+            <svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 4.9 2.8 18a2 2 0 0 0 1.74 3h14.92A2 2 0 0 0 21.2 18L13.7 4.9a2 2 0 0 0-3.4 0Z"></path>
+            </svg>
+          </div>
+          <h3 class="mt-5 text-2xl font-semibold text-ink">提案カードの表示に失敗しました</h3>
+          <p class="mt-3 max-w-xl text-sm leading-8 text-slate-600 sm:text-base">
+            選択内容が見つからないか、読み込みに問題が発生しました。もう一度お悩みを選び直してください。
+          </p>
+          <button id="reset-view" type="button" class="mt-6 rounded-full border border-[#b79a68]/40 bg-white px-5 py-3 text-sm font-semibold text-ink shadow-sm transition hover:bg-[#faf6ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b79a68]/45">
+            初期表示に戻す
+          </button>
+        </div>
+      `;
+      announcer.textContent = "提案カードの表示に失敗しました。";
+    }
+
+    function buildCard(data) {
+      const benefitsHtml = data.benefits
+        .map((benefit) => `
+          <span class="rounded-full border border-[#d8c6aa] bg-[#fbf8f2] px-3 py-2 text-xs font-medium text-[#6f5834]">
+            ${escapeHtml(benefit)}
+          </span>
+        `)
+        .join("");
+
+      const copyText = [
+        `おすすめコーティング: ${data.coating}`,
+        "",
+        "提案トーク",
+        data.talk,
+        "",
+        "押し売りに見せないコツ",
+        data.tip,
+        "",
+        "やわらかな締め",
+        data.softClose
+      ].join("\n");
+
+      return `
+        <div class="fade-in grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+          <div class="rounded-[30px] border border-white/85 bg-white/75 p-6 shadow-[0_14px_40px_rgba(31,41,55,0.08)] sm:p-7">
+            <div class="flex items-start gap-4">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-[#203042] text-white shadow-lg">
+                ${data.icon}
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold tracking-[0.24em] text-[#8b6b3f] uppercase">Recommended Coating</p>
+                <h3 class="mt-2 text-[1.9rem] font-semibold leading-tight text-ink">${escapeHtml(data.coating)}</h3>
+                <p class="mt-3 text-sm leading-7 text-slate-600 sm:text-[15px]">${escapeHtml(data.tagline)}</p>
+              </div>
+            </div>
+
+            <div class="mt-6 rounded-[24px] border border-[#e6dbc9] bg-[#fbf8f2] p-5">
+              <p class="text-xs font-semibold tracking-[0.2em] text-[#8b6b3f] uppercase">お悩みとのつながり</p>
+              <p class="mt-3 text-sm leading-8 text-slate-700 sm:text-[15px]">${escapeHtml(data.insight)}</p>
+            </div>
+
+            <div class="mt-6">
+              <p class="text-sm font-semibold text-ink">伝えるメリット</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                ${benefitsHtml}
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-3">
+              <div class="rounded-[22px] border border-white/85 bg-white/85 p-4">
+                <p class="text-xs font-semibold tracking-[0.16em] text-[#8b6b3f] uppercase">共感の入口</p>
+                <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(data.empathy)}</p>
+              </div>
+              <div class="rounded-[22px] border border-white/85 bg-white/85 p-4">
+                <p class="text-xs font-semibold tracking-[0.16em] text-[#8b6b3f] uppercase">おすすめ理由</p>
+                <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(data.reason)}</p>
+              </div>
+              <div class="rounded-[22px] border border-white/85 bg-white/85 p-4">
+                <p class="text-xs font-semibold tracking-[0.16em] text-[#8b6b3f] uppercase">やわらかな締め</p>
+                <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(data.softClose)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="sheen rounded-[30px] border border-[#e7dbc7] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(250,245,236,0.88))] p-6 shadow-[0_18px_50px_rgba(71,55,33,0.10)] sm:p-7">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-xs font-semibold tracking-[0.24em] text-[#8b6b3f] uppercase">Proposal Script</p>
+                  <h4 class="mt-2 text-xl font-semibold text-ink">押し売り感を抑えた提案トーク</h4>
+                </div>
+                <button
+                  type="button"
+                  data-copy="${escapeHtml(copyText)}"
+                  class="inline-flex items-center justify-center rounded-full border border-[#b79a68]/35 bg-white/90 px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:bg-[#faf6ef] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#b79a68]/45"
+                >
+                  トークをコピー
+                </button>
+              </div>
+
+              <blockquote class="mt-5 rounded-[24px] border border-white/85 bg-white/80 p-5 text-[15px] leading-8 text-slate-700 sm:text-base">
+                「${escapeHtml(data.talk)}」
+              </blockquote>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="rounded-[24px] border border-white/85 bg-white/75 p-5 shadow-[0_12px_36px_rgba(31,41,55,0.07)]">
+                <p class="text-sm font-semibold text-ink">押し売りに見せないコツ</p>
+                <p class="mt-3 text-sm leading-8 text-slate-600">${escapeHtml(data.tip)}</p>
+              </div>
+              <div class="rounded-[24px] border border-white/85 bg-white/75 p-5 shadow-[0_12px_36px_rgba(31,41,55,0.07)]">
+                <p class="text-sm font-semibold text-ink">おすすめの聞き返し</p>
+                <p class="mt-3 text-sm leading-8 text-slate-600">${escapeHtml(data.followUp)}</p>
+              </div>
+            </div>
+
+            <div class="rounded-[24px] border border-white/85 bg-white/75 p-5 shadow-[0_12px_36px_rgba(31,41,55,0.07)]">
+              <p class="text-sm font-semibold text-ink">接客メモ</p>
+              <p class="mt-3 text-sm leading-8 text-slate-600">${escapeHtml(data.note)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function showToast(message, isError = false) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.remove("translate-y-4", "opacity-0", "bg-[#203042]/95", "bg-red-900/90");
+      toast.classList.add("opacity-100", "translate-y-0", isError ? "bg-red-900/90" : "bg-[#203042]/95");
+
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "translate-y-4");
+      }, 2200);
+    }
+
+    async function copyTextToClipboard(text) {
+      const safeText = String(text || "").replace(/&#10;/g, "\n");
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(safeText);
+          showToast("提案トークをコピーしました");
+          return;
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = safeText;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        if (!successful) throw new Error("copy failed");
+        showToast("提案トークをコピーしました");
+      } catch (error) {
+        showToast("コピーに失敗しました", true);
+      }
+    }
+
+    function renderConcern(id, options = {}) {
+      const { store = true, updateHistory = true, scrollIntoView = false } = options;
+      try {
+        const data = concerns[id];
+        if (!data) {
+          renderError();
+          return;
+        }
+
+        currentProblem = id;
+        selectedStatus.textContent = data.coating;
+        resultPanel.innerHTML = buildCard(data);
+        setActiveButton(id);
+        announcer.textContent = `${data.coating} の提案カードを表示しました。`;
+
+        if (store) {
+          try {
+            localStorage.setItem("lens-coating-problem", id);
+          } catch (_) {}
+        }
+
+        if (updateHistory) {
+          try {
+            history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${encodeURIComponent(id)}`);
+          } catch (_) {}
+        }
+
+        if (scrollIntoView && window.innerWidth < 768) {
+          resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      } catch (error) {
+        renderError();
+      }
+    }
+
+    buttons.forEach((button, index) => {
+      button.addEventListener("click", () => {
+        renderConcern(button.dataset.problem, { scrollIntoView: true });
+      });
+
+      button.addEventListener("keydown", (event) => {
+        const key = event.key;
+        if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(key)) return;
+        event.preventDefault();
+
+        let nextIndex = index;
+        if (key === "ArrowRight" || key === "ArrowDown") nextIndex = (index + 1) % buttons.length;
+        if (key === "ArrowLeft" || key === "ArrowUp") nextIndex = (index - 1 + buttons.length) % buttons.length;
+        if (key === "Home") nextIndex = 0;
+        if (key === "End") nextIndex = buttons.length - 1;
+
+        const nextButton = buttons[nextIndex];
+        nextButton.focus();
+        renderConcern(nextButton.dataset.problem);
+      });
+    });
+
+    resultPanel.addEventListener("click", (event) => {
+      const copyButton = event.target.closest("[data-copy]");
+      const resetButton = event.target.closest("#reset-view");
+
+      if (copyButton) {
+        copyTextToClipboard(copyButton.getAttribute("data-copy"));
+      }
+
+      if (resetButton) {
+        renderEmpty();
+      }
+    });
+
+    window.addEventListener("hashchange", () => {
+      const id = decodeURIComponent(window.location.hash.replace("#", ""));
+      if (id && concerns[id]) {
+        renderConcern(id, { store: true, updateHistory: false });
+      }
+    });
+
+    (function init() {
+      const hashId = decodeURIComponent(window.location.hash.replace("#", ""));
+      let initialId = "";
+
+      if (hashId && concerns[hashId]) {
+        initialId = hashId;
+      } else {
+        try {
+          const storedId = localStorage.getItem("lens-coating-problem");
+          if (storedId && concerns[storedId]) initialId = storedId;
+        } catch (_) {}
+      }
+
+      if (initialId) {
+        renderConcern(initialId, { updateHistory: true });
+      } else {
+        renderEmpty();
+      }
+    })();
+  </script>
+</body>
+</html>
