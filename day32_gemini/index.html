@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>裸眼視力「見えている距離」リアル解説ツール</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        /* スムーズなフェードインアニメーション */
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 視力に応じたリアルな「ぼやけ」の再現 */
+        .blur-level-005 { filter: blur(8px); }
+        .blur-level-01 { filter: blur(4px); }
+        .blur-level-03 { filter: blur(1.5px); }
+        .blur-level-07 { filter: blur(0px); }
+        
+        /* Cマーク（ランドルト環）の描画用 */
+        .landolt-c {
+            width: 120px;
+            height: 120px;
+            border: 24px solid currentColor;
+            border-radius: 50%;
+            border-right-color: transparent; /* 右側を開ける */
+            transform: rotate(-45deg); /* 斜めにするなど調整可能 */
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col p-4 md:p-8">
+
+    <div class="max-w-4xl w-full mx-auto flex-grow flex flex-col">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <div class="inline-block bg-brand-100 text-brand-600 px-4 py-1 rounded-full text-sm font-bold tracking-wide mb-3">
+                <i class="fa-solid fa-glasses mr-2"></i>Staff Only Tool
+            </div>
+            <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                裸眼視力「見え方」リアル解説ツール
+            </h1>
+            <p class="text-slate-500 mt-2 text-sm md:text-base">
+                お客様の裸眼視力を選択し、メガネの必要性を分かりやすくご案内してください。
+            </p>
+        </header>
+
+        <!-- Vision Selector -->
+        <section class="mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4" id="vision-buttons">
+                <!-- Buttons will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow flex flex-col relative">
+            
+            <!-- Placeholder (初期表示) -->
+            <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center transition-opacity duration-300 z-10">
+                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                    <i class="fa-solid fa-hand-pointer text-3xl"></i>
+                </div>
+                <h2 class="text-lg font-bold text-slate-600">上のボタンから視力を選択してください</h2>
+                <p class="text-sm text-slate-400 mt-2">選択すると、お客様の見え方のイメージと<br>提案トークが表示されます。</p>
+            </div>
+
+            <!-- Result Card (非表示で待機) -->
+            <div id="result-card" class="hidden bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 flex-col md:flex-row h-full z-20">
+                
+                <!-- Left: Visual & Distance (お客様に見せるエリア) -->
+                <div class="md:w-5/12 bg-slate-50 p-6 md:p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200">
+                    <div class="text-center mb-6 w-full">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">現在の見え方イメージ</span>
+                        <div class="bg-white p-8 rounded-xl shadow-inner flex items-center justify-center relative overflow-hidden">
+                            <!-- ぼやけるCマーク -->
+                            <div id="visual-c-mark" class="landolt-c text-slate-800 transition-all duration-700"></div>
+                            <div class="absolute inset-0 pointer-events-none rounded-xl ring-1 ring-inset ring-black/5"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center w-full">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">ピントが合う限界の距離</span>
+                        <div class="flex items-baseline justify-center space-x-2 text-brand-600">
+                            <span class="text-4xl md:text-5xl font-black tracking-tighter" id="distance-value">--</span>
+                            <span class="text-xl md:text-2xl font-bold" id="distance-unit"></span>
+                        </div>
+                        <p id="distance-sub" class="text-sm text-slate-500 mt-2 font-medium"></p>
+                    </div>
+                </div>
+
+                <!-- Right: Explanations & Script (スタッフ用・説明エリア) -->
+                <div class="md:w-7/12 p-6 md:p-8 flex flex-col">
+                    
+                    <!-- 具体的な見え方 -->
+                    <div class="mb-8 flex-grow">
+                        <h3 class="flex items-center text-slate-800 font-bold text-lg mb-3">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i>
+                            日常生活での危険・不便な点
+                        </h3>
+                        <div class="bg-amber-50 rounded-xl p-4 border border-amber-100">
+                            <p id="example-text" class="text-slate-700 leading-relaxed font-medium"></p>
+                        </div>
+                    </div>
+
+                    <!-- トークスクリプト -->
+                    <div class="mt-auto">
+                        <div class="flex items-end justify-between mb-2">
+                            <h3 class="flex items-center text-brand-600 font-bold text-lg">
+                                <i class="fa-regular fa-comments text-brand-500 mr-2 text-xl"></i>
+                                提案トークスクリプト
+                            </h3>
+                            <span class="text-xs font-bold bg-brand-100 text-brand-600 px-2 py-1 rounded">そのまま読めます</span>
+                        </div>
+                        <div class="relative bg-brand-50 rounded-2xl rounded-tl-none p-5 border border-brand-100 shadow-sm">
+                            <!-- 吹き出しの尻尾 -->
+                            <div class="absolute top-0 left-0 -ml-2 -mt-px w-4 h-4 bg-brand-50 border-l border-t border-brand-100 transform -skew-x-12 z-0"></div>
+                            
+                            <p id="script-text" class="relative z-10 text-slate-800 text-lg leading-relaxed font-bold tracking-wide">
+                                <!-- Script goes here -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 視力データ定義
+        const visionData = {
+            "0.05": {
+                label: "0.05 以下",
+                distanceVal: "約50",
+                distanceUnit: "cm",
+                distanceSub: "腕の長さより先はぼやけます",
+                example: "手を伸ばした距離の人の顔もぼやけます。足元の段差に気づきにくく、室内でも非常に危険な状態です。",
+                script: "「裸眼だとご自身の腕の長さより先がぼやけてしまう状態です。外出時はもちろん、室内でも段差などで危険が伴いますので、メガネの常用（掛けっぱなし）が絶対に必要です！」",
+                blurClass: "blur-level-005",
+                btnColor: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 ring-red-500",
+                activeColor: "bg-red-600 text-white border-red-600 ring-red-500 shadow-lg shadow-red-200"
+            },
+            "0.1": {
+                label: "0.1",
+                distanceVal: "約3",
+                distanceUnit: "m",
+                distanceSub: "部屋の向こう側は見えません",
+                example: "少し離れたテレビのテロップや、部屋の向こう側にいる人の表情が分かりません。無意識に目を細める原因になります。",
+                script: "「室内ならなんとかなると思いがちですが、3m先の人の表情が読み取れない状態です。目を細めて見る癖がついて余計に目が疲れるので、室内用でもメガネがあった方が圧倒的に楽になりますよ！」",
+                blurClass: "blur-level-01",
+                btnColor: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 ring-orange-500",
+                activeColor: "bg-orange-500 text-white border-orange-500 ring-orange-500 shadow-lg shadow-orange-200"
+            },
+            "0.3": {
+                label: "0.3",
+                distanceVal: "約10",
+                distanceUnit: "m",
+                distanceSub: "運転免許の基準には満たない視力",
+                example: "運転時の標識の文字や、黒板・スクリーンの文字が見えづらいです。とっさの判断が遅れる可能性があります。",
+                script: "「手元や日常生活は不便がないかもしれませんが、運転免許の基準には満たない視力です。いざという時にサッと掛けられるよう、お出かけ用のメガネを1本持っておくことを強くおすすめします！」",
+                blurClass: "blur-level-03",
+                btnColor: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 ring-amber-500",
+                activeColor: "bg-amber-500 text-white border-amber-500 ring-amber-500 shadow-lg shadow-amber-200"
+            },
+            "0.7": {
+                label: "0.7",
+                distanceVal: "数十",
+                distanceUnit: "m〜",
+                distanceSub: "遠くの文字が少しにじむ程度",
+                example: "日常生活に支障はほぼありませんが、夜間や悪天候時、または遠くの細かい文字を見る時に少しにじみを感じます。",
+                script: "「普段は裸眼でも全く問題ありませんが、夜間の運転や、長時間の映画・観劇の際だけはメガネがあると『こんなに景色がクリアだったんだ！』と感動しますよ。お守り代わりに1本いかがですか？」",
+                blurClass: "blur-level-07",
+                btnColor: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 ring-emerald-500",
+                activeColor: "bg-emerald-500 text-white border-emerald-500 ring-emerald-500 shadow-lg shadow-emerald-200"
+            }
+        };
+
+        let currentActiveKey = null;
+
+        // 初期化処理
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnContainer = document.getElementById('vision-buttons');
+            
+            // ボタンの動的生成
+            Object.keys(visionData).forEach(key => {
+                const data = visionData[key];
+                const btn = document.createElement('button');
+                btn.id = `btn-${key}`;
+                // 基本のボタンスタイル
+                btn.className = `w-full py-4 px-2 rounded-xl border-2 font-bold text-lg md:text-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${data.btnColor}`;
+                btn.innerHTML = data.label;
+                btn.onclick = () => selectVision(key);
+                btnContainer.appendChild(btn);
+            });
+        });
+
+        // 視力選択時の処理
+        function selectVision(key) {
+            try {
+                const data = visionData[key];
+                if (!data) throw new Error("無効な視力データが選択されました。");
+
+                // --- 1. ボタンのスタイル更新 ---
+                if (currentActiveKey) {
+                    const prevBtn = document.getElementById(`btn-${currentActiveKey}`);
+                    const prevData = visionData[currentActiveKey];
+                    prevBtn.className = `w-full py-4 px-2 rounded-xl border-2 font-bold text-lg md:text-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${prevData.btnColor}`;
+                }
+                const currentBtn = document.getElementById(`btn-${key}`);
+                currentBtn.className = `w-full py-4 px-2 rounded-xl border-2 font-bold text-lg md:text-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${data.activeColor} transform scale-[1.02]`;
+                currentActiveKey = key;
+
+                // --- 2. プレースホルダーを隠し、結果カードを表示 ---
+                document.getElementById('placeholder').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('placeholder').classList.add('hidden');
+                    const resultCard = document.getElementById('result-card');
+                    resultCard.classList.remove('hidden');
+                    resultCard.classList.add('flex', 'fade-in');
+                    
+                    // アニメーションの再トリガー用
+                    resultCard.style.animation = 'none';
+                    resultCard.offsetHeight; /* trigger reflow */
+                    resultCard.style.animation = null; 
+                }, 300); // fade outとタイミングを合わせる
+
+                // --- 3. データの流し込み ---
+                document.getElementById('distance-value').innerText = data.distanceVal;
+                document.getElementById('distance-unit').innerText = data.distanceUnit;
+                document.getElementById('distance-sub').innerText = data.distanceSub;
+                document.getElementById('example-text').innerText = data.example;
+                document.getElementById('script-text').innerText = data.script;
+
+                // --- 4. Cマーク（ランドルト環）のぼかし表現 ---
+                const cMark = document.getElementById('visual-c-mark');
+                // 既存のblurクラスを削除
+                cMark.className = 'landolt-c text-slate-800 transition-all duration-1000 ease-in-out';
+                // 新しいblurクラスを付与 (少し遅延させてアニメーションを強調)
+                requestAnimationFrame(() => {
+                    cMark.classList.add(data.blurClass);
+                });
+
+            } catch (error) {
+                console.error(error);
+                alert("データの読み込みに失敗しました。ページをリロードしてください。");
+            }
+        }
+    </script>
+</body>
+</html>
