@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>年齢×目的別 老眼鏡度数ピタリ当てツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#111827',
+            panel: '#ffffff',
+            accent: '#0f766e',
+            accentStrong: '#115e59',
+            accentSoft: '#ccfbf1',
+            warn: '#92400e',
+            warnBg: '#fef3c7',
+            danger: '#b91c1c',
+            dangerBg: '#fee2e2'
+          },
+          boxShadow: {
+            soft: '0 10px 30px rgba(17, 24, 39, 0.08)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+        "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    }
+    .choice-btn {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .choice-btn:hover { transform: translateY(-1px); }
+    .choice-btn:active { transform: translateY(0); }
+    .choice-btn.selected {
+      background: #0f766e;
+      color: #ffffff;
+      border-color: #0f766e;
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+    }
+    .choice-btn:focus-visible,
+    .action-btn:focus-visible {
+      outline: 4px solid rgba(15, 118, 110, 0.28);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-ink min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <header class="mb-6 sm:mb-8">
+      <div class="bg-panel rounded-3xl shadow-soft border-2 border-slate-200 p-5 sm:p-7">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-sm sm:text-base font-bold tracking-wide text-teal-800 mb-2">眼鏡屋向け 接客サポート</p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight">
+              年齢×目的別<br class="sm:hidden" />
+              老眼鏡（リーディンググラス）<span class="text-teal-700">度数ピタリ当てツール</span>
+            </h1>
+            <p class="mt-4 text-lg sm:text-xl leading-relaxed text-slate-700 max-w-4xl">
+              「年齢だけ」で売らず、<span class="font-bold text-slate-900">見たい距離</span>まで踏まえて、
+              おすすめ目安度数と提案トークをすぐ表示します。
+            </p>
+          </div>
+
+          <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 sm:p-5 min-w-[280px]">
+            <p class="text-base sm:text-lg font-extrabold text-slate-900 mb-2">使い方</p>
+            <ol class="space-y-2 text-base sm:text-lg text-slate-700">
+              <li><span class="font-bold text-slate-900">1.</span> 年齢層を選ぶ</li>
+              <li><span class="font-bold text-slate-900">2.</span> 一番見たい距離を選ぶ</li>
+              <li><span class="font-bold text-slate-900">3.</span> 下に出た度数とトークをそのまま活用</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      <section class="xl:col-span-3 space-y-6">
+        <div class="bg-panel rounded-3xl shadow-soft border-2 border-slate-200 p-5 sm:p-7">
+          <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
+            <h2 class="text-2xl sm:text-3xl font-extrabold">① 年齢層を選択</h2>
+            <span class="text-base sm:text-lg font-bold text-slate-600">大きなボタンでタップしやすい</span>
+          </div>
+
+          <div id="ageButtons" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[104px]" data-group="age" data-value="45">
+              <div class="text-2xl sm:text-3xl font-extrabold">45歳前後</div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">初期の手元の見づらさが出やすい年代</div>
+            </button>
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[104px]" data-group="age" data-value="50">
+              <div class="text-2xl sm:text-3xl font-extrabold">50歳前後</div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">手元用とPC用の差が出やすい年代</div>
+            </button>
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[104px]" data-group="age" data-value="55">
+              <div class="text-2xl sm:text-3xl font-extrabold">55歳前後</div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">用途に合わせた度数提案が特に重要</div>
+            </button>
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[104px]" data-group="age" data-value="60">
+              <div class="text-2xl sm:text-3xl font-extrabold">60歳以上</div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">強めになりやすいため距離確認が大切</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-panel rounded-3xl shadow-soft border-2 border-slate-200 p-5 sm:p-7">
+          <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
+            <h2 class="text-2xl sm:text-3xl font-extrabold">② 一番見たいものを選択</h2>
+            <span class="text-base sm:text-lg font-bold text-slate-600">距離で度数は変わる</span>
+          </div>
+
+          <div id="distanceButtons" class="grid grid-cols-1 gap-4">
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[112px]" data-group="distance" data-value="30">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="text-2xl sm:text-3xl font-extrabold">スマホ・文庫本</div>
+                <div class="text-xl sm:text-2xl font-black text-slate-700">約30cm</div>
+              </div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">かなり近い手元。一般的な「老眼鏡」の想定に近い距離</div>
+            </button>
+
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[112px]" data-group="distance" data-value="50">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="text-2xl sm:text-3xl font-extrabold">デスクトップPC・タブレット</div>
+                <div class="text-xl sm:text-2xl font-black text-slate-700">約50cm</div>
+              </div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">少し離れた画面用。手元用より少し弱めが合いやすい</div>
+            </button>
+
+            <button type="button" class="choice-btn text-left w-full rounded-2xl border-2 border-slate-300 bg-white p-5 sm:p-6 min-h-[112px]" data-group="distance" data-value="70">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="text-2xl sm:text-3xl font-extrabold">楽譜・料理の手元</div>
+                <div class="text-xl sm:text-2xl font-black text-slate-700">約70cm</div>
+              </div>
+              <div class="mt-2 text-lg sm:text-xl text-slate-700">さらに少し離れた距離。強すぎると逆に見づらくなりやすい</div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="xl:col-span-2">
+        <div class="sticky top-4 space-y-6">
+          <div class="bg-panel rounded-3xl shadow-soft border-2 border-slate-200 p-5 sm:p-7">
+            <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <h2 class="text-2xl sm:text-3xl font-extrabold">選択状況</h2>
+              <button id="resetButton" type="button" class="action-btn inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 bg-white px-4 py-3 text-lg sm:text-xl font-bold hover:bg-slate-50">
+                リセット
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              <div class="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
+                <div class="text-base sm:text-lg font-bold text-slate-600">年齢層</div>
+                <div id="selectedAgeText" class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-400">未選択</div>
+              </div>
+              <div class="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
+                <div class="text-base sm:text-lg font-bold text-slate-600">見たい距離</div>
+                <div id="selectedDistanceText" class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-400">未選択</div>
+              </div>
+            </div>
+
+            <div id="helperMessage" class="mt-5 rounded-2xl border-2 border-amber-300 bg-warnBg p-4 text-lg sm:text-xl leading-relaxed text-warn">
+              まずは「年齢層」と「一番見たいもの」の両方を選んでください。
+            </div>
+          </div>
+
+          <div id="resultCard" class="bg-panel rounded-3xl shadow-soft border-2 border-slate-200 p-5 sm:p-7">
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+              <h2 class="text-2xl sm:text-3xl font-extrabold">おすすめ結果</h2>
+              <span class="rounded-full bg-teal-50 border-2 border-teal-200 px-3 py-1 text-base sm:text-lg font-bold text-teal-800">自動表示</span>
+            </div>
+
+            <div id="resultPlaceholder" class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+              <div class="text-4xl mb-3">👓</div>
+              <p class="text-xl sm:text-2xl font-bold text-slate-700">選択が完了すると、ここに</p>
+              <p class="text-xl sm:text-2xl font-bold text-slate-700">おすすめ目安度数と提案トークが表示されます</p>
+            </div>
+
+            <div id="resultContent" class="hidden">
+              <div class="rounded-2xl border-2 border-teal-200 bg-teal-50 p-5 mb-5">
+                <div class="text-base sm:text-lg font-bold text-teal-800">おすすめの目安度数（SPH）</div>
+                <div id="powerValue" class="mt-2 text-5xl sm:text-6xl font-extrabold tracking-tight text-teal-900">+0.00</div>
+                <p class="mt-3 text-lg sm:text-xl leading-relaxed text-teal-900">
+                  これはあくまで接客時の<span class="font-extrabold">目安</span>です。最終的には実際の見え方確認をおすすめしてください。
+                </p>
+              </div>
+
+              <div class="rounded-2xl border-2 border-slate-200 bg-slate-50 p-5">
+                <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+                  <div class="text-xl sm:text-2xl font-extrabold">提案トーク</div>
+                  <button id="copyButton" type="button" class="action-btn inline-flex items-center justify-center rounded-2xl border-2 border-slate-300 bg-white px-4 py-3 text-base sm:text-lg font-bold hover:bg-slate-100">
+                    トークをコピー
+                  </button>
+                </div>
+                <p id="talkScript" class="text-xl sm:text-2xl leading-relaxed text-slate-800 whitespace-pre-line"></p>
+              </div>
+            </div>
+
+            <div id="errorBox" class="hidden mt-5 rounded-2xl border-2 border-red-300 bg-dangerBg p-4 text-lg sm:text-xl leading-relaxed text-danger"></div>
+          </div>
+
+          <div class="bg-slate-900 text-white rounded-3xl shadow-soft p-5 sm:p-6">
+            <h3 class="text-xl sm:text-2xl font-extrabold mb-3">接客ワンポイント</h3>
+            <p class="text-lg sm:text-xl leading-relaxed text-slate-100">
+              「年齢の目安」は便利ですが、<span class="font-extrabold">何をどの距離で見たいか</span>を聞くだけで、
+              提案の精度と納得感が大きく上がります。
+            </p>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const data = {
+        45: { 30: 1.50, 50: 1.00, 70: 0.50 },
+        50: { 30: 2.00, 50: 1.50, 70: 1.00 },
+        55: { 30: 2.50, 50: 2.00, 70: 1.50 },
+        60: { 30: 3.00, 50: 2.50, 70: 2.00 }
+      };
+
+      const ageMeta = {
+        45: { label: '45歳前後', general: 1.50 },
+        50: { label: '50歳前後', general: 2.00 },
+        55: { label: '55歳前後', general: 2.50 },
+        60: { label: '60歳以上', general: 3.00 }
+      };
+
+      const distanceMeta = {
+        30: {
+          label: 'スマホ・文庫本（約30cm）',
+          short: 'スマホなどの近い手元',
+          phrase: 'かなり近い距離のスマホや文庫本'
+        },
+        50: {
+          label: 'デスクトップPC・タブレット（約50cm）',
+          short: '少し離れたパソコン画面',
+          phrase: '少し離れたパソコン画面やタブレット'
+        },
+        70: {
+          label: '楽譜・料理の手元（約70cm）',
+          short: 'やや離れた手元',
+          phrase: '楽譜や料理など、やや離れた手元'
+        }
+      };
+
+      const state = {
+        age: null,
+        distance: null
+      };
+
+      const selectedAgeText = document.getElementById('selectedAgeText');
+      const selectedDistanceText = document.getElementById('selectedDistanceText');
+      const helperMessage = document.getElementById('helperMessage');
+      const resultPlaceholder = document.getElementById('resultPlaceholder');
+      const resultContent = document.getElementById('resultContent');
+      const powerValue = document.getElementById('powerValue');
+      const talkScript = document.getElementById('talkScript');
+      const errorBox = document.getElementById('errorBox');
+      const copyButton = document.getElementById('copyButton');
+      const resetButton = document.getElementById('resetButton');
+
+      function formatPower(value) {
+        return `+${Number(value).toFixed(2)}`;
+      }
+
+      function updateSelectedButtons(group, value) {
+        document.querySelectorAll(`[data-group="${group}"]`).forEach(btn => {
+          const isSelected = btn.dataset.value === String(value);
+          btn.classList.toggle('selected', isSelected);
+          btn.setAttribute('aria-pressed', String(isSelected));
+        });
+      }
+
+      function showError(message) {
+        errorBox.textContent = message;
+        errorBox.classList.remove('hidden');
+      }
+
+      function hideError() {
+        errorBox.textContent = '';
+        errorBox.classList.add('hidden');
+      }
+
+      function getTalkScript(age, distance, recommended) {
+        const ageInfo = ageMeta[age];
+        const distanceInfo = distanceMeta[distance];
+        const generalPower = ageInfo.general;
+        const recText = formatPower(recommended);
+        const generalText = formatPower(generalPower);
+
+        if (String(distance) === '30') {
+          return `お客様の年齢の一般的な目安は【${generalText}】です。今回は${distanceInfo.phrase}を一番見たいとのことですので、まさに手元用に合いやすい【${recText}】が目安になります。近い距離にしっかりピントが合いやすく、文字も追いやすいですよ。`;
+        }
+
+        return `お客様の年齢の一般的な目安は${generalText}ですが、それはスマホなどの近い距離用です。今回は${distanceInfo.short}（${distance}cm）を楽に見たいとのことですので、少し度数を弱めた【${recText}】が一番ピントが合いやすく、目も疲れにくいですよ。`;
+      }
+
+      function render() {
+        try {
+          hideError();
+
+          selectedAgeText.textContent = state.age ? ageMeta[state.age].label : '未選択';
+          selectedAgeText.className = `mt-1 text-2xl sm:text-3xl font-extrabold ${state.age ? 'text-slate-900' : 'text-slate-400'}`;
+
+          selectedDistanceText.textContent = state.distance ? distanceMeta[state.distance].label : '未選択';
+          selectedDistanceText.className = `mt-1 text-2xl sm:text-3xl font-extrabold ${state.distance ? 'text-slate-900' : 'text-slate-400'}`;
+
+          if (!state.age || !state.distance) {
+            resultPlaceholder.classList.remove('hidden');
+            resultContent.classList.add('hidden');
+
+            const pending = [];
+            if (!state.age) pending.push('年齢層');
+            if (!state.distance) pending.push('見たい距離');
+
+            helperMessage.textContent = `${pending.join('と')}を選ぶと、結果が自動で表示されます。`;
+            helperMessage.className = 'mt-5 rounded-2xl border-2 border-amber-300 bg-warnBg p-4 text-lg sm:text-xl leading-relaxed text-warn';
+            return;
+          }
+
+          const recommended = data[state.age]?.[state.distance];
+          if (typeof recommended !== 'number') {
+            throw new Error('該当する度数データが見つかりませんでした。');
+          }
+
+          powerValue.textContent = formatPower(recommended);
+          talkScript.textContent = getTalkScript(state.age, state.distance, recommended);
+
+          helperMessage.textContent = '結果を表示中です。必要なら「トークをコピー」でそのまま接客に使えます。';
+          helperMessage.className = 'mt-5 rounded-2xl border-2 border-teal-300 bg-teal-50 p-4 text-lg sm:text-xl leading-relaxed text-teal-900';
+
+          resultPlaceholder.classList.add('hidden');
+          resultContent.classList.remove('hidden');
+        } catch (error) {
+          resultPlaceholder.classList.remove('hidden');
+          resultContent.classList.add('hidden');
+          helperMessage.textContent = '選択内容を確認して、もう一度お試しください。';
+          helperMessage.className = 'mt-5 rounded-2xl border-2 border-red-300 bg-dangerBg p-4 text-lg sm:text-xl leading-relaxed text-danger';
+          showError(error instanceof Error ? error.message : '予期しないエラーが発生しました。');
+        }
+      }
+
+      document.querySelectorAll('[data-group="age"]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.age = button.dataset.value;
+          updateSelectedButtons('age', state.age);
+          render();
+        });
+      });
+
+      document.querySelectorAll('[data-group="distance"]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.distance = button.dataset.value;
+          updateSelectedButtons('distance', state.distance);
+          render();
+        });
+      });
+
+      resetButton.addEventListener('click', () => {
+        state.age = null;
+        state.distance = null;
+        updateSelectedButtons('age', null);
+        updateSelectedButtons('distance', null);
+        hideError();
+        render();
+      });
+
+      copyButton.addEventListener('click', async () => {
+        try {
+          const text = talkScript.textContent?.trim();
+          if (!text) {
+            showError('コピーする提案トークがまだありません。');
+            return;
+          }
+
+          await navigator.clipboard.writeText(text);
+          const originalText = copyButton.textContent;
+          copyButton.textContent = 'コピーしました';
+          copyButton.disabled = true;
+          setTimeout(() => {
+            copyButton.textContent = originalText;
+            copyButton.disabled = false;
+          }, 1400);
+        } catch (error) {
+          showError('コピーに失敗しました。ブラウザの設定をご確認ください。');
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
