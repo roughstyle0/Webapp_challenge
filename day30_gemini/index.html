@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens Coating Navigator | Premium Vision</title>
+    <!-- Google Fonts: 高級感を演出する明朝体と、読みやすいゴシック体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fcfcfc',
+                            100: '#f5f5f5',
+                            gold: '#C5A059',      // 上品なゴールド
+                            goldLight: '#E8DCC4', // 薄いゴールド
+                            text: '#2C2C2C',      // 真っ黒ではない、墨色
+                            scriptBg: '#F9F8F6',  // スクリプト用の温かみのある背景
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif JP"', 'serif'],
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'premium-hover': '0 20px 40px -10px rgba(197,160,89,0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムアニメーション */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f5; }
+        ::-webkit-scrollbar-thumb { background: #E8DCC4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #C5A059; }
+    </style>
+</head>
+<body class="bg-brand-50 text-brand-text font-sans min-h-screen flex flex-col items-center py-10 px-4 md:px-8">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl text-center mb-12 fade-in-up" style="animation-delay: 0.1s;">
+        <p class="text-brand-gold font-serif text-sm tracking-[0.2em] mb-3 uppercase">Consulting Desk</p>
+        <h1 class="text-3xl md:text-4xl font-serif font-medium tracking-wide mb-4">レンズオプション提案ナビ</h1>
+        <p class="text-gray-500 text-sm md:text-base font-light">お客様のライフスタイルに寄り添った、最適なレンズをご提案します。</p>
+        <div class="w-12 h-[1px] bg-brand-gold mx-auto mt-6"></div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-4xl w-full">
+        <!-- Step 1: 悩みの選択 -->
+        <section class="mb-16 fade-in-up" style="animation-delay: 0.2s;">
+            <h2 class="text-xl font-serif mb-6 text-center text-gray-700">お客様はどのようなストレスをお持ちですか？</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="symptoms-container">
+                <!-- JavaScriptでボタンが生成されます -->
+            </div>
+        </section>
+
+        <!-- Step 2: 提案内容の表示エリア (初期状態は非表示) -->
+        <section id="proposal-container" class="hidden">
+            <!-- JavaScriptでカードが生成されます -->
+        </section>
+
+        <!-- エラーメッセージ用コンテナ -->
+        <div id="error-container" class="hidden mt-8 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-r-md">
+            <p class="font-bold">エラーが発生しました</p>
+            <p class="text-sm mt-1" id="error-message">データを読み込めませんでした。</p>
+        </div>
+    </main>
+
+    <script>
+        /**
+         * アプリケーションのデータ定義
+         * UIとデータを分離し、将来的なオプション追加にも容易に対応可能。
+         */
+        const coatingData = [
+            {
+                id: 'bluelight',
+                symptom: 'パソコンやスマホを長時間見ると目が疲れる',
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25" /></svg>',
+                coatingName: 'ブルーライトカットコート',
+                subtitle: 'デジタルワークの強い味方',
+                script: 'お仕事でPCを長く使われるんですね。<br>それなら<strong class="text-brand-gold text-lg">『ブルーライトカット』</strong>を追加するのが絶対おすすめです！<br><br>夕方の目の疲れ具合が全然違いますし、目への投資として一番人気ですよ。',
+                benefits: ['眼精疲労の軽減', 'コントラスト向上で文字がくっきり']
+            },
+            {
+                id: 'scratch',
+                symptom: 'レンズにすぐ傷がついてしまい、長持ちしない',
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>',
+                coatingName: '超硬質（キズ防止）コート',
+                subtitle: '新品のクリアな視界を長く保つ',
+                script: 'レンズの傷、気になりますよね。<br>それでしたら<strong class="text-brand-gold text-lg">『キズ防止コート』</strong>がおすすめです！<br><br>通常のレンズの約3倍傷に強くなるので、結果的にメガネが長持ちして非常にコスパが良いオプションなんです。',
+                benefits: ['通常レンズの約3倍の硬度', '拭きキズがつきにくい']
+            },
+            {
+                id: 'reflection',
+                symptom: '夜の運転中の対向車のライトや、写真撮影時の反射が気になる',
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>',
+                coatingName: '超低反射コート',
+                subtitle: '目元を美しく、視界を究極にクリアに',
+                script: '夜の運転や写真の反射が気になるなら<strong class="text-brand-gold text-lg">『超低反射コート』</strong>がぴったりです！<br><br>レンズのギラつきを極限まで抑えるので、視界が驚くほどクリアになり、写真に写った時の目元もすごく綺麗に見えますよ。',
+                benefits: ['光の反射を極限までカット', 'オンライン会議でも目元が綺麗に映る']
+            },
+            {
+                id: 'anti-fog',
+                symptom: 'マスク着用時や、温かい飲み物を飲む時にレンズが曇るのがストレス',
+                icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 19.5v2.25m3-2.25v2.25m3-2.25v2.25m3-2.25v2.25" /></svg>',
+                coatingName: 'くもり止めコート',
+                subtitle: 'もう曇りに悩まされない、快適な毎日',
+                script: 'マスクの曇り、本当にストレスですよね。<br>今のレンズは<strong class="text-brand-gold text-lg">『くもり止めコート』</strong>を最初から焼き付けることができるんです！<br><br>毎朝スプレーを塗る手間から解放されるので、すごく快適になりますよ。',
+                benefits: ['メンテナンス不要の防曇効果', '温度差の激しい環境でも安心']
+            }
+        ];
+
+        // アプリケーションの状態
+        let state = {
+            selectedId: null
+        };
+
+        // DOM要素の取得
+        const symptomsContainer = document.getElementById('symptoms-container');
+        const proposalContainer = document.getElementById('proposal-container');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+
+        /**
+         * アプリケーションの初期化
+         */
+        function initApp() {
+            try {
+                if (!coatingData || coatingData.length === 0) {
+                    throw new Error("データが見つかりません。");
+                }
+                renderSymptoms();
+            } catch (error) {
+                showError("システムの初期化に失敗しました: " + error.message);
+            }
+        }
+
+        /**
+         * エラーメッセージの表示
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorContainer.classList.remove('hidden');
+        }
+
+        /**
+         * 悩み選択ボタンのレンダリング
+         */
+        function renderSymptoms() {
+            symptomsContainer.innerHTML = '';
+            
+            coatingData.forEach(item => {
+                const button = document.createElement('button');
+                // 選択状態に応じたスタイリング
+                const isSelected = state.selectedId === item.id;
+                const baseClasses = "flex items-start text-left p-5 rounded-xl border transition-all duration-300 w-full outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 bg-white shadow-sm hover:shadow-premium-hover";
+                const activeClasses = isSelected 
+                    ? "border-brand-gold bg-brand-goldLight bg-opacity-10 ring-1 ring-brand-gold transform scale-[1.02]" 
+                    : "border-gray-200 hover:border-brand-gold hover:bg-gray-50";
+
+                button.className = `${baseClasses} ${activeClasses}`;
+                button.setAttribute('aria-pressed', isSelected);
+                
+                button.innerHTML = `
+                    <div class="flex-shrink-0 mt-1 w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-gold border border-brand-goldLight">
+                        ${item.icon}
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <p class="text-brand-text font-medium leading-relaxed">${item.symptom}</p>
+                    </div>
+                    <div class="flex-shrink-0 self-center ml-2 text-gray-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 transition-transform duration-300 ${isSelected ? 'translate-x-1 text-brand-gold' : ''}">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </div>
+                `;
+
+                button.addEventListener('click', () => handleSelect(item.id));
+                symptomsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * 選択イベントのハンドリング
+         */
+        function handleSelect(id) {
+            state.selectedId = id;
+            renderSymptoms(); // ボタンの選択状態を更新
+            renderProposal(); // 提案カードを表示
+            
+            // スムーズスクロールで提案部分へ移動
+            setTimeout(() => {
+                proposalContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        /**
+         * 提案カードのレンダリング
+         */
+        function renderProposal() {
+            const selectedData = coatingData.find(item => item.id === state.selectedId);
+            
+            if (!selectedData) {
+                showError("選択されたデータが見つかりません。");
+                return;
+            }
+
+            // 一旦コンテナをクリアしてアニメーションをリセット
+            proposalContainer.innerHTML = '';
+            proposalContainer.classList.remove('hidden');
+
+            const benefitsHtml = selectedData.benefits.map(benefit => `
+                <li class="flex items-center text-sm md:text-base text-gray-600">
+                    <svg class="w-5 h-5 text-brand-gold mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    ${benefit}
+                </li>
+            `).join('');
+
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-2xl shadow-premium overflow-hidden border border-gray-100 fade-in-up";
+            
+            card.innerHTML = `
+                <!-- カードヘッダー -->
+                <div class="bg-gradient-to-r from-brand-text to-gray-800 p-6 md:p-8 text-white relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 opacity-10 transform scale-150">
+                        ${selectedData.icon}
+                    </div>
+                    <div class="relative z-10">
+                        <span class="inline-block px-3 py-1 rounded-full bg-brand-gold bg-opacity-20 text-brand-goldLight text-xs font-bold tracking-wider mb-3 border border-brand-gold border-opacity-30">
+                            RECOMMENDED
+                        </span>
+                        <h3 class="text-2xl md:text-3xl font-serif font-medium mb-2">${selectedData.coatingName}</h3>
+                        <p class="text-gray-300 font-light tracking-wide">${selectedData.subtitle}</p>
+                    </div>
+                </div>
+
+                <!-- カードボディ -->
+                <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 左側：メリット -->
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="w-4 h-[1px] bg-brand-gold mr-2"></span>
+                            Features
+                        </h4>
+                        <ul class="space-y-3 mb-6">
+                            ${benefitsHtml}
+                        </ul>
+                    </div>
+
+                    <!-- 右側：トークスクリプト（台本） -->
+                    <div class="bg-brand-scriptBg rounded-xl p-5 md:p-6 border border-brand-goldLight border-opacity-50 relative">
+                        <div class="absolute -top-3 left-6 bg-brand-scriptBg px-2 text-brand-gold text-sm font-bold tracking-widest uppercase flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-1"><path fill-rule="evenodd" d="M4.804 21.644A6.707 6.707 0 0 0 6 21.75a6.721 6.721 0 0 0 3.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 0 1-.814 1.686.75.75 0 0 0 .44 1.223ZM8.25 10.875a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25ZM10.875 12a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875-1.125a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Z" clip-rule="evenodd" /></svg>
+                            Talk Script
+                        </div>
+                        <p class="text-brand-text leading-loose text-base md:text-lg font-medium">
+                            ${selectedData.script}
+                        </p>
+                        <p class="mt-4 text-xs text-gray-400 text-right">※そのままお客様にお伝えください</p>
+                    </div>
+                </div>
+            `;
+
+            proposalContainer.appendChild(card);
+        }
+
+        // DOMの読み込みが完了したら初期化
+        document.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+</html>
