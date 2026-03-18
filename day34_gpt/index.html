@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>眼鏡屋向け ライフスタイル・ギャップ（2本目）診断</title>
+  <meta
+    name="description"
+    content="新人スタッフ向け。お客様の今のメガネと生活ストレスから、用途別の2本目メガネ提案を自然に導く診断アプリ。"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            soft: "0 8px 30px rgba(15, 23, 42, 0.08)",
+          },
+          colors: {
+            brand: {
+              50: "#eef8ff",
+              100: "#d8efff",
+              500: "#2b7fff",
+              600: "#1f67d6",
+              700: "#1d4f9f",
+              900: "#0f2747"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+    .safe-bottom {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+  <div class="mx-auto flex min-h-screen w-full max-w-7xl flex-col">
+    <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+      <div class="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">
+              For Optical Staff
+            </p>
+            <h1 class="mt-1 text-xl font-bold leading-tight text-slate-900 sm:text-2xl">
+              ライフスタイル・ギャップ（2本目）診断
+            </h1>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+              「今のメガネ」と「困る場面」を選ぶだけ。押し売り感を出さず、自然に2本目提案へつなげる接客サポートツールです。
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 self-start sm:w-auto">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+              <div class="text-[11px] font-medium text-slate-500">STEP 1</div>
+              <div id="status-main" class="mt-0.5 text-sm font-semibold text-slate-900">未選択</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+              <div class="text-[11px] font-medium text-slate-500">STEP 2</div>
+              <div id="status-stress" class="mt-0.5 text-sm font-semibold text-slate-900">未選択</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+      <section class="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-slate-200/70 sm:p-6">
+        <div class="flex flex-col gap-1">
+          <div class="inline-flex w-fit items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+            STEP 1
+          </div>
+          <h2 class="mt-1 text-lg font-bold text-slate-900 sm:text-xl">
+            お客様の「現在のメインメガネ」
+          </h2>
+          <p class="text-sm leading-6 text-slate-600">
+            いま一番よく使っているメガネを選んでください。
+          </p>
+        </div>
+
+        <div id="main-group" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <button
+            type="button"
+            data-group="main"
+            data-value="progressive"
+            class="choice-btn group rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[0.99] min-h-[108px]"
+            aria-pressed="false"
+          >
+            <div class="flex h-full items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">👓</div>
+              <div class="min-w-0">
+                <div class="text-base font-bold text-slate-900">遠近両用</div>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  普段ずっと掛けている
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            data-group="main"
+            data-value="distance"
+            class="choice-btn group rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[0.99] min-h-[108px]"
+            aria-pressed="false"
+          >
+            <div class="flex h-full items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">🚗</div>
+              <div class="min-w-0">
+                <div class="text-base font-bold text-slate-900">遠く用</div>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  運転や外出の時だけ掛けている
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            data-group="main"
+            data-value="reading"
+            class="choice-btn group rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[0.99] min-h-[108px]"
+            aria-pressed="false"
+          >
+            <div class="flex h-full items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">📖</div>
+              <div class="min-w-0">
+                <div class="text-base font-bold text-slate-900">老眼鏡</div>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  手元を見る時だけ掛けている
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-slate-200/70 sm:p-6">
+        <div class="flex flex-col gap-1">
+          <div class="inline-flex w-fit items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+            STEP 2
+          </div>
+          <h2 class="mt-1 text-lg font-bold text-slate-900 sm:text-xl">
+            日常で「一番ストレスを感じる瞬間」
+          </h2>
+          <p class="text-sm leading-6 text-slate-600">
+            お客様が「困る」と感じやすい場面をひとつ選んでください。
+          </p>
+        </div>
+
+        <div id="stress-group" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <button
+            type="button"
+            data-group="stress"
+            data-value="pc"
+            class="choice-btn group rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[0.99] min-h-[116px]"
+            aria-pressed="false"
+          >
+            <div class="flex h-full items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">💻</div>
+              <div class="min-w-0">
+                <div class="text-base font-bold text-slate-900">長時間のパソコン・スマホ作業</div>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  目・首・肩の疲れにつながりやすい場面
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            data-group="stress"
+            data-value="drive"
+            class="choice-btn group rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[0.99] min-h-[116px]"
+            aria-pressed="false"
+          >
+            <div class="flex h-full items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">🌇</div>
+              <div class="min-w-0">
+                <div class="text-base font-bold text-slate-900">夜間の運転や、強い日差し</div>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  まぶしさ・コントラスト低下を感じやすい場面
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            data-group="stress"
+            data-value="home"
+            class="choice-btn group rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-brand-100 active:scale-[0.99] min-h-[116px]"
+            aria-pressed="false"
+          >
+            <div class="flex h-full items-start gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-xl">🏠</div>
+              <div class="min-w-0">
+                <div class="text-base font-bold text-slate-900">家事や室内での移動</div>
+                <p class="mt-1 text-sm leading-6 text-slate-600">
+                  テレビと手元の往復が多い場面
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section
+        id="result-section"
+        class="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-slate-200/70 sm:p-6"
+        aria-live="polite"
+      >
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div class="inline-flex w-fit items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              診断結果
+            </div>
+            <h2 class="mt-1 text-lg font-bold text-slate-900 sm:text-xl">
+              2本目提案のベストアンサー
+            </h2>
+            <p class="text-sm leading-6 text-slate-600">
+              2つ選ぶと、すぐ使える提案内容が表示されます。
+            </p>
+          </div>
+
+          <div class="mt-3 flex flex-wrap gap-2 sm:mt-0">
+            <button
+              id="copy-btn"
+              type="button"
+              class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled
+            >
+              トークをコピー
+            </button>
+            <button
+              id="reset-btn"
+              type="button"
+              class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-200"
+            >
+              選択をリセット
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="result-empty"
+          class="mt-4 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-7 text-slate-600"
+        >
+          まずは「現在のメインメガネ」と「一番ストレスを感じる瞬間」を1つずつ選んでください。
+        </div>
+
+        <div id="result-card" class="mt-4 hidden">
+          <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-soft">
+            <div class="border-b border-slate-200 bg-white/80 px-4 py-4 sm:px-6">
+              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div class="min-w-0">
+                  <div class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-600">
+                    Lifestyle Gap Match
+                  </div>
+                  <h3 id="result-title" class="mt-1 text-lg font-bold text-slate-900 sm:text-xl"></h3>
+                </div>
+                <div class="flex flex-wrap gap-2" id="result-tags"></div>
+              </div>
+            </div>
+
+            <div class="grid gap-4 p-4 sm:p-6 lg:grid-cols-3">
+              <article class="rounded-3xl border border-slate-200 bg-white p-4">
+                <div class="flex items-center gap-2">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-lg">🔍</div>
+                  <h4 class="text-base font-bold text-slate-900">ギャップの解説</h4>
+                </div>
+                <p id="gap-text" class="mt-3 text-sm leading-7 text-slate-700"></p>
+              </article>
+
+              <article class="rounded-3xl border border-slate-200 bg-white p-4">
+                <div class="flex items-center gap-2">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-lg">✨</div>
+                  <h4 class="text-base font-bold text-slate-900">おすすめレンズ</h4>
+                </div>
+                <div id="lens-text" class="mt-3 text-sm leading-7 text-slate-700"></div>
+              </article>
+
+              <article class="rounded-3xl border border-slate-200 bg-white p-4 lg:col-span-1">
+                <div class="flex items-center gap-2">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-lg">🗣️</div>
+                  <h4 class="text-base font-bold text-slate-900">そのまま使える提案トーク</h4>
+                </div>
+                <p id="talk-text" class="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700"></p>
+              </article>
+            </div>
+
+            <div class="border-t border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
+              <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="text-sm font-semibold text-slate-900">接客のコツ</div>
+                <p id="tip-text" class="mt-2 text-sm leading-7 text-slate-600"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p id="feedback" class="mt-3 min-h-[1.5rem] text-sm font-medium text-slate-600"></p>
+      </section>
+    </main>
+
+    <div class="sticky bottom-0 z-20 border-t border-slate-200/80 bg-white/95 backdrop-blur safe-bottom">
+      <div class="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8 md:flex-row md:items-center md:justify-between">
+        <div class="min-w-0">
+          <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            現在の選択
+          </div>
+          <div id="selection-summary" class="mt-1 text-sm leading-6 text-slate-700">
+            まだ選択されていません
+          </div>
+        </div>
+        <button
+          id="jump-result-btn"
+          type="button"
+          class="inline-flex w-full items-center justify-center rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 md:w-auto disabled:cursor-not-allowed disabled:bg-slate-300"
+          disabled
+        >
+          診断結果へ移動
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const labels = {
+        main: {
+          progressive: "遠近両用",
+          distance: "遠く用",
+          reading: "老眼鏡"
+        },
+        stress: {
+          pc: "長時間のパソコン・スマホ作業",
+          drive: "夜間の運転や、強い日差し",
+          home: "家事や室内での移動"
+        }
+      };
+
+      const diagnosisMap = {
+        "progressive|pc": {
+          title: "遠近両用 × パソコン作業",
+          tags: ["首肩の負担", "デスクワーク専用", "2本目提案しやすい"],
+          gap: "遠近両用は1本で幅広く使える反面、パソコン距離はレンズの中でも使える範囲が限られやすく、無意識にアゴを上げてピントを探しがちです。その姿勢が続くと、目の疲れだけでなく首・肩のこりにもつながります。",
+          lens: "おすすめは <strong>近々両用（PC用）</strong>。パソコン画面から手元までを広く見やすく確保できるため、姿勢が自然になり、長時間作業がぐっと楽になります。",
+          talk: "遠近両用は万能ですが、実はパソコンの画面を見る時はアゴを少し上げないとピントが合わず、首や肩が凝りやすいんです。\nお仕事中だけ『デスクワーク専用（近々両用）』に掛け替えると、姿勢が真っ直ぐになって、驚くほど体が楽になりますよ。\n2本目の使い分け、かなり相性がいいケースです。",
+          tip: "「今のメガネが悪い」ではなく、「用途ごとに得意な距離が違う」という伝え方にすると、押し売り感が出にくくなります。"
+        },
+        "progressive|drive": {
+          title: "遠近両用 × 運転・まぶしさ",
+          tags: ["視界の安定", "まぶしさ対策", "運転専用"],
+          gap: "遠近両用でも運転はできますが、夜間や西日が強い場面では、まぶしさやコントラスト低下がストレスになりやすいです。運転中は遠方視が最優先なので、余計な視線移動が減る設計の方がラクに感じる方も多いです。",
+          lens: "おすすめは <strong>運転用の遠く重視レンズ＋カラーレンズ</strong>。必要に応じて夜間配慮コートや日中のまぶしさを抑える薄めカラーを組み合わせると、見え方の安定感が上がります。",
+          talk: "普段の遠近両用で問題ない方でも、夜の運転や西日が強い時間帯だけは『まぶしさ』で疲れやすいことがあるんです。\nそういう時は、遠くを見ることにしっかり特化した運転用の1本があると、とても快適です。\n日差し対策のカラーも薄めなら使いやすいので、必要な場面だけ使い分ける方が増えていますよ。",
+          tip: "安全性や疲労軽減を軸に話すと、販売トークではなく生活サポートとして受け取ってもらいやすくなります。"
+        },
+        "progressive|home": {
+          title: "遠近両用 × 家事・室内移動",
+          tags: ["室内快適", "視線移動が多い", "中間距離を強化"],
+          gap: "遠近両用は便利ですが、室内では『テレビ』『キッチン』『手元』を短い距離で何度も見分けるため、もっと中間距離が広い方が楽な場面があります。特に家事では視線移動が多く、疲れが積み重なりやすいです。",
+          lens: "おすすめは <strong>中近両用（室内用）</strong>。お部屋の中で使う距離に合わせて、テレビから手元までを広く見やすくできるため、家事や室内移動がスムーズになります。",
+          talk: "遠近両用は外でも中でも使えて便利ですが、お家の中だけで考えると、実はもう少し室内距離に特化した方がラクなことが多いんです。\nテレビから手元までを広く見やすくした『室内用（中近両用）』にすると、家事や移動のストレスがかなり減りますよ。\n1日中ではなく、お家の中だけ使い分けるイメージです。",
+          tip: "生活導線を具体的に想像してもらうと、2本目の必要性を自然に理解してもらえます。"
+        },
+        "distance|pc": {
+          title: "遠く用 × パソコン作業",
+          tags: ["手元不足", "ピントの無理", "仕事用の提案"],
+          gap: "遠く用のメガネは、運転や外出には快適でも、パソコンやスマホの距離ではピントが合いづらくなりやすいです。画面を見るたびに前のめりになったり、外して掛けてを繰り返したりすると、作業効率も落ちてしまいます。",
+          lens: "おすすめは <strong>近々両用（PC用）</strong>。画面と手元が見やすく、長時間のデスクワークでも無理な姿勢になりにくいのが特長です。",
+          talk: "今の遠く用メガネは、外出や運転にはすごく合っています。\nただ、パソコンやスマホの距離になると少し無理をしやすいので、お仕事用だけ『近く中心の専用メガネ』を使うと目も体もかなり楽になります。\n場面ごとに使い分けると、見え方のストレスが減りますよ。",
+          tip: "まず今のメガネの良さを認めてから、苦手距離を補う提案に入ると受け入れられやすくなります。"
+        },
+        "distance|drive": {
+          title: "遠く用 × 運転・まぶしさ",
+          tags: ["用途特化", "運転の質向上", "カラー提案"],
+          gap: "遠く用をすでにお持ちでも、夜間や強い日差しでは『見える』と『ラクに見える』は別問題です。ヘッドライトのにじみや西日のまぶしさは、度数だけでは解決しきれないことがあります。",
+          lens: "おすすめは <strong>ドライブ用カラーレンズ</strong> または <strong>運転環境に合わせた高コントラスト設計</strong>。日中のまぶしさ対策や、必要に応じた夜間配慮コートの使い分けで、運転時の快適性を高められます。",
+          talk: "今の遠く用メガネで距離は見えていても、夜のライトや西日のまぶしさは別の疲れとして出やすいんです。\nそこで、運転する時間帯に合わせてレンズカラーやコートを調整した1本があると、かなりラクになります。\n『見える』から一歩進んで、『疲れにくい運転用』として考えると分かりやすいですよ。",
+          tip: "同じ『遠く用』でも、使用シーンの違いで快適性が変わることを説明すると、重複提案に見えにくくなります。"
+        },
+        "distance|home": {
+          title: "遠く用 × 家事・室内移動",
+          tags: ["室内距離に最適化", "テレビ〜手元", "家事ラク"],
+          gap: "遠く用のメガネだと、室内ではテレビは見えても手元やスマホが見えづらく、家事のたびに不便を感じやすいです。お家の中は『遠く』よりも『中間〜近く』を何度も使うため、用途がズレやすい組み合わせです。",
+          lens: "おすすめは <strong>中近両用（室内用）</strong>。テレビから手元までが広く見やすくなり、料理・片付け・スマホ確認までスムーズにこなせます。",
+          talk: "遠く用のメガネだと、お料理の時の手元やスマホが見えづらいですよね。\nお家の中では遠くを見る必要があまりないので、テレビから手元までが一番広くスッキリ見える『室内用（中近両用）』に掛け替えると、家事のストレスがかなり減りますよ。\nご自宅専用の2本目として、とてもおすすめしやすい組み合わせです。",
+          tip: "「家の中だけ」という使い分けを提示すると、導入後のイメージが明確になります。"
+        },
+        "reading|pc": {
+          title: "老眼鏡 × パソコン作業",
+          tags: ["距離ズレ", "画面が遠い", "専用化が効果的"],
+          gap: "老眼鏡は手元には合っていても、パソコン画面の距離になると近すぎたり遠すぎたりして、ちょうどよく見えないことがあります。画面の位置に合わせて姿勢を崩しやすく、結果として疲労がたまりやすくなります。",
+          lens: "おすすめは <strong>近々両用（PC用）</strong>。手元だけでなく、少し先のモニター距離までラクに見えるため、デスクワークとの相性が良いです。",
+          talk: "今の老眼鏡は手元を見るにはぴったりですが、パソコンの画面距離には少し合いづらいことが多いんです。\n画面まで見やすい『PC用の近々両用』にすると、顔を前に出したり戻したりが減って、すごく自然に作業できますよ。\nお仕事や趣味で画面を見る時間が長い方には特に好評です。",
+          tip: "『老眼鏡の延長ではなく、パソコン距離専用』と説明すると違いが伝わりやすくなります。"
+        },
+        "reading|drive": {
+          title: "老眼鏡 × 運転・まぶしさ",
+          tags: ["掛け替え負担", "外出用不足", "提案しやすい"],
+          gap: "老眼鏡をメインで使っている方は、近くを見る場面では快適でも、運転や屋外ではそもそも見たい距離に合っていないことがあります。さらに、まぶしさ対策まで必要になると、用途を分けた方が生活はぐっと快適になります。",
+          lens: "おすすめは <strong>遠く用（運転用）＋必要に応じてカラーレンズ</strong>。運転や外出に必要な距離へしっかり合わせることで、安全性と快適性の両立を狙えます。",
+          talk: "手元用の老眼鏡はとても便利ですが、運転や外では見る距離が変わるので、どうしても役割が違ってきます。\n外出や運転の時だけは、遠くをしっかり見やすくした専用メガネを持っておくと安心感が全然違いますよ。\n日差しが気になる方なら、カラーの工夫も相性がいいです。",
+          tip: "『2本目を増やす』ではなく、『外出用を持つ』と伝えると、必要性が素直に伝わります。"
+        },
+        "reading|home": {
+          title: "老眼鏡 × 家事・室内移動",
+          tags: ["距離の行き来", "掛け外し軽減", "室内専用"],
+          gap: "老眼鏡は手元には強いですが、家事では手元だけでなく少し先の棚・テレビ・足元なども頻繁に見ます。そのたびに外したり位置を調整したりすると、生活の流れが止まりやすくなります。",
+          lens: "おすすめは <strong>中近両用（室内用）</strong>。キッチンの手元から少し先の距離まで連続して見やすく、掛け外しの回数を減らせます。",
+          talk: "老眼鏡は手元を見る時には便利ですが、家事の時は手元だけじゃなく、少し先も何度も見ますよね。\nそのたびに外したり掛けたりするより、室内用の中近両用にすると、テレビから手元まで自然につながって見えるのでとてもラクです。\nお家の中専用として使うと、毎日の動きがスムーズになりますよ。",
+          tip: "『掛け外しの手間が減る』は、お客様がすぐ想像しやすい実感ワードです。"
+        }
+      };
+
+      const state = {
+        main: null,
+        stress: null
+      };
+
+      const statusMain = document.getElementById("status-main");
+      const statusStress = document.getElementById("status-stress");
+      const resultSection = document.getElementById("result-section");
+      const resultEmpty = document.getElementById("result-empty");
+      const resultCard = document.getElementById("result-card");
+      const resultTitle = document.getElementById("result-title");
+      const resultTags = document.getElementById("result-tags");
+      const gapText = document.getElementById("gap-text");
+      const lensText = document.getElementById("lens-text");
+      const talkText = document.getElementById("talk-text");
+      const tipText = document.getElementById("tip-text");
+      const feedback = document.getElementById("feedback");
+      const selectionSummary = document.getElementById("selection-summary");
+      const copyBtn = document.getElementById("copy-btn");
+      const resetBtn = document.getElementById("reset-btn");
+      const jumpResultBtn = document.getElementById("jump-result-btn");
+
+      const allChoiceButtons = Array.from(document.querySelectorAll(".choice-btn"));
+
+      function safeSetItem(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.warn("localStorageへの保存に失敗しました:", error);
+        }
+      }
+
+      function safeGetItem(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (error) {
+          console.warn("localStorageの読み込みに失敗しました:", error);
+          return null;
+        }
+      }
+
+      function announce(message, isError = false) {
+        feedback.textContent = message || "";
+        feedback.className = `mt-3 min-h-[1.5rem] text-sm font-medium ${
+          isError ? "text-rose-600" : "text-slate-600"
+        }`;
+      }
+
+      function setSelectedButton(group, value) {
+        const groupButtons = document.querySelectorAll(`[data-group="${group}"]`);
+        groupButtons.forEach((button) => {
+          const isSelected = button.dataset.value === value;
+          button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+          button.classList.toggle("border-brand-500", isSelected);
+          button.classList.toggle("bg-brand-50", isSelected);
+          button.classList.toggle("shadow-soft", isSelected);
+          button.classList.toggle("ring-4", isSelected);
+          button.classList.toggle("ring-brand-100", isSelected);
+          button.classList.toggle("border-slate-200", !isSelected);
+          button.classList.toggle("bg-white", !isSelected);
+        });
+      }
+
+      function renderSelectionSummary() {
+        const mainLabel = state.main ? labels.main[state.main] : "未選択";
+        const stressLabel = state.stress ? labels.stress[state.stress] : "未選択";
+
+        statusMain.textContent = mainLabel;
+        statusStress.textContent = stressLabel;
+
+        if (!state.main && !state.stress) {
+          selectionSummary.textContent = "まだ選択されていません";
+        } else {
+          selectionSummary.textContent = `メインメガネ：${mainLabel} ／ ストレス場面：${stressLabel}`;
+        }
+
+        const canShowResult = Boolean(state.main && state.stress);
+        jumpResultBtn.disabled = !canShowResult;
+        copyBtn.disabled = !canShowResult;
+      }
+
+      function renderResult() {
+        renderSelectionSummary();
+
+        if (!state.main || !state.stress) {
+          resultEmpty.classList.remove("hidden");
+          resultCard.classList.add("hidden");
+          announce("");
+          return;
+        }
+
+        const key = `${state.main}|${state.stress}`;
+        const diagnosis = diagnosisMap[key];
+
+        if (!diagnosis) {
+          resultEmpty.classList.remove("hidden");
+          resultCard.classList.add("hidden");
+          resultEmpty.textContent = "組み合わせデータの読み込みに失敗しました。選択をリセットしてもう一度お試しください。";
+          announce("診断データが見つかりませんでした。", true);
+          return;
+        }
+
+        resultEmpty.classList.add("hidden");
+        resultCard.classList.remove("hidden");
+
+        resultTitle.textContent = diagnosis.title;
+        gapText.textContent = diagnosis.gap;
+        lensText.innerHTML = diagnosis.lens;
+        talkText.textContent = diagnosis.talk;
+        tipText.textContent = diagnosis.tip;
+
+        resultTags.innerHTML = "";
+        diagnosis.tags.forEach((tag) => {
+          const chip = document.createElement("span");
+          chip.className = "inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700";
+          chip.textContent = tag;
+          resultTags.appendChild(chip);
+        });
+
+        safeSetItem("glasses-gap-main", state.main);
+        safeSetItem("glasses-gap-stress", state.stress);
+      }
+
+      function handleChoiceClick(event) {
+        const button = event.currentTarget;
+        const { group, value } = button.dataset;
+
+        if (!group || !value) {
+          announce("選択情報の取得に失敗しました。", true);
+          return;
+        }
+
+        state[group] = value;
+        setSelectedButton(group, value);
+        renderResult();
+      }
+
+      async function copyTalk() {
+        if (!state.main || !state.stress) {
+          announce("先に2つの項目を選択してください。", true);
+          return;
+        }
+
+        const key = `${state.main}|${state.stress}`;
+        const diagnosis = diagnosisMap[key];
+
+        if (!diagnosis) {
+          announce("コピーする内容が見つかりませんでした。", true);
+          return;
+        }
+
+        const text = [
+          `【${diagnosis.title}】`,
+          "",
+          "■ ギャップの解説",
+          diagnosis.gap,
+          "",
+          "■ おすすめレンズ",
+          diagnosis.lens.replace(/<[^>]*>/g, ""),
+          "",
+          "■ 提案トーク",
+          diagnosis.talk
+        ].join("\n");
+
+        try {
+          await navigator.clipboard.writeText(text);
+          announce("提案トークをコピーしました。");
+        } catch (error) {
+          console.warn("クリップボードへのコピーに失敗しました:", error);
+          announce("コピーに失敗しました。長押し選択で手動コピーをお願いします。", true);
+        }
+      }
+
+      function resetSelections() {
+        state.main = null;
+        state.stress = null;
+
+        ["main", "stress"].forEach((group) => setSelectedButton(group, ""));
+        resultEmpty.textContent = "まずは「現在のメインメガネ」と「一番ストレスを感じる瞬間」を1つずつ選んでください。";
+        announce("選択をリセットしました。");
+        renderResult();
+
+        try {
+          localStorage.removeItem("glasses-gap-main");
+          localStorage.removeItem("glasses-gap-stress");
+        } catch (error) {
+          console.warn("localStorageの削除に失敗しました:", error);
+        }
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function jumpToResult() {
+        if (!state.main || !state.stress) {
+          announce("先に2つの項目を選択してください。", true);
+          return;
+        }
+        resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function restoreSavedSelections() {
+        const savedMain = safeGetItem("glasses-gap-main");
+        const savedStress = safeGetItem("glasses-gap-stress");
+
+        if (savedMain && labels.main[savedMain]) {
+          state.main = savedMain;
+          setSelectedButton("main", savedMain);
+        }
+
+        if (savedStress && labels.stress[savedStress]) {
+          state.stress = savedStress;
+          setSelectedButton("stress", savedStress);
+        }
+
+        renderResult();
+      }
+
+      allChoiceButtons.forEach((button) => {
+        button.addEventListener("click", handleChoiceClick);
+      });
+
+      copyBtn.addEventListener("click", copyTalk);
+      resetBtn.addEventListener("click", resetSelections);
+      jumpResultBtn.addEventListener("click", jumpToResult);
+
+      restoreSavedSelections();
+    })();
+  </script>
+</body>
+</html>
