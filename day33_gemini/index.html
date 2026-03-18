@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レンズ提案ナビ | 薄型化メリット解説</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* グラスモーフィズムのベーススタイル */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .glass-button {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+        }
+        .glass-button.selected {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: 1px solid #1d4ed8;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            transform: scale(1.02);
+        }
+        
+        /* 背景のアニメーション装飾 */
+        .bg-shape {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: float 20s infinite alternate;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(30px, -50px) scale(1.1); }
+        }
+        
+        /* フェードインアニメーション */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen relative overflow-x-hidden selection:bg-blue-200">
+
+    <!-- 背景装飾 -->
+    <div class="bg-shape bg-blue-300 w-96 h-96 top-[-10%] left-[-10%] opacity-60"></div>
+    <div class="bg-shape bg-cyan-200 w-80 h-80 bottom-[10%] right-[-5%] opacity-50" style="animation-delay: -5s;"></div>
+    <div class="bg-shape bg-indigo-200 w-72 h-72 top-[40%] left-[40%] opacity-40" style="animation-delay: -10s;"></div>
+
+    <div class="max-w-3xl mx-auto px-4 py-8 relative z-10">
+        <!-- ヘッダー -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 mb-2 drop-shadow-sm">
+                <i class="fa-solid fa-glasses mr-2"></i>レンズ提案ナビ
+            </h1>
+            <p class="text-slate-600 text-sm md:text-base font-medium">お客様に最適なレンズと「響くトーク」を導き出します</p>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="space-y-8">
+            
+            <!-- STEP 1: 度数選択 -->
+            <section class="glass-panel rounded-2xl p-6">
+                <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2 shadow-inner">1</span>
+                    お客様の「度数の強さ」は？
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="power-buttons">
+                    <button class="glass-button rounded-xl p-4 text-left group" data-type="power" data-value="weak">
+                        <div class="font-bold text-lg mb-1 group-[.selected]:text-white text-slate-700">弱度</div>
+                        <div class="text-xs group-[.selected]:text-blue-100 text-slate-500">-2.00前後：裸眼でスマホは見える</div>
+                    </button>
+                    <button class="glass-button rounded-xl p-4 text-left group" data-type="power" data-value="medium">
+                        <div class="font-bold text-lg mb-1 group-[.selected]:text-white text-slate-700">中等度</div>
+                        <div class="text-xs group-[.selected]:text-blue-100 text-slate-500">-4.00前後：裸眼だと少し不便</div>
+                    </button>
+                    <button class="glass-button rounded-xl p-4 text-left group" data-type="power" data-value="strong">
+                        <div class="font-bold text-lg mb-1 group-[.selected]:text-white text-slate-700">強度</div>
+                        <div class="text-xs group-[.selected]:text-blue-100 text-slate-500">-6.00以上：裸眼だと全く見えない</div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- STEP 2: お悩み選択 -->
+            <section class="glass-panel rounded-2xl p-6">
+                <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center">
+                    <span class="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2 shadow-inner">2</span>
+                    一番のこだわり（お悩み）は？
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="concern-buttons">
+                    <button class="glass-button rounded-xl p-4 flex flex-col items-center text-center group" data-type="concern" data-value="price">
+                        <i class="fa-solid fa-coins text-2xl mb-2 text-yellow-500 group-[.selected]:text-yellow-300"></i>
+                        <div class="font-bold text-sm group-[.selected]:text-white text-slate-700">価格重視</div>
+                        <div class="text-xs mt-1 group-[.selected]:text-blue-100 text-slate-500">とにかく安く済ませたい</div>
+                    </button>
+                    <button class="glass-button rounded-xl p-4 flex flex-col items-center text-center group" data-type="concern" data-value="eyesize">
+                        <i class="fa-regular fa-eye text-2xl mb-2 text-emerald-500 group-[.selected]:text-emerald-300"></i>
+                        <div class="font-bold text-sm group-[.selected]:text-white text-slate-700">見た目重視</div>
+                        <div class="text-xs mt-1 group-[.selected]:text-blue-100 text-slate-500">目が小さくなるのを防ぎたい</div>
+                    </button>
+                    <button class="glass-button rounded-xl p-4 flex flex-col items-center text-center group" data-type="concern" data-value="thickness">
+                        <i class="fa-solid fa-feather text-2xl mb-2 text-sky-500 group-[.selected]:text-sky-300"></i>
+                        <div class="font-bold text-sm group-[.selected]:text-white text-slate-700">軽さ・薄さ重視</div>
+                        <div class="text-xs mt-1 group-[.selected]:text-blue-100 text-slate-500">分厚く重くなるのが嫌だ</div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- プレースホルダー / エラーメッセージ -->
+            <div id="placeholder-area" class="text-center py-8 text-slate-400">
+                <i class="fa-solid fa-arrow-up text-2xl mb-3 animate-bounce"></i>
+                <p>上の2つの項目を選択すると、<br>おすすめの提案内容が表示されます</p>
+            </div>
+
+            <!-- STEP 3: 結果表示 (初期非表示) -->
+            <section id="result-area" class="hidden">
+                <div class="relative bg-white/80 backdrop-blur-xl rounded-2xl p-1 shadow-2xl border border-white/80">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md z-10">
+                        提案のアドバイス
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-5 md:p-8 pt-6">
+                        <!-- おすすめレンズ -->
+                        <div class="mb-6">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">おすすめレンズ</h3>
+                            <div class="flex items-center">
+                                <div id="result-lens" class="text-xl md:text-2xl font-extrabold text-blue-900 border-l-4 border-blue-500 pl-3">
+                                    <!-- JSで挿入 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- メリット -->
+                        <div class="mb-6 bg-blue-50/50 rounded-lg p-4 border border-blue-100">
+                            <h3 class="text-xs font-bold text-blue-600 mb-2 flex items-center">
+                                <i class="fa-solid fa-star mr-1"></i> 最大のメリット
+                            </h3>
+                            <p id="result-merit" class="text-slate-700 font-medium leading-relaxed text-sm md:text-base">
+                                <!-- JSで挿入 -->
+                            </p>
+                        </div>
+
+                        <!-- トークスクリプト -->
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">そのまま使える！提案トーク</h3>
+                            <div class="relative">
+                                <!-- 吹き出しのしっぽ -->
+                                <div class="absolute -left-2 top-4 w-4 h-4 bg-slate-100 rotate-45 border-l border-b border-slate-200"></div>
+                                <!-- 吹き出し本体 -->
+                                <div class="bg-slate-100 border border-slate-200 rounded-2xl rounded-tl-sm p-4 md:p-5 relative shadow-sm">
+                                    <p id="result-talk" class="text-slate-800 text-base md:text-lg font-medium leading-relaxed tracking-wide">
+                                        <!-- JSで挿入 -->
+                                    </p>
+                                </div>
+                                <div class="mt-2 text-right">
+                                    <button id="copy-btn" class="text-xs text-slate-400 hover:text-blue-500 transition-colors flex items-center justify-end w-full">
+                                        <i class="fa-regular fa-copy mr-1"></i>トークをコピー
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- リセットボタン -->
+                <div class="text-center mt-6">
+                    <button id="reset-btn" class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors underline decoration-slate-300 underline-offset-4">
+                        <i class="fa-solid fa-rotate-left mr-1"></i>条件をリセットして次の接客へ
+                    </button>
+                </div>
+            </section>
+            
+            <!-- トースト通知 (コピー完了時など) -->
+            <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+                コピーしました
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- データ定義 ---
+            // 縦軸: power (weak, medium, strong), 横軸: concern (price, eyesize, thickness)
+            const suggestionData = {
+                weak: {
+                    price: {
+                        lens: "標準（1.60）非球面",
+                        merit: "必要十分な薄さで、追加料金ゼロ。お客様にとって最もコストパフォーマンスが高い選択です。",
+                        talk: "今の度数であれば、標準レンズでも十分薄く軽く仕上がりますよ。追加料金なしで綺麗にできるので安心してくださいね！"
+                    },
+                    eyesize: {
+                        lens: "標準（1.60）非球面",
+                        merit: "弱度数のため、標準レンズでも輪郭の凹みや目の縮小はほとんど発生しません。",
+                        talk: "弱めの度数なので、標準レンズでも輪郭の凹みや目が小さく見える心配はほとんどありません。無理にランクアップせず、このまま進めましょう！"
+                    },
+                    thickness: {
+                        lens: "標準（1.60）非球面 または 薄型（1.67）",
+                        merit: "標準でも十分ですが、フレームが細い・大きい場合は1ランク上げるとよりスッキリします。",
+                        talk: "今の度数なら標準でも重さは気になりません。ただ、もし少しでもレンズのフチをスッキリさせたい場合は、1ランクだけ上げるとより綺麗に仕上がりますよ。"
+                    }
+                },
+                medium: {
+                    price: {
+                        lens: "標準（1.60）非球面",
+                        merit: "フレームの厚みでレンズをカバーすることで、予算を抑えつつ綺麗な仕上がりを実現できます。",
+                        talk: "今回は少しフレームに厚みがあるデザインをお選びいただいたので、無理に追加料金を払って薄型にしなくても、標準レンズで綺麗に仕上がりますよ。その分、予算が浮くので安心してくださいね！"
+                    },
+                    eyesize: {
+                        lens: "薄型（1.67）非球面",
+                        merit: "少し気になり始める輪郭の凹みを軽減し、自然な目元の印象を保ちます。",
+                        talk: "この度数になると少し輪郭の凹みが出てきます。一つランクを上げて薄型非球面にすると、目元が自然になり、メガネを掛けた時の印象がグッと良くなりますよ！"
+                    },
+                    thickness: {
+                        lens: "薄型（1.67）非球面",
+                        merit: "鼻への負担を軽減し、長時間掛けても疲れにくい軽快な掛け心地を実現します。",
+                        talk: "標準レンズだと少し鼻への重みを感じるかもしれません。薄型にランクアップすることで、長時間掛けても疲れにくく、スッキリとした横顔になります！"
+                    }
+                },
+                strong: {
+                    price: {
+                        lens: "薄型（1.67）非球面",
+                        merit: "標準レンズの極端な厚みを回避しつつ、最高ランクまでの出費を抑える現実的なバランスの選択です。",
+                        talk: "度数が強いので標準だとどうしても分厚くなってしまいます。ご予算を抑えつつ見栄えも考慮して、1ランクだけのアップをおすすめします。これなら見た目も重さもかなり改善されますよ。"
+                    },
+                    eyesize: {
+                        lens: "超薄型（1.74）両面非球面",
+                        merit: "最高峰の技術で歪みを極限まで抑え、強度数特有の「目が小さく見える」現象を劇的に改善します。",
+                        talk: "度数が強いとどうしてもフェイスラインの凹みが出やすいのですが、こちらの『両面非球面』という一番良いレンズにランクアップすると、極限まで自然な目元をキープできます。メガネを掛けた時のガッカリ感が全然違いますよ！"
+                    },
+                    thickness: {
+                        lens: "超薄型（1.74）非球面 または 両面非球面",
+                        merit: "最薄・最軽量素材を使用することで、強度数でも鼻に跡がつきにくく、横から見たときの厚みも最小限に抑えられます。",
+                        talk: "レンズの厚みと重さが一番出やすい度数です。最高ランクの超薄型にすることで、鼻への負担を最小限に抑え、横から見たときのぐるぐる感も無くせます。毎日掛けるなら絶対にこれがおすすめです！"
+                    }
+                }
+            };
+
+            // --- 状態管理 ---
+            let selectedPower = null;
+            let selectedConcern = null;
+
+            // --- DOM要素 ---
+            const buttons = document.querySelectorAll('button[data-type]');
+            const placeholderArea = document.getElementById('placeholder-area');
+            const resultArea = document.getElementById('result-area');
+            const resultLens = document.getElementById('result-lens');
+            const resultMerit = document.getElementById('result-merit');
+            const resultTalk = document.getElementById('result-talk');
+            const resetBtn = document.getElementById('reset-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const toast = document.getElementById('toast');
+
+            // --- 関数 ---
+            
+            // UIの更新（ボタンの選択状態）
+            const updateButtonUI = () => {
+                buttons.forEach(btn => {
+                    const type = btn.dataset.type;
+                    const value = btn.dataset.value;
+                    if ((type === 'power' && value === selectedPower) || 
+                        (type === 'concern' && value === selectedConcern)) {
+                        btn.classList.add('selected');
+                    } else {
+                        btn.classList.remove('selected');
+                    }
+                });
+            };
+
+            // 結果の描画
+            const renderResult = () => {
+                if (selectedPower && selectedConcern) {
+                    try {
+                        const data = suggestionData[selectedPower][selectedConcern];
+                        
+                        // データの挿入
+                        resultLens.textContent = data.lens;
+                        resultMerit.textContent = data.merit;
+                        resultTalk.textContent = data.talk;
+
+                        // 表示切り替え
+                        placeholderArea.classList.add('hidden');
+                        resultArea.classList.remove('hidden');
+                        
+                        // アニメーションのリセットと適用
+                        resultArea.classList.remove('fade-in');
+                        void resultArea.offsetWidth; // リフローを強制してアニメーションを再起動
+                        resultArea.classList.add('fade-in');
+
+                        // 結果エリアへスムーススクロール (モバイル時など)
+                        setTimeout(() => {
+                            resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 100);
+
+                    } catch (error) {
+                        console.error("データが見つかりません:", error);
+                        alert("予期せぬエラーが発生しました。条件を選び直してください。");
+                        resetSelection();
+                    }
+                } else {
+                    placeholderArea.classList.remove('hidden');
+                    resultArea.classList.add('hidden');
+                }
+            };
+
+            // リセット処理
+            const resetSelection = () => {
+                selectedPower = null;
+                selectedConcern = null;
+                updateButtonUI();
+                renderResult();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            // トースト通知の表示
+            const showToast = (message) => {
+                toast.textContent = message;
+                toast.classList.remove('opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('opacity-0');
+                }, 2000);
+            };
+
+            // --- イベントリスナー設定 ---
+            
+            // ボタンのクリックイベント
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const type = btn.dataset.type;
+                    const value = btn.dataset.value;
+
+                    if (type === 'power') {
+                        // 同じボタンを押したら解除、違うならセット
+                        selectedPower = selectedPower === value ? null : value;
+                    } else if (type === 'concern') {
+                        selectedConcern = selectedConcern === value ? null : value;
+                    }
+
+                    updateButtonUI();
+                    renderResult();
+                });
+            });
+
+            // リセットボタン
+            resetBtn.addEventListener('click', resetSelection);
+
+            // コピーボタン（クリップボード API）
+            copyBtn.addEventListener('click', async () => {
+                const textToCopy = resultTalk.textContent.trim();
+                if (!textToCopy) return;
+
+                try {
+                    // 現代のクリップボードAPIを試行
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(textToCopy);
+                    } else {
+                        // フォールバック (iFrame等での制限対策)
+                        const textArea = document.createElement("textarea");
+                        textArea.value = textToCopy;
+                        textArea.style.position = "fixed";
+                        textArea.style.left = "-999999px";
+                        textArea.style.top = "-999999px";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        document.execCommand('copy');
+                        textArea.remove();
+                    }
+                    showToast("トークをコピーしました！");
+                } catch (error) {
+                    console.error("コピーに失敗しました", error);
+                    showToast("コピーに失敗しました");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
