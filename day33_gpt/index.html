@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>レンズ薄型化メリット＆デメリット解説ナビ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ice: {
+              50: "#f7fbff",
+              100: "#eef7ff",
+              200: "#d9eefc",
+              300: "#b9e1fb",
+              400: "#7dcdf8",
+              500: "#49b4ee",
+              600: "#2893d0",
+              700: "#2376a8",
+              800: "#215f86",
+              900: "#204f6f"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(125, 211, 252, 0.28), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(191, 219, 254, 0.26), transparent 24%),
+        radial-gradient(circle at 80% 82%, rgba(148, 163, 184, 0.16), transparent 28%),
+        linear-gradient(135deg, #eaf5ff 0%, #dceefe 45%, #eef4fb 100%);
+    }
+
+    .glass {
+      background: linear-gradient(135deg, rgba(255,255,255,0.58), rgba(255,255,255,0.24));
+      border: 1px solid rgba(255,255,255,0.42);
+      box-shadow: 0 24px 70px rgba(15,23,42,0.12);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .choice-btn {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.42);
+      background: linear-gradient(135deg, rgba(255,255,255,0.54), rgba(255,255,255,0.22));
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(30,64,175,0.12);
+    }
+
+    .choice-btn.is-selected {
+      background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(224,242,254,0.62));
+      border-color: rgba(56,189,248,0.55);
+      box-shadow: 0 0 0 2px rgba(125,211,252,0.28), 0 18px 45px rgba(30,64,175,0.16);
+    }
+
+    .check-badge {
+      opacity: 0;
+      transform: scale(.85);
+      transition: all .2s ease;
+    }
+
+    .choice-btn.is-selected .check-badge {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .fade-up {
+      animation: fadeUp .35s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .meter-on {
+      background: linear-gradient(90deg, rgba(56,189,248,0.95), rgba(96,165,250,0.95));
+      box-shadow: 0 4px 12px rgba(56,189,248,0.2);
+    }
+
+    .mesh::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 22px 22px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.35), transparent 85%);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+  <div id="toast" class="hidden fixed bottom-4 right-4 z-50 rounded-2xl bg-slate-900/90 px-4 py-3 text-sm font-medium text-white shadow-2xl"></div>
+
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <header class="glass mesh relative overflow-hidden rounded-3xl p-6 sm:p-8">
+      <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/50 px-3 py-1 text-xs font-semibold text-ice-700">
+            <span class="inline-block h-2 w-2 rounded-full bg-sky-400"></span>
+            新人スタッフ向け・接客トーク支援
+          </div>
+          <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+            眼鏡屋向け「レンズ薄型化（屈折率）<br class="hidden sm:block">メリット＆デメリット解説ナビ」
+          </h1>
+          <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+            「ただ薄くなるだけ」で終わらせず、
+            <span class="font-semibold text-slate-800">目元の自然さ・掛け心地・予算バランス</span>
+            のどこに価値があるかまで一瞬で整理。度数の強さとお客様の悩みを選ぶだけで、
+            おすすめレンズ・最大メリット・そのまま使える提案トークを表示します。
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 rounded-3xl border border-white/50 bg-white/35 p-3 text-center text-xs sm:text-sm">
+          <div class="rounded-2xl bg-white/60 px-3 py-3">
+            <div class="font-bold text-slate-900">3段階</div>
+            <div class="mt-1 text-slate-500">度数分類</div>
+          </div>
+          <div class="rounded-2xl bg-white/60 px-3 py-3">
+            <div class="font-bold text-slate-900">3視点</div>
+            <div class="mt-1 text-slate-500">悩み分類</div>
+          </div>
+          <div class="rounded-2xl bg-white/60 px-3 py-3">
+            <div class="font-bold text-slate-900">即提案</div>
+            <div class="mt-1 text-slate-500">トーク生成</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <div class="space-y-6">
+        <section class="glass rounded-3xl p-5 sm:p-6">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sm font-black text-sky-700">1</div>
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">お客様の「度数の強さ」を選ぶ</h2>
+              <p class="text-sm text-slate-500">まずは薄型化の必要度をざっくり把握します。</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-4 md:grid-cols-3">
+            <button type="button" data-group="degree" data-value="weak" class="choice-btn rounded-3xl p-4 text-left" aria-pressed="false">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-sky-700">弱度</p>
+                  <h3 class="mt-1 text-lg font-bold text-slate-900">-2.00前後</h3>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">裸眼でスマホは見える</p>
+                </div>
+                <span class="check-badge rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700">選択中</span>
+              </div>
+            </button>
+
+            <button type="button" data-group="degree" data-value="medium" class="choice-btn rounded-3xl p-4 text-left" aria-pressed="false">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-sky-700">中等度</p>
+                  <h3 class="mt-1 text-lg font-bold text-slate-900">-4.00前後</h3>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">裸眼だと少し不便</p>
+                </div>
+                <span class="check-badge rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700">選択中</span>
+              </div>
+            </button>
+
+            <button type="button" data-group="degree" data-value="strong" class="choice-btn rounded-3xl p-4 text-left" aria-pressed="false">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-sky-700">強度</p>
+                  <h3 class="mt-1 text-lg font-bold text-slate-900">-6.00以上</h3>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">裸眼だと全く見えない</p>
+                </div>
+                <span class="check-badge rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700">選択中</span>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        <section class="glass rounded-3xl p-5 sm:p-6">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-sm font-black text-slate-700">2</div>
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">お客様の「一番のこだわり」を選ぶ</h2>
+              <p class="text-sm text-slate-500">薄さ以外の価値をどこに置くかを整理します。</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-4 md:grid-cols-3">
+            <button type="button" data-group="concern" data-value="price" class="choice-btn rounded-3xl p-4 text-left" aria-pressed="false">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-600">価格重視</p>
+                  <h3 class="mt-1 text-base font-bold leading-7 text-slate-900">とにかく価格を抑えて安く済ませたい</h3>
+                </div>
+                <span class="check-badge rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700">選択中</span>
+              </div>
+            </button>
+
+            <button type="button" data-group="concern" data-value="appearance" class="choice-btn rounded-3xl p-4 text-left" aria-pressed="false">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-600">見た目重視</p>
+                  <h3 class="mt-1 text-base font-bold leading-7 text-slate-900">目が小さく見える（輪郭が凹む）のを防ぎたい</h3>
+                </div>
+                <span class="check-badge rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700">選択中</span>
+              </div>
+            </button>
+
+            <button type="button" data-group="concern" data-value="weight" class="choice-btn rounded-3xl p-4 text-left" aria-pressed="false">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-slate-600">掛け心地重視</p>
+                  <h3 class="mt-1 text-base font-bold leading-7 text-slate-900">レンズが分厚くて重くなる（鼻に跡がつく）のが嫌だ</h3>
+                </div>
+                <span class="check-badge rounded-full bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-700">選択中</span>
+              </div>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="space-y-6 xl:sticky xl:top-6 self-start">
+        <section class="glass rounded-3xl p-5 sm:p-6">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">選択サマリー</h2>
+              <p class="text-sm text-slate-500">両方選ぶと提案カードが出ます。</p>
+            </div>
+            <span id="readyBadge" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">選択待ち</span>
+          </div>
+
+          <div class="mt-5 space-y-3">
+            <div class="rounded-2xl border border-white/50 bg-white/45 p-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">度数の強さ</p>
+              <p id="degreeSummary" class="mt-2 text-sm font-semibold text-slate-900">未選択</p>
+            </div>
+            <div class="rounded-2xl border border-white/50 bg-white/45 p-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">一番のこだわり</p>
+              <p id="concernSummary" class="mt-2 text-sm font-semibold text-slate-900">未選択</p>
+            </div>
+          </div>
+
+          <p id="helperText" class="mt-4 text-sm leading-6 text-slate-600">
+            度数の強さとこだわりを1つずつ選ぶと、おすすめレンズ・最大メリット・提案トークを表示します。
+          </p>
+
+          <button id="resetBtn" type="button" class="mt-5 inline-flex w-full items-center justify-center rounded-2xl border border-white/50 bg-white/55 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white/75">
+            選択をリセット
+          </button>
+        </section>
+
+        <section class="glass rounded-3xl p-5 sm:p-6">
+          <h3 class="text-lg font-bold text-slate-900">新人スタッフ向け・伝え方のコツ</h3>
+          <p class="mt-2 text-sm leading-6 text-slate-600">
+            「薄いです」だけでは弱いので、必ず
+            <span class="font-semibold text-slate-800">何が嬉しいか</span>
+            に言い換えるのがコツです。
+          </p>
+
+          <div class="mt-4 grid gap-3">
+            <div class="rounded-2xl bg-white/55 p-4">
+              <div class="text-sm font-bold text-sky-700">① 自然な目元</div>
+              <div class="mt-1 text-sm text-slate-600">目が小さく見えにくい・顔なじみが良い</div>
+            </div>
+            <div class="rounded-2xl bg-white/55 p-4">
+              <div class="text-sm font-bold text-sky-700">② 軽い掛け心地</div>
+              <div class="mt-1 text-sm text-slate-600">鼻あたりがラク・長時間でも快適</div>
+            </div>
+            <div class="rounded-2xl bg-white/55 p-4">
+              <div class="text-sm font-bold text-sky-700">③ 予算バランス</div>
+              <div class="mt-1 text-sm text-slate-600">無理に上げない誠実提案も価値になる</div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="mt-6">
+      <div id="resultPanel" aria-live="polite"></div>
+    </section>
+
+    <footer class="mt-6 glass rounded-3xl p-4 text-sm leading-6 text-slate-600">
+      ※ 実際のレンズの厚み・見た目・重さは、
+      <span class="font-semibold text-slate-700">フレームサイズ / 玉型 / PD（瞳孔距離）/ 加工条件</span>
+      でも変わります。最終提案では、必ずフレームとの組み合わせも一緒にご案内してください。
+    </footer>
+  </main>
+
+  <script>
+    const DEGREE_OPTIONS = {
+      weak: {
+        title: "弱度",
+        detail: "-2.00前後｜裸眼でスマホは見える"
+      },
+      medium: {
+        title: "中等度",
+        detail: "-4.00前後｜裸眼だと少し不便"
+      },
+      strong: {
+        title: "強度",
+        detail: "-6.00以上｜裸眼だと全く見えない"
+      }
+    };
+
+    const CONCERN_OPTIONS = {
+      price: {
+        title: "価格を抑えたい",
+        detail: "とにかく価格を抑えて安く済ませたい"
+      },
+      appearance: {
+        title: "目元を自然に見せたい",
+        detail: "目が小さく見える（輪郭が凹む）のを防ぎたい"
+      },
+      weight: {
+        title: "厚み・重さを減らしたい",
+        detail: "レンズが分厚くて重くなる（鼻に跡がつく）のが嫌だ"
+      }
+    };
+
+    const SCENARIOS = {
+      weak: {
+        price: {
+          recommendation: "標準 1.60 非球面",
+          stance: "標準で十分",
+          reasonLine: "弱度では薄型化の差が出にくいため、まずは標準の非球面で十分きれいに仕上がります。",
+          maxMerit: "追加料金を抑えながら、見た目と使いやすさのバランスが良いこと。『無理に上げない』安心感そのものが価値になります。",
+          talk: "今回の度数でしたら、薄型にしなくても標準の非球面レンズで十分すっきり仕上がります。無理に追加料金をかけなくても、見た目と使いやすさのバランスが良いので安心してくださいね。",
+          honest: "弱度では薄型化しても変化は控えめです。小ぶりのフレームなら、なおさら標準で十分なケースが多いです。",
+          tip: "“追加しない理由”まで伝えると、売り込みではなく信頼に変わります。",
+          scores: { cost: 5, appearance: 3, comfort: 3 }
+        },
+        appearance: {
+          recommendation: "薄型 1.67 非球面",
+          stance: "一段階アップ",
+          reasonLine: "弱度でも、目元の印象を少しでも自然にしたいなら、薄型×非球面が顔なじみを整えやすいです。",
+          maxMerit: "ただ薄いだけでなく、レンズ越しの目元や輪郭の印象がすっきり見えやすくなることです。",
+          talk: "度数はそこまで強くないのですが、目元の見え方を少しでも自然にしたいなら、薄型の非球面にしておくと印象がすっきりします。『ただ薄い』というより、掛けた時の顔なじみが良くなるのがポイントです。",
+          honest: "弱度なので劇的な差ではありません。細身フレームや大きめ玉型だと、差を感じやすくなります。",
+          tip: "“顔なじみが良い”という言い換えは、見た目重視のお客様に刺さりやすいです。",
+          scores: { cost: 3, appearance: 4, comfort: 3 }
+        },
+        weight: {
+          recommendation: "薄型 1.67 非球面",
+          stance: "快適さ重視",
+          reasonLine: "大きめフレームや長時間使用なら、弱度でも一段薄くする価値が出やすい組み合わせです。",
+          maxMerit: "レンズ端がすっきりして、掛けた時の軽さの印象が良くなりやすいこと。長時間使用の快適さにつながります。",
+          talk: "長時間掛けるなら、薄型にしておくとレンズの端がすっきりして、掛けた時の軽さの印象も良くなります。弱度でも、フレームが大きめだと差が出るので、快適さ重視なら相性が良いですよ。",
+          honest: "小さめフレームなら標準との差は小さめです。毎日長く使うかどうかで判断するのがおすすめです。",
+          tip: "“鼻に跡がつきにくい方向です”と体感で伝えると、メリットが想像しやすくなります。",
+          scores: { cost: 3, appearance: 3, comfort: 4 }
+        }
+      },
+      medium: {
+        price: {
+          recommendation: "標準 1.60 非球面",
+          stance: "標準で十分",
+          reasonLine: "中等度でもフレーム選び次第では標準で十分。追加料金をかけない誠実提案が光る組み合わせです。",
+          maxMerit: "予算を守りつつ、非球面で見た目の野暮ったさを抑えられること。『必要以上に上げない』納得感があります。",
+          talk: "今回は少しフレームに厚みがあるデザインをお選びいただいたので、無理に追加料金を払って薄型にしなくても、標準レンズで綺麗に仕上がりますよ。その分、予算が浮くので安心してくださいね。",
+          honest: "大きめで細いフレームだと厚みが気になりやすいため、フレームとの組み合わせ確認は前提です。",
+          tip: "売らない提案ができると、『この人はちゃんと見てくれている』という信頼が一段上がります。",
+          scores: { cost: 5, appearance: 3, comfort: 3 }
+        },
+        appearance: {
+          recommendation: "薄型 1.67 非球面",
+          stance: "一番バランスが良い",
+          reasonLine: "中等度からは見え方以上に“見た目の印象差”が出やすく、1.67が最もバランス良く効きやすいです。",
+          maxMerit: "見た目の厚ぼったさと目元の縮小感を抑え、正面から見た印象をかなり自然に寄せられることです。",
+          talk: "このくらいの度数になると、標準レンズだと目元の印象が少し変わりやすいんです。1.67の薄型非球面にしておくと、掛けた時の目の小ささが和らいで、かなり自然に見えやすくなりますよ。",
+          honest: "1.74ほどの最上位まで上げなくても、まずは1.67で十分きれいに仕上がるケースが多いです。",
+          tip: "“自然に見える”を主語にすると、売り込み感が減って受け入れられやすくなります。",
+          scores: { cost: 4, appearance: 5, comfort: 4 }
+        },
+        weight: {
+          recommendation: "薄型 1.67 非球面",
+          stance: "快適さ重視",
+          reasonLine: "厚みと価格のバランスがよく、毎日使うメガネの快適さを底上げしやすい王道の選び方です。",
+          maxMerit: "見た目だけでなく、長時間掛けた時の軽さや鼻まわりのラクさにつながることです。",
+          talk: "中くらいの度数だと、薄型にしておくと見た目だけでなく、掛けた時の軽さも違ってきます。特に毎日長時間お使いなら、鼻あたりのラクさまで含めて満足感が高いですよ。",
+          honest: "超薄型ほどの軽量化ではありませんが、価格と快適さのバランスはかなり良いです。",
+          tip: "“毎日使うものだから快適さに投資する価値があります”は定番で強いトークです。",
+          scores: { cost: 4, appearance: 4, comfort: 5 }
+        }
+      },
+      strong: {
+        price: {
+          recommendation: "薄型 1.67 非球面",
+          stance: "最低でもここは提案",
+          reasonLine: "強度数では標準との差が大きいため、価格重視でも1.67までは提案価値が高いラインです。",
+          maxMerit: "最上位まで上げなくても、厚み・重さ・見た目をしっかり改善できる“コスパの良い薄型化”であることです。",
+          talk: "度数が強めの方は、標準のままだと厚みと重さがかなり出やすいので、価格を抑えるなら1.67の薄型が一番バランスが良いです。最上位ほど高くしなくても、ここで仕上がりの差はしっかり出ますよ。",
+          honest: "最安にはなりませんが、強度数で標準にすると見た目や掛け心地の不満が出やすいです。",
+          tip: "“最上位ではなく、コスパの良い薄型です”と伝えると納得感が高まります。",
+          scores: { cost: 4, appearance: 4, comfort: 4 }
+        },
+        appearance: {
+          recommendation: "超薄型 1.74 両面非球面",
+          stance: "最上位で差が出る",
+          reasonLine: "強度数で見た目を最優先するなら、最上位の両面非球面が最も説得力を持ちやすい組み合わせです。",
+          maxMerit: "フェイスラインの凹みや目の小ささを極限まで抑え、強度数でも目元をできるだけ自然に見せられることです。",
+          talk: "度数が強いとどうしてもフェイスラインの凹みが出やすいのですが、こちらの『両面非球面』という一番良いレンズにランクアップすると、極限まで自然な目元をキープできます。メガネを掛けた時のガッカリ感が全然違いますよ。",
+          honest: "追加料金は最も高めです。ただ、見た目を最優先するなら体感差が一番分かりやすい選択肢です。",
+          tip: "“薄さ”ではなく“目元の自然さ”を主役にして説明すると、上位提案が通りやすくなります。",
+          scores: { cost: 2, appearance: 5, comfort: 5 }
+        },
+        weight: {
+          recommendation: "超薄型 1.74 両面非球面",
+          stance: "快適さ最優先",
+          reasonLine: "厚みと重さの体感差がはっきり出やすく、毎日の負担軽減に直結しやすい組み合わせです。",
+          maxMerit: "レンズ端の厚みと重量感を大きく抑えられるため、鼻への負担やズレやすさの軽減につながることです。",
+          talk: "強い度数ほどレンズが分厚く重くなりやすいのですが、1.74の超薄型にすると、見た目以上に掛け心地が軽く感じやすいです。鼻に跡がつきやすい方や、ズレるのが気になる方には特に満足度が高いですよ。",
+          honest: "価格は上がりますが、強度数では毎日の掛け心地に差が出やすいので、満足度は高くなりやすいです。",
+          tip: "“1日中掛ける方ほど差が出ます”と生活実感に落とし込むと伝わりやすいです。",
+          scores: { cost: 2, appearance: 4, comfort: 5 }
+        }
+      }
+    };
+
+    const state = {
+      degree: null,
+      concern: null
+    };
+
+    const degreeButtons = Array.from(document.querySelectorAll('[data-group="degree"]'));
+    const concernButtons = Array.from(document.querySelectorAll('[data-group="concern"]'));
+    const degreeSummary = document.getElementById("degreeSummary");
+    const concernSummary = document.getElementById("concernSummary");
+    const helperText = document.getElementById("helperText");
+    const readyBadge = document.getElementById("readyBadge");
+    const resultPanel = document.getElementById("resultPanel");
+    const resetBtn = document.getElementById("resetBtn");
+    const toast = document.getElementById("toast");
+
+    let toastTimer = null;
+
+    function escapeHtml(value) {
+      const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      };
+      return String(value).replace(/[&<>"']/g, (char) => map[char]);
+    }
+
+    function setSelected(group, value) {
+      if (group === "degree") {
+        state.degree = state.degree === value ? null : value;
+      } else if (group === "concern") {
+        state.concern = state.concern === value ? null : value;
+      }
+      render();
+    }
+
+    function syncButtons() {
+      degreeButtons.forEach((button) => {
+        const isSelected = state.degree === button.dataset.value;
+        button.classList.toggle("is-selected", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
+      });
+
+      concernButtons.forEach((button) => {
+        const isSelected = state.concern === button.dataset.value;
+        button.classList.toggle("is-selected", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
+      });
+    }
+
+    function syncSummary() {
+      degreeSummary.textContent = state.degree
+        ? `${DEGREE_OPTIONS[state.degree].title}｜${DEGREE_OPTIONS[state.degree].detail}`
+        : "未選択";
+
+      concernSummary.textContent = state.concern
+        ? `${CONCERN_OPTIONS[state.concern].title}｜${CONCERN_OPTIONS[state.concern].detail}`
+        : "未選択";
+
+      const isReady = Boolean(state.degree && state.concern);
+
+      readyBadge.textContent = isReady ? "提案準備OK" : "選択待ち";
+      readyBadge.className = isReady
+        ? "rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700"
+        : "rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600";
+
+      if (!state.degree && !state.concern) {
+        helperText.textContent = "度数の強さとこだわりを1つずつ選ぶと、おすすめレンズ・最大メリット・提案トークを表示します。";
+      } else if (!state.degree) {
+        helperText.textContent = "次は度数の強さを選んでください。薄型化の必要度が決まると提案が絞れます。";
+      } else if (!state.concern) {
+        helperText.textContent = "次は一番のこだわりを選んでください。見た目・軽さ・予算のどこを重視するかで話し方が変わります。";
+      } else {
+        helperText.textContent = "この組み合わせに合うおすすめレンズと、そのまま使える提案トークを表示中です。";
+      }
+    }
+
+    function renderMeter(label, score) {
+      let bars = "";
+      for (let i = 1; i <= 5; i += 1) {
+        bars += `<span class="${i <= score ? "meter-on" : "bg-white/70"} h-2.5 rounded-full"></span>`;
+      }
+
+      return `
+        <div>
+          <div class="mb-2 flex items-center justify-between text-sm">
+            <span class="font-medium text-slate-700">${escapeHtml(label)}</span>
+            <span class="text-slate-500">${score}/5</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1.5">
+            ${bars}
+          </div>
+        </div>
+      `;
+    }
+
+    function getScenario() {
+      if (!state.degree || !state.concern) return null;
+      return SCENARIOS[state.degree] && SCENARIOS[state.degree][state.concern]
+        ? SCENARIOS[state.degree][state.concern]
+        : null;
+    }
+
+    function renderPlaceholder() {
+      const missing = [];
+      if (!state.degree) missing.push("度数の強さ");
+      if (!state.concern) missing.push("一番のこだわり");
+
+      resultPanel.innerHTML = `
+        <div class="glass fade-up rounded-3xl p-6 sm:p-7">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-slate-600">
+                提案カード待機中
+              </div>
+              <h2 class="mt-3 text-2xl font-bold text-slate-900">選択がそろうと、ここに接客ナビが表示されます</h2>
+              <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
+                あと
+                <span class="font-semibold text-slate-800">${escapeHtml(missing.join(" と "))}</span>
+                を選ぶと、
+                おすすめレンズ・最大のメリット・正直に伝えるべきデメリット・そのまま使える提案トークをリッチなカードで表示します。
+              </p>
+            </div>
+            <div class="rounded-3xl border border-white/50 bg-white/55 px-5 py-4 text-sm text-slate-600">
+              <div class="font-semibold text-slate-800">接客のコツ</div>
+              <div class="mt-2">「薄くなります」ではなく</div>
+              <div class="mt-1 font-semibold text-sky-700">“何がラクになるか / 何が自然になるか”</div>
+              <div class="mt-1">まで言い切るのがポイントです。</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderResult() {
+      const scenario = getScenario();
+
+      if (!state.degree || !state.concern) {
+        renderPlaceholder();
+        return;
+      }
+
+      if (!scenario) {
+        resultPanel.innerHTML = `
+          <div class="glass fade-up rounded-3xl p-6">
+            <h2 class="text-xl font-bold text-rose-700">提案データの読み込みに失敗しました</h2>
+            <p class="mt-2 text-sm text-slate-600">
+              選択パターンに対応する提案が見つかりませんでした。リセットしてもう一度お試しください。
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      const degreeTitle = DEGREE_OPTIONS[state.degree].title;
+      const concernTitle = CONCERN_OPTIONS[state.concern].title;
+
+      resultPanel.innerHTML = `
+        <div class="glass fade-up rounded-3xl p-5 sm:p-6">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">${escapeHtml(degreeTitle)}</span>
+                <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700">${escapeHtml(concernTitle)}</span>
+              </div>
+              <h2 class="mt-3 text-2xl font-bold text-slate-900">このお客様には、こう提案する</h2>
+              <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
+                「ただ薄くなる」ではなく、
+                <span class="font-semibold text-slate-800">なぜ満足度が上がるのか</span>
+                を先に伝えると、会話が一気に通りやすくなります。
+              </p>
+            </div>
+
+            <div class="rounded-3xl border border-white/50 bg-white/60 px-4 py-3">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">提案スタンス</p>
+              <p class="mt-1 text-base font-bold text-slate-900">${escapeHtml(scenario.stance)}</p>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-5 lg:grid-cols-3">
+            <article class="rounded-3xl border border-white/60 bg-white/50 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">おすすめのレンズ種類</p>
+              <h3 class="mt-3 text-xl font-black text-slate-900">${escapeHtml(scenario.recommendation)}</h3>
+              <p class="mt-3 text-sm leading-7 text-slate-600">${escapeHtml(scenario.reasonLine)}</p>
+            </article>
+
+            <article class="rounded-3xl border border-white/60 bg-white/50 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">ランクアップによる最大のメリット</p>
+              <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(scenario.maxMerit)}</p>
+            </article>
+
+            <article class="rounded-3xl border border-white/60 bg-white/50 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">提案バランス</p>
+              <div class="mt-4 space-y-4">
+                ${renderMeter("コスパ", scenario.scores.cost)}
+                ${renderMeter("目元の自然さ", scenario.scores.appearance)}
+                ${renderMeter("軽さ・快適さ", scenario.scores.comfort)}
+              </div>
+            </article>
+
+            <article class="rounded-3xl border border-white/60 bg-white/50 p-5 lg:col-span-2">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">そのまま使える提案トークスクリプト</p>
+                <button id="copyBtn" type="button" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                  トークをコピー
+                </button>
+              </div>
+              <blockquote class="mt-4 rounded-3xl bg-slate-900/90 p-5 text-sm leading-8 text-white">
+                「${escapeHtml(scenario.talk)}」
+              </blockquote>
+              <p class="mt-4 text-sm leading-7 text-slate-600">
+                <span class="font-semibold text-slate-800">刺さる言い換え：</span>
+                ${escapeHtml(scenario.tip)}
+              </p>
+            </article>
+
+            <article class="rounded-3xl border border-white/60 bg-white/50 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">正直に伝えるポイント（デメリット）</p>
+              <p class="mt-3 text-sm leading-7 text-slate-700">${escapeHtml(scenario.honest)}</p>
+              <div class="mt-4 rounded-2xl bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-800">
+                誠実な一言を添えると、アップセルではなく
+                <span class="font-semibold">“納得して選べる提案”</span>
+                に変わります。
+              </div>
+            </article>
+          </div>
+        </div>
+      `;
+
+      const copyBtn = document.getElementById("copyBtn");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", async () => {
+          await copyText(scenario.talk);
+        });
+      }
+    }
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          showToast("提案トークをコピーしました。");
+          return;
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        if (!copied) throw new Error("copy failed");
+        showToast("提案トークをコピーしました。");
+      } catch (error) {
+        console.error(error);
+        showToast("コピーに失敗しました。手動でコピーしてください。", true);
+      }
+    }
+
+    function showToast(message, isError = false) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.className = isError
+        ? "fixed bottom-4 right-4 z-50 rounded-2xl bg-rose-600/95 px-4 py-3 text-sm font-medium text-white shadow-2xl"
+        : "fixed bottom-4 right-4 z-50 rounded-2xl bg-slate-900/90 px-4 py-3 text-sm font-medium text-white shadow-2xl";
+
+      toastTimer = setTimeout(() => {
+        toast.className += " hidden";
+      }, 2200);
+    }
+
+    function resetSelection() {
+      state.degree = null;
+      state.concern = null;
+      render();
+    }
+
+    function render() {
+      syncButtons();
+      syncSummary();
+      renderResult();
+    }
+
+    degreeButtons.forEach((button) => {
+      button.addEventListener("click", () => setSelected("degree", button.dataset.value));
+    });
+
+    concernButtons.forEach((button) => {
+      button.addEventListener("click", () => setSelected("concern", button.dataset.value));
+    });
+
+    resetBtn.addEventListener("click", resetSelection);
+
+    render();
+  </script>
+</body>
+</html>
