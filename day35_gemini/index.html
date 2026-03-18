@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Color & Frame Matching Navigator</title>
+    
+    <!-- Google Fonts for elegant typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        serif: ['"Noto Serif JP"', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            spring: '#FDE68A', // 柔らかいイエロー
+                            summer: '#BAE6FD', // 涼しげなブルー
+                            autumn: '#FDBA74', // 温かみのあるオレンジ
+                            winter: '#F472B6', // クリアなピンク
+                            primary: '#D946EF', // アクセントカラー(フューシャ)
+                            bg: '#FDFBFB',
+                        }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-soft': 'pulseSoft 2s infinite',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.8' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* グラスモーフィズムや微細な調整用カスタムCSS */
+        body {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%, #fdfbfb 100%);
+            background-attachment: fixed;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #d946ef, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* スクロールバー非表示（スマートな見た目のため） */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen pb-20">
+
+    <!-- App Container (Mobile First, Max-width for larger screens) -->
+    <div class="max-w-md mx-auto min-h-screen relative shadow-2xl shadow-gray-200/50 bg-white/40">
+        
+        <!-- Header -->
+        <header class="pt-10 pb-6 px-6 text-center sticky top-0 z-10 glass-card rounded-b-3xl">
+            <h1 class="font-serif text-2xl font-bold tracking-wider gradient-text mb-1">Frame Match</h1>
+            <p class="text-xs text-gray-500 tracking-widest uppercase">Personal Color Navigator</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="px-6 mt-8 space-y-10">
+            
+            <!-- Step 1: Personal Color -->
+            <section id="step1">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                    <h2 class="font-serif font-semibold text-lg text-gray-700">肌のトーンをお選びください</h2>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="choice-btn group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-all hover:shadow-md active:scale-95" data-category="tone" data-value="spring">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-brand-spring opacity-20 rounded-bl-full transition-transform group-hover:scale-110"></div>
+                        <div class="relative z-10">
+                            <span class="block text-sm font-bold text-gray-800">イエベ春</span>
+                            <span class="block text-xs text-gray-500 mt-1">明るく黄み肌・キュート</span>
+                        </div>
+                    </button>
+                    
+                    <button class="choice-btn group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-all hover:shadow-md active:scale-95" data-category="tone" data-value="summer">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-brand-summer opacity-20 rounded-bl-full transition-transform group-hover:scale-110"></div>
+                        <div class="relative z-10">
+                            <span class="block text-sm font-bold text-gray-800">ブルベ夏</span>
+                            <span class="block text-xs text-gray-500 mt-1">明るく色白・ソフト</span>
+                        </div>
+                    </button>
+                    
+                    <button class="choice-btn group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-all hover:shadow-md active:scale-95" data-category="tone" data-value="autumn">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-brand-autumn opacity-20 rounded-bl-full transition-transform group-hover:scale-110"></div>
+                        <div class="relative z-10">
+                            <span class="block text-sm font-bold text-gray-800">イエベ秋</span>
+                            <span class="block text-xs text-gray-500 mt-1">落ち着いた黄み肌・ゴージャス</span>
+                        </div>
+                    </button>
+                    
+                    <button class="choice-btn group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-all hover:shadow-md active:scale-95" data-category="tone" data-value="winter">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-brand-winter opacity-20 rounded-bl-full transition-transform group-hover:scale-110"></div>
+                        <div class="relative z-10">
+                            <span class="block text-sm font-bold text-gray-800">ブルベ冬</span>
+                            <span class="block text-xs text-gray-500 mt-1">雪のような色白・クール</span>
+                        </div>
+                    </button>
+                    
+                    <button class="choice-btn col-span-2 group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm transition-all hover:shadow-md active:scale-95" data-category="tone" data-value="unknown">
+                        <div class="absolute inset-0 bg-gradient-to-r from-gray-50 to-gray-100 opacity-50"></div>
+                        <div class="relative z-10 flex items-center justify-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-gray-400"></i>
+                            <span class="block text-sm font-medium text-gray-600">分からない（AI・プロにおまかせ）</span>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 2: Impression -->
+            <section id="step2" class="opacity-50 transition-opacity duration-500 relative">
+                <!-- Overlay to prevent clicking before step 1 is done -->
+                <div id="step2-overlay" class="absolute inset-0 z-20"></div>
+
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                    <h2 class="font-serif font-semibold text-lg text-gray-700">なりたい印象は？</h2>
+                </div>
+                
+                <div class="flex flex-col gap-3">
+                    <button class="choice-btn flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:shadow-md active:scale-95" data-category="impression" data-value="cute">
+                        <div class="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-pink-400">
+                            <i data-lucide="heart" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <span class="block text-sm font-bold text-gray-800">優しく・可愛らしい</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">Soft & Cute</span>
+                        </div>
+                    </button>
+                    
+                    <button class="choice-btn flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:shadow-md active:scale-95" data-category="impression" data-value="smart">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-400">
+                            <i data-lucide="briefcase" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <span class="block text-sm font-bold text-gray-800">知的で・仕事ができる</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">Smart & Professional</span>
+                        </div>
+                    </button>
+
+                    <button class="choice-btn flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:shadow-md active:scale-95" data-category="impression" data-value="trend">
+                        <div class="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-500">
+                            <i data-lucide="star" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <span class="block text-sm font-bold text-gray-800">トレンド感のある・オシャレ</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">Trendy & Stylish</span>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Result Section (Hidden initially) -->
+            <section id="result-section" class="hidden pt-4 pb-10">
+                <div class="glass-card rounded-3xl p-6 shadow-xl shadow-purple-900/5 relative overflow-hidden animate-slide-up border border-white">
+                    <!-- Decorative glowing orb -->
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-purple-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+                    <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-center gap-2 mb-6">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-brand-primary"></i>
+                            <h2 class="font-serif font-bold text-xl text-gray-800 tracking-wide">Best Match</h2>
+                        </div>
+
+                        <div class="text-center mb-6">
+                            <p class="text-xs text-gray-500 mb-2">おすすめのフレームカラー</p>
+                            <div class="inline-block px-5 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-2xl shadow-lg">
+                                <span id="result-color" class="font-bold text-lg tracking-wide">クリアシャンパン</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/60 rounded-2xl p-5 border border-white/80 shadow-inner relative">
+                            <div class="absolute -top-3 left-5 bg-brand-primary text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                Staff Talk Script
+                            </div>
+                            <p id="result-talk" class="text-sm text-gray-700 leading-relaxed mt-2 font-medium">
+                                （ここにプロの提案トークが表示されます）
+                            </p>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <button onclick="resetApp()" class="text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1 mx-auto">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 最初からやり直す
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // --- Database (Logic & Talk Scripts) ---
+        const matchingDatabase = {
+            "spring": {
+                "cute": { color: "ピーチピンク / ライトブラウン", talk: "お客様の明るくキュートな魅力には、ふんわりとした『ピーチピンク』や『ライトブラウン』がぴったりです。お顔周りがパッと華やぎ、親しみやすく可愛らしい印象を最大限に引き出してくれますよ！" },
+                "smart": { color: "明るめのべっ甲 / キャメル", talk: "イエベ春の方のお肌をくすませず、かつ知的な印象を与えるなら『明るめのべっ甲』や『キャメル』がおすすめです。かっちりしすぎず、柔らかさを残したままお仕事モードのキリッとした表情を作れます。" },
+                "trend": { color: "クリアシャンパン / ゴールドメタル", talk: "お客様の明るいお肌のトーンには、今一番人気の『クリアシャンパン』が驚くほど綺麗に馴染みます！お顔の血色感をさらに良く見せてくれますし、透明感のあるフレームは抜け感が出て一気にオシャレな印象になりますよ！" }
+            },
+            "summer": {
+                "cute": { color: "くすみピンク / ラベンダー", talk: "ブルベ夏の方の透明感あふれるお肌には、少し青みのある『くすみピンク』や『ラベンダー』が最高に映えます。お肌の白さを際立たせながら、ふんわりと優しく可憐な雰囲気を演出してくれます。" },
+                "smart": { color: "シルバー / グレーメタル", talk: "透明感のあるお肌には、シルバー系のフレームが一番お顔立ちをスッキリと綺麗に見せてくれます。黒縁よりも重くならず、上品で知的な印象になるので、お仕事用にもピッタリのカラーです！" },
+                "trend": { color: "クリアグレー / アイスブルー", talk: "トレンド感を出すなら、涼しげな『クリアグレー』や『アイスブルー』の太めセルフレームはいかがでしょうか。ブルベ夏の方ならではのクールな透明感とマッチして、洗練された都会的なオシャレが完成します。" }
+            },
+            "autumn": {
+                "cute": { color: "サーモンピンク / テラコッタ", talk: "イエベ秋の方のゴージャスで落ち着いたお肌には、深みのある『サーモンピンク』や『テラコッタ』が血色感を与え、大人可愛い印象を作ります。温かみのあるカラーで親しみやすさもグッとアップしますよ。" },
+                "smart": { color: "ダークブラウン / カーキ", talk: "知的な印象を目指すなら、深みのある『ダークブラウン』や『カーキ』が間違いありません。イエベ秋の方のお顔立ちをキュッと引き締め、落ち着きと信頼感を与える洗練されたスタイルになります。" },
+                "trend": { color: "オリーブグリーン / アンティーク金", talk: "今期のトレンドを取り入れるなら、『オリーブグリーン』や艶消しの『アンティークゴールド』が非常にお似合いになります。イエベ秋の方の持つシックな雰囲気を引き立て、こなれたオシャレ感を演出できます！" }
+            },
+            "winter": {
+                "cute": { color: "クリアワイン / マゼンタ", talk: "ブルベ冬の方の雪のような色白肌には、鮮やかな『マゼンタ』や透明感のある『クリアワイン』が綺麗に発色します。コントラストがはっきりすることで、凛とした中にも女性らしい華やかさと可愛らしさが生まれます。" },
+                "smart": { color: "ブラック / プラチナシルバー", talk: "ブルベ冬の方のクールな魅力を最大限に活かすなら、王道の『ブラック』や光沢のある『プラチナシルバー』です。お顔のパーツをくっきりと見せ、圧倒的に知的でスタイリッシュな印象を与えてくれます。" },
+                "trend": { color: "クリアブラック / ディープブルー", talk: "トレンドの透け感を楽しむなら『クリアブラック』や『ディープブルー』がおすすめです。重たくなりがちな濃い色も、クリア素材なら抜け感が出て、ブルベ冬の方のお肌に抜群に映える最旬スタイルになります！" }
+            },
+            "unknown": {
+                "cute": { color: "ピンクブラウン / クリアベージュ", talk: "どんなお肌のトーンにも馴染みやすく、優しく可愛らしい印象にしてくれるのが『ピンクブラウン』や『クリアベージュ』です。肌なじみが非常に良いので、初めてのカラーフレームでも自然にかけていただけますよ！" },
+                "smart": { color: "ネイビー / マットブラウン", talk: "お肌の色を問わず、知的で誠実な印象を与えるなら『ネイビー』や『マットブラウン』が定番でおすすめです。黒ほど強すぎず、お顔をすっきりと引き締めてくれる万能カラーです。" },
+                "trend": { color: "クリアカーキ / シャンパンゴールド", talk: "パーソナルカラーを問わず、かけるだけで一気に今っぽくなるのが『クリアカーキ』や『シャンパンゴールド』です。肌浮きしにくいニュアンスカラーなので、トレンド感と合わせやすさを両立できます！" }
+            }
+        };
+
+        // --- App State ---
+        let state = {
+            tone: null,
+            impression: null
+        };
+
+        // --- DOM Elements ---
+        const buttons = document.querySelectorAll('.choice-btn');
+        const step2Section = document.getElementById('step2');
+        const step2Overlay = document.getElementById('step2-overlay');
+        const resultSection = document.getElementById('result-section');
+        const resultColorEl = document.getElementById('result-color');
+        const resultTalkEl = document.getElementById('result-talk');
+
+        // --- Event Listeners ---
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const category = this.dataset.category;
+                const value = this.dataset.value;
+
+                // Update State
+                state[category] = value;
+
+                // Update UI for buttons
+                updateButtonStyles(category, this);
+
+                // Handle Flow
+                if (category === 'tone') {
+                    // Unlock Step 2
+                    step2Section.classList.remove('opacity-50');
+                    step2Overlay.style.display = 'none';
+                    
+                    // Auto-scroll slightly to show step 2 clearly
+                    setTimeout(() => {
+                        step2Section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 200);
+                }
+
+                // Check if both selected to show result
+                if (state.tone && state.impression) {
+                    showResult();
+                }
+            });
+        });
+
+        // --- Functions ---
+        function updateButtonStyles(category, selectedBtn) {
+            // Reset all buttons in this category
+            const categoryBtns = document.querySelectorAll(`.choice-btn[data-category="${category}"]`);
+            categoryBtns.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-brand-primary', 'bg-purple-50');
+                btn.classList.add('bg-white');
+            });
+
+            // Highlight selected button
+            selectedBtn.classList.remove('bg-white');
+            selectedBtn.classList.add('ring-2', 'ring-brand-primary', 'bg-purple-50');
+        }
+
+        function showResult() {
+            try {
+                // Fetch data safely
+                const data = matchingDatabase[state.tone]?.[state.impression];
+                
+                if (!data) throw new Error("Matching data not found");
+
+                // Update DOM
+                resultColorEl.textContent = data.color;
+                resultTalkEl.textContent = data.talk;
+
+                // Show Section with animation
+                resultSection.classList.remove('hidden');
+                
+                // Smooth scroll to result
+                setTimeout(() => {
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 100);
+
+            } catch (error) {
+                console.error("Error generating result:", error);
+                alert("申し訳ありません。結果の生成中にエラーが発生しました。");
+            }
+        }
+
+        function resetApp() {
+            // Reset State
+            state.tone = null;
+            state.impression = null;
+
+            // Reset UI
+            buttons.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-brand-primary', 'bg-purple-50');
+                btn.classList.add('bg-white');
+            });
+
+            // Lock Step 2 again
+            step2Section.classList.add('opacity-50');
+            step2Overlay.style.display = 'block';
+
+            // Hide Result
+            resultSection.classList.add('hidden');
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
