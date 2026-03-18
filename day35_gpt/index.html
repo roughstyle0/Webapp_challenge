@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>パーソナルカラー × トレンドフレーム マッチングナビ</title>
+  <meta
+    name="description"
+    content="眼鏡屋向け・新人スタッフのための、パーソナルカラーと印象から最適なフレームカラー提案を行うマッチングナビ"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Hiragino Sans"', '"Yu Gothic"', '"Noto Sans JP"', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            beauty: '0 10px 40px rgba(236, 72, 153, 0.12)',
+            soft: '0 8px 28px rgba(15, 23, 42, 0.08)',
+          },
+          backgroundImage: {
+            aurora:
+              'radial-gradient(circle at top left, rgba(255,255,255,0.95), rgba(255,240,246,0.92) 35%, rgba(239,246,255,0.92) 70%, rgba(255,255,255,0.98) 100%)',
+            cardGlow:
+              'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.78))',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(14px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            pulseSoft: {
+              '0%,100%': { transform: 'scale(1)', opacity: '1' },
+              '50%': { transform: 'scale(1.02)', opacity: '0.92' },
+            },
+          },
+          animation: {
+            fadeUp: 'fadeUp 0.45s ease-out',
+            pulseSoft: 'pulseSoft 3s ease-in-out infinite',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255, 221, 238, 0.55), transparent 32%),
+        radial-gradient(circle at 85% 10%, rgba(219, 234, 254, 0.65), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(254, 242, 242, 0.7), transparent 35%),
+        #fff;
+    }
+
+    .glass {
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .choice-btn {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .choice-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.38), rgba(255,255,255,0));
+      opacity: 0;
+      transition: opacity 0.24s ease;
+    }
+
+    .choice-btn:hover::after,
+    .choice-btn:focus-visible::after {
+      opacity: 1;
+    }
+
+    .choice-btn[aria-pressed="true"] {
+      transform: translateY(-1px);
+    }
+
+    .selection-ring {
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.9) inset,
+        0 0 0 2px rgba(236,72,153,0.18),
+        0 12px 25px rgba(236,72,153,0.12);
+    }
+
+    .result-enter {
+      animation: fadeUp 0.45s ease-out;
+    }
+
+    .swatch {
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7), 0 8px 18px rgba(15,23,42,0.08);
+    }
+
+    .soft-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .soft-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.35);
+      border-radius: 999px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 font-sans">
+  <div class="relative isolate overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 bg-aurora"></div>
+
+    <main class="relative mx-auto min-h-screen max-w-7xl px-4 pb-20 pt-5 sm:px-6 sm:pt-8 lg:px-8">
+      <section class="mx-auto max-w-6xl">
+        <div class="mb-5 flex flex-col gap-3 sm:mb-6">
+          <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-xs font-medium text-rose-700 shadow-soft glass sm:text-sm">
+            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-rose-400"></span>
+            新人スタッフ向け 接客サポートツール
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+            <div class="rounded-[28px] border border-white/70 bg-white/70 p-5 shadow-beauty glass sm:p-7">
+              <p class="mb-2 text-sm font-medium tracking-[0.18em] text-rose-500 uppercase">Personal Color × Frame Styling</p>
+              <h1 class="text-2xl font-bold leading-tight text-slate-900 sm:text-4xl">
+                眼鏡屋向け
+                <span class="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-sky-500 bg-clip-text text-transparent">
+                  パーソナルカラー×トレンドフレーム
+                </span>
+                <br class="hidden sm:block" />
+                マッチングナビ
+              </h1>
+              <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                お客様の肌トーンと「なりたい印象」から、説得力のあるフレームカラー提案と、
+                そのまま使えるプロっぽい接客トークを瞬時に表示します。
+              </p>
+
+              <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl border border-rose-100 bg-rose-50/80 p-3">
+                  <p class="text-xs font-semibold text-rose-600">STEP 1</p>
+                  <p class="mt-1 text-sm font-medium text-slate-800">肌トーンを選択</p>
+                </div>
+                <div class="rounded-2xl border border-sky-100 bg-sky-50/80 p-3">
+                  <p class="text-xs font-semibold text-sky-600">STEP 2</p>
+                  <p class="mt-1 text-sm font-medium text-slate-800">印象を選択</p>
+                </div>
+                <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-3">
+                  <p class="text-xs font-semibold text-violet-600">STEP 3</p>
+                  <p class="mt-1 text-sm font-medium text-slate-800">提案トークを確認</p>
+                </div>
+              </div>
+            </div>
+
+            <aside class="rounded-[28px] border border-white/70 bg-white/70 p-4 shadow-soft glass sm:p-5">
+              <div class="flex items-start gap-3">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-rose-100 text-xl">
+                  ✨
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-900 sm:text-base">接客のコツ</h2>
+                  <p class="mt-1 text-sm leading-6 text-slate-600">
+                    お客様が迷っているときは、色の名前だけでなく
+                    <span class="font-semibold text-slate-800">「顔色がどう見えるか」</span>と
+                    <span class="font-semibold text-slate-800">「印象がどう変わるか」</span>
+                    を伝えると、提案に納得感が生まれます。
+                  </p>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-[1fr_1fr] xl:grid-cols-[1.02fr_0.98fr]">
+          <section class="rounded-[30px] border border-white/70 bg-white/70 p-4 shadow-beauty glass sm:p-6 lg:sticky lg:top-5 lg:self-start">
+            <div class="mb-5">
+              <p class="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">Question 1</p>
+              <div class="mt-2 flex items-start justify-between gap-3">
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900 sm:text-xl">お客様の肌のトーンは？</h2>
+                  <p class="mt-1 text-sm leading-6 text-slate-600">
+                    自己申告ベースで選んでOKです。分からない場合は「AIにおまかせ」を使えます。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="toneOptions"
+              class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+              role="group"
+              aria-label="肌のトーン選択"
+            >
+              <!-- JS -->
+            </div>
+
+            <div class="mt-7 mb-5">
+              <p class="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">Question 2</p>
+              <h2 class="mt-2 text-lg font-bold text-slate-900 sm:text-xl">どんな印象になりたい？</h2>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                接客では「似合う」と「なりたい」を掛け合わせると、提案の満足度が上がります。
+              </p>
+            </div>
+
+            <div
+              id="impressionOptions"
+              class="grid grid-cols-1 gap-3"
+              role="group"
+              aria-label="なりたい印象選択"
+            >
+              <!-- JS -->
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div class="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3">
+                <p class="text-xs font-semibold text-slate-500">現在の選択</p>
+                <div class="mt-2 flex flex-wrap gap-2 text-sm">
+                  <span id="selectedToneBadge" class="rounded-full bg-white px-3 py-1.5 text-slate-500 shadow-sm">
+                    肌トーン：未選択
+                  </span>
+                  <span id="selectedImpressionBadge" class="rounded-full bg-white px-3 py-1.5 text-slate-500 shadow-sm">
+                    印象：未選択
+                  </span>
+                </div>
+              </div>
+
+              <button
+                id="resetBtn"
+                type="button"
+                class="inline-flex min-h-[52px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-200 hover:text-rose-600 focus:outline-none focus:ring-4 focus:ring-rose-100"
+              >
+                選択をリセット
+              </button>
+            </div>
+
+            <div
+              id="helperMessage"
+              class="mt-4 rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 px-4 py-3 text-sm leading-6 text-rose-700"
+              aria-live="polite"
+            >
+              まずは「肌のトーン」と「なりたい印象」を1つずつ選んでください。
+            </div>
+          </section>
+
+          <section class="rounded-[30px] border border-white/70 bg-white/70 p-4 shadow-beauty glass sm:p-6">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">Recommendation</p>
+                <h2 class="mt-2 text-lg font-bold text-slate-900 sm:text-xl">おすすめ提案カード</h2>
+              </div>
+              <div class="hidden rounded-full bg-gradient-to-r from-rose-100 to-sky-100 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:block">
+                一緒に画面を見せながら使える設計
+              </div>
+            </div>
+
+            <div id="resultArea" class="mt-5">
+              <div class="rounded-[28px] border border-dashed border-slate-200 bg-slate-50/70 p-6 sm:p-8">
+                <div class="mx-auto flex max-w-md flex-col items-center text-center">
+                  <div class="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-soft">
+                    <span class="text-2xl">🪞</span>
+                  </div>
+                  <h3 class="mt-4 text-lg font-bold text-slate-900">まだ提案は表示されていません</h3>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">
+                    左側で条件を選ぶと、ここにおすすめフレームカラーと
+                    接客トークスクリプトがカード形式で表示されます。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const toneOptions = [
+        {
+          id: 'spring',
+          name: 'イエベ春',
+          short: '明るく黄み肌・キュート',
+          emoji: '🌼',
+          accent: 'from-amber-100 to-rose-100',
+          border: 'border-amber-200/80',
+        },
+        {
+          id: 'summer',
+          name: 'ブルベ夏',
+          short: '明るく色白・ソフト',
+          emoji: '🫧',
+          accent: 'from-sky-100 to-violet-100',
+          border: 'border-sky-200/80',
+        },
+        {
+          id: 'autumn',
+          name: 'イエベ秋',
+          short: '落ち着いた黄み肌・ゴージャス',
+          emoji: '🍁',
+          accent: 'from-orange-100 to-amber-100',
+          border: 'border-orange-200/80',
+        },
+        {
+          id: 'winter',
+          name: 'ブルベ冬',
+          short: '雪のような色白・クール',
+          emoji: '❄️',
+          accent: 'from-slate-100 to-sky-100',
+          border: 'border-slate-200/80',
+        },
+        {
+          id: 'unknown',
+          name: '分からない',
+          short: 'AIにおまかせ',
+          emoji: '🤍',
+          accent: 'from-fuchsia-100 to-sky-100',
+          border: 'border-fuchsia-200/80',
+        },
+      ];
+
+      const impressionOptions = [
+        {
+          id: 'soft',
+          name: '優しく・可愛らしい印象になりたい',
+          short: '親しみやすく柔らかい雰囲気',
+          emoji: '🌷',
+          accent: 'from-rose-100 to-pink-100',
+          border: 'border-rose-200/80',
+        },
+        {
+          id: 'smart',
+          name: '知的で・仕事ができる印象になりたい',
+          short: 'すっきり上品で信頼感のある雰囲気',
+          emoji: '📘',
+          accent: 'from-sky-100 to-slate-100',
+          border: 'border-sky-200/80',
+        },
+        {
+          id: 'trend',
+          name: 'トレンド感のある・オシャレな印象になりたい',
+          short: '今っぽく洗練された雰囲気',
+          emoji: '✨',
+          accent: 'from-violet-100 to-rose-100',
+          border: 'border-violet-200/80',
+        },
+      ];
+
+      const recommendations = {
+        spring: {
+          soft: {
+            frameColor: 'ミルクベージュ × コーラルブラウン',
+            subColor: 'やわらかい黄みのある明るめカラー',
+            swatches: ['#F6E6D5', '#E9B9A8', '#B98367'],
+            theory:
+              'イエベ春の明るく黄みを含んだ肌には、白すぎないミルキーなベージュやコーラル寄りのブラウンが自然に溶け込みます。顔色をくすませず、血色感をふんわり引き出せるのが強みです。',
+            talk:
+              'お客様のお肌は明るくて黄みを少し感じるので、ミルクベージュやコーラルブラウンのようなやわらかい色がすごく綺麗に馴染みます。お顔立ちを優しく見せながら、血色感も自然に上げてくれるので、可愛らしく親しみやすい印象に仕上がりますよ。',
+            point:
+              '黒や寒色グレーよりも、少し温かみのある淡色を選ぶと“やさしさ”が出やすいです。',
+            fallback: 'クリアピーチ / ライトブラウン',
+          },
+          smart: {
+            frameColor: 'ライトゴールド × ハニーブラウン',
+            subColor: '軽やかで知的に見える黄み系メタル',
+            swatches: ['#E7CB8A', '#C99853', '#8A6A45'],
+            theory:
+              'イエベ春は重たすぎる色より、透明感と明るさを保ったまま輪郭を整える色が得意です。ライトゴールドやハニーブラウンは顔色を明るく見せつつ、きちんと感も演出できます。',
+            talk:
+              '知的さを出したい場合でも、お客様のような明るいイエローベースのお肌には、重たい黒よりライトゴールドやハニーブラウンが上品に映えます。お顔を暗く見せずに輪郭を整えてくれるので、柔らかさを残しながら“仕事ができる印象”を作りやすいですよ。',
+            point:
+              '軽めのメタルや細めフレームと相性がよく、第一印象をシャープにしすぎません。',
+            fallback: 'シャンパンゴールド / キャメルブラウン',
+          },
+          trend: {
+            frameColor: 'クリアシャンパン',
+            subColor: '透明感のあるゴールド系トレンドカラー',
+            swatches: ['#F7E8C1', '#E8D5A8', '#FFF8E8'],
+            theory:
+              'イエベ春の明るさと黄みを活かすには、透け感のあるシャンパン系が最適です。透明フレームの抜け感が加わることで、顔まわりが軽く今っぽく見えます。',
+            talk:
+              'お客様の明るいお肌のトーンには、今人気のクリアシャンパンが驚くほど綺麗に馴染みます。お顔の血色感をさらに良く見せてくれますし、透明感のあるフレームなので抜け感が出て、一気にオシャレな印象になりますよ。',
+            point:
+              'トレンド提案では「透明感」と「抜け感」を言語化すると、納得していただきやすくなります。',
+            fallback: 'クリアハニー / ペールゴールド',
+          },
+        },
+        summer: {
+          soft: {
+            frameColor: 'くすみピンク × ラベンダーグレー',
+            subColor: '青みを含んだ淡くソフトなカラー',
+            swatches: ['#D9BCCB', '#C9CDD9', '#F3E8EE'],
+            theory:
+              'ブルベ夏は、コントラストの強い色よりも、やわらかく青みを含んだくすみカラーが得意です。くすみピンクやラベンダーグレーは肌の透明感を崩さず、上品なやさしさを引き出します。',
+            talk:
+              'お客様の透明感のあるお肌には、くすみピンクやラベンダーグレーのようなやわらかい青みカラーがとてもお似合いです。色が主張しすぎないので、お顔立ちをふんわり見せながら、優しく可愛らしい雰囲気に仕上がりますよ。',
+            point:
+              'ピンクでも黄みが強いものより、少しグレイッシュな青み寄りを選ぶのがポイントです。',
+            fallback: 'ローズグレー / スモーキーモーブ',
+          },
+          smart: {
+            frameColor: 'シルバー × ソフトグレー メタル',
+            subColor: '透明感を引き立てる上品な寒色系',
+            swatches: ['#D9DEE6', '#A7B0BC', '#EEF2F7'],
+            theory:
+              'ブルベ夏の肌には、白っぽい透明感と相性の良いシルバーやグレーがよく映えます。黒ほど強くなく、柔らかいのに知的に見せられるのが魅力です。',
+            talk:
+              '透明感のあるお肌には、シルバー系のフレームが一番お顔立ちをすっきり綺麗に見せてくれます。黒縁よりも重くならず、上品で知的な印象になるので、お仕事用にもぴったりのカラーです。',
+            point:
+              '“黒ほど強くないのに、きちんと見える”という伝え方が仕事用ニーズに刺さります。',
+            fallback: 'グレージュメタル / ブルーグレー',
+          },
+          trend: {
+            frameColor: 'クリアグレー × スモーキーライラック',
+            subColor: '抜け感と洗練感が両立する旬カラー',
+            swatches: ['#D8DDE5', '#C9C1D8', '#F4F6FA'],
+            theory:
+              'ブルベ夏は透け感のある寒色系やグレイッシュカラーで、トレンド感を上品に取り入れやすいタイプです。クリアグレーやライラックは洒落感がありながら顔色を濁らせません。',
+            talk:
+              'トレンド感を出すなら、クリアグレーやスモーキーライラックがとてもおすすめです。透明感のあるお肌に自然に溶け込みながら、今っぽい抜け感をしっかり出してくれるので、頑張りすぎずにオシャレな印象が作れますよ。',
+            point:
+              '“上品なトレンド感”を打ち出すと、派手さを心配するお客様にも提案しやすいです。',
+            fallback: 'フロストグレー / ミストブルー',
+          },
+        },
+        autumn: {
+          soft: {
+            frameColor: 'ミルクティーブラウン × ウォームカーキ',
+            subColor: '深みがありつつ優しさのあるアースカラー',
+            swatches: ['#C8A98B', '#92826A', '#EEE0D1'],
+            theory:
+              'イエベ秋は深みと落ち着きのある黄みカラーが得意です。ミルクティーブラウンやカーキは肌に温もりを足しつつ、優しさも表現できる絶妙なバランスです。',
+            talk:
+              'お客様のお肌には、ミルクティーブラウンやウォームカーキのような落ち着いたアースカラーがとても自然に馴染みます。深みがあるので安っぽく見えず、柔らかさもちゃんと出せるので、優しく見せたいときにぴったりですよ。',
+            point:
+              'イエベ秋には“淡すぎる色”より、少し深みを感じる優しい色の方が高見えします。',
+            fallback: 'オリーブブラウン / カフェオレ',
+          },
+          smart: {
+            frameColor: 'べっ甲 × ブロンズメタル',
+            subColor: '落ち着き・高級感・信頼感を出す定番',
+            swatches: ['#7A4E2F', '#B07A49', '#E7CCAB'],
+            theory:
+              'イエベ秋は、深いブラウンやブロンズのようなリッチな黄みカラーが非常に得意です。べっ甲は顔立ちを引き締めながら、黒よりも温かく洗練された知的さを演出できます。',
+            talk:
+              '知的で信頼感のある印象を作るなら、べっ甲やブロンズメタルがすごくおすすめです。お客様の落ち着いた黄み肌に自然な深みが足されるので、顔まわりが締まりつつも、きつく見えず上品に見せられます。',
+            point:
+              '“黒だと強すぎるけれど、ブラウンなら知的さと柔らかさを両立できる”と伝えると効果的です。',
+            fallback: 'ダークキャメル / アンバーブラウン',
+          },
+          trend: {
+            frameColor: 'モードカーキ × クリアアンバー',
+            subColor: '深みのある今っぽさを出せる洒落色',
+            swatches: ['#6F7257', '#C69258', '#F3DEC7'],
+            theory:
+              'イエベ秋は、ニュアンスのある深色でトレンドを取り入れると一気に洗練されます。カーキやアンバー系は顔なじみがよく、オシャレ感だけが浮かずにまとまります。',
+            talk:
+              'トレンド感を出したいなら、モードカーキやクリアアンバーのようなニュアンスカラーがとても素敵です。お客様のお肌に自然に溶け込みながら、今っぽいこなれ感が出るので、“似合うオシャレ”として提案しやすいですよ。',
+            point:
+              '秋タイプは“深みのある透明感”を意識すると、トレンドカラーがぐっと似合いやすくなります。',
+            fallback: 'オリーブクリア / スモークブラウン',
+          },
+        },
+        winter: {
+          soft: {
+            frameColor: 'ダスティーローズ × ソフトネイビー',
+            subColor: 'クールさを残しつつ柔らかさを出す配色',
+            swatches: ['#C79AA8', '#5E6F8C', '#F5EBEF'],
+            theory:
+              'ブルベ冬は本来コントラストの強い色が得意ですが、柔らかく見せたいときは青みを含んだくすみローズやネイビーで調整すると、クールさを残しつつ印象を和らげられます。',
+            talk:
+              'お客様の透明感の高いお肌には、ダスティーローズやソフトネイビーのような青みのあるカラーが綺麗に映えます。ブルベ冬らしい洗練感は残しながら、きつく見えすぎず、優しく女性らしい印象に寄せられますよ。',
+            point:
+              '冬タイプに“ただ薄い色”を選ぶとぼやけやすいので、少し芯のある青み色を選ぶのがコツです。',
+            fallback: 'ローズグレープ / ナイトネイビー',
+          },
+          smart: {
+            frameColor: 'シャープシルバー × ネイビー',
+            subColor: '輪郭を美しく見せるクールな知性カラー',
+            swatches: ['#C7D2E0', '#314A67', '#EEF3F8'],
+            theory:
+              'ブルベ冬はコントラストのあるクールカラーが映えるタイプです。シャープなシルバーやネイビーは肌の白さを引き立て、凛とした知性を強調できます。',
+            talk:
+              '知的さをしっかり出したいなら、シャープなシルバーやネイビーがとてもおすすめです。お客様の白さのあるお肌とコントラストが綺麗に出るので、お顔立ちがすっきり見えて、洗練された“できる印象”に仕上がります。',
+            point:
+              '冬タイプは“引き締め”が得意なので、仕事用提案ではコントラストを味方につけると強いです。',
+            fallback: 'ガンメタル / クールブラック',
+          },
+          trend: {
+            frameColor: 'クリアグレー × ガンメタル',
+            subColor: 'モード感と透明感を両立する旬カラー',
+            swatches: ['#D7DCE3', '#626A74', '#F7F8FA'],
+            theory:
+              'ブルベ冬の透明感には、無機質でシャープなクリアグレーやガンメタルが映えます。モードな印象を作りやすく、トレンド感を高い完成度で取り入れられます。',
+            talk:
+              'オシャレ感を出すなら、クリアグレーやガンメタルがすごく相性いいです。お客様のクールで透明感のあるお肌にモードな雰囲気が乗るので、顔まわりが一気に洗練されて、今っぽい印象をしっかり作れますよ。',
+            point:
+              '“都会的”“洗練”“モード感”などの言葉が冬タイプのトレンド提案と相性抜群です。',
+            fallback: 'アイスグレー / スモークシルバー',
+          },
+        },
+        unknown: {
+          soft: {
+            frameColor: 'クリアピンクベージュ',
+            subColor: '誰にでも提案しやすい優しさ重視の中間色',
+            swatches: ['#EFD5CF', '#F7ECE8', '#D8B4A9'],
+            theory:
+              '肌トーンが分からない場合は、黄みにも青みにも極端に寄りすぎない“中間のくすみカラー”が安全です。クリア感のあるピンクベージュは顔色を重くせず、優しい印象づくりにも向いています。',
+            talk:
+              'まだ肌トーンがはっきり分からない場合でも、クリアピンクベージュなら黄み・青みどちらにも寄りすぎず、すごく自然に掛けやすいです。柔らかく優しい雰囲気を作りやすいので、まず最初の1本として安心してご提案できますよ。',
+            point:
+              '“失敗しにくい中間色”として提案すると、お客様も試しやすくなります。',
+            fallback: 'ローズベージュ / ミルクティークリア',
+          },
+          smart: {
+            frameColor: 'ライトグレージュ メタル',
+            subColor: '清潔感と知性を両立する万能カラー',
+            swatches: ['#D3CBC3', '#B5BCC3', '#F4F2EF'],
+            theory:
+              'トーンが不明なときは、主張しすぎないグレージュや薄めメタルが最も失敗しにくいです。顔なじみがよく、清潔感と知的さのバランスが取りやすいのが特長です。',
+            talk:
+              '肌トーンがまだ断定できない場合は、ライトグレージュのメタルフレームがとても万能です。顔色を邪魔せずにすっきり見せてくれるので、清潔感も知的さも出しやすく、お仕事用としても安心しておすすめできます。',
+            point:
+              '“どんな服にも合わせやすい”という実用面も一緒に伝えると決め手になります。',
+            fallback: 'ソフトシルバー / グレージュブラウン',
+          },
+          trend: {
+            frameColor: 'クリアグレージュ',
+            subColor: '今っぽさと万人受けを両立するAI推奨色',
+            swatches: ['#D8D1C9', '#F3EFEA', '#BBC1C9'],
+            theory:
+              'AIおまかせ提案では、顔立ちを重くしにくいクリア系ニュートラルカラーが最適です。クリアグレージュは季節を問わず使いやすく、今っぽさも十分に演出できます。',
+            talk:
+              'トーンがまだ分からない方には、まずクリアグレージュがすごくおすすめです。透明感があって顔まわりが重くならず、今っぽい抜け感も出せるので、似合いやすさとオシャレ感のバランスがとても良いカラーなんです。',
+            point:
+              '迷ったときは“ニュートラル・透明感・抜け感”の3ワードで提案すると説得力が出ます。',
+            fallback: 'クリアモカ / ミストグレー',
+          },
+        },
+      };
+
+      const state = {
+        tone: null,
+        impression: null,
+      };
+
+      const toneContainer = document.getElementById('toneOptions');
+      const impressionContainer = document.getElementById('impressionOptions');
+      const helperMessage = document.getElementById('helperMessage');
+      const resultArea = document.getElementById('resultArea');
+      const resetBtn = document.getElementById('resetBtn');
+      const selectedToneBadge = document.getElementById('selectedToneBadge');
+      const selectedImpressionBadge = document.getElementById('selectedImpressionBadge');
+
+      function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = String(value ?? '');
+        return div.innerHTML;
+      }
+
+      function createOptionButton(option, groupName, type) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.type = type;
+        button.dataset.id = option.id;
+        button.setAttribute('aria-pressed', 'false');
+        button.className = [
+          'choice-btn group min-h-[86px] rounded-[24px] border bg-gradient-to-br p-4 text-left shadow-sm transition duration-200',
+          'focus:outline-none focus:ring-4 focus:ring-rose-100',
+          'hover:-translate-y-0.5 hover:shadow-soft',
+          option.border,
+          `bg-gradient-to-br ${option.accent}`,
+        ].join(' ');
+
+        button.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-xl shadow-sm">
+              ${escapeHtml(option.emoji)}
+            </div>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-base font-bold text-slate-900">${escapeHtml(option.name)}</span>
+                <span class="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600">${escapeHtml(groupName)}</span>
+              </div>
+              <p class="mt-1 text-sm leading-6 text-slate-600">${escapeHtml(option.short)}</p>
+            </div>
+          </div>
+        `;
+
+        button.addEventListener('click', () => {
+          updateSelection(type, option.id);
+        });
+
+        return button;
+      }
+
+      function renderOptions() {
+        toneContainer.innerHTML = '';
+        impressionContainer.innerHTML = '';
+
+        toneOptions.forEach((option) => {
+          toneContainer.appendChild(createOptionButton(option, '肌トーン', 'tone'));
+        });
+
+        impressionOptions.forEach((option) => {
+          impressionContainer.appendChild(createOptionButton(option, '印象', 'impression'));
+        });
+      }
+
+      function updateSelection(type, value) {
+        try {
+          if (type !== 'tone' && type !== 'impression') {
+            throw new Error('不正な選択種別です。');
+          }
+
+          const exists = type === 'tone'
+            ? toneOptions.some((item) => item.id === value)
+            : impressionOptions.some((item) => item.id === value);
+
+          if (!exists) {
+            throw new Error('選択肢の読み込みに失敗しました。');
+          }
+
+          state[type] = value;
+          syncPressedState();
+          updateBadges();
+          updateHelper();
+          renderResult();
+        } catch (error) {
+          helperMessage.className =
+            'mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700';
+          helperMessage.textContent =
+            '選択の処理中に問題が発生しました。もう一度選び直してください。';
+          console.error(error);
+        }
+      }
+
+      function syncPressedState() {
+        document.querySelectorAll('[data-type="tone"]').forEach((button) => {
+          const isActive = button.dataset.id === state.tone;
+          button.setAttribute('aria-pressed', String(isActive));
+          button.classList.toggle('selection-ring', isActive);
+          button.classList.toggle('border-rose-300', isActive);
+        });
+
+        document.querySelectorAll('[data-type="impression"]').forEach((button) => {
+          const isActive = button.dataset.id === state.impression;
+          button.setAttribute('aria-pressed', String(isActive));
+          button.classList.toggle('selection-ring', isActive);
+          button.classList.toggle('border-rose-300', isActive);
+        });
+      }
+
+      function getOptionLabel(type, id) {
+        const list = type === 'tone' ? toneOptions : impressionOptions;
+        const found = list.find((item) => item.id === id);
+        return found ? found.name : '未選択';
+      }
+
+      function updateBadges() {
+        selectedToneBadge.textContent = `肌トーン：${state.tone ? getOptionLabel('tone', state.tone) : '未選択'}`;
+        selectedImpressionBadge.textContent = `印象：${state.impression ? getOptionLabel('impression', state.impression) : '未選択'}`;
+
+        selectedToneBadge.className =
+          `rounded-full px-3 py-1.5 shadow-sm ${state.tone ? 'bg-rose-50 text-rose-700' : 'bg-white text-slate-500'}`;
+        selectedImpressionBadge.className =
+          `rounded-full px-3 py-1.5 shadow-sm ${state.impression ? 'bg-sky-50 text-sky-700' : 'bg-white text-slate-500'}`;
+      }
+
+      function updateHelper() {
+        const hasTone = Boolean(state.tone);
+        const hasImpression = Boolean(state.impression);
+
+        if (!hasTone && !hasImpression) {
+          helperMessage.className =
+            'mt-4 rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 px-4 py-3 text-sm leading-6 text-rose-700';
+          helperMessage.textContent =
+            'まずは「肌のトーン」と「なりたい印象」を1つずつ選んでください。';
+          return;
+        }
+
+        if (hasTone && !hasImpression) {
+          helperMessage.className =
+            'mt-4 rounded-2xl border border-dashed border-sky-200 bg-sky-50/80 px-4 py-3 text-sm leading-6 text-sky-700';
+          helperMessage.textContent =
+            '肌トーンを選べました。次は「なりたい印象」を選ぶと提案が表示されます。';
+          return;
+        }
+
+        if (!hasTone && hasImpression) {
+          helperMessage.className =
+            'mt-4 rounded-2xl border border-dashed border-amber-200 bg-amber-50/80 px-4 py-3 text-sm leading-6 text-amber-700';
+          helperMessage.textContent =
+            '印象を選べました。続けて「肌のトーン」を選ぶと、最適なフレーム提案を表示します。';
+          return;
+        }
+
+        helperMessage.className =
+          'mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm leading-6 text-emerald-700';
+        helperMessage.textContent =
+          '条件がそろいました。おすすめカラーと接客トークを確認してください。';
+      }
+
+      function renderPlaceholderCard() {
+        resultArea.innerHTML = `
+          <div class="rounded-[28px] border border-dashed border-slate-200 bg-slate-50/70 p-6 sm:p-8">
+            <div class="mx-auto flex max-w-md flex-col items-center text-center">
+              <div class="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-soft">
+                <span class="text-2xl">🪞</span>
+              </div>
+              <h3 class="mt-4 text-lg font-bold text-slate-900">まだ提案は表示されていません</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-600">
+                左側で条件を選ぶと、ここにおすすめフレームカラーと
+                接客トークスクリプトがカード形式で表示されます。
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderResult() {
+        if (!state.tone || !state.impression) {
+          renderPlaceholderCard();
+          return;
+        }
+
+        try {
+          const toneData = recommendations[state.tone];
+          const result = toneData?.[state.impression];
+
+          if (!result) {
+            throw new Error('組み合わせデータが見つかりません。');
+          }
+
+          const toneLabel = getOptionLabel('tone', state.tone);
+          const impressionLabel = getOptionLabel('impression', state.impression);
+          const isUnknown = state.tone === 'unknown';
+
+          resultArea.innerHTML = `
+            <article class="result-enter overflow-hidden rounded-[30px] border border-white/80 bg-white shadow-soft">
+              <div class="bg-gradient-to-r from-rose-50 via-white to-sky-50 px-5 py-5 sm:px-6">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                      <span class="rounded-full bg-rose-100 px-3 py-1 text-rose-700">${escapeHtml(toneLabel)}</span>
+                      <span class="rounded-full bg-sky-100 px-3 py-1 text-sky-700">${escapeHtml(impressionLabel)}</span>
+                      ${isUnknown ? '<span class="rounded-full bg-fuchsia-100 px-3 py-1 text-fuchsia-700">AIアシスト提案</span>' : ''}
+                    </div>
+                    <h3 class="mt-3 text-xl font-bold leading-tight text-slate-900 sm:text-2xl">
+                      おすすめフレームカラー：
+                      <span class="bg-gradient-to-r from-rose-500 to-fuchsia-500 bg-clip-text text-transparent">
+                        ${escapeHtml(result.frameColor)}
+                      </span>
+                    </h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">${escapeHtml(result.subColor)}</p>
+                  </div>
+                  <div class="rounded-2xl border border-white/80 bg-white/80 p-3 shadow-sm">
+                    <p class="text-xs font-semibold text-slate-500">サブ候補</p>
+                    <p class="mt-1 text-sm font-medium text-slate-800">${escapeHtml(result.fallback)}</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 flex flex-wrap gap-3">
+                  ${result.swatches
+                    .map(
+                      (color, idx) => `
+                        <div class="flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 shadow-sm">
+                          <span class="swatch h-6 w-6 rounded-full border border-white" style="background:${escapeHtml(color)};"></span>
+                          <span class="text-xs font-semibold text-slate-600">カラー ${idx + 1}</span>
+                        </div>
+                      `
+                    )
+                    .join('')}
+                </div>
+              </div>
+
+              <div class="grid gap-4 p-5 sm:p-6">
+                <section class="rounded-[24px] border border-amber-100 bg-amber-50/70 p-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">🎨</span>
+                    <h4 class="text-sm font-bold tracking-wide text-amber-900">パーソナルカラー理論</h4>
+                  </div>
+                  <p class="mt-2 text-sm leading-7 text-slate-700">${escapeHtml(result.theory)}</p>
+                </section>
+
+                <section class="rounded-[24px] border border-rose-100 bg-rose-50/70 p-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">🗣️</span>
+                    <h4 class="text-sm font-bold tracking-wide text-rose-900">プロっぽい提案トークスクリプト</h4>
+                  </div>
+                  <p class="mt-2 text-sm leading-7 text-slate-700">${escapeHtml(result.talk)}</p>
+                </section>
+
+                <section class="rounded-[24px] border border-sky-100 bg-sky-50/70 p-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">💡</span>
+                    <h4 class="text-sm font-bold tracking-wide text-sky-900">接客でのひと押しポイント</h4>
+                  </div>
+                  <p class="mt-2 text-sm leading-7 text-slate-700">${escapeHtml(result.point)}</p>
+                </section>
+
+                <section class="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">📝</span>
+                    <h4 class="text-sm font-bold tracking-wide text-slate-900">スタッフ向けメモ</h4>
+                  </div>
+                  <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                    <li>・最初に「似合う理由」を伝え、次に「なりたい印象」を叶える点を補足すると説得力が増します。</li>
+                    <li>・迷われた場合は、メイン提案 → サブ候補の順で実際に掛け比べてもらうと決定しやすくなります。</li>
+                    <li>・色だけでなく「軽さ・抜け感・上品さ」まで言葉にすると、接客がワンランク上がります。</li>
+                  </ul>
+                </section>
+              </div>
+            </article>
+          `;
+
+          const shouldScrollOnSmallScreen = window.innerWidth < 1024;
+          if (shouldScrollOnSmallScreen) {
+            resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        } catch (error) {
+          console.error(error);
+          resultArea.innerHTML = `
+            <div class="rounded-[28px] border border-red-200 bg-red-50 p-6">
+              <div class="flex items-start gap-3">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">⚠️</div>
+                <div>
+                  <h3 class="text-base font-bold text-red-900">提案の表示でエラーが発生しました</h3>
+                  <p class="mt-2 text-sm leading-6 text-red-700">
+                    申し訳ありません。もう一度選択し直すと改善する場合があります。
+                  </p>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      resetBtn.addEventListener('click', () => {
+        state.tone = null;
+        state.impression = null;
+        syncPressedState();
+        updateBadges();
+        updateHelper();
+        renderPlaceholderCard();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      renderOptions();
+      updateBadges();
+      updateHelper();
+      renderPlaceholderCard();
+    })();
+  </script>
+</body>
+</html>
