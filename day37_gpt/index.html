@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>遠近両用レンズ 視界（グレード）比較シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --brand:#0f766e;
+      --brand-soft:#14b8a6;
+      --blue:#2563eb;
+      --blue-soft:#60a5fa;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --line:#dbeafe;
+      --surface:#ffffff;
+      --surface-soft:#f8fafc;
+      --shadow: 0 14px 40px rgba(15, 23, 42, 0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at top right, rgba(96,165,250,0.08), transparent 22%),
+        radial-gradient(circle at top left, rgba(20,184,166,0.08), transparent 18%),
+        #f8fbff;
+      color: var(--ink);
+    }
+
+    .glass-card {
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(219,234,254,0.95);
+      box-shadow: var(--shadow);
+    }
+
+    .choice-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+    }
+    .choice-btn:hover { transform: translateY(-1px); }
+    .choice-btn.active {
+      border-color: rgba(37,99,235,0.35);
+      background: linear-gradient(135deg, rgba(239,246,255,1), rgba(236,253,245,1));
+      box-shadow: 0 12px 30px rgba(37,99,235,0.14);
+    }
+    .choice-btn.active .choice-badge {
+      background: linear-gradient(135deg, var(--blue), var(--brand-soft));
+      color: white;
+    }
+
+    .lens-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1.15;
+      max-width: 290px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lens {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 48% 48% 44% 44% / 36% 36% 60% 60%;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.98) 54%, rgba(236,253,245,0.98) 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.55),
+        inset 0 12px 30px rgba(255,255,255,0.55),
+        0 12px 30px rgba(2, 132, 199, 0.10);
+    }
+
+    .lens::before {
+      content: "";
+      position: absolute;
+      inset: 8% 10%;
+      border-radius: 46% 46% 42% 42% / 34% 34% 62% 62%;
+      background:
+        radial-gradient(circle at 50% 40%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.15) 38%, transparent 58%);
+      pointer-events: none;
+    }
+
+    .vision-zone {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 48% 48% 44% 44% / 36% 36% 60% 60%;
+      pointer-events: none;
+    }
+
+    .zone-clear {
+      top: 7%;
+      height: 68%;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255,255,255,0.98) 0%, rgba(219,234,254,0.78) 45%, rgba(187,247,208,0.32) 76%, rgba(255,255,255,0.02) 100%);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.55) inset,
+        0 0 45px rgba(96,165,250,0.16);
+    }
+
+    .zone-mid {
+      bottom: 17%;
+      height: 24%;
+      background:
+        linear-gradient(180deg, rgba(125,211,252,0.28), rgba(16,185,129,0.18));
+      filter: blur(2px);
+      opacity: 0.9;
+    }
+
+    .zone-near {
+      bottom: 5%;
+      height: 14%;
+      background:
+        linear-gradient(180deg, rgba(59,130,246,0.18), rgba(20,184,166,0.22));
+      filter: blur(4px);
+      opacity: 0.8;
+    }
+
+    .distortion {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .distortion::before,
+    .distortion::after {
+      content: "";
+      position: absolute;
+      top: 14%;
+      bottom: 8%;
+      width: 34%;
+      filter: blur(18px);
+      opacity: 0.88;
+    }
+
+    .distortion::before {
+      left: -6%;
+      background:
+        linear-gradient(180deg, rgba(191,219,254,0.1), rgba(59,130,246,0.32), rgba(2,132,199,0.15));
+      border-radius: 58% 36% 46% 64% / 30% 44% 56% 66%;
+      transform: rotate(-7deg);
+    }
+
+    .distortion::after {
+      right: -6%;
+      background:
+        linear-gradient(180deg, rgba(187,247,208,0.08), rgba(20,184,166,0.30), rgba(16,185,129,0.14));
+      border-radius: 36% 58% 64% 46% / 44% 30% 66% 56%;
+      transform: rotate(7deg);
+    }
+
+    .swim-lines {
+      position: absolute;
+      inset: 0;
+      opacity: 0.5;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 16% 52%, rgba(37,99,235,0.18) 0 8%, transparent 16%),
+        radial-gradient(circle at 84% 54%, rgba(20,184,166,0.18) 0 8%, transparent 16%);
+      filter: blur(18px);
+    }
+
+    .standard .zone-clear { width: 46%; }
+    .standard .zone-mid   { width: 60%; }
+    .standard .zone-near  { width: 68%; }
+
+    .premium .zone-clear {
+      width: 70%;
+      top: 5%;
+      height: 74%;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.65) inset,
+        0 0 55px rgba(52,211,153,0.16);
+    }
+    .premium .zone-mid  {
+      width: 76%;
+      bottom: 15%;
+      height: 21%;
+      filter: blur(1px);
+      opacity: 0.65;
+    }
+    .premium .zone-near {
+      width: 78%;
+      bottom: 5%;
+      height: 13%;
+      filter: blur(2px);
+      opacity: 0.58;
+    }
+
+    .premium .distortion::before,
+    .premium .distortion::after {
+      width: 18%;
+      filter: blur(10px);
+      opacity: 0.34;
+      top: 18%;
+      bottom: 12%;
+    }
+
+    .premium .swim-lines {
+      opacity: 0.2;
+      filter: blur(12px);
+    }
+
+    .zone-label {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+
+    .label-clear {
+      top: 9%;
+      background: rgba(255,255,255,0.82);
+      color: #0f172a;
+      border: 1px solid rgba(191,219,254,0.9);
+    }
+
+    .label-blur {
+      bottom: 8%;
+      background: rgba(15,23,42,0.75);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .arrow-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.2);
+      background: rgba(255,255,255,0.82);
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      border-radius: 999px;
+      padding: .4rem .75rem;
+      font-size: .78rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, rgba(239,246,255,1), rgba(236,253,245,1));
+      border: 1px solid rgba(191,219,254,0.9);
+      color: #0f172a;
+    }
+
+    .talk-script {
+      position: relative;
+      background: linear-gradient(180deg, #f8fffe 0%, #f0fdf4 100%);
+      border: 1px solid rgba(167,243,208,0.7);
+    }
+
+    .talk-script::before {
+      content: "提案トーク";
+      position: absolute;
+      top: -12px;
+      left: 18px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      color: #065f46;
+      background: white;
+      padding: 0 8px;
+    }
+
+    .fade-up {
+      animation: fadeUp .45s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .focus-ring:focus-visible {
+      outline: 3px solid rgba(37,99,235,0.22);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 360px) {
+      .zone-label { font-size: 11px; padding: 3px 8px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <header class="mb-6 sm:mb-8">
+      <div class="glass-card rounded-3xl p-5 sm:p-7">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl">
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold tracking-[0.08em] text-sky-700">
+              <span>店頭説明サポート</span>
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              <span>新人スタッフ向け</span>
+            </div>
+            <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+              遠近両用レンズ 視界（グレード）比較シミュレーター
+            </h1>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+              お客様のライフスタイルに合わせて、
+              <span class="font-bold text-slate-800">「なぜハイグレードが合うのか」</span>を
+              一目で伝える説明ツールです。視界の違いを大きく見せ、提案トークまでその場で確認できます。
+            </p>
+          </div>
+          <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <div class="pill">比較が直感的</div>
+            <div class="pill">提案トーク付き</div>
+            <div class="pill">タブレット説明向け</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
+      <!-- Left panel -->
+      <section class="glass-card rounded-3xl p-4 sm:p-5 lg:sticky lg:top-6 lg:self-start" aria-labelledby="choice-heading">
+        <div class="mb-4">
+          <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-sky-700">STEP 1</p>
+          <h2 id="choice-heading" class="mt-1 text-lg font-extrabold text-slate-900 sm:text-xl">
+            お客様のメイン用途を選ぶ
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-slate-600">
+            迷ったら「今、いちばん困りたくない場面」に近いものを選んでください。
+          </p>
+        </div>
+
+        <div class="space-y-3" id="choiceGroup" role="radiogroup" aria-label="メイン用途の選択">
+          <button
+            type="button"
+            class="choice-btn focus-ring active w-full rounded-2xl border border-slate-200 bg-white p-4 text-left"
+            data-key="active"
+            role="radio"
+            aria-checked="true"
+          >
+            <div class="flex items-start gap-3">
+              <div class="choice-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-lg">🚗</div>
+              <div class="min-w-0">
+                <div class="text-sm font-extrabold text-slate-900 sm:text-base">運転や買い物など、アクティブに動くことが多い</div>
+                <div class="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                  視線移動が多く、左右の歪みや歩行時の見え方が満足度を左右します。
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="choice-btn focus-ring w-full rounded-2xl border border-slate-200 bg-white p-4 text-left"
+            data-key="indoor"
+            role="radio"
+            aria-checked="false"
+          >
+            <div class="flex items-start gap-3">
+              <div class="choice-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-lg">💻</div>
+              <div class="min-w-0">
+                <div class="text-sm font-extrabold text-slate-900 sm:text-base">パソコンや読書など、室内での作業が多い</div>
+                <div class="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                  中間距離と近方の見やすさが重要。作業姿勢のラクさもポイントです。
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="choice-btn focus-ring w-full rounded-2xl border border-slate-200 bg-white p-4 text-left"
+            data-key="first"
+            role="radio"
+            aria-checked="false"
+          >
+            <div class="flex items-start gap-3">
+              <div class="choice-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-lg">🌱</div>
+              <div class="min-w-0">
+                <div class="text-sm font-extrabold text-slate-900 sm:text-base">遠近両用は初めてで、とにかく酔うのが不安</div>
+                <div class="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                  慣れやすさ優先。違和感やフワつきの少なさを重視して案内します。
+                </div>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+          <p class="text-xs font-extrabold uppercase tracking-[0.14em] text-amber-700">接客のコツ</p>
+          <p class="mt-2 text-sm leading-6 text-amber-900">
+            価格の話から入るより先に、
+            <span class="font-bold">「お客様が困る場面」→「その見え方を減らせる理由」</span>
+            の順で伝えると、納得感が上がります。
+          </p>
+        </div>
+      </section>
+
+      <!-- Right panel -->
+      <section id="resultPanel" class="fade-up space-y-6" aria-live="polite">
+        <div class="glass-card rounded-3xl p-4 sm:p-5 lg:p-6">
+          <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div class="max-w-3xl">
+              <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">STEP 2</p>
+              <h2 id="scenarioTitle" class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                動きの多い生活では、広い視界の安心感が満足度を左右します
+              </h2>
+              <p id="scenarioLead" class="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
+                運転・買い物・外出では、正面だけでなく左右や足元まで自然に視線を動かします。
+                そのため、周辺の歪みが強いと「見えてはいるけど疲れる」「歩くと違和感がある」につながりやすくなります。
+              </p>
+            </div>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <div class="text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-700">おすすめ</div>
+              <div id="recommendBadge" class="mt-1 text-lg font-black text-emerald-900">ハイグレードレンズ</div>
+              <div id="recommendReasonMini" class="mt-1 text-sm text-emerald-800">視線移動が多い場面ほど、差が体感しやすい</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-3xl p-4 sm:p-5 lg:p-6">
+          <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 class="text-lg font-extrabold text-slate-900 sm:text-xl">視界の比較ビジュアル</h3>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                ぼやけ・歪みエリアが少ないほど、視線を動かしたときにラクです。
+              </p>
+            </div>
+            <div class="arrow-chip">見せ方のコツ：お客様に「左右のぼやけ幅」を見比べてもらう</div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-2 lg:gap-6">
+            <article class="rounded-3xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-extrabold text-slate-900 sm:text-base">標準レンズ</div>
+                  <div class="mt-1 text-xs text-slate-500 sm:text-sm">価格は抑えやすいが、周辺の歪みが広め</div>
+                </div>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600">ベーシック</span>
+              </div>
+
+              <div class="lens-viewport">
+                <div class="lens standard">
+                  <div class="vision-zone zone-clear"></div>
+                  <div class="vision-zone zone-mid"></div>
+                  <div class="vision-zone zone-near"></div>
+                  <div class="distortion"></div>
+                  <div class="swim-lines"></div>
+                  <div class="zone-label label-clear">クリアな範囲が狭め</div>
+                  <div class="zone-label label-blur">ぼやけ・歪みが広い</div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="rounded-2xl bg-white p-3">
+                  <div class="text-xs font-bold text-slate-500">正面視界</div>
+                  <div class="mt-1 font-extrabold text-slate-900">必要最低限</div>
+                </div>
+                <div class="rounded-2xl bg-white p-3">
+                  <div class="text-xs font-bold text-slate-500">横方向のラクさ</div>
+                  <div class="mt-1 font-extrabold text-slate-900">慣れが必要</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-4 sm:p-5">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-extrabold text-slate-900 sm:text-base">ハイグレードレンズ</div>
+                  <div class="mt-1 text-xs text-slate-500 sm:text-sm">クリアな範囲が広く、違和感を抑えやすい</div>
+                </div>
+                <span class="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-bold text-emerald-700">おすすめ</span>
+              </div>
+
+              <div class="lens-viewport">
+                <div class="lens premium">
+                  <div class="vision-zone zone-clear"></div>
+                  <div class="vision-zone zone-mid"></div>
+                  <div class="vision-zone zone-near"></div>
+                  <div class="distortion"></div>
+                  <div class="swim-lines"></div>
+                  <div class="zone-label label-clear">クリアな範囲が広い</div>
+                  <div class="zone-label label-blur">歪みエリアが少ない</div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="rounded-2xl bg-white p-3">
+                  <div class="text-xs font-bold text-emerald-700">正面〜周辺視界</div>
+                  <div class="mt-1 font-extrabold text-slate-900">広く自然</div>
+                </div>
+                <div class="rounded-2xl bg-white p-3">
+                  <div class="text-xs font-bold text-emerald-700">横方向のラクさ</div>
+                  <div class="mt-1 font-extrabold text-slate-900">慣れやすい</div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div class="glass-card rounded-3xl p-4 sm:p-5 lg:p-6">
+            <h3 class="text-lg font-extrabold text-slate-900 sm:text-xl">なぜこのグレードが必要か</h3>
+            <div id="whyNeed" class="mt-4 space-y-3 text-sm leading-7 text-slate-700 sm:text-base">
+              <p>
+                動きが多い生活では、レンズの中心だけ見えればよいわけではありません。
+                左右確認、棚を見る、歩きながら足元を見るなど、自然な視線移動が多いため、
+                周辺部の歪みが少ないレンズほど快適さに差が出ます。
+              </p>
+              <p>
+                ハイグレードにすると、クリアな視界が広くなることで、
+                「見え方に気を遣うストレス」を減らしやすく、結果として満足度や使用継続率にもつながります。
+              </p>
+            </div>
+
+            <div class="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+              <div class="text-xs font-extrabold uppercase tracking-[0.14em] text-sky-700">スタッフ向けひと言要約</div>
+              <p id="staffTip" class="mt-2 text-sm font-bold leading-6 text-sky-900 sm:text-base">
+                「動きながら使う人ほど、周辺の見やすさの差がそのまま安心感の差になります」
+              </p>
+            </div>
+          </div>
+
+          <div class="talk-script rounded-3xl p-4 sm:p-5 lg:p-6">
+            <h3 class="text-lg font-extrabold text-slate-900 sm:text-xl">お客様の背中を押す 提案トークスクリプト</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              そのまま読んでも自然になるように、やわらかい接客トーンで整えています。
+            </p>
+            <div id="talkScript" class="mt-5 rounded-2xl bg-white/80 p-4 text-sm leading-7 text-slate-800 shadow-sm sm:text-base">
+              運転やお買い物のように視線をよく動かす使い方ですと、実はレンズの真ん中だけではなく、
+              横の見え方の自然さがすごく大事なんです。標準タイプでも使えますが、周辺のぼやけや歪みがやや出やすいので、
+              動く場面では疲れや違和感につながることがあります。こちらのハイグレードレンズなら、
+              クリアな範囲が広くて視線移動がラクなので、外出時の安心感がかなり変わります。
+              毎日使うメガネだからこそ、使いやすさを優先していただく価値は十分あります。
+            </div>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-2xl border border-white/70 bg-white/70 p-4">
+                <div class="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">刺さるキーワード</div>
+                <p id="keywordLine" class="mt-2 text-sm font-bold leading-6 text-slate-900">
+                  安心感 / 視線移動がラク / 外出時に疲れにくい
+                </p>
+              </div>
+              <div class="rounded-2xl border border-white/70 bg-white/70 p-4">
+                <div class="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">避けたい言い方</div>
+                <p id="avoidLine" class="mt-2 text-sm font-bold leading-6 text-slate-900">
+                  「高い方が良いです」だけで終わらせず、生活場面に結びつけて説明する
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-3xl p-4 sm:p-5">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900 sm:text-lg">使い方メモ</h3>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                お客様の用途ボタンを切り替えながら、視界図の「クリアな範囲」と「歪みエリア」の広さを一緒に見比べてください。
+              </p>
+            </div>
+            <button id="copyBtn" type="button" class="focus-ring inline-flex items-center justify-center rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50">
+              提案トークをコピー
+            </button>
+          </div>
+          <p id="copyFeedback" class="mt-3 hidden text-sm font-bold text-emerald-700">提案トークをコピーしました。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const scenarios = {
+        active: {
+          title: '動きの多い生活では、広い視界の安心感が満足度を左右します',
+          lead: '運転・買い物・外出では、正面だけでなく左右や足元まで自然に視線を動かします。そのため、周辺の歪みが強いと「見えてはいるけど疲れる」「歩くと違和感がある」につながりやすくなります。',
+          recommend: 'ハイグレードレンズ',
+          recommendReasonMini: '視線移動が多い場面ほど、差が体感しやすい',
+          why: [
+            '動きが多い生活では、レンズの中心だけ見えればよいわけではありません。左右確認、棚を見る、歩きながら足元を見るなど、自然な視線移動が多いため、周辺部の歪みが少ないレンズほど快適さに差が出ます。',
+            'ハイグレードにすると、クリアな視界が広くなることで、「見え方に気を遣うストレス」を減らしやすく、結果として満足度や使用継続率にもつながります。'
+          ],
+          tip: '「動きながら使う人ほど、周辺の見やすさの差がそのまま安心感の差になります」',
+          script: '運転やお買い物のように視線をよく動かす使い方ですと、実はレンズの真ん中だけではなく、横の見え方の自然さがすごく大事なんです。標準タイプでも使えますが、周辺のぼやけや歪みがやや出やすいので、動く場面では疲れや違和感につながることがあります。こちらのハイグレードレンズなら、クリアな範囲が広くて視線移動がラクなので、外出時の安心感がかなり変わります。毎日使うメガネだからこそ、使いやすさを優先していただく価値は十分あります。',
+          keywords: '安心感 / 視線移動がラク / 外出時に疲れにくい',
+          avoid: '「高い方が良いです」だけで終わらせず、生活場面に結びつけて説明する'
+        },
+        indoor: {
+          title: '室内作業が多い方は、中間距離の広さが快適さを大きく左右します',
+          lead: 'パソコン・読書・書き物などの室内中心の生活では、手元だけでなく少し先を見る中間距離の使いやすさが重要です。ここが狭いと、顔を細かく動かして見える位置を探す必要が出てきます。',
+          recommend: 'ハイグレードレンズ',
+          recommendReasonMini: 'デスクワークは「中間の広さ」の差が出やすい',
+          why: [
+            '室内作業では、手元の本やスマホだけでなく、パソコン画面、机の上、少し離れた相手の顔など、複数の距離を行き来します。そのため、中間距離の視野が広い設計の方が姿勢も視線移動も自然です。',
+            '標準レンズだと見える位置を探す動きが増え、首や肩の疲れにつながることがあります。ハイグレードはそのストレスを減らしやすく、長時間使用でも快適さを保ちやすいのが強みです。'
+          ],
+          tip: '「室内メインの方ほど、手元だけでなくパソコン距離の見やすさが満足度につながります」',
+          script: 'パソコンや読書が多い方は、近くを見るだけではなく、少し先の画面やテーブル全体を見る中間距離の広さがすごく大事なんです。標準タイプでも見えますが、見えるポイントが狭いと顔を動かして合わせることが増えて、意外と疲れやすくなります。こちらのハイグレードレンズは、手元からパソコン距離までのつながりが自然で、作業姿勢もラクに保ちやすいです。毎日何時間も使うことを考えると、快適さの差はかなり大きいですよ。',
+          keywords: 'パソコン距離が見やすい / 姿勢がラク / 長時間でも快適',
+          avoid: '読書だけを強調しすぎず、「画面・机上・会話距離」まで含めて説明する'
+        },
+        first: {
+          title: '初めての遠近両用こそ、慣れやすさを優先する価値があります',
+          lead: '初めての遠近両用では、足元のフワつきや横の歪みに慣れるまで時間がかかることがあります。最初の体験で違和感が強いと、「合わない」と感じて使わなくなってしまうケースも少なくありません。',
+          recommend: 'ハイグレードレンズ',
+          recommendReasonMini: '最初の違和感を抑えやすく、定着しやすい',
+          why: [
+            '遠近両用に初めて挑戦する方は、「見え方に慣れる」こと自体がハードルになります。そのため、歪みやユレ感が少ない設計の方が、最初の不安を和らげやすくなります。',
+            'ハイグレードは酔いやすさの原因になりやすい周辺の違和感を抑えやすく、「意外と使いやすい」と感じてもらえる可能性を高めます。結果として、せっかく作ったメガネを使わなくなるリスクも下げやすいです。'
+          ],
+          tip: '「初めての一本は、慣れやすさへの投資と考えていただくと失敗しにくいです」',
+          script: '初めての遠近両用は、どうしても足元のフワフワ感や横の歪みに慣れるまで時間がかかります。こちらのハイグレードレンズにすると、その「酔いやすいエリア」が極限まで削られているので、初めての方でもスッと慣れやすいんです。メガネを使わなくなってしまうのが一番もったいないので、ここは目への投資としてしっかり良い設計を選んでいただくのがおすすめです。',
+          keywords: '慣れやすい / 酔いにくい / 使わなくなるリスクを減らす',
+          avoid: '「慣れますよ」と言い切りすぎず、不安に寄り添いながら安心材料として伝える'
+        }
+      };
+
+      const els = {
+        buttons: Array.from(document.querySelectorAll('[data-key]')),
+        resultPanel: document.getElementById('resultPanel'),
+        title: document.getElementById('scenarioTitle'),
+        lead: document.getElementById('scenarioLead'),
+        recommend: document.getElementById('recommendBadge'),
+        recommendMini: document.getElementById('recommendReasonMini'),
+        whyNeed: document.getElementById('whyNeed'),
+        tip: document.getElementById('staffTip'),
+        script: document.getElementById('talkScript'),
+        keywords: document.getElementById('keywordLine'),
+        avoid: document.getElementById('avoidLine'),
+        copyBtn: document.getElementById('copyBtn'),
+        copyFeedback: document.getElementById('copyFeedback')
+      };
+
+      function safeGetScenario(key) {
+        return scenarios[key] || scenarios.active;
+      }
+
+      function renderScenario(key) {
+        const data = safeGetScenario(key);
+
+        els.title.textContent = data.title;
+        els.lead.textContent = data.lead;
+        els.recommend.textContent = data.recommend;
+        els.recommendMini.textContent = data.recommendReasonMini;
+        els.tip.textContent = data.tip;
+        els.script.textContent = data.script;
+        els.keywords.textContent = data.keywords;
+        els.avoid.textContent = data.avoid;
+
+        els.whyNeed.innerHTML = '';
+        data.why.forEach((text) => {
+          const p = document.createElement('p');
+          p.textContent = text;
+          els.whyNeed.appendChild(p);
+        });
+
+        els.resultPanel.classList.remove('fade-up');
+        void els.resultPanel.offsetWidth;
+        els.resultPanel.classList.add('fade-up');
+
+        els.buttons.forEach((btn) => {
+          const active = btn.dataset.key === key;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-checked', String(active));
+        });
+      }
+
+      function setupChoices() {
+        els.buttons.forEach((btn, index) => {
+          btn.addEventListener('click', () => renderScenario(btn.dataset.key));
+
+          btn.addEventListener('keydown', (e) => {
+            const currentIndex = els.buttons.indexOf(btn);
+            let nextIndex = null;
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+              nextIndex = (currentIndex + 1) % els.buttons.length;
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+              nextIndex = (currentIndex - 1 + els.buttons.length) % els.buttons.length;
+            } else if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault();
+              renderScenario(btn.dataset.key);
+            }
+
+            if (nextIndex !== null) {
+              e.preventDefault();
+              els.buttons[nextIndex].focus();
+            }
+          });
+
+          if (index === 0) {
+            btn.classList.add('active');
+            btn.setAttribute('aria-checked', 'true');
+          }
+        });
+      }
+
+      async function copyScript() {
+        const text = els.script.textContent?.trim() || '';
+        if (!text) {
+          els.copyFeedback.textContent = 'コピーする提案トークが見つかりませんでした。';
+          els.copyFeedback.classList.remove('hidden');
+          els.copyFeedback.classList.remove('text-emerald-700');
+          els.copyFeedback.classList.add('text-rose-600');
+          return;
+        }
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            if (!ok) throw new Error('fallback copy failed');
+          }
+
+          els.copyFeedback.textContent = '提案トークをコピーしました。';
+          els.copyFeedback.classList.remove('hidden', 'text-rose-600');
+          els.copyFeedback.classList.add('text-emerald-700');
+        } catch (error) {
+          els.copyFeedback.textContent = 'コピーに失敗しました。手動で選択してご利用ください。';
+          els.copyFeedback.classList.remove('hidden', 'text-emerald-700');
+          els.copyFeedback.classList.add('text-rose-600');
+          console.error(error);
+        }
+      }
+
+      function init() {
+        try {
+          setupChoices();
+          renderScenario('active');
+          els.copyBtn.addEventListener('click', copyScript);
+        } catch (error) {
+          console.error(error);
+          alert('初期化中に問題が発生しました。ページを再読み込みしてください。');
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
