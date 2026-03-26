@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隠れ眼精疲労チェック＆適正レンズ寿命ジャッジ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            medical: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e'
+            },
+            mint: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              300: '#6ee7b7',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          },
+          boxShadow: {
+            soft: '0 10px 30px rgba(2, 132, 199, 0.10)',
+            glow: '0 0 0 4px rgba(14, 165, 233, 0.12)'
+          },
+          keyframes: {
+            pulseSoft: {
+              '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+              '50%': { transform: 'scale(1.03)', opacity: '0.92' }
+            },
+            rise: {
+              '0%': { opacity: '0', transform: 'translateY(14px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            shimmer: {
+              '0%': { transform: 'translateX(-120%)' },
+              '100%': { transform: 'translateX(220%)' }
+            }
+          },
+          animation: {
+            pulseSoft: 'pulseSoft 2.2s ease-in-out infinite',
+            rise: 'rise 0.5s ease-out',
+            shimmer: 'shimmer 2.4s linear infinite'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at top right, rgba(186,230,253,0.35), transparent 26%),
+        radial-gradient(circle at bottom left, rgba(167,243,208,0.25), transparent 22%),
+        #f8fafc;
+    }
+
+    .age-card input,
+    .symptom-card input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .age-card-content,
+    .symptom-card-content {
+      transition: all .2s ease;
+    }
+
+    .age-card input:checked + .age-card-content {
+      border-color: rgb(14 165 233);
+      background: linear-gradient(180deg, rgba(240,249,255,1) 0%, rgba(224,242,254,1) 100%);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.10);
+      transform: translateY(-1px);
+    }
+
+    .symptom-card input:checked + .symptom-card-content {
+      border-color: rgb(16 185 129);
+      background: linear-gradient(180deg, rgba(236,253,245,1) 0%, rgba(209,250,229,1) 100%);
+      box-shadow: 0 0 0 4px rgba(16,185,129,.10);
+    }
+
+    .gauge-track::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,.35) 45%, transparent 60%);
+      animation: shimmer 2.8s linear infinite;
+      pointer-events: none;
+    }
+
+    .result-enter {
+      animation: rise .45s ease-out both;
+    }
+
+    .focus-ring:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(14,165,233,.20);
+    }
+  </style>
+</head>
+<body class="text-slate-800">
+  <div class="min-h-screen">
+    <header class="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10">
+      <div class="max-w-6xl mx-auto">
+        <div class="rounded-3xl bg-white/90 backdrop-blur border border-white shadow-soft overflow-hidden">
+          <div class="grid lg:grid-cols-[1.25fr_.95fr] gap-0">
+            <div class="p-6 sm:p-8 lg:p-10">
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-medical-50 text-medical-700 text-xs sm:text-sm font-semibold border border-medical-100">
+                <span class="w-2 h-2 rounded-full bg-medical-500 animate-pulse"></span>
+                店頭接客サポート・問診テスト
+              </div>
+              <h1 class="mt-4 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+                隠れ眼精疲労チェック
+                <span class="block text-medical-700">＆ 適正レンズ寿命ジャッジ</span>
+              </h1>
+              <p class="mt-4 text-sm sm:text-base leading-7 text-slate-600 max-w-2xl">
+                「まだ見えるから大丈夫」と先延ばししがちなお客様に対し、
+                <span class="font-semibold text-slate-800">使用年数 × 体のサイン</span>
+                から、今のメガネが目に与えている負担を
+                <span class="font-semibold text-slate-800">ロジカルに見える化</span>する接客アプリです。
+              </p>
+
+              <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                  <div class="text-xs font-semibold text-slate-500">STEP 1</div>
+                  <div class="mt-1 font-bold text-slate-900">使用年数を選択</div>
+                  <div class="mt-1 text-xs text-slate-600">レンズ寿命の入口を判定</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                  <div class="text-xs font-semibold text-slate-500">STEP 2</div>
+                  <div class="mt-1 font-bold text-slate-900">不調サインを確認</div>
+                  <div class="mt-1 text-xs text-slate-600">隠れ疲労の兆候を可視化</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                  <div class="text-xs font-semibold text-slate-500">STEP 3</div>
+                  <div class="mt-1 font-bold text-slate-900">提案トークを表示</div>
+                  <div class="mt-1 text-xs text-slate-600">新人でも自信を持って接客</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-medical-600 via-medical-700 to-teal-700 text-white p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
+              <div>
+                <div class="text-sm uppercase tracking-[0.18em] text-white/80">Professional Guide</div>
+                <div class="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
+                  “見えている” と “負担がない” は、
+                  <span class="text-mint-200">同じではありません。</span>
+                </div>
+              </div>
+              <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                <div class="rounded-2xl bg-white/10 border border-white/15 p-4">
+                  <div class="text-xs text-white/75">接客メリット</div>
+                  <div class="mt-1 font-semibold">感覚論ではなく、症状ベースで提案できる</div>
+                </div>
+                <div class="rounded-2xl bg-white/10 border border-white/15 p-4">
+                  <div class="text-xs text-white/75">想定シーン</div>
+                  <div class="mt-1 font-semibold">タブレットを見ながらお客様と一緒にチェック</div>
+                </div>
+                <div class="rounded-2xl bg-white/10 border border-white/15 p-4">
+                  <div class="text-xs text-white/75">最終ゴール</div>
+                  <div class="mt-1 font-semibold">測定 → レンズ交換提案へ自然に接続</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+      <div class="max-w-6xl mx-auto grid gap-6 lg:gap-8">
+        <section class="rounded-3xl bg-white border border-slate-200 shadow-soft p-5 sm:p-6 lg:p-8">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div class="text-sm font-semibold text-medical-700">質問 1 / 2</div>
+              <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">現在のメガネの使用年数</h2>
+              <p class="text-sm sm:text-base text-slate-600 mt-2">
+                お客様が今お使いのメガネに最も近い年数を選んでください。
+              </p>
+            </div>
+            <div class="text-xs sm:text-sm text-slate-500">
+              迷った場合は「より長い年数」を選ぶと安全です
+            </div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label class="age-card relative cursor-pointer">
+              <input type="radio" name="age" value="1-2" />
+              <div class="age-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5 focus-ring">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="text-lg font-bold text-slate-900">1〜2年未満</div>
+                    <div class="mt-1 text-sm text-slate-500">まだ新しい方</div>
+                  </div>
+                  <div class="w-11 h-11 rounded-2xl bg-medical-50 border border-medical-100 flex items-center justify-center text-medical-700 font-bold">A</div>
+                </div>
+                <div class="mt-4 text-sm leading-6 text-slate-600">
+                  レンズ状態は比較的良好。ただし使い方や度数ズレによっては疲れが出ることもあります。
+                </div>
+              </div>
+            </label>
+
+            <label class="age-card relative cursor-pointer">
+              <input type="radio" name="age" value="3-4" />
+              <div class="age-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5 focus-ring">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="text-lg font-bold text-slate-900">3〜4年</div>
+                    <div class="mt-1 text-sm text-amber-600 font-semibold">レンズ寿命サインが出始める</div>
+                  </div>
+                  <div class="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-700 font-bold">B</div>
+                </div>
+                <div class="mt-4 text-sm leading-6 text-slate-600">
+                  細かな傷・コート劣化・見え方のズレが蓄積しやすく、夕方の疲れが表面化しやすい時期です。
+                </div>
+              </div>
+            </label>
+
+            <label class="age-card relative cursor-pointer">
+              <input type="radio" name="age" value="5+" />
+              <div class="age-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5 focus-ring">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="text-lg font-bold text-slate-900">5年以上</div>
+                    <div class="mt-1 text-sm text-rose-600 font-semibold">完全に寿命・度数変化の可能性大</div>
+                  </div>
+                  <div class="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-700 font-bold">C</div>
+                </div>
+                <div class="mt-4 text-sm leading-6 text-slate-600">
+                  「見える」状態でも、光のにじみやピント負荷が増え、脳や身体に無自覚な疲れが出やすい段階です。
+                </div>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section class="rounded-3xl bg-white border border-slate-200 shadow-soft p-5 sm:p-6 lg:p-8">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div class="text-sm font-semibold text-mint-700">質問 2 / 2</div>
+              <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">最近感じる体の不調（サイン）</h2>
+              <p class="text-sm sm:text-base text-slate-600 mt-2">
+                当てはまるものを複数選択してください。1つだけでも診断できます。
+              </p>
+            </div>
+            <div class="text-xs sm:text-sm text-slate-500">
+              複数選択可
+            </div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="symptom-card relative cursor-pointer">
+              <input type="checkbox" value="dryness" />
+              <div class="symptom-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5">
+                <div class="flex items-start gap-4">
+                  <div class="shrink-0 w-11 h-11 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-lg">👁️</div>
+                  <div>
+                    <div class="font-bold text-slate-900 leading-6">夕方になると目がしょぼしょぼする、乾く</div>
+                    <div class="mt-2 text-sm leading-6 text-slate-600">
+                      夕方の乾き・かすみは、目が無理にピント調整を続けているサインのことがあります。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </label>
+
+            <label class="symptom-card relative cursor-pointer">
+              <input type="checkbox" value="focus" />
+              <div class="symptom-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5">
+                <div class="flex items-start gap-4">
+                  <div class="shrink-0 w-11 h-11 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-lg">🔎</div>
+                  <div>
+                    <div class="font-bold text-slate-900 leading-6">パソコンやスマホの後、遠くを見るとピントが合うまで時間がかかる</div>
+                    <div class="mt-2 text-sm leading-6 text-slate-600">
+                      近くと遠くの切り替えに時間がかかる場合、度数やレンズ状態が負担を増やしている可能性があります。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </label>
+
+            <label class="symptom-card relative cursor-pointer">
+              <input type="checkbox" value="stiffness" />
+              <div class="symptom-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5">
+                <div class="flex items-start gap-4">
+                  <div class="shrink-0 w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg">💢</div>
+                  <div>
+                    <div class="font-bold text-slate-900 leading-6">首や肩のコリがひどい、頭痛がする</div>
+                    <div class="mt-2 text-sm leading-6 text-slate-600">
+                      見えにくさを補う姿勢や脳の緊張が続くと、眼精疲労が肩こり・頭痛として現れることがあります。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </label>
+
+            <label class="symptom-card relative cursor-pointer">
+              <input type="checkbox" value="glare" />
+              <div class="symptom-card-content h-full rounded-2xl border-2 border-slate-200 bg-white p-5">
+                <div class="flex items-start gap-4">
+                  <div class="shrink-0 w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-lg">🌙</div>
+                  <div>
+                    <div class="font-bold text-slate-900 leading-6">夜の運転で、対向車のライトがやたらと眩しく感じる、にじむ</div>
+                    <div class="mt-2 text-sm leading-6 text-slate-600">
+                      レンズの細かな傷や反射、コーティング劣化は、夜間の眩しさやにじみを強く感じさせやすくなります。
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <div id="errorBox" class="hidden mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            使用年数を選び、体の不調を1つ以上チェックしてください。
+          </div>
+
+          <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <button id="diagnoseBtn" class="focus-ring inline-flex items-center justify-center rounded-2xl bg-medical-600 hover:bg-medical-700 active:scale-[0.99] text-white font-bold px-5 py-4 text-base shadow-soft transition min-h-[56px]">
+              診断する
+            </button>
+            <button id="resetBtn" class="focus-ring inline-flex items-center justify-center rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-semibold px-5 py-4 text-base border border-slate-200 transition min-h-[56px]">
+              入力をリセット
+            </button>
+          </div>
+        </section>
+
+        <section id="resultSection" class="hidden">
+          <div class="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
+            <div class="rounded-3xl bg-white border border-slate-200 shadow-soft p-5 sm:p-6 lg:p-8 result-enter">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                  <div class="text-sm font-semibold text-medical-700">診断結果</div>
+                  <h3 class="mt-1 text-xl sm:text-2xl font-bold text-slate-900">隠れ眼精疲労度</h3>
+                  <p class="mt-2 text-sm sm:text-base text-slate-600">
+                    使用年数と不調サインから、現在のメガネが目や身体に与えている負担を可視化しました。
+                  </p>
+                </div>
+                <div id="urgencyBadge" class="inline-flex items-center rounded-full px-4 py-2 text-sm font-bold border"></div>
+              </div>
+
+              <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                <div class="flex items-end justify-between gap-4">
+                  <div>
+                    <div class="text-sm text-slate-500">推定疲労レベル</div>
+                    <div class="mt-1 flex items-end gap-2">
+                      <span id="scoreValue" class="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">0</span>
+                      <span class="text-lg font-bold text-slate-500 mb-1">%</span>
+                    </div>
+                  </div>
+                  <div id="scoreLabel" class="rounded-2xl px-3 py-2 text-sm font-bold"></div>
+                </div>
+
+                <div class="mt-5">
+                  <div class="flex justify-between text-xs sm:text-sm text-slate-500 mb-2">
+                    <span>軽度</span>
+                    <span>中度</span>
+                    <span>高リスク</span>
+                  </div>
+                  <div class="relative h-5 sm:h-6 rounded-full bg-slate-200 overflow-hidden">
+                    <div id="gaugeBar" class="gauge-track relative h-full rounded-full transition-all duration-[1400ms] ease-out w-0 bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500"></div>
+                  </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-3 gap-3 text-center">
+                  <div class="rounded-2xl bg-white border border-slate-200 p-3">
+                    <div class="text-xs text-slate-500">使用年数評価</div>
+                    <div id="ageSummary" class="mt-1 font-bold text-slate-900 text-sm sm:text-base"></div>
+                  </div>
+                  <div class="rounded-2xl bg-white border border-slate-200 p-3">
+                    <div class="text-xs text-slate-500">不調サイン数</div>
+                    <div id="symptomCount" class="mt-1 font-bold text-slate-900 text-sm sm:text-base"></div>
+                  </div>
+                  <div class="rounded-2xl bg-white border border-slate-200 p-3">
+                    <div class="text-xs text-slate-500">推奨アクション</div>
+                    <div id="actionSummary" class="mt-1 font-bold text-slate-900 text-sm sm:text-base"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <h4 class="text-lg font-bold text-slate-900">今のメガネが目に与えている悪影響</h4>
+                <div id="logicText" class="mt-3 rounded-2xl bg-medical-50 border border-medical-100 p-4 sm:p-5 text-sm sm:text-base leading-7 text-slate-700"></div>
+              </div>
+            </div>
+
+            <div class="grid gap-6">
+              <div class="rounded-3xl bg-white border border-slate-200 shadow-soft p-5 sm:p-6 lg:p-8 result-enter">
+                <div class="flex items-center gap-3">
+                  <div class="w-11 h-11 rounded-2xl bg-mint-50 border border-mint-100 flex items-center justify-center text-xl">🗣️</div>
+                  <div>
+                    <div class="text-sm font-semibold text-mint-700">即日買い替え提案</div>
+                    <h4 class="text-xl font-bold text-slate-900">プロの提案トーク</h4>
+                  </div>
+                </div>
+                <div id="talkText" class="mt-4 rounded-2xl bg-mint-50 border border-mint-100 p-4 sm:p-5 text-sm sm:text-base leading-7 text-slate-700"></div>
+              </div>
+
+              <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-soft p-5 sm:p-6 lg:p-8 result-enter">
+                <div class="text-sm font-semibold text-medical-200">接客の次アクション</div>
+                <h4 class="mt-1 text-xl font-bold">このまま会話を商談につなげる流れ</h4>
+                <ol class="mt-4 space-y-3 text-sm sm:text-base text-white/90">
+                  <li class="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <span class="font-bold text-white">1.</span>
+                    結果を見せながら「見え方よりも、目の負担が先に出ている可能性があります」と共感する
+                  </li>
+                  <li class="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <span class="font-bold text-white">2.</span>
+                    「今の度数が合っているか」と「レンズ表面が劣化していないか」を測定・点検する提案につなげる
+                  </li>
+                  <li class="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <span class="font-bold text-white">3.</span>
+                    夜間の眩しさ、肩こり、夕方の疲れなど、選択された症状に絞って新レンズの価値を説明する
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const diagnoseBtn = document.getElementById('diagnoseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const errorBox = document.getElementById('errorBox');
+    const resultSection = document.getElementById('resultSection');
+    const scoreValue = document.getElementById('scoreValue');
+    const gaugeBar = document.getElementById('gaugeBar');
+    const scoreLabel = document.getElementById('scoreLabel');
+    const logicText = document.getElementById('logicText');
+    const talkText = document.getElementById('talkText');
+    const urgencyBadge = document.getElementById('urgencyBadge');
+    const ageSummary = document.getElementById('ageSummary');
+    const symptomCount = document.getElementById('symptomCount');
+    const actionSummary = document.getElementById('actionSummary');
+
+    const symptomMeta = {
+      dryness: {
+        label: '夕方のしょぼつき・乾き',
+        weight: 14,
+        logic: '夕方に目がしょぼしょぼしたり乾くのは、日中ずっとピント調整を頑張り続けた結果として起こりやすいサインです。',
+      },
+      focus: {
+        label: '遠近のピント切替の遅れ',
+        weight: 17,
+        logic: 'スマホやパソコンの後に遠くへ視線を移した時、ピントが合うまで時間がかかるのは、レンズの度数ズレや見え方の負荷が蓄積している可能性があります。',
+      },
+      stiffness: {
+        label: '首・肩こり / 頭痛',
+        weight: 20,
+        logic: '肩こりや頭痛は、見えにくさを姿勢や脳の緊張で補っている時に起こりやすく、眼精疲労が身体症状として表れている典型例です。',
+      },
+      glare: {
+        label: '夜の眩しさ・にじみ',
+        weight: 18,
+        logic: '夜のライトがやたらと眩しい、にじむ感覚は、レンズ表面の微細な傷やコーティングの劣化による乱反射と相性が強い症状です。',
+      }
+    };
+
+    const ageMeta = {
+      '1-2': {
+        label: '1〜2年未満',
+        base: 18,
+        severity: '比較的新しい',
+        action: '点検・測定推奨',
+        logic: '使用年数としてはまだ新しい部類ですが、度数の変化や日常使用での負荷によっては、見え方以上に疲れが先に出ることがあります。'
+      },
+      '3-4': {
+        label: '3〜4年',
+        base: 38,
+        severity: '寿命サイン期',
+        action: '交換の検討段階',
+        logic: '3年を超えたレンズは、見た目では分からない細かな傷・コート劣化・反射の増加が起きやすく、脳と目が無意識に補正し続ける状態になりやすいです。'
+      },
+      '5+': {
+        label: '5年以上',
+        base: 58,
+        severity: '寿命リスク大',
+        action: '即日交換提案',
+        logic: '5年以上使ったレンズは、光学性能の低下や度数変化の可能性が高く、「まだ見える」状態でも、目と脳に強い負担をかけ続けているケースが珍しくありません。'
+      }
+    };
+
+    function getSelectedAge() {
+      const checked = document.querySelector('input[name="age"]:checked');
+      return checked ? checked.value : null;
+    }
+
+    function getSelectedSymptoms() {
+      return [...document.querySelectorAll('.symptom-card input:checked')].map(el => el.value);
+    }
+
+    function calculateScore(age, symptoms) {
+      let score = ageMeta[age].base;
+
+      symptoms.forEach(key => {
+        score += symptomMeta[key]?.weight || 0;
+      });
+
+      // 相乗効果
+      if (age === '5+' && symptoms.includes('stiffness')) score += 8;
+      if (age === '5+' && symptoms.includes('dryness')) score += 6;
+      if (age === '5+' && symptoms.includes('glare')) score += 8;
+      if (age === '3-4' && symptoms.length >= 3) score += 6;
+      if (symptoms.includes('focus') && symptoms.includes('dryness')) score += 5;
+      if (symptoms.includes('stiffness') && symptoms.includes('glare')) score += 5;
+
+      return Math.min(score, 98);
+    }
+
+    function getRiskInfo(score) {
+      if (score >= 80) {
+        return {
+          label: '高リスク',
+          badge: '即日対応推奨',
+          badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+          labelClass: 'bg-rose-50 text-rose-700 border border-rose-200',
+          action: '本日交換を強く推奨'
+        };
+      }
+      if (score >= 55) {
+        return {
+          label: '要注意',
+          badge: '早めの点検推奨',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+          labelClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+          action: '測定後に交換提案'
+        };
+      }
+      return {
+        label: '軽〜中度',
+        badge: '点検価値あり',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        labelClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+        action: '現状点検を提案'
+      };
+    }
+
+    function buildLogic(age, symptoms, score) {
+      const ageText = ageMeta[age].logic;
+      const symptomTexts = symptoms.map(key => symptomMeta[key].logic);
+
+      let summary = `${ageText} `;
+      summary += symptomTexts.join(' ');
+
+      if (age === '5+' && symptoms.includes('stiffness') && symptoms.includes('dryness')) {
+        summary += '特に「5年以上の使用」かつ「肩こり・夕方の疲れ」が同時に出ている状態は、レンズの劣化と度数変化の両面から目が無理をしている可能性が高く、隠れ眼精疲労がかなり進んでいると考えられます。';
+      } else if (age === '3-4' && symptoms.includes('glare')) {
+        summary += '3〜4年使用のレンズで夜の眩しさがある場合は、表面状態の変化による乱反射が接客トークの核になります。';
+      } else if (age === '1-2' && symptoms.length >= 2) {
+        summary += '使用年数が短くても複数の不調が出ているため、度数ズレや使用環境とのミスマッチを確認する価値が高いです。';
+      }
+
+      if (score >= 80) {
+        summary += ' つまり今は「見える・見えない」の問題ではなく、見える状態を保つために目と脳が頑張りすぎている段階です。';
+      } else if (score >= 55) {
+        summary += ' まだ我慢できてしまうレベルでも、放置すると夕方以降の疲れや夜間の見づらさがさらに強くなる可能性があります。';
+      } else {
+        summary += ' 直ちに強い劣化とは言い切れませんが、今のうちに点検しておくことで疲れの原因を早期に切り分けられます。';
+      }
+
+      return summary;
+    }
+
+    function buildTalk(age, symptoms, score) {
+      if (age === '5+' && symptoms.includes('stiffness') && symptoms.includes('dryness')) {
+        return '今のメガネ、すごく大切に使っていただいているんですね！ただ、プラスチックレンズは3年を過ぎると見えない細かな傷やコート剥がれで光が乱反射し、脳が無理にピントを合わせようとして激しい肩こりや疲れを引き起こします。『まだ見える』状態でも、目には相当な負担がかかっているサインが出ていますので、本日の視力測定と新しいレンズへの交換を強くおすすめします！';
+      }
+
+      if (age === '5+' && symptoms.includes('glare')) {
+        return '夜のライトの眩しさやにじみが出ているのは、レンズ表面の劣化サインとして非常に分かりやすい状態です。5年以上お使いのメガネですと、見え方は足りていても光の処理が追いつかず、運転時の負担が大きくなります。安全面も含めて、今日この場で度数とレンズ状態を確認し、交換前提で見比べていただくのがおすすめです。';
+      }
+
+      if (age === '3-4' && score >= 55) {
+        return '今のメガネはまだ使えていても、ちょうどレンズ寿命のサインが出やすい時期に入っています。特に今回チェックされた症状は、見え方を無意識に補正している時に出やすいものです。今のうちに視力測定とレンズ点検をしておくと、疲れの原因をはっきりさせたうえで、交換が必要かどうかを納得して選んでいただけます。';
+      }
+
+      if (age === '1-2' && symptoms.length >= 2) {
+        return '使用年数としてはまだ新しいのですが、不調が複数出ているので、レンズの寿命というより今の度数や見え方のバランスが合っていない可能性があります。せっかくなら「まだ新しいのに疲れる理由」を今日ここで測って、必要なら早めに負担の少ない見え方へ調整していきましょう。';
+      }
+
+      return '今回の結果では、今のメガネで見えていても、目と身体にはすでに負担サインが出始めています。放置すると疲れが日常化しやすいため、まずは本日の視力測定とレンズ状態の点検をして、必要であれば負担の少ない新しいレンズをご提案させてください。';
+    }
+
+    function animateScore(target) {
+      scoreValue.textContent = '0';
+      gaugeBar.style.width = '0%';
+
+      let start = null;
+      const duration = 1400;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const value = Math.round(target * progress);
+
+        scoreValue.textContent = value;
+        gaugeBar.style.width = value + '%';
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.remove('hidden');
+    }
+
+    function hideError() {
+      errorBox.classList.add('hidden');
+    }
+
+    function diagnose() {
+      const age = getSelectedAge();
+      const symptoms = getSelectedSymptoms();
+
+      if (!age && symptoms.length === 0) {
+        showError('使用年数を選び、体の不調を1つ以上チェックしてください。');
+        resultSection.classList.add('hidden');
+        return;
+      }
+
+      if (!age) {
+        showError('先に「現在のメガネの使用年数」を選んでください。');
+        resultSection.classList.add('hidden');
+        return;
+      }
+
+      if (symptoms.length === 0) {
+        showError('体の不調を1つ以上チェックしてください。小さな違和感でもOKです。');
+        resultSection.classList.add('hidden');
+        return;
+      }
+
+      hideError();
+
+      const score = calculateScore(age, symptoms);
+      const risk = getRiskInfo(score);
+      const logic = buildLogic(age, symptoms, score);
+      const talk = buildTalk(age, symptoms, score);
+
+      urgencyBadge.className = `inline-flex items-center rounded-full px-4 py-2 text-sm font-bold border ${risk.badgeClass}`;
+      urgencyBadge.textContent = risk.badge;
+
+      scoreLabel.className = `rounded-2xl px-3 py-2 text-sm font-bold ${risk.labelClass}`;
+      scoreLabel.textContent = risk.label;
+
+      ageSummary.textContent = `${ageMeta[age].label} / ${ageMeta[age].severity}`;
+      symptomCount.textContent = `${symptoms.length}項目`;
+      actionSummary.textContent = risk.action;
+
+      logicText.textContent = logic;
+      talkText.textContent = talk;
+
+      resultSection.classList.remove('hidden');
+      animateScore(score);
+      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function resetAll() {
+      document.querySelectorAll('input[name="age"]').forEach(el => el.checked = false);
+      document.querySelectorAll('.symptom-card input').forEach(el => el.checked = false);
+      hideError();
+      resultSection.classList.add('hidden');
+      scoreValue.textContent = '0';
+      gaugeBar.style.width = '0%';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    diagnoseBtn.addEventListener('click', diagnose);
+    resetBtn.addEventListener('click', resetAll);
+
+    document.querySelectorAll('input').forEach(el => {
+      el.addEventListener('change', hideError);
+    });
+  </script>
+</body>
+</html>
