@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>カラーレンズ濃度・実用性シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            glow: "0 10px 30px rgba(14, 165, 233, 0.18)",
+            card: "0 18px 50px rgba(15, 23, 42, 0.10)"
+          },
+          backgroundImage: {
+            sky: "linear-gradient(180deg, #7dd3fc 0%, #e0f2fe 38%, #fef3c7 100%)",
+            sunset: "linear-gradient(135deg, rgba(14,165,233,0.18), rgba(251,146,60,0.18))"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(251, 146, 60, 0.14), transparent 25%),
+        linear-gradient(180deg, #f8fdff 0%, #eef9ff 45%, #fffaf2 100%);
+    }
+
+    .glass-card {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .scene-layer {
+      transition: opacity 0.35s ease, background 0.35s ease, backdrop-filter 0.35s ease;
+    }
+
+    .soft-ring {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.7) inset,
+        0 8px 28px rgba(14, 165, 233, 0.10);
+    }
+
+    .option-btn[data-active="true"] {
+      transform: translateY(-1px);
+    }
+
+    .meter-bar {
+      transition: width 0.45s ease;
+    }
+
+    .fade-up {
+      animation: fadeUp 0.45s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .scene-road::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 8%;
+      width: 82%;
+      height: 28%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, #5b6472 0%, #303846 100%);
+      clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+      opacity: 0.9;
+      border-radius: 1rem;
+    }
+
+    .scene-road::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 14%;
+      width: 4px;
+      height: 16%;
+      transform: translateX(-50%);
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.95) 0 14px,
+          transparent 14px 28px
+        );
+      opacity: 0.85;
+      border-radius: 9999px;
+    }
+
+    .scene-mountain::before {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 48%;
+      background:
+        polygon(0% 100%, 18% 60%, 34% 84%, 50% 42%, 68% 78%, 84% 52%, 100% 100%);
+    }
+
+    .mountain-back,
+    .mountain-front {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      left: 0;
+    }
+
+    .mountain-back {
+      height: 42%;
+      background: #84cc16;
+      clip-path: polygon(0 100%, 0 68%, 14% 54%, 28% 64%, 40% 44%, 55% 63%, 70% 38%, 84% 56%, 100% 48%, 100% 100%);
+      opacity: 0.8;
+    }
+
+    .mountain-front {
+      height: 36%;
+      background: #4d7c0f;
+      clip-path: polygon(0 100%, 0 76%, 16% 64%, 30% 72%, 44% 56%, 59% 69%, 78% 50%, 100% 63%, 100% 100%);
+      opacity: 0.95;
+    }
+
+    .office-buildings {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 42%;
+    }
+
+    .office-buildings span {
+      position: absolute;
+      bottom: 0;
+      border-radius: 1rem 1rem 0 0;
+      background: linear-gradient(180deg, rgba(148,163,184,0.95), rgba(71,85,105,0.95));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+    }
+
+    .office-buildings span::after {
+      content: "";
+      position: absolute;
+      inset: 12% 18%;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.35) 0 8px,
+          transparent 8px 16px
+        ),
+        repeating-linear-gradient(
+          to right,
+          rgba(255,255,255,0.28) 0 8px,
+          transparent 8px 18px
+        );
+      opacity: 0.9;
+      border-radius: 0.5rem;
+    }
+
+    .sun-glow {
+      position: absolute;
+      right: 10%;
+      top: 12%;
+      width: 88px;
+      height: 88px;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(255,255,255,0.92) 0%, rgba(253,224,71,0.75) 35%, rgba(251,146,60,0.18) 68%, transparent 72%);
+      filter: blur(1px);
+    }
+
+    .cloud {
+      position: absolute;
+      background: rgba(255,255,255,0.78);
+      border-radius: 9999px;
+      filter: blur(1px);
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: "";
+      position: absolute;
+      background: inherit;
+      border-radius: inherit;
+    }
+
+    .cloud::before {
+      width: 60%;
+      height: 100%;
+      left: 14%;
+      top: -45%;
+    }
+
+    .cloud::after {
+      width: 42%;
+      height: 80%;
+      right: 10%;
+      top: -22%;
+    }
+  </style>
+</head>
+<body class="text-slate-800">
+  <div class="relative overflow-hidden">
+    <div class="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-sky-200/50 via-cyan-100/20 to-transparent pointer-events-none"></div>
+
+    <main class="relative mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 lg:px-8">
+      <header class="mb-6 sm:mb-8">
+        <div class="glass-card soft-ring rounded-3xl p-5 sm:p-7 shadow-card">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+              <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold tracking-wide text-sky-700">
+                <span>🌞 春夏のご提案サポート</span>
+                <span class="text-sky-400">|</span>
+                <span>新人スタッフ向け</span>
+              </div>
+              <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                眼鏡屋向け カラーレンズ濃度・実用性シミュレーター
+              </h1>
+              <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                お客様の利用シーンとレンズ濃度を選ぶだけで、
+                <span class="font-semibold text-slate-800">見え方のイメージ</span>、
+                <span class="font-semibold text-slate-800">夜間運転の注意</span>、
+                <span class="font-semibold text-slate-800">そのまま使える提案トーク</span>
+                を一度に表示します。
+              </p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+              <div class="rounded-2xl bg-white/80 px-3 py-3 text-center shadow-sm">
+                <div class="text-xs text-slate-500">シーン選択</div>
+                <div id="statusScene" class="mt-1 text-sm font-bold text-slate-900">未選択</div>
+              </div>
+              <div class="rounded-2xl bg-white/80 px-3 py-3 text-center shadow-sm">
+                <div class="text-xs text-slate-500">濃度選択</div>
+                <div id="statusDensity" class="mt-1 text-sm font-bold text-slate-900">未選択</div>
+              </div>
+              <div class="rounded-2xl bg-white/80 px-3 py-3 text-center shadow-sm">
+                <div class="text-xs text-slate-500">夜間運転</div>
+                <div id="statusNight" class="mt-1 text-sm font-bold text-amber-600">判定待ち</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid gap-6 xl:grid-cols-[420px,minmax(0,1fr)]">
+        <aside class="space-y-6">
+          <div class="glass-card soft-ring rounded-3xl p-5 sm:p-6 shadow-card">
+            <div class="mb-4">
+              <h2 class="text-lg font-extrabold text-slate-900 sm:text-xl">1. メインの利用シーン</h2>
+              <p class="mt-1 text-sm text-slate-600">お客様が一番使いたい場面を選んでください。</p>
+            </div>
+
+            <div id="sceneOptions" class="grid gap-3">
+              <button type="button" data-scene="fashion" class="option-btn group rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-sky-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-sky-200">
+                <div class="flex items-start gap-3">
+                  <div class="mt-0.5 rounded-xl bg-sky-100 px-3 py-2 text-xl">👓</div>
+                  <div>
+                    <div class="font-bold text-slate-900">普段使い・オフィスでも浮かない程度</div>
+                    <div class="mt-1 text-sm text-slate-600">ファッション重視。自然で取り入れやすい印象。</div>
+                  </div>
+                </div>
+              </button>
+
+              <button type="button" data-scene="drive" class="option-btn group rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-sky-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-sky-200">
+                <div class="flex items-start gap-3">
+                  <div class="mt-0.5 rounded-xl bg-cyan-100 px-3 py-2 text-xl">🚗</div>
+                  <div>
+                    <div class="font-bold text-slate-900">日中の運転や、ちょっとした外出</div>
+                    <div class="mt-1 text-sm text-slate-600">まぶしさ対策と実用性のバランス重視。</div>
+                  </div>
+                </div>
+              </button>
+
+              <button type="button" data-scene="outdoor" class="option-btn group rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-sky-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-sky-200">
+                <div class="flex items-start gap-3">
+                  <div class="mt-0.5 rounded-xl bg-orange-100 px-3 py-2 text-xl">🏖️</div>
+                  <div>
+                    <div class="font-bold text-slate-900">海や山、日差しの強い屋外</div>
+                    <div class="mt-1 text-sm text-slate-600">本格的な遮光。強い日差しをしっかり抑えたい方向け。</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card soft-ring rounded-3xl p-5 sm:p-6 shadow-card">
+            <div class="mb-4">
+              <h2 class="text-lg font-extrabold text-slate-900 sm:text-xl">2. 試したいレンズ濃度</h2>
+              <p class="mt-1 text-sm text-slate-600">ボタンでもスライダーでも選べます。</p>
+            </div>
+
+            <div id="densityOptions" class="grid gap-3 sm:grid-cols-3">
+              <button type="button" data-density="15" class="option-btn rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-orange-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-orange-200">
+                <div class="text-sm font-extrabold text-slate-900">15%</div>
+                <div class="mt-1 text-xs leading-5 text-slate-600">ごく薄い・目元が明るく見える</div>
+              </button>
+
+              <button type="button" data-density="35" class="option-btn rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-orange-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-orange-200">
+                <div class="text-sm font-extrabold text-slate-900">35%</div>
+                <div class="mt-1 text-xs leading-5 text-slate-600">中程度・目が見えるくらいのサングラス</div>
+              </button>
+
+              <button type="button" data-density="50" class="option-btn rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left transition hover:border-orange-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-orange-200">
+                <div class="text-sm font-extrabold text-slate-900">50%以上</div>
+                <div class="mt-1 text-xs leading-5 text-slate-600">濃い・しっかり眩しさをカット</div>
+              </button>
+            </div>
+
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <label for="densityRange" class="text-sm font-semibold text-slate-700">クイック選択</label>
+                <span id="rangeValue" class="rounded-full bg-white px-3 py-1 text-sm font-bold text-slate-800 shadow-sm">未選択</span>
+              </div>
+              <input
+                id="densityRange"
+                type="range"
+                min="0"
+                max="2"
+                step="1"
+                value="0"
+                class="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-r from-sky-200 via-cyan-200 to-orange-200 accent-sky-500"
+                aria-label="レンズ濃度選択スライダー"
+              />
+              <div class="mt-2 grid grid-cols-3 text-xs text-slate-500">
+                <span>15%</span>
+                <span class="text-center">35%</span>
+                <span class="text-right">50%以上</span>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+              <span class="font-bold">重要:</span>
+              夜間運転の判定は
+              <span class="font-bold">「25%以上は夜間NG」</span>
+              の前提で表示しています。接客時は必ず最終的な店頭案内ルールに沿ってご説明ください。
+            </div>
+          </div>
+        </aside>
+
+        <section class="space-y-6">
+          <div id="emptyState" class="glass-card soft-ring rounded-3xl p-6 shadow-card">
+            <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <div class="rounded-3xl bg-gradient-to-br from-sky-100 to-orange-100 px-4 py-4 text-3xl">🌤️</div>
+              <div>
+                <h2 class="text-xl font-black text-slate-900">選択すると、すぐに提案カードが表示されます</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                  まずは
+                  <span class="font-semibold text-slate-800">利用シーン</span>
+                  と
+                  <span class="font-semibold text-slate-800">レンズ濃度</span>
+                  を選んでください。新人スタッフでも、
+                  お客様への説明ポイントが一目でわかるように設計しています。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="resultPanel" class="hidden space-y-6 fade-up">
+            <div class="grid gap-6 2xl:grid-cols-[1.2fr,0.8fr]">
+              <div class="glass-card soft-ring rounded-3xl p-5 sm:p-6 shadow-card">
+                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700">
+                      <span>視界シミュレーション</span>
+                      <span class="text-sky-400">•</span>
+                      <span id="simLabel">未選択</span>
+                    </div>
+                    <h3 class="mt-3 text-xl font-black text-slate-900">お客様に見せながら説明できるイメージ表示</h3>
+                  </div>
+                  <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                    <div class="text-xs text-slate-500">まぶしさ軽減イメージ</div>
+                    <div id="glareText" class="mt-1 text-lg font-black text-slate-900">-</div>
+                  </div>
+                </div>
+
+                <div class="overflow-hidden rounded-[28px] border border-white/70 bg-white/60 p-3 shadow-inner">
+                  <div id="sceneFrame" class="relative h-[260px] overflow-hidden rounded-[22px] bg-sky sm:h-[340px]">
+                    <div class="sun-glow"></div>
+
+                    <div class="cloud left-[10%] top-[18%] h-7 w-20"></div>
+                    <div class="cloud left-[32%] top-[13%] h-6 w-16 opacity-80"></div>
+                    <div class="cloud left-[68%] top-[24%] h-8 w-24 opacity-90"></div>
+
+                    <div id="sceneOffice" class="office-buildings">
+                      <span style="left: 4%; width: 18%; height: 52%;"></span>
+                      <span style="left: 20%; width: 14%; height: 66%;"></span>
+                      <span style="left: 34%; width: 17%; height: 50%;"></span>
+                      <span style="left: 50%; width: 12%; height: 72%;"></span>
+                      <span style="left: 62%; width: 16%; height: 58%;"></span>
+                      <span style="left: 79%; width: 14%; height: 64%;"></span>
+                    </div>
+
+                    <div id="sceneDrive" class="absolute inset-0 scene-road hidden"></div>
+                    <div id="sceneOutdoor" class="absolute inset-0 hidden">
+                      <div class="mountain-back"></div>
+                      <div class="mountain-front"></div>
+                    </div>
+
+                    <div id="sceneOverlay" class="scene-layer absolute inset-0"></div>
+
+                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/15 to-transparent p-4 sm:p-5">
+                      <div class="glass-card inline-flex max-w-full items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-slate-800 shadow-sm sm:text-sm">
+                        <span>👁️ 見え方メモ:</span>
+                        <span id="viewMemo">-</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <div class="text-sm font-bold text-slate-700">明るさの見え方</div>
+                    <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                      <div id="brightnessBar" class="meter-bar h-full rounded-full bg-sky-400" style="width:0%"></div>
+                    </div>
+                    <div id="brightnessText" class="mt-2 text-sm text-slate-600">-</div>
+                  </div>
+
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <div class="text-sm font-bold text-slate-700">遮光の実感</div>
+                    <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                      <div id="shadeBar" class="meter-bar h-full rounded-full bg-orange-400" style="width:0%"></div>
+                    </div>
+                    <div id="shadeText" class="mt-2 text-sm text-slate-600">-</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="glass-card soft-ring rounded-3xl p-5 sm:p-6 shadow-card">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <div class="text-sm font-bold text-slate-500">おすすめ度</div>
+                      <div id="recommendBadge" class="mt-2 inline-flex rounded-full px-3 py-1 text-sm font-black">-</div>
+                    </div>
+                    <div id="nightBadge" class="rounded-2xl px-4 py-3 text-right shadow-sm">-</div>
+                  </div>
+
+                  <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+                    <div class="text-sm font-bold text-slate-500">接客での結論</div>
+                    <p id="practicalSummary" class="mt-2 text-sm leading-7 text-slate-700">-</p>
+                  </div>
+                </div>
+
+                <div class="glass-card soft-ring rounded-3xl p-5 sm:p-6 shadow-card">
+                  <h3 class="text-lg font-black text-slate-900">プロの提案トークスクリプト</h3>
+                  <p class="mt-1 text-sm text-slate-500">そのまま口頭で使いやすい言い回しにしています。</p>
+
+                  <div class="mt-4 rounded-2xl bg-gradient-to-br from-white to-sky-50 p-4 sm:p-5">
+                    <p id="talkScript" class="text-sm leading-7 text-slate-700 sm:text-[15px]">-</p>
+                  </div>
+
+                  <div class="mt-4 grid gap-3">
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div class="text-xs font-bold tracking-wide text-slate-500">ひと押しフレーズ</div>
+                      <div id="closingLine" class="mt-1 text-sm font-semibold text-slate-800">-</div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div class="text-xs font-bold tracking-wide text-slate-500">追加で確認すると親切なこと</div>
+                      <div id="followupNote" class="mt-1 text-sm font-semibold text-slate-800">-</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card soft-ring rounded-3xl p-5 sm:p-6 shadow-card">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h3 class="text-lg font-black text-slate-900">新人スタッフ向け 即答メモ</h3>
+                  <p class="mt-1 text-sm text-slate-600">迷いやすいポイントを、最後にひと目で確認できます。</p>
+                </div>
+                <button id="resetBtn" type="button" class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-300">
+                  すべてリセット
+                </button>
+              </div>
+
+              <div class="mt-5 grid gap-4 md:grid-cols-3">
+                <div class="rounded-2xl bg-sky-50 p-4">
+                  <div class="text-xs font-extrabold tracking-wide text-sky-700">薄めが向く人</div>
+                  <p class="mt-2 text-sm leading-6 text-slate-700">まずは自然に取り入れたい方、オフィスでも使いやすさを重視する方。</p>
+                </div>
+                <div class="rounded-2xl bg-cyan-50 p-4">
+                  <div class="text-xs font-extrabold tracking-wide text-cyan-700">バランス型が向く人</div>
+                  <p class="mt-2 text-sm leading-6 text-slate-700">日中ドライブや街歩きで、見やすさと眩しさ対策を両立したい方。</p>
+                </div>
+                <div class="rounded-2xl bg-orange-50 p-4">
+                  <div class="text-xs font-extrabold tracking-wide text-orange-700">濃いめが向く人</div>
+                  <p class="mt-2 text-sm leading-6 text-slate-700">海・山・屋外レジャーなど、強い日差しからしっかり目を守りたい方。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const appState = {
+      scene: null,
+      density: null
+    };
+
+    const sceneData = {
+      fashion: {
+        label: "普段使い・オフィス向け",
+        icon: "👓",
+        glareBase: 30,
+        sceneNote: "室内外を行き来しても印象が強すぎず、自然に使いやすいシーンです。",
+        followup: "オフィスでの見え方、肌なじみ、普段の服装との相性も一緒に確認すると安心です。",
+        background: "linear-gradient(180deg, #93c5fd 0%, #dbeafe 32%, #fde68a 100%)",
+        overlayTint: "rgba(100, 116, 139, 0.18)"
+      },
+      drive: {
+        label: "日中の運転・外出向け",
+        icon: "🚗",
+        glareBase: 58,
+        sceneNote: "路面や反射光のまぶしさを抑えつつ、見やすさとのバランスが重要なシーンです。",
+        followup: "運転が日中中心か、トンネルや夕方まで使うことが多いかを確認すると提案しやすいです。",
+        background: "linear-gradient(180deg, #7dd3fc 0%, #e0f2fe 36%, #fef3c7 68%, #cbd5e1 100%)",
+        overlayTint: "rgba(71, 85, 105, 0.22)"
+      },
+      outdoor: {
+        label: "海・山・強い日差し向け",
+        icon: "🏖️",
+        glareBase: 78,
+        sceneNote: "直射日光の強い屋外では、しっかりした遮光感が安心感につながります。",
+        followup: "使用時間帯、レジャーかスポーツか、長時間の屋外利用かを聞けるとより的確です。",
+        background: "linear-gradient(180deg, #38bdf8 0%, #bae6fd 30%, #fde68a 55%, #86efac 100%)",
+        overlayTint: "rgba(51, 65, 85, 0.28)"
+      }
+    };
+
+    const densityData = {
+      15: {
+        label: "15%",
+        display: "15%（ごく薄い）",
+        darkness: 0.14,
+        brightness: 82,
+        shade: 28,
+        toneText: "ほんのり色づき、目元が明るく見えやすい濃さです。",
+        viewMemo: "自然な見え方。印象を変えすぎず、軽いまぶしさ対策向き。",
+        nightOK: true,
+        badgeText: "夜間運転適合",
+        badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        glareBonus: 10
+      },
+      35: {
+        label: "35%",
+        display: "35%（中程度）",
+        darkness: 0.32,
+        brightness: 58,
+        shade: 68,
+        toneText: "しっかりまぶしさを抑えつつ、目元がある程度見えるバランス型です。",
+        viewMemo: "眩しさを抑えやすく、日中の実用性と見た目の両立がしやすい。",
+        nightOK: false,
+        badgeText: "夜間運転不適合",
+        badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
+        glareBonus: 28
+      },
+      50: {
+        label: "50%以上",
+        display: "50%以上（濃い）",
+        darkness: 0.5,
+        brightness: 38,
+        shade: 88,
+        toneText: "かなりしっかり遮光するため、強い日差し対策を優先した濃さです。",
+        viewMemo: "強い遮光感。屋外レジャー向きだが、暗く感じやすさにも配慮が必要。",
+        nightOK: false,
+        badgeText: "夜間運転不適合",
+        badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
+        glareBonus: 40
+      }
+    };
+
+    const recommendationMap = {
+      fashion: {
+        15: {
+          level: "おすすめ",
+          levelClass: "bg-sky-100 text-sky-700",
+          summary: "普段使いとファッション性のバランスが良く、オフィスでも取り入れやすい組み合わせです。",
+          script: "普段使いメインでしたら、15%くらいの薄さが一番取り入れやすいです。ほんのり色が入るので雰囲気は変わりますが、目元が暗くなりすぎず、オフィスや普段のお出かけでも自然に使いやすいですよ。まずは『さりげなく楽しみたい』という方にぴったりです。",
+          close: "まず1本目なら、いちばん失敗しにくい濃さです。"
+        },
+        35: {
+          level: "用途次第でおすすめ",
+          levelClass: "bg-cyan-100 text-cyan-700",
+          summary: "見た目の印象はぐっと出ます。ファッション性は高いですが、室内では少し濃く感じる場面もあります。",
+          script: "35%になると、カラー感やサングラスらしさがしっかり出てきます。ファッションとしては映えやすいですが、室内やオフィス中心だと少し濃く感じる方もいらっしゃいます。外出が多い方や、少し印象を出したい方には良い選択です。ただし夜間運転には使えない濃さなので、その点だけ先にお伝えしています。",
+          close: "『自然さ重視』か『見た目の変化重視』かで決めると選びやすいです。"
+        },
+        50: {
+          level: "限定的におすすめ",
+          levelClass: "bg-amber-100 text-amber-700",
+          summary: "ファッション用途としてはかなり濃く、屋外中心なら成立しますが、日常使いには強めの印象です。",
+          script: "50%以上はかなりしっかりした濃さになるので、日常の普段使いというよりは、強い日差しの中やしっかり印象を出したい方向けです。屋外では快適ですが、室内では暗く感じやすいので、毎日ずっと掛けっぱなしにする使い方には向きが分かれます。夜間運転には使えませんので、掛け替え前提でご案内するのが安心です。",
+          close: "普段使い中心なら、もう少し薄めにすると使い回ししやすいです。"
+        }
+      },
+      drive: {
+        15: {
+          level: "軽め対策としておすすめ",
+          levelClass: "bg-sky-100 text-sky-700",
+          summary: "軽いまぶしさ対策には向きますが、日中運転用としては遮光感がやや控えめです。",
+          script: "15%は見え方が自然で使いやすいのですが、日中の運転でしっかりまぶしさを抑えたい場合には、少し物足りなく感じることがあります。『ほんの少しラクになれば十分』という方には合いますが、日差しが強い道ではもう一段濃い方が安心感は出やすいです。夜間運転は可能な濃さですので、掛け替えを減らしたい方には候補になります。",
+          close: "軽さを取るか、遮光感を取るかで選ぶのがポイントです。"
+        },
+        35: {
+          level: "おすすめ度MAX",
+          levelClass: "bg-orange-100 text-orange-700",
+          summary: "日中運転では特にバランスが良く、まぶしさ対策と視認性の両立がしやすい鉄板の組み合わせです。",
+          script: "日中のドライブなら35%が一番おすすめです。眩しさをしっかり抑えつつ、トンネルに入っても暗くなりすぎにくいので、安心感と実用性のバランスがとても良いです。ただ、夜間の運転には法律上使えない濃さになりますので、夜は必ずいつものクリアレンズに掛け替えてくださいね。",
+          close: "『昼の運転専用で快適に』というご案内がしやすい定番です。"
+        },
+        50: {
+          level: "強い日差しならおすすめ",
+          levelClass: "bg-cyan-100 text-cyan-700",
+          summary: "眩しさ対策は強力ですが、場所によっては暗さを感じやすく、日中運転でも好みが分かれます。",
+          script: "50%以上は日差しカット力がしっかりあるので、強い西日や反射の強い場面ではとてもラクです。ただ、そのぶん暗く感じやすいので、トンネルや日陰が多い環境では人によって好みが分かれます。日中専用として割り切るなら候補になりますが、夜間運転には使えないため、掛け替え前提でのご案内が必要です。",
+          close: "『しっかり遮光したいか』を先に確認するとミスマッチを防げます。"
+        }
+      },
+      outdoor: {
+        15: {
+          level: "やや控えめ",
+          levelClass: "bg-amber-100 text-amber-700",
+          summary: "強い日差しの屋外では遮光感が足りず、見た目重視の軽め提案になりやすい組み合わせです。",
+          script: "海や山のように日差しが強い場所では、15%だと見た目は自然でも、まぶしさ対策としては少し軽く感じることがあります。短時間の外出や雰囲気重視なら選択肢になりますが、しっかり遮光したい方には、もう少し濃い方が満足度は高いです。夜間運転が可能な点はメリットですが、屋外レジャー専用としては控えめな濃さです。",
+          close: "レジャー重視なら、遮光感をもう一段上げる提案がしやすいです。"
+        },
+        35: {
+          level: "バランス型でおすすめ",
+          levelClass: "bg-cyan-100 text-cyan-700",
+          summary: "屋外でも十分実用的で、濃すぎるのは不安という方に提案しやすいバランス型です。",
+          script: "屋外でしっかり使いたいけれど、濃すぎるのは少し不安という方には35%がちょうどいいです。眩しさをかなり抑えながら、見え方とのバランスも取りやすいので、最初の1本としても選ばれやすい濃さです。ただし夜間運転には使えませんので、そこだけは事前にしっかりお伝えします。",
+          close: "『濃すぎず、でも頼れる』と説明すると伝わりやすいです。"
+        },
+        50: {
+          level: "屋外用途で最有力",
+          levelClass: "bg-orange-100 text-orange-700",
+          summary: "強い日差しを想定した屋外利用では最も頼もしい組み合わせです。遮光優先なら非常に提案しやすいです。",
+          script: "海や山など、日差しの強い場所でしっかり楽に過ごしたいなら、50%以上の濃さはかなり頼もしいです。眩しさを強くカットできるので、長時間の屋外でも目が疲れにくく感じやすいです。そのかわり暗さもしっかり出るため、普段使いとの兼用よりは、屋外用として割り切るイメージがおすすめです。夜間運転には使えませんので、用途を分けてご案内すると安心です。",
+          close: "レジャー専用の快適さを重視する方には、満足度の高い提案です。"
+        }
+      }
+    };
+
+    const sceneButtons = [...document.querySelectorAll("[data-scene]")];
+    const densityButtons = [...document.querySelectorAll("[data-density]")];
+    const densityRange = document.getElementById("densityRange");
+
+    const resultPanel = document.getElementById("resultPanel");
+    const emptyState = document.getElementById("emptyState");
+
+    const elements = {
+      statusScene: document.getElementById("statusScene"),
+      statusDensity: document.getElementById("statusDensity"),
+      statusNight: document.getElementById("statusNight"),
+      rangeValue: document.getElementById("rangeValue"),
+      simLabel: document.getElementById("simLabel"),
+      glareText: document.getElementById("glareText"),
+      viewMemo: document.getElementById("viewMemo"),
+      brightnessBar: document.getElementById("brightnessBar"),
+      shadeBar: document.getElementById("shadeBar"),
+      brightnessText: document.getElementById("brightnessText"),
+      shadeText: document.getElementById("shadeText"),
+      recommendBadge: document.getElementById("recommendBadge"),
+      nightBadge: document.getElementById("nightBadge"),
+      practicalSummary: document.getElementById("practicalSummary"),
+      talkScript: document.getElementById("talkScript"),
+      closingLine: document.getElementById("closingLine"),
+      followupNote: document.getElementById("followupNote"),
+      sceneFrame: document.getElementById("sceneFrame"),
+      sceneOverlay: document.getElementById("sceneOverlay"),
+      sceneOffice: document.getElementById("sceneOffice"),
+      sceneDrive: document.getElementById("sceneDrive"),
+      sceneOutdoor: document.getElementById("sceneOutdoor")
+    };
+
+    function setActiveButton(buttons, selectedValue, keyName) {
+      buttons.forEach(btn => {
+        const active = btn.dataset[keyName] === String(selectedValue);
+        btn.dataset.active = active ? "true" : "false";
+        btn.classList.toggle("border-sky-400", active && keyName === "scene");
+        btn.classList.toggle("border-orange-400", active && keyName === "density");
+        btn.classList.toggle("bg-sky-50", active && keyName === "scene");
+        btn.classList.toggle("bg-orange-50", active && keyName === "density");
+        btn.classList.toggle("shadow-md", active);
+      });
+    }
+
+    function syncRangeFromDensity(density) {
+      const map = { 15: 0, 35: 1, 50: 2 };
+      if (Object.hasOwn(map, density)) {
+        densityRange.value = map[density];
+      }
+      elements.rangeValue.textContent = densityData[density]?.display || "未選択";
+    }
+
+    function updateSceneVisual(sceneKey) {
+      elements.sceneOffice.classList.add("hidden");
+      elements.sceneDrive.classList.add("hidden");
+      elements.sceneOutdoor.classList.add("hidden");
+
+      if (sceneKey === "fashion") elements.sceneOffice.classList.remove("hidden");
+      if (sceneKey === "drive") elements.sceneDrive.classList.remove("hidden");
+      if (sceneKey === "outdoor") elements.sceneOutdoor.classList.remove("hidden");
+
+      elements.sceneFrame.style.background = sceneData[sceneKey]?.background || "linear-gradient(180deg, #93c5fd 0%, #e0f2fe 38%, #fde68a 100%)";
+    }
+
+    function computeGlare(sceneKey, densityKey) {
+      const scene = sceneData[sceneKey];
+      const density = densityData[densityKey];
+      if (!scene || !density) return 0;
+      return Math.min(95, scene.glareBase + density.glareBonus);
+    }
+
+    function renderResult() {
+      const { scene, density } = appState;
+
+      elements.statusScene.textContent = sceneData[scene]?.label || "未選択";
+      elements.statusDensity.textContent = densityData[density]?.label || "未選択";
+
+      if (!scene || !density) {
+        resultPanel.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        elements.statusNight.textContent = "判定待ち";
+        elements.statusNight.className = "mt-1 text-sm font-bold text-amber-600";
+        return;
+      }
+
+      const sceneInfo = sceneData[scene];
+      const densityInfo = densityData[density];
+      const recommendation = recommendationMap[scene]?.[density];
+
+      if (!sceneInfo || !densityInfo || !recommendation) {
+        resultPanel.classList.add("hidden");
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      emptyState.classList.add("hidden");
+      resultPanel.classList.remove("hidden");
+
+      const glareScore = computeGlare(scene, density);
+      const overlayOpacity = Math.min(0.65, densityInfo.darkness + (scene === "outdoor" ? 0.06 : 0));
+
+      elements.simLabel.textContent = `${sceneInfo.label} × ${densityInfo.display}`;
+      elements.glareText.textContent = `${glareScore}% 軽減イメージ`;
+      elements.viewMemo.textContent = densityInfo.viewMemo;
+
+      elements.sceneOverlay.style.background = `
+        linear-gradient(180deg, ${sceneInfo.overlayTint} 0%, rgba(15, 23, 42, ${overlayOpacity}) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(15,23,42,${overlayOpacity}))
+      `;
+      elements.sceneOverlay.style.opacity = String(0.95);
+      elements.sceneOverlay.style.backdropFilter = `saturate(${Math.max(0.7, 1 - densityInfo.darkness * 0.45)}) brightness(${1 - densityInfo.darkness * 0.15})`;
+
+      updateSceneVisual(scene);
+
+      elements.brightnessBar.style.width = `${densityInfo.brightness}%`;
+      elements.shadeBar.style.width = `${densityInfo.shade}%`;
+
+      elements.brightnessText.textContent = `視界の明るさ: ${densityInfo.brightness}%程度のイメージ。${densityInfo.toneText}`;
+      elements.shadeText.textContent = `遮光感: ${densityInfo.shade}%程度。${sceneInfo.sceneNote}`;
+
+      elements.recommendBadge.textContent = recommendation.level;
+      elements.recommendBadge.className = `mt-2 inline-flex rounded-full px-3 py-1 text-sm font-black ${recommendation.levelClass}`;
+
+      elements.nightBadge.className = `rounded-2xl px-4 py-3 text-right shadow-sm ${densityInfo.badgeClass}`;
+      elements.nightBadge.innerHTML = `
+        <div class="text-xs font-bold tracking-wide">夜間運転</div>
+        <div class="mt-1 text-base font-black">${densityInfo.nightOK ? "◯ 適合" : "⚠ 不適合"}</div>
+        <div class="mt-1 text-xs">${densityInfo.nightOK ? "25%未満の想定" : "25%以上は夜間NG"}</div>
+      `;
+
+      elements.statusNight.textContent = densityInfo.nightOK ? "適合" : "不適合";
+      elements.statusNight.className = densityInfo.nightOK
+        ? "mt-1 text-sm font-bold text-emerald-600"
+        : "mt-1 text-sm font-bold text-rose-600";
+
+      const ruleLine = densityInfo.nightOK
+        ? "夜間運転も想定しやすい濃さです。"
+        : "夜間の運転には使えない濃さのため、クリアレンズへの掛け替え案内が必須です。";
+
+      elements.practicalSummary.textContent = `${recommendation.summary} ${ruleLine}`;
+
+      elements.talkScript.textContent = recommendation.script;
+      elements.closingLine.textContent = recommendation.close;
+      elements.followupNote.textContent = sceneInfo.followup;
+    }
+
+    sceneButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        appState.scene = button.dataset.scene || null;
+        setActiveButton(sceneButtons, appState.scene, "scene");
+        renderResult();
+      });
+    });
+
+    densityButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        const value = Number(button.dataset.density);
+        appState.density = Number.isFinite(value) ? value : null;
+        setActiveButton(densityButtons, appState.density, "density");
+        syncRangeFromDensity(appState.density);
+        renderResult();
+      });
+    });
+
+    densityRange.addEventListener("input", (event) => {
+      const index = Number(event.target.value);
+      const map = [15, 35, 50];
+      const value = map[index] ?? 15;
+      appState.density = value;
+      setActiveButton(densityButtons, appState.density, "density");
+      syncRangeFromDensity(appState.density);
+      renderResult();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      appState.scene = null;
+      appState.density = null;
+      setActiveButton(sceneButtons, null, "scene");
+      setActiveButton(densityButtons, null, "density");
+      densityRange.value = 0;
+      elements.rangeValue.textContent = "未選択";
+      renderResult();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    syncRangeFromDensity(null);
+    renderResult();
+  </script>
+</body>
+</html>
