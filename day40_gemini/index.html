@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Muscle Fitness | サポートレンズチェッカー</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        primary: '#10b981', // Emerald/Neon Green
+                        accent: '#06b6d4',  // Cyan/Blue
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスクロールバー（非表示にしつつスクロール可能に） */
+        ::-webkit-scrollbar { display: none; }
+        html { scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* ラジオボタン・チェックボックスのデフォルトを隠す */
+        input[type="radio"], input[type="checkbox"] { display: none; }
+        
+        /* 選択時のスタイリング */
+        input[type="radio"]:checked + label {
+            background-color: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+        input[type="radio"]:checked + label .icon-container {
+            color: #10b981;
+        }
+
+        input[type="checkbox"]:checked + label {
+            background-color: rgba(6, 182, 212, 0.15);
+            border-color: #06b6d4;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        input[type="checkbox"]:checked + label .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* 診断ボタンのネオンエフェクト */
+        .btn-neon {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4), inset 0 0 10px rgba(16, 185, 129, 0.2);
+            transition: all 0.3s ease;
+        }
+        .btn-neon:hover {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), inset 0 0 15px rgba(16, 185, 129, 0.4);
+            transform: translateY(-2px);
+        }
+        .btn-neon:active {
+            transform: translateY(1px);
+        }
+
+        /* レンズ図解のシェイプ */
+        .lens-shape {
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        }
+    </style>
+</head>
+<body class="bg-dark text-slate-200 min-h-screen font-sans antialiased selection:bg-primary selection:text-white">
+
+    <!-- モバイルファーストのメインコンテナ -->
+    <main class="max-w-md mx-auto min-h-screen flex flex-col relative pb-20">
+        
+        <!-- ヘッダー -->
+        <header class="pt-8 pb-6 px-6 sticky top-0 bg-dark/90 backdrop-blur-md z-10 border-b border-slate-800">
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <i data-lucide="activity" class="text-primary w-6 h-6"></i>
+                <h1 class="font-display text-xl tracking-wider font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">EYE FITNESS</h1>
+            </div>
+            <p class="text-center text-xs text-slate-400 font-medium tracking-wide">ピント調節筋 コリ度スキャン</p>
+        </header>
+
+        <div class="flex-1 px-6 py-8 space-y-10" id="input-section">
+            
+            <!-- セクション1: 使用時間 -->
+            <section id="time-section" class="transition-all duration-300">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-primary font-display font-bold text-sm border border-slate-700">1</div>
+                    <h2 class="text-base font-bold text-white">1日のスマホ・PC使用時間</h2>
+                </div>
+                <p class="text-xs text-slate-400 mb-4 ml-10">デジタルデバイスを見ている合計時間を選択してください。</p>
+                
+                <div class="space-y-3 ml-10">
+                    <!-- 選択肢 1 -->
+                    <div class="relative">
+                        <input type="radio" name="usageTime" id="time-low" value="low">
+                        <label for="time-low" class="flex items-center p-4 rounded-xl border border-slate-700 bg-card cursor-pointer transition-all duration-200 hover:border-slate-500">
+                            <div class="icon-container text-slate-500 mr-4 transition-colors">
+                                <i data-lucide="smartphone" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-sm text-white">3時間未満</div>
+                                <div class="text-xs text-slate-400 mt-1">軽度な使用</div>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- 選択肢 2 -->
+                    <div class="relative">
+                        <input type="radio" name="usageTime" id="time-mid" value="mid">
+                        <label for="time-mid" class="flex items-center p-4 rounded-xl border border-slate-700 bg-card cursor-pointer transition-all duration-200 hover:border-slate-500">
+                            <div class="icon-container text-slate-500 mr-4 transition-colors">
+                                <i data-lucide="laptop" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-sm text-white">3〜6時間</div>
+                                <div class="text-xs text-slate-400 mt-1">一般的なデスクワーク</div>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- 選択肢 3 -->
+                    <div class="relative">
+                        <input type="radio" name="usageTime" id="time-high" value="high">
+                        <label for="time-high" class="flex items-center p-4 rounded-xl border border-slate-700 bg-card cursor-pointer transition-all duration-200 hover:border-slate-500">
+                            <div class="icon-container text-slate-500 mr-4 transition-colors">
+                                <i data-lucide="monitor" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-bold text-sm text-white">6時間以上</div>
+                                <div class="text-xs text-slate-400 mt-1 text-primary">ヘビーユーザー・要注意</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <!-- エラーメッセージ用 -->
+                <p id="time-error" class="text-red-400 text-xs mt-2 ml-10 hidden flex items-center gap-1">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                    選択必須項目です
+                </p>
+            </section>
+
+            <!-- セクション2: SOSサイン -->
+            <section>
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-accent font-display font-bold text-sm border border-slate-700">2</div>
+                    <h2 class="text-base font-bold text-white">夕方以降の目のSOSサイン</h2>
+                </div>
+                <p class="text-xs text-slate-400 mb-4 ml-10">当てはまるものを全て選択してください。</p>
+
+                <div class="space-y-3 ml-10">
+                    <!-- 症状 1 -->
+                    <div class="relative">
+                        <input type="checkbox" id="symp-focus" class="symptom-cb" value="focus">
+                        <label for="symp-focus" class="flex items-start p-4 rounded-xl border border-slate-700 bg-card cursor-pointer transition-all duration-200 hover:border-slate-500 group">
+                            <div class="mt-0.5 w-5 h-5 rounded border-2 border-slate-600 mr-3 flex items-center justify-center relative bg-dark group-hover:border-accent transition-colors">
+                                <i data-lucide="check" class="check-icon w-3.5 h-3.5 text-accent opacity-0 transform scale-50 transition-all duration-200 absolute"></i>
+                            </div>
+                            <div class="flex-1 text-sm font-medium leading-relaxed">
+                                スマホから遠くを見た時、<span class="text-accent font-bold">ピントが合うまで数秒かかる</span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- 症状 2 -->
+                    <div class="relative">
+                        <input type="checkbox" id="symp-pain" class="symptom-cb" value="pain">
+                        <label for="symp-pain" class="flex items-start p-4 rounded-xl border border-slate-700 bg-card cursor-pointer transition-all duration-200 hover:border-slate-500 group">
+                            <div class="mt-0.5 w-5 h-5 rounded border-2 border-slate-600 mr-3 flex items-center justify-center relative bg-dark group-hover:border-accent transition-colors">
+                                <i data-lucide="check" class="check-icon w-3.5 h-3.5 text-accent opacity-0 transform scale-50 transition-all duration-200 absolute"></i>
+                            </div>
+                            <div class="flex-1 text-sm font-medium leading-relaxed">
+                                目の奥が重い、または<span class="text-accent font-bold">頭痛や肩こり</span>がする
+                            </div>
+                        </label>
+                    </div>
+                    <!-- 症状 3 -->
+                    <div class="relative">
+                        <input type="checkbox" id="symp-blur" class="symptom-cb" value="blur">
+                        <label for="symp-blur" class="flex items-start p-4 rounded-xl border border-slate-700 bg-card cursor-pointer transition-all duration-200 hover:border-slate-500 group">
+                            <div class="mt-0.5 w-5 h-5 rounded border-2 border-slate-600 mr-3 flex items-center justify-center relative bg-dark group-hover:border-accent transition-colors">
+                                <i data-lucide="check" class="check-icon w-3.5 h-3.5 text-accent opacity-0 transform scale-50 transition-all duration-200 absolute"></i>
+                            </div>
+                            <div class="flex-1 text-sm font-medium leading-relaxed">
+                                夕方になると、細かい文字が<span class="text-accent font-bold">かすんで見える</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 診断ボタン -->
+            <div class="pt-6 pb-8">
+                <button id="scan-btn" class="w-full btn-neon bg-gradient-to-r from-emerald-500 to-primary text-white font-bold text-lg py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="scan-line" class="w-6 h-6"></i>
+                    目の筋肉疲労度をスキャン
+                </button>
+            </div>
+        </div>
+
+        <!-- 診断中ローディング画面 (初期非表示) -->
+        <div id="loading-screen" class="hidden absolute inset-0 bg-dark/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+            <div class="relative w-24 h-24 flex items-center justify-center">
+                <div class="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+                <i data-lucide="eye" class="w-8 h-8 text-primary animate-pulse"></i>
+            </div>
+            <p class="mt-6 text-primary font-display tracking-widest text-sm animate-pulse">SCANNING MUSCLE TENSION...</p>
+        </div>
+
+        <!-- 結果画面 (初期非表示) -->
+        <div id="result-section" class="hidden absolute inset-0 bg-dark z-30 flex-col overflow-y-auto pb-24 animate-fade-in-up">
+            
+            <header class="pt-6 pb-4 px-6 flex justify-between items-center bg-dark sticky top-0 z-40">
+                <h2 class="font-display font-bold text-xl text-white">SCAN RESULT</h2>
+                <button id="reset-btn" class="w-10 h-10 rounded-full bg-card flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </header>
+
+            <div class="px-6 space-y-8 mt-2">
+                
+                <!-- スコアゲージ -->
+                <div class="bg-card rounded-3xl p-6 border border-slate-800 relative overflow-hidden shadow-2xl">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
+                    
+                    <p class="text-center text-xs text-slate-400 font-medium mb-2">毛様体筋（ピント調節筋）のコリ度</p>
+                    <div class="flex items-end justify-center gap-1 mb-4">
+                        <span id="score-display" class="font-display text-6xl font-black text-white leading-none">0</span>
+                        <span class="text-primary font-bold text-xl mb-1">%</span>
+                    </div>
+
+                    <!-- プログレスバー -->
+                    <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden mt-6 shadow-inner">
+                        <div id="score-bar" class="h-full bg-gradient-to-r from-green-400 to-red-500 w-0 transition-all duration-1000 ease-out"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-500 mt-2 font-bold px-1">
+                        <span>リラックス</span>
+                        <span>緊張・筋肉痛</span>
+                    </div>
+                </div>
+
+                <!-- 提案トークスクリプト (老眼という言葉を使わない) -->
+                <div class="relative bg-slate-800/50 rounded-2xl p-5 border-l-4 border-primary">
+                    <i data-lucide="message-circle" class="absolute -top-3 -left-3 w-8 h-8 text-primary fill-dark stroke-[1.5px] bg-dark rounded-full"></i>
+                    <p class="text-xs text-primary font-bold mb-2">スタッフからのアドバイス</p>
+                    <div id="talk-script" class="text-sm leading-relaxed text-slate-200">
+                        <!-- JSで動的に挿入 -->
+                    </div>
+                </div>
+
+                <!-- サポートレンズの図解 -->
+                <div class="bg-card rounded-3xl p-6 border border-slate-800 mt-8">
+                    <h3 class="text-center text-sm font-bold text-white mb-6 flex items-center justify-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-accent"></i>
+                        サポートレンズの構造
+                    </h3>
+                    
+                    <div class="flex items-center justify-center gap-6">
+                        <!-- レンズグラフィック -->
+                        <div class="lens-shape relative w-32 h-44 border-[3px] border-slate-600 bg-slate-800/50 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                            <!-- 遠く用ゾーン -->
+                            <div class="absolute top-0 w-full h-1/2 flex flex-col items-center justify-center pt-2">
+                                <span class="text-[10px] text-slate-400 font-bold mb-1">通常度数</span>
+                                <i data-lucide="eye" class="w-5 h-5 text-slate-500 mb-1"></i>
+                                <span class="text-xs text-slate-300 font-medium">遠くが<br>クリア</span>
+                            </div>
+                            
+                            <!-- 境界線 -->
+                            <div class="absolute top-1/2 left-[10%] w-[80%] border-t border-dashed border-slate-500"></div>
+                            
+                            <!-- リラックスゾーン -->
+                            <div class="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-accent/40 via-accent/10 to-transparent flex flex-col items-center justify-end pb-4 rounded-b-[40%]">
+                                <span class="text-[10px] text-accent font-bold mb-1 bg-dark/50 px-2 py-0.5 rounded-full border border-accent/30">微弱度数</span>
+                                <i data-lucide="smartphone" class="w-5 h-5 text-accent mb-1 animate-pulse-slow"></i>
+                                <span class="text-xs text-accent font-bold">筋肉を休ませる<br>リラックスゾーン</span>
+                            </div>
+                        </div>
+
+                        <!-- 解説テキスト -->
+                        <div class="flex-1 space-y-4">
+                            <div class="flex items-start gap-2">
+                                <div class="w-2 h-2 rounded-full bg-slate-400 mt-1.5 shrink-0"></div>
+                                <p class="text-[11px] text-slate-300">上半分は運転や会議など、遠くをクッキリ見るための度数です。</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <div class="w-2 h-2 rounded-full bg-accent mt-1.5 shadow-[0_0_8px_rgba(6,182,212,0.8)] shrink-0"></div>
+                                <p class="text-[11px] text-slate-300">下半分はスマホやPCを見る目線に合わせて、<span class="text-accent font-bold">度数を優しく調整</span>。ピント調節筋の負担をスッと抜いてくれます。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="text-center text-xs text-slate-400 mt-6 bg-dark/50 py-2 rounded-lg">
+                        まるで目のための<span class="text-white font-bold">「マッサージチェア」</span>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Lucide Icons初期化
+        lucide.createIcons();
+
+        // DOM要素
+        const scanBtn = document.getElementById('scan-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const timeInputs = document.getElementsByName('usageTime');
+        const timeSection = document.getElementById('time-section');
+        const timeError = document.getElementById('time-error');
+        const loadingScreen = document.getElementById('loading-screen');
+        const resultSection = document.getElementById('result-section');
+        const inputSection = document.getElementById('input-section');
+        const scoreDisplay = document.getElementById('score-display');
+        const scoreBar = document.getElementById('score-bar');
+        const talkScript = document.getElementById('talk-script');
+
+        // エラーリセットリスナー（入力変更時にエラーを消す）
+        timeInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                timeSection.classList.remove('animate-shake');
+                timeError.classList.add('hidden');
+            });
+        });
+
+        // 診断実行
+        scanBtn.addEventListener('click', () => {
+            // バリデーション：時間が選択されているか
+            let selectedTime = null;
+            for (const input of timeInputs) {
+                if (input.checked) selectedTime = input.value;
+            }
+
+            if (!selectedTime) {
+                // エラー表示とシェイクアニメーション
+                timeError.classList.remove('hidden');
+                timeSection.classList.remove('animate-shake'); // リセット
+                void timeSection.offsetWidth; // リフローを強制
+                timeSection.classList.add('animate-shake');
+                
+                // エラー箇所にスクロール
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            // チェックされた症状を取得
+            const symptoms = Array.from(document.querySelectorAll('.symptom-cb:checked')).map(cb => cb.value);
+
+            // スコア計算
+            let baseScore = 0;
+            if (selectedTime === 'low') baseScore = 20;
+            else if (selectedTime === 'mid') baseScore = 55;
+            else if (selectedTime === 'high') baseScore = 75;
+
+            // 症状1つにつき +10% (最大値制御)
+            let finalScore = baseScore + (symptoms.length * 10);
+            if (finalScore > 98) finalScore = 98; // 100より少しリアルな数字に
+
+            // ローディング画面表示
+            loadingScreen.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // 背景スクロール防止
+
+            // 1.5秒後に結果表示
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+                
+                // トークスクリプトの生成
+                generateTalkScript(selectedTime, symptoms, finalScore);
+
+                // スコアのアニメーション (0からカウントアップ)
+                animateScore(finalScore);
+                
+            }, 1500);
+        });
+
+        // リセット機能
+        resetBtn.addEventListener('click', () => {
+            resultSection.classList.add('hidden');
+            document.body.style.overflow = '';
+            
+            // スコアバーをリセット
+            scoreBar.style.width = '0%';
+            scoreDisplay.textContent = '0';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // スコアカウントアップアニメーション
+        function animateScore(targetScore) {
+            let current = 0;
+            const duration = 1000; // 1秒
+            const interval = 20;
+            const step = targetScore / (duration / interval);
+
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= targetScore) {
+                    current = targetScore;
+                    clearInterval(timer);
+                }
+                scoreDisplay.textContent = Math.floor(current);
+            }, interval);
+
+            // プログレスバーも伸ばす（CSSトランジションを利用）
+            setTimeout(() => {
+                scoreBar.style.width = targetScore + '%';
+            }, 50);
+        }
+
+        // トークスクリプト生成ロジック
+        function generateTalkScript(time, symptoms, score) {
+            let html = '';
+
+            if (score >= 75) {
+                // 重度
+                html = `
+                    診断の結果、目のピントを合わせる筋肉がずっと緊張しっぱなしで<span class="text-white font-bold bg-red-500/20 px-1 rounded">『筋肉痛（コリ）』</span>を起こしている状態です！<br><br>
+                    老眼とは違い、スマホ世代特有の疲れ目ですね。この『サポートレンズ』は、レンズの下半分だけ度数を少し弱めて作られていて、スマホを見る時に目の筋肉を<span class="text-accent font-bold">フワッと休ませてくれる</span>んです。<br><br>
+                    目のための『マッサージチェア』のようなレンズなので、今の時代、お仕事用として一番人気ですよ！
+                `;
+            } else if (score >= 50) {
+                // 中等度
+                html = `
+                    目のピント調節筋が、かなり<span class="text-white font-bold bg-orange-500/20 px-1 rounded">お疲れのサイン</span>を出していますね。筋肉が一日中緊張して『筋肉痛』を起こしかけています。<br><br>
+                    この『サポートレンズ』は、スマホを見る目線（レンズの下半分）に合わせて度数が優しくなっており、目の負担をスッと抜いてくれます。<br><br>
+                    お仕事のパフォーマンスを落とさないための<span class="text-primary font-bold">『アイケアギア』</span>として、お仕事用に切り替える方が増えていますよ。
+                `;
+            } else {
+                // 軽度・予防
+                html = `
+                    今はまだ深刻なコリではありませんが、毎日のスマホ時間は確実に<span class="text-white font-bold">目の筋肉に負担</span>をかけています。<br><br>
+                    この『サポートレンズ』は、下の部分が少しだけ度数を弱めてあり、今のうちから目の筋肉をフワッと休ませてくれる<span class="text-primary font-bold">予防アイテム</span>として最適です。<br><br>
+                    ジムで軽いストレッチをする感覚で、目の健康のために早めに取り入れてみませんか？
+                `;
+            }
+
+            // 特定の症状がある場合の追加カスタマイズ
+            if (symptoms.includes('blur') && score >= 50) {
+                html = html.replace('筋肉が一日中緊張して『筋肉痛』を起こしかけています。', '夕方にかすむのは、筋肉が一日中緊張して『筋肉痛』を起こしている証拠です！');
+            }
+
+            talkScript.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
