@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隠れ眼精疲労チェック＆適正レンズ寿命ジャッジ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* カスタムチェックボックス/ラジオボタンの隠蔽 */
+        input[type="radio"], input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* ゲージのアニメーション用 */
+        .gauge-fill {
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* エラー時のシェイクアニメーション */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* スムーズな画面遷移用 */
+        .fade-transition {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .fade-out {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+        }
+        .fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        },
+                        accent: {
+                            500: '#10b981', // Green
+                            600: '#059669',
+                        },
+                        danger: {
+                            500: '#ef4444',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="antialiased min-h-screen flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="w-full max-w-3xl mb-8 text-center">
+        <h1 class="text-2xl sm:text-3xl font-bold text-brand-900 tracking-tight flex items-center justify-center gap-2">
+            <svg class="w-8 h-8 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            レンズ寿命・眼精疲労チェッカー
+        </h1>
+        <p class="text-sm sm:text-base text-slate-500 mt-2">お客様の目の状態とレンズの適正な買い替え時期を診断します。</p>
+    </header>
+
+    <div class="w-full max-w-3xl relative min-h-[600px]">
+        
+        <!-- ==================== 入力フォームセクション ==================== -->
+        <main id="form-section" class="w-full bg-white shadow-xl rounded-2xl overflow-hidden fade-transition">
+            <div class="p-6 sm:p-8">
+                
+                <!-- エラーメッセージ表示エリア -->
+                <div id="error-message" class="hidden mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-md text-sm font-medium flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    <span>必須項目を選択してください。</span>
+                </div>
+
+                <!-- Q1. 使用年数 -->
+                <section class="mb-10">
+                    <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <span class="bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-sm">Q1</span>
+                        現在のメガネの使用年数は？ <span class="text-red-500 text-sm font-normal ml-1">*必須</span>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="years-group">
+                        <!-- 1-2年 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="radio" name="usage-years" value="1-2" class="peer">
+                            <div class="h-full p-4 border-2 border-slate-200 rounded-xl bg-slate-50 transition-all duration-200 ease-in-out
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-md
+                                        group-hover:border-brand-300 flex flex-col items-center justify-center text-center">
+                                <span class="text-xl font-bold text-slate-700 peer-checked:text-brand-700 block mb-1">1〜2年未満</span>
+                                <span class="text-xs text-slate-500 peer-checked:text-brand-600">まだ新しい方</span>
+                            </div>
+                            <div class="absolute top-3 right-3 text-brand-500 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </label>
+                        
+                        <!-- 3-4年 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="radio" name="usage-years" value="3-4" class="peer">
+                            <div class="h-full p-4 border-2 border-slate-200 rounded-xl bg-slate-50 transition-all duration-200 ease-in-out
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-md
+                                        group-hover:border-brand-300 flex flex-col items-center justify-center text-center">
+                                <span class="text-xl font-bold text-slate-700 peer-checked:text-brand-700 block mb-1">3〜4年</span>
+                                <span class="text-xs text-slate-500 peer-checked:text-brand-600">劣化サインが出始める</span>
+                            </div>
+                            <div class="absolute top-3 right-3 text-brand-500 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </label>
+
+                        <!-- 5年以上 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="radio" name="usage-years" value="5+" class="peer">
+                            <div class="h-full p-4 border-2 border-slate-200 rounded-xl bg-slate-50 transition-all duration-200 ease-in-out
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-md
+                                        group-hover:border-brand-300 flex flex-col items-center justify-center text-center">
+                                <span class="text-xl font-bold text-slate-700 peer-checked:text-brand-700 block mb-1">5年以上</span>
+                                <span class="text-xs text-slate-500 peer-checked:text-brand-600">寿命・度数変化の可能性大</span>
+                            </div>
+                            <div class="absolute top-3 right-3 text-brand-500 opacity-0 peer-checked:opacity-100 transition-opacity">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <hr class="border-slate-100 mb-8">
+
+                <!-- Q2. 症状チェック -->
+                <section class="mb-10">
+                    <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <span class="bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-sm">Q2</span>
+                        最近感じる体の不調（サイン）はありますか？ <span class="text-slate-400 text-sm font-normal ml-1">※複数選択可</span>
+                    </h2>
+
+                    <div class="flex flex-col gap-3">
+                        <!-- Symptom 1 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="checkbox" name="symptoms" value="dry" class="peer">
+                            <div class="p-4 border-2 border-slate-200 rounded-xl bg-white transition-all duration-200
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-sm
+                                        group-hover:bg-slate-50 flex items-center gap-4">
+                                <div class="w-6 h-6 rounded border-2 border-slate-300 peer-checked:border-brand-500 peer-checked:bg-brand-500 flex items-center justify-center transition-colors">
+                                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <span class="text-slate-700 font-medium sm:text-lg select-none">夕方になると目がしょぼしょぼする、乾く</span>
+                            </div>
+                        </label>
+
+                        <!-- Symptom 2 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="checkbox" name="symptoms" value="focus" class="peer">
+                            <div class="p-4 border-2 border-slate-200 rounded-xl bg-white transition-all duration-200
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-sm
+                                        group-hover:bg-slate-50 flex items-center gap-4">
+                                <div class="w-6 h-6 rounded border-2 border-slate-300 peer-checked:border-brand-500 peer-checked:bg-brand-500 flex items-center justify-center transition-colors">
+                                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <span class="text-slate-700 font-medium sm:text-lg select-none">PCやスマホを見た後、遠くのピントが合うまで時間がかかる</span>
+                            </div>
+                        </label>
+
+                        <!-- Symptom 3 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="checkbox" name="symptoms" value="stiff" class="peer">
+                            <div class="p-4 border-2 border-slate-200 rounded-xl bg-white transition-all duration-200
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-sm
+                                        group-hover:bg-slate-50 flex items-center gap-4">
+                                <div class="w-6 h-6 rounded border-2 border-slate-300 peer-checked:border-brand-500 peer-checked:bg-brand-500 flex items-center justify-center transition-colors">
+                                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <span class="text-slate-700 font-medium sm:text-lg select-none">首や肩のコリがひどい、頭痛がする</span>
+                            </div>
+                        </label>
+
+                        <!-- Symptom 4 -->
+                        <label class="relative cursor-pointer group">
+                            <input type="checkbox" name="symptoms" value="glare" class="peer">
+                            <div class="p-4 border-2 border-slate-200 rounded-xl bg-white transition-all duration-200
+                                        peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:shadow-sm
+                                        group-hover:bg-slate-50 flex items-center gap-4">
+                                <div class="w-6 h-6 rounded border-2 border-slate-300 peer-checked:border-brand-500 peer-checked:bg-brand-500 flex items-center justify-center transition-colors">
+                                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <span class="text-slate-700 font-medium sm:text-lg select-none">夜の運転で、対向車のライトが眩しく感じる、にじむ</span>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Action Button -->
+                <div class="mt-8 text-center">
+                    <button id="btn-diagnose" class="w-full sm:w-auto px-12 py-4 bg-brand-600 hover:bg-brand-700 text-white text-lg font-bold rounded-full shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-brand-300">
+                        診断する
+                        <svg class="w-5 h-5 inline-block ml-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+                
+            </div>
+        </main>
+
+        <!-- ==================== 結果表示セクション ==================== -->
+        <main id="result-section" class="w-full bg-white shadow-2xl rounded-2xl overflow-hidden fade-out hidden">
+            <!-- 結果ヘッダー -->
+            <div class="bg-slate-800 text-white p-6 sm:p-8 text-center relative">
+                <button id="btn-back" class="absolute top-4 left-4 text-slate-300 hover:text-white transition-colors flex items-center gap-1 text-sm font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    やり直す
+                </button>
+                <h2 class="text-xl sm:text-2xl font-bold mt-4 sm:mt-0">診断結果</h2>
+                <p class="text-slate-300 mt-1 text-sm">お客様の現在のレンズ状態と目への負担度</p>
+            </div>
+
+            <div class="p-6 sm:p-8">
+                
+                <!-- 疲労度ゲージ -->
+                <div class="mb-8 bg-slate-50 rounded-2xl p-6 border border-slate-100 text-center relative overflow-hidden">
+                    <h3 class="text-lg font-bold text-slate-700 mb-4">隠れ眼精疲労度</h3>
+                    <div class="flex items-end justify-center gap-1 mb-2">
+                        <span id="score-number" class="text-6xl font-black text-brand-600 tabular-nums leading-none">0</span>
+                        <span class="text-2xl font-bold text-slate-400 mb-1">%</span>
+                    </div>
+                    
+                    <div class="w-full h-4 bg-slate-200 rounded-full overflow-hidden mt-4 relative">
+                        <div id="score-bar" class="h-full gauge-fill bg-brand-500 rounded-full w-0"></div>
+                    </div>
+                    
+                    <div class="flex justify-between text-xs text-slate-400 mt-2 font-medium px-1">
+                        <span>安心</span>
+                        <span>要注意</span>
+                        <span>危険</span>
+                    </div>
+                </div>
+
+                <!-- 悪影響の解説 -->
+                <div class="mb-8">
+                    <h3 class="flex items-center gap-2 text-lg font-bold text-slate-800 border-b-2 border-brand-100 pb-2 mb-4">
+                        <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        なぜ不調が起きているのか？
+                    </h3>
+                    <p id="logic-explanation" class="text-slate-600 leading-relaxed sm:text-lg bg-slate-50 p-4 rounded-lg border border-slate-100">
+                        <!-- JSで動的に挿入 -->
+                    </p>
+                </div>
+
+                <!-- スタッフ用 提案トーク (ハイライト) -->
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 sm:p-6 shadow-sm relative">
+                    <div class="absolute -top-3 left-6 bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                        プロの提案トーク
+                    </div>
+                    <h3 class="text-amber-800 font-bold mb-3 flex items-center gap-2 mt-2">
+                        お客様へのお声がけ例
+                    </h3>
+                    <div class="flex gap-4">
+                        <div class="hidden sm:block text-amber-300">
+                            <svg class="w-8 h-8 transform rotate-180" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+                        </div>
+                        <p id="sales-talk" class="text-amber-900 font-medium leading-relaxed sm:text-lg flex-1">
+                            <!-- JSで動的に挿入 -->
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                     <button class="w-full sm:w-auto px-8 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg transition-colors focus:outline-none focus:ring-4 focus:ring-slate-300" onclick="alert('視力測定予約システムへ遷移します。')">
+                        本日の視力測定をご案内する
+                    </button>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const formSection = document.getElementById('form-section');
+            const resultSection = document.getElementById('result-section');
+            const btnDiagnose = document.getElementById('btn-diagnose');
+            const btnBack = document.getElementById('btn-back');
+            const errorMessage = document.getElementById('error-message');
+            const yearsGroup = document.getElementById('years-group');
+
+            // 結果表示用要素
+            const scoreNumber = document.getElementById('score-number');
+            const scoreBar = document.getElementById('score-bar');
+            const logicExplanation = document.getElementById('logic-explanation');
+            const salesTalk = document.getElementById('sales-talk');
+
+            // 診断ロジックとコンテンツ
+            const logicData = {
+                yearsScore: { '1-2': 15, '3-4': 40, '5+': 70 },
+                symptomScore: 15, // 1症状あたりの追加スコア
+                
+                generateContent: (years, symptomsCount, symptomsList) => {
+                    let logicText = '';
+                    let talkText = '';
+                    let colorClass = 'bg-brand-500'; // デフォルトの色
+                    let textColorClass = 'text-brand-600';
+
+                    const hasStiff = symptomsList.includes('stiff');
+                    const hasDry = symptomsList.includes('dry');
+                    
+                    // --- ロジックの構築 ---
+                    if (years === '5+') {
+                        logicText = `プラスチックレンズは一般的に3年程度で経年劣化（細かな傷、コートの剥がれ、黄ばみ等）が進行します。5年以上の使用は、レンズの透明度が低下し、光が乱反射している状態です。<br>それに加え、現在<strong>${symptomsCount}つの不調</strong>が現れています。脳が「見えにくい」状態を無理に補正しようと眼筋を酷使しており、それが全身の疲労に繋がっていると考えられます。`;
+                        colorClass = 'bg-danger-500';
+                        textColorClass = 'text-danger-600';
+
+                        if (hasStiff) {
+                            talkText = `今のメガネ、すごく大切に使っていただいているんですね！ただ、プラスチックレンズは3年を過ぎると見えない細かな傷やコート剥がれで光が乱反射し、脳が無理にピントを合わせようとして激しい肩こりや疲れを引き起こします。「まだ見える」状態でも、目には相当な負担がかかっているサインが出ていますので、本日の視力測定と新しいレンズへの交換を強くおすすめします！`;
+                        } else {
+                            talkText = `長年大切に使っていただきありがとうございます。実はレンズは3年を過ぎるとコートが剥がれ始め、気づかないうちに目に負担をかけています。今の不調は「レンズの寿命」を知らせるサインです。視力が変わっていなくても、レンズを新しくするだけで驚くほど目がラクになりますよ。まずは今の視力とレンズの状態を確認させてください！`;
+                        }
+                    } else if (years === '3-4') {
+                        logicText = `レンズのコーティング劣化が始まり、見え方の質が落ちてくる時期です。<br>さらに<strong>${symptomsCount}つの不調</strong>を感じておられます。度数が合わなくなってきているか、レンズの傷による光の乱反射が原因で、無意識にピント調節筋に負担がかかっています。`;
+                        colorClass = symptomsCount >= 2 ? 'bg-amber-500' : 'bg-brand-500';
+                        textColorClass = symptomsCount >= 2 ? 'text-amber-600' : 'text-brand-600';
+
+                        talkText = `ちょうどレンズの劣化サインが出始める時期ですね。${hasDry ? '夕方の乾きや疲れ' : '今の不調'}は、見え方のピントがズレてきているか、レンズの細かな傷が原因で目に負担がかかっている証拠です。早めにレンズをリセットすることで、毎日の疲れ具合が全然違ってきます。一度、詳しい見え方のチェックをしてみませんか？`;
+                    } else {
+                        logicText = `レンズ自体はまだ新しい状態ですが、<strong>${symptomsCount}つの不調</strong>が出ています。<br>スマホやPCの長時間使用による「ピント調節筋」の疲労、または現在の度数が生活環境（近くを見る作業が多い等）に合っていない可能性があります。`;
+                        colorClass = symptomsCount >= 3 ? 'bg-amber-500' : 'bg-accent-500';
+                        textColorClass = symptomsCount >= 3 ? 'text-amber-600' : 'text-accent-600';
+
+                        talkText = `メガネはまだ新しいですが、目にかなりお疲れが溜まっているようですね。現代はスマホやPCで近くを見る時間が長いので、今の度数が「ライフスタイルに合っていない」可能性があります。疲れ目専用のレンズや、今の生活に最適な度数バランスをご提案できるので、ぜひ一度測定させてください。`;
+                    }
+
+                    // 症状ゼロの場合のフォールバック
+                    if (symptomsCount === 0) {
+                        logicText = years === '5+' 
+                            ? `自覚症状は少ないようですが、5年経過したレンズは確実に劣化しています。見え方の質は落ちているため、潜在的な目の負担が懸念されます。` 
+                            : `現在、顕著な不調は出ていないようですが、定期的なチェックが目の健康維持に繋がります。`;
+                        colorClass = years === '5+' ? 'bg-amber-500' : 'bg-accent-500';
+                        textColorClass = years === '5+' ? 'text-amber-600' : 'text-accent-600';
+                        talkText = `今は大きな不調を感じていないとのことですが、${years === '5+' ? 'レンズ自体の寿命が来ているため、' : ''}視力はご自身が気づかないうちに変化します。健康診断と同じように、今の目の状態を一度チェックしておくと安心ですよ。`;
+                    }
+
+                    return { logicText, talkText, colorClass, textColorClass };
+                }
+            };
+
+            // 数字のカウントアップアニメーション
+            const animateValue = (obj, start, end, duration) => {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    // イージング (easeOutQuart)
+                    const easeProgress = 1 - Math.pow(1 - progress, 4);
+                    obj.innerHTML = Math.floor(easeProgress * (end - start) + start);
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            };
+
+            // 診断実行
+            btnDiagnose.addEventListener('click', () => {
+                // 値の取得
+                const selectedYear = document.querySelector('input[name="usage-years"]:checked');
+                const selectedSymptoms = document.querySelectorAll('input[name="symptoms"]:checked');
+
+                // バリデーション (年数必須)
+                if (!selectedYear) {
+                    errorMessage.classList.remove('hidden');
+                    yearsGroup.classList.add('animate-shake');
+                    setTimeout(() => yearsGroup.classList.remove('animate-shake'), 500);
+                    
+                    // スクロールしてエラーを見せる
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                errorMessage.classList.add('hidden');
+
+                // スコア計算
+                const yearsVal = selectedYear.value;
+                const symptomsList = Array.from(selectedSymptoms).map(cb => cb.value);
+                const symptomsCount = symptomsList.length;
+                
+                let totalScore = logicData.yearsScore[yearsVal] + (symptomsCount * logicData.symptomScore);
+                if (totalScore > 100) totalScore = 100;
+
+                // コンテンツ生成
+                const content = logicData.generateContent(yearsVal, symptomsCount, symptomsList);
+                
+                // DOMへのセット
+                logicExplanation.innerHTML = content.logicText;
+                salesTalk.innerHTML = content.talkText;
+
+                // バーの色とテキスト色をリセットして再設定
+                scoreBar.className = `h-full gauge-fill rounded-full w-0 ${content.colorClass}`;
+                scoreNumber.className = `text-6xl font-black tabular-nums leading-none ${content.textColorClass}`;
+
+                // 画面切り替え (フェードアニメーション)
+                formSection.classList.replace('fade-in', 'fade-out');
+                
+                setTimeout(() => {
+                    formSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    // 少し遅延させてからフェードインクラスを付与
+                    requestAnimationFrame(() => {
+                        resultSection.classList.add('fade-in');
+                        resultSection.classList.remove('fade-out');
+                        
+                        // ゲージのアニメーション開始
+                        setTimeout(() => {
+                            scoreBar.style.width = `${totalScore}%`;
+                            animateValue(scoreNumber, 0, totalScore, 1500);
+                        }, 300); // 画面遷移後に開始
+                    });
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 500); // CSSのtransition durationと合わせる
+            });
+
+            // やり直し
+            btnBack.addEventListener('click', () => {
+                resultSection.classList.replace('fade-in', 'fade-out');
+                
+                // ゲージをリセット
+                scoreBar.style.width = '0%';
+                scoreNumber.innerHTML = '0';
+
+                setTimeout(() => {
+                    resultSection.classList.add('hidden');
+                    formSection.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        formSection.classList.add('fade-in');
+                        formSection.classList.remove('fade-out');
+                    });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 500);
+            });
+            
+            // 初期状態のセット
+            formSection.classList.add('fade-in');
+        });
+    </script>
+</body>
+</html>
