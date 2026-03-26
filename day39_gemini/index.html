@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レンズ耐久力・防具シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        
+        /* プレミアムコートのシールドエフェクト */
+        @keyframes shield-deploy {
+            0% { transform: scale(1.1); opacity: 0; border-color: transparent; }
+            50% { transform: scale(1.02); opacity: 1; border-color: rgba(6, 182, 212, 1); box-shadow: 0 0 30px rgba(6, 182, 212, 0.8), inset 0 0 30px rgba(6, 182, 212, 0.5); }
+            100% { transform: scale(1); opacity: 1; border-color: rgba(6, 182, 212, 0.8); box-shadow: 0 0 15px rgba(6, 182, 212, 0.5), inset 0 0 15px rgba(6, 182, 212, 0.2); }
+        }
+        @keyframes shield-pulse {
+            0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.5), inset 0 0 15px rgba(6, 182, 212, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(6, 182, 212, 0.8), inset 0 0 20px rgba(6, 182, 212, 0.4); }
+            100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.5), inset 0 0 15px rgba(6, 182, 212, 0.2); }
+        }
+        .shield-active {
+            animation: shield-deploy 0.5s ease-out forwards, shield-pulse 2s infinite 0.5s;
+        }
+
+        /* 画面が揺れるダメージエフェクト */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px) rotate(-1deg); }
+            40%, 80% { transform: translateX(5px) rotate(1deg); }
+        }
+        .shake-effect { animation: shake 0.4s ease-in-out; }
+
+        /* レンズ越しの風景設定 */
+        .lens-bg {
+            background-image: url('https://images.unsplash.com/photo-1506744626753-eda818c6b2cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        /* スクロールバー非表示（UIの洗練） */
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen py-6 px-4 md:px-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-2">
+                レンズ防具シミュレーター
+            </h1>
+            <p class="text-slate-400 text-sm md:text-base">お客様の日常から、2年後の「視界」と「コスパ」を予測します。</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Panel: Selections (RPG風の選択UI) -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- STEP 1: ダメージ環境 -->
+                <section class="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded">STEP 1</span>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path></svg>
+                            日常のダメージ環境
+                        </h2>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <button onclick="selectDamage('small')" id="btn-dmg-small" class="relative overflow-hidden group text-left p-4 rounded-xl border-2 border-slate-600 hover:border-emerald-400 bg-slate-700/50 transition-all">
+                            <div class="flex justify-between items-center relative z-10">
+                                <div>
+                                    <div class="font-bold text-emerald-300">専用クロスで水洗い</div>
+                                    <div class="text-xs text-slate-400 mt-1">ダメージ小：丁寧なケア</div>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-400 flex-shrink-0" id="radio-dmg-small"></div>
+                            </div>
+                        </button>
+                        <button onclick="selectDamage('medium')" id="btn-dmg-medium" class="relative overflow-hidden group text-left p-4 rounded-xl border-2 border-slate-600 hover:border-amber-400 bg-slate-700/50 transition-all">
+                            <div class="flex justify-between items-center relative z-10">
+                                <div>
+                                    <div class="font-bold text-amber-300">ティッシュ・服で乾拭き</div>
+                                    <div class="text-xs text-slate-400 mt-1">ダメージ中：繊維による摩擦</div>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-400 flex-shrink-0" id="radio-dmg-medium"></div>
+                            </div>
+                        </button>
+                        <button onclick="selectDamage('large')" id="btn-dmg-large" class="relative overflow-hidden group text-left p-4 rounded-xl border-2 border-slate-600 hover:border-rose-400 bg-slate-700/50 transition-all">
+                            <div class="flex justify-between items-center relative z-10">
+                                <div>
+                                    <div class="font-bold text-rose-300">屋外作業・カバン直入れ</div>
+                                    <div class="text-xs text-slate-400 mt-1">ダメージ大：砂埃・硬い物と接触</div>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-400 flex-shrink-0" id="radio-dmg-large"></div>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- STEP 2: コーティング -->
+                <section class="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="bg-cyan-500 text-white text-xs font-bold px-2 py-1 rounded">STEP 2</span>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            装備（コーティング）
+                        </h2>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <button onclick="selectCoating('standard')" id="btn-coat-standard" class="text-left p-4 rounded-xl border-2 border-slate-600 hover:border-slate-400 bg-slate-700/50 transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold text-slate-200">標準コート</div>
+                                    <div class="text-xs text-slate-400 mt-1">防御力：低（初期装備）</div>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-400 flex-shrink-0" id="radio-coat-standard"></div>
+                            </div>
+                        </button>
+                        <button onclick="selectCoating('premium')" id="btn-coat-premium" class="relative overflow-hidden text-left p-4 rounded-xl border-2 border-slate-600 hover:border-cyan-400 bg-gradient-to-br from-slate-700/50 to-cyan-900/30 transition-all">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold text-cyan-300 text-lg">超硬質キズ防止コート</div>
+                                    <div class="text-xs text-cyan-100/70 mt-1">防御力：特大（無敵の盾）</div>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 border-slate-400 flex-shrink-0" id="radio-coat-premium"></div>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Panel: Simulation Result -->
+            <div class="lg:col-span-7">
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl h-full flex flex-col overflow-hidden relative">
+                    
+                    <!-- プレースホルダー（未選択時） -->
+                    <div id="placeholder-overlay" class="absolute inset-0 z-50 bg-slate-800/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center transition-opacity duration-500">
+                        <div class="w-20 h-20 mb-4 rounded-full bg-slate-700 flex items-center justify-center animate-bounce">
+                            <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">左のメニューを選択してください</h3>
+                        <p class="text-slate-400 text-sm">ダメージと装備を組み合わせることで、<br>2年後のレンズ状態をシミュレーションします。</p>
+                    </div>
+
+                    <!-- シミュレーション：レンズ視界表現エリア -->
+                    <div id="lens-container" class="relative w-full h-64 md:h-80 bg-black flex items-center justify-center overflow-hidden border-b border-slate-700 p-4">
+                        
+                        <!-- 背景画像（遠景） -->
+                        <div class="absolute inset-0 lens-bg opacity-40 blur-sm"></div>
+
+                        <!-- レンズ本体 -->
+                        <div class="relative w-56 h-56 md:w-72 md:h-72 rounded-full border-[12px] border-slate-700 shadow-2xl overflow-hidden bg-white/10 z-10 transition-transform duration-300" id="lens-frame">
+                            <!-- レンズ越しのクリアな風景 -->
+                            <div class="absolute inset-0 lens-bg"></div>
+                            
+                            <!-- 白濁レイヤー（ダメージ表現） -->
+                            <div id="haze-layer" class="absolute inset-0 bg-white transition-opacity duration-700" style="opacity: 0;"></div>
+                            
+                            <!-- キズレイヤー（SVGで動的描画） -->
+                            <svg id="scratch-layer" class="absolute inset-0 w-full h-full pointer-events-none opacity-80 transition-opacity duration-700" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+                            
+                            <!-- シールドエフェクトレイヤー -->
+                            <div id="shield-layer" class="absolute inset-0 rounded-full border-[6px] border-transparent transition-all duration-300"></div>
+                        </div>
+
+                        <!-- 状態バッジ -->
+                        <div id="status-badge" class="absolute top-4 right-4 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white opacity-0 transition-opacity duration-300 border border-slate-600 z-20">
+                            2年後予測
+                        </div>
+                    </div>
+
+                    <!-- 解説・トークスクリプトエリア -->
+                    <div class="p-6 flex-grow flex flex-col justify-between bg-gradient-to-b from-slate-800 to-slate-900">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded">トーク例</span>
+                                <h3 id="result-title" class="text-xl font-bold text-white">---</h3>
+                            </div>
+                            <div class="bg-slate-700/50 p-4 rounded-lg border-l-4 border-blue-500 mb-6">
+                                <p id="result-script" class="text-slate-200 text-sm md:text-base leading-relaxed font-medium">
+                                    左のメニューから環境とコーティングを選択してください。
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- コスパ比較カード -->
+                        <div class="bg-slate-800 border border-slate-600 rounded-xl p-4 shadow-lg">
+                            <h4 class="text-sm text-slate-400 font-bold mb-3 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                ロジカル・コスパ診断
+                            </h4>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div id="cost-period" class="text-xs text-slate-400">想定買い替えサイクル</div>
+                                    <div id="cost-value" class="text-lg font-black text-white mt-1">---</div>
+                                </div>
+                                <div id="cost-badge" class="px-3 py-1.5 rounded bg-slate-700 text-slate-300 text-xs font-bold text-center">
+                                    評価<br><span class="text-sm">---</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 状態管理
+        const state = {
+            damage: null,
+            coating: null
+        };
+
+        // マスターデータ：シナリオ定義
+        const scenarios = {
+            'small-standard': {
+                title: 'キズ極小。綺麗な視界をキープ',
+                script: '「素晴らしいお手入れですね！専用クロスで洗って頂いているなら、標準コートでも十分長持ちします。現状の使い方が一番素晴らしいです。」',
+                period: '買い替え目安：約3年',
+                costEval: '現状維持でOK',
+                costClass: 'bg-emerald-900/50 text-emerald-400 border border-emerald-700',
+                haze: 0.05, scratches: 5, scratchDepth: 0.5
+            },
+            'small-premium': {
+                title: '完全無傷。最強の布陣',
+                script: '「完璧なお手入れに超硬質コートが加われば、まさに『鬼に金棒』です。3〜4年後も新品同様のクリアな視界が続き、最高に快適ですよ！」',
+                period: '買い替え目安：4年以上',
+                costEval: '究極コスパ！',
+                costClass: 'bg-cyan-900/50 text-cyan-400 border border-cyan-700',
+                haze: 0, scratches: 0, scratchDepth: 0
+            },
+            'medium-standard': {
+                title: '細かいキズによる白濁りが発生',
+                script: '「実は、ティッシュの繊維は意外と硬いんです。乾拭きを続けると、2年後にはこのように細かいキズが無数につき、視界が白く濁ってしまいます…」',
+                period: '買い替え目安：1〜1.5年',
+                costEval: '結果的に割高',
+                costClass: 'bg-amber-900/50 text-amber-400 border border-amber-700',
+                haze: 0.4, scratches: 40, scratchDepth: 1
+            },
+            'medium-premium': {
+                title: 'ティッシュの摩擦をガッチリ防御',
+                script: '「この『超硬質コート』をつければ、ティッシュで拭いてもキズをガッチリ跳ね返してくれます！今の習慣のままでも、レンズが圧倒的に長持ちして一番お得です！」',
+                period: '買い替え目安：約3年',
+                costEval: '年間コスト半額！',
+                costClass: 'bg-cyan-900/50 text-cyan-400 border border-cyan-700',
+                haze: 0.05, scratches: 8, scratchDepth: 0.5
+            },
+            'large-standard': {
+                title: '深いキズと曇りで視界不良',
+                script: '「過酷な環境では、砂埃などの摩擦で半年〜1年で画面がキズだらけになります。見えにくくなって頻繁に買い替えることになり、逆に高くついてしまいます。」',
+                period: '買い替え目安：半年〜1年',
+                costEval: '非常にもったいない',
+                costClass: 'bg-rose-900/50 text-rose-400 border border-rose-700',
+                haze: 0.7, scratches: 80, scratchDepth: 2.5
+            },
+            'large-premium': {
+                title: '過酷なダメージを最小限に抑制',
+                script: '「過酷な環境だからこそ、このコートが必須装備です！ダメージを最小限に抑え、ハードな使い方でも買い替え頻度を劇的に減らすことができますよ。」',
+                period: '買い替え目安：約2年',
+                costEval: '最強の防具投資',
+                costClass: 'bg-blue-900/50 text-blue-400 border border-blue-700',
+                haze: 0.2, scratches: 20, scratchDepth: 1
+            }
+        };
+
+        // ダメージ選択処理
+        function selectDamage(level) {
+            state.damage = level;
+            updateUI('dmg', level, ['small', 'medium', 'large'], {
+                'small': 'border-emerald-400 bg-emerald-900/20',
+                'medium': 'border-amber-400 bg-amber-900/20',
+                'large': 'border-rose-400 bg-rose-900/20'
+            });
+            checkAndRender();
+        }
+
+        // コーティング選択処理
+        function selectCoating(level) {
+            state.coating = level;
+            updateUI('coat', level, ['standard', 'premium'], {
+                'standard': 'border-slate-300 bg-slate-700',
+                'premium': 'border-cyan-400 bg-cyan-900/40 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+            });
+            checkAndRender();
+        }
+
+        // ボタンの見た目更新ヘルパー
+        function updateUI(prefix, selected, allOptions, activeClasses) {
+            allOptions.forEach(opt => {
+                const btn = document.getElementById(`btn-${prefix}-${opt}`);
+                const radio = document.getElementById(`radio-${prefix}-${opt}`);
+                
+                // リセット
+                btn.className = btn.className.replace(/border-(emerald|amber|rose|slate|cyan)-[0-9]+|bg-(emerald|amber|rose|slate|cyan)-[0-9]+\/[0-9]+|shadow-\[.*\]/g, '');
+                btn.classList.add('border-slate-600', 'bg-slate-700/50');
+                radio.innerHTML = '';
+                radio.className = 'w-4 h-4 rounded-full border-2 border-slate-400 flex-shrink-0 flex items-center justify-center';
+
+                // 選択状態の適用
+                if (opt === selected) {
+                    btn.classList.remove('border-slate-600', 'bg-slate-700/50');
+                    const classes = activeClasses[opt].split(' ');
+                    btn.classList.add(...classes);
+                    
+                    radio.classList.remove('border-slate-400');
+                    // 色合わせ
+                    let dotColor = 'bg-white';
+                    if(opt==='small') radio.classList.add('border-emerald-400');
+                    else if(opt==='medium') radio.classList.add('border-amber-400');
+                    else if(opt==='large') radio.classList.add('border-rose-400');
+                    else if(opt==='standard') radio.classList.add('border-slate-300');
+                    else if(opt==='premium') { radio.classList.add('border-cyan-400'); dotColor = 'bg-cyan-400'; }
+                    
+                    radio.innerHTML = `<div class="w-2 h-2 rounded-full ${dotColor}"></div>`;
+                }
+            });
+        }
+
+        // 判定と描画処理
+        function checkAndRender() {
+            if (state.damage && state.coating) {
+                // プレースホルダーを非表示
+                document.getElementById('placeholder-overlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('placeholder-overlay').style.pointerEvents = 'none';
+                }, 500);
+
+                const scenarioKey = `${state.damage}-${state.coating}`;
+                const data = scenarios[scenarioKey];
+
+                // テキスト更新
+                document.getElementById('result-title').textContent = data.title;
+                document.getElementById('result-script').textContent = data.script;
+                document.getElementById('cost-period').textContent = data.period;
+                
+                const costBadge = document.getElementById('cost-badge');
+                costBadge.className = `px-3 py-1.5 rounded text-xs font-bold text-center ${data.costClass}`;
+                costBadge.innerHTML = `評価<br><span class="text-sm">${data.costEval}</span>`;
+                document.getElementById('status-badge').style.opacity = '1';
+
+                // エフェクト更新
+                applyLensEffects(data.haze, data.scratches, data.scratchDepth);
+
+                // プレミアムコート時のシールド演出
+                const shieldLayer = document.getElementById('shield-layer');
+                if (state.coating === 'premium') {
+                    shieldLayer.classList.add('shield-active');
+                } else {
+                    shieldLayer.classList.remove('shield-active');
+                    // ダメージを受けた時の画面揺れ演出
+                    if(state.damage !== 'small') {
+                        const frame = document.getElementById('lens-frame');
+                        frame.classList.remove('shake-effect');
+                        void frame.offsetWidth; // reflow
+                        frame.classList.add('shake-effect');
+                    }
+                }
+            }
+        }
+
+        // レンズのキズと白濁を描画する関数
+        function applyLensEffects(hazeLevel, scratchCount, maxDepth) {
+            // 白濁（曇り）
+            document.getElementById('haze-layer').style.opacity = hazeLevel;
+
+            // キズ（SVGのline要素をランダム生成）
+            const svg = document.getElementById('scratch-layer');
+            svg.innerHTML = ''; // クリア
+
+            for (let i = 0; i < scratchCount; i++) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                
+                // ランダムな始点と終点
+                const x1 = Math.random() * 100;
+                const y1 = Math.random() * 100;
+                const length = Math.random() * 20 + 5; // 5~25% の長さ
+                const angle = Math.random() * Math.PI * 2;
+                
+                const x2 = x1 + Math.cos(angle) * length;
+                const y2 = y1 + Math.sin(angle) * length;
+
+                // ランダムな太さと透明度（ダメージレベルに依存）
+                const strokeWidth = (Math.random() * maxDepth + 0.1).toFixed(1);
+                const opacity = (Math.random() * 0.5 + 0.3).toFixed(2); // 0.3 ~ 0.8
+
+                line.setAttribute("x1", x1);
+                line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("stroke", "white"); // キズは白っぽく光る
+                line.setAttribute("stroke-width", strokeWidth);
+                line.setAttribute("opacity", opacity);
+                
+                // ランダムな曲線っぽく見せるための軽いフィルター効果の代わり
+                line.setAttribute("stroke-linecap", "round");
+
+                svg.appendChild(line);
+            }
+        }
+    </script>
+</body>
+</html>
