@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>眼鏡屋向け レンズ耐久力（コーティング）防具シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg1:#07111f;
+      --bg2:#0f172a;
+      --card:#0f172acc;
+      --line:#7dd3fc;
+      --accent:#38bdf8;
+      --gold:#fbbf24;
+      --danger:#fb7185;
+      --ok:#34d399;
+      --mist: rgba(255,255,255,.08);
+      --lensGlass1: rgba(170, 225, 255, .18);
+      --lensGlass2: rgba(255, 255, 255, .06);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      background:
+        radial-gradient(circle at top, rgba(56,189,248,.15), transparent 28%),
+        radial-gradient(circle at 90% 10%, rgba(251,191,36,.14), transparent 22%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+
+    .glass-card {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: linear-gradient(180deg, rgba(15,23,42,.88), rgba(15,23,42,.72));
+      border: 1px solid rgba(148,163,184,.18);
+      box-shadow: 0 10px 35px rgba(0,0,0,.25);
+    }
+
+    .choice-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .choice-btn:hover { transform: translateY(-2px); }
+    .choice-btn.active-damage {
+      border-color: rgba(251,191,36,.95);
+      box-shadow: 0 0 0 1px rgba(251,191,36,.25), 0 8px 28px rgba(251,191,36,.15);
+      background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(15,23,42,.55));
+    }
+    .choice-btn.active-coating {
+      border-color: rgba(56,189,248,.95);
+      box-shadow: 0 0 0 1px rgba(56,189,248,.28), 0 10px 30px rgba(56,189,248,.16);
+      background: linear-gradient(180deg, rgba(14,165,233,.18), rgba(15,23,42,.55));
+    }
+    .choice-btn::after{
+      content:"";
+      position:absolute;
+      inset:-120% auto auto -20%;
+      width:60%;
+      height:280%;
+      transform: rotate(20deg);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent);
+      pointer-events:none;
+    }
+    .choice-btn:hover::after{
+      animation: shine .9s ease;
+    }
+
+    @keyframes shine {
+      from { transform: translateX(-120%) rotate(20deg); }
+      to { transform: translateX(280%) rotate(20deg); }
+    }
+
+    .status-pill {
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(15,23,42,.65);
+    }
+
+    .lens-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      min-height: 250px;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 35% 35%, rgba(255,255,255,.18), transparent 18%),
+        radial-gradient(circle at 65% 30%, rgba(255,255,255,.14), transparent 16%),
+        linear-gradient(180deg, rgba(2,6,23,.9), rgba(15,23,42,.92));
+      border: 1px solid rgba(148,163,184,.16);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 18px 45px rgba(0,0,0,.28);
+    }
+
+    .arena-grid {
+      position:absolute;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black 55%, transparent 95%);
+      opacity: .7;
+      pointer-events: none;
+    }
+
+    .glasses {
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:2%;
+      padding: 5%;
+    }
+
+    .lens {
+      position: relative;
+      width: 38%;
+      height: 62%;
+      border-radius: 50%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 35% 28%, rgba(255,255,255,.26), transparent 22%),
+        linear-gradient(180deg, var(--lensGlass1), var(--lensGlass2));
+      border: 3px solid rgba(203,213,225,.85);
+      box-shadow:
+        inset 0 0 24px rgba(125,211,252,.12),
+        inset 0 -12px 18px rgba(2,6,23,.28),
+        0 0 0 1px rgba(255,255,255,.08);
+    }
+
+    .lens::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(110deg, transparent 0 25%, rgba(255,255,255,.12) 34%, transparent 42%),
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.14), transparent 24%);
+      mix-blend-mode: screen;
+      pointer-events:none;
+    }
+
+    .bridge {
+      width: 8%;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(226,232,240,.95), rgba(148,163,184,.9));
+      box-shadow: 0 0 10px rgba(255,255,255,.08);
+      align-self: center;
+      margin-top: -2%;
+    }
+
+    .scratch-layer, .fog-layer, .shield-layer, .impact-layer {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .scratch {
+      position:absolute;
+      height: 1px;
+      transform-origin:left center;
+      border-radius:999px;
+      opacity:.55;
+      filter: blur(.2px);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+    }
+
+    .deep-scratch {
+      height: 2px;
+      opacity:.75;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), rgba(255,255,255,.45), transparent);
+      box-shadow: 0 0 6px rgba(255,255,255,.16);
+    }
+
+    .fog-layer {
+      background:
+        radial-gradient(circle at 40% 50%, rgba(255,255,255,.06), transparent 38%),
+        radial-gradient(circle at 70% 50%, rgba(255,255,255,.08), transparent 40%);
+      mix-blend-mode: screen;
+    }
+
+    .shield-layer {
+      opacity: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(56,189,248,.16), transparent 58%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.1), transparent 22%);
+    }
+
+    .shield-ring {
+      position:absolute;
+      inset:auto;
+      width: 68%;
+      height: 68%;
+      left: 16%;
+      top: 16%;
+      border-radius: 999px;
+      border: 1px solid rgba(125,211,252,.42);
+      box-shadow:
+        0 0 20px rgba(56,189,248,.20),
+        inset 0 0 16px rgba(255,255,255,.06);
+      animation: pulse 2.2s infinite ease-in-out;
+    }
+
+    .shield-hex {
+      position:absolute;
+      inset:0;
+      background-image:
+        linear-gradient(30deg, rgba(125,211,252,.08) 12%, transparent 12.5%, transparent 87%, rgba(125,211,252,.08) 87.5%, rgba(125,211,252,.08)),
+        linear-gradient(150deg, rgba(125,211,252,.08) 12%, transparent 12.5%, transparent 87%, rgba(125,211,252,.08) 87.5%, rgba(125,211,252,.08)),
+        linear-gradient(90deg, rgba(125,211,252,.06) 2%, transparent 2.5%, transparent 97%, rgba(125,211,252,.06) 97.5%, rgba(125,211,252,.06));
+      background-size: 28px 48px;
+      mask-image: radial-gradient(circle at center, black 42%, transparent 82%);
+      opacity:.55;
+      animation: drift 8s linear infinite;
+    }
+
+    .impact {
+      position:absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(251,113,133,.38);
+      box-shadow: 0 0 0 0 rgba(251,113,133,.15);
+      animation: impactPulse 2.4s infinite;
+      opacity:.35;
+    }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(.98); opacity:.85; }
+      50% { transform: scale(1.03); opacity:1; }
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0); }
+      to { transform: translateY(-48px); }
+    }
+
+    @keyframes impactPulse {
+      0%   { transform: scale(.6); box-shadow: 0 0 0 0 rgba(251,113,133,.24); }
+      70%  { transform: scale(1.2); box-shadow: 0 0 0 18px rgba(251,113,133,0); }
+      100% { transform: scale(1.2); box-shadow: 0 0 0 18px rgba(251,113,133,0); }
+    }
+
+    .meter-bar {
+      height: .8rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(148,163,184,.16);
+      border: 1px solid rgba(148,163,184,.18);
+    }
+
+    .meter-fill {
+      height:100%;
+      width:0;
+      transition: width .5s ease;
+      background: linear-gradient(90deg, rgba(248,113,113,.95), rgba(251,191,36,.95), rgba(52,211,153,.95));
+    }
+
+    .appear {
+      animation: rise .35s ease;
+    }
+
+    @keyframes rise {
+      from { opacity:0; transform: translateY(10px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    .small-note {
+      color: rgba(226,232,240,.72);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+
+    .accent-border {
+      position: relative;
+      overflow: hidden;
+    }
+    .accent-border::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      padding:1px;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(56,189,248,.45), rgba(251,191,36,.24), rgba(255,255,255,.08));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events:none;
+    }
+
+    @media (max-width: 420px){
+      .lens-stage{ min-height: 220px; }
+    }
+  </style>
+</head>
+<body class="text-slate-100">
+  <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+    <header class="mb-5 sm:mb-8">
+      <div class="glass-card accent-border rounded-3xl p-4 sm:p-6 lg:p-8">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl">
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-400/25 bg-sky-400/10 px-3 py-1 text-xs font-semibold tracking-wide text-sky-200">
+              <span>⚔️ RPG風 提案支援ツール</span>
+              <span class="opacity-60">|</span>
+              <span>新人スタッフ向け</span>
+            </div>
+            <h1 class="text-2xl font-black leading-tight sm:text-4xl">
+              レンズ耐久力（コーティング）
+              <span class="bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent">防具シミュレーター</span>
+            </h1>
+            <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
+              お客様の使い方を「ダメージ環境」、レンズを「防具」として見せることで、
+              キズ防止コートの価値を直感的に伝える提案アプリです。
+              2年後の視界・コスパ・接客トークをひと画面で提示できます。
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 sm:gap-3">
+            <div class="status-pill rounded-2xl px-3 py-3 text-center">
+              <div class="text-[11px] uppercase tracking-[.18em] text-slate-400">Damage</div>
+              <div id="currentDamageLabel" class="mt-1 text-sm font-semibold text-amber-200">未選択</div>
+            </div>
+            <div class="status-pill rounded-2xl px-3 py-3 text-center">
+              <div class="text-[11px] uppercase tracking-[.18em] text-slate-400">Defense</div>
+              <div id="currentCoatingLabel" class="mt-1 text-sm font-semibold text-sky-200">未選択</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <!-- LEFT PANEL -->
+      <section class="space-y-5">
+        <div class="glass-card accent-border rounded-3xl p-4 sm:p-5">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/15 text-xl">💥</div>
+            <div>
+              <h2 class="text-lg font-bold sm:text-xl">1. お客様のダメージ環境</h2>
+              <p class="text-sm text-slate-400">普段の扱い方に近いものを選んでください</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3">
+            <button
+              class="choice-btn rounded-2xl border border-slate-700/70 p-4 text-left"
+              data-group="damage"
+              data-value="low"
+              aria-pressed="false"
+            >
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 text-2xl">💧</div>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold">専用クロスで水洗いしてから拭く</span>
+                    <span class="rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">ダメージ小</span>
+                  </div>
+                  <p class="mt-1 text-sm leading-6 text-slate-400">
+                    レンズにやさしい理想的な扱い方。細かい摩耗が起きにくい状態です。
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              class="choice-btn rounded-2xl border border-slate-700/70 p-4 text-left"
+              data-group="damage"
+              data-value="mid"
+              aria-pressed="false"
+            >
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 text-2xl">🧻</div>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold">ついティッシュや服の裾で乾拭きしてしまう</span>
+                    <span class="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">ダメージ中</span>
+                  </div>
+                  <p class="mt-1 text-sm leading-6 text-slate-400">
+                    日常で最も多いパターン。乾拭きの摩擦で細かなキズが蓄積しやすいです。
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              class="choice-btn rounded-2xl border border-slate-700/70 p-4 text-left"
+              data-group="damage"
+              data-value="high"
+              aria-pressed="false"
+            >
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 text-2xl">🏃‍♂️</div>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold">屋外での仕事・スポーツが多い、カバンにそのまま入れる</span>
+                    <span class="rounded-full bg-rose-400/15 px-2 py-0.5 text-xs font-semibold text-rose-300">ダメージ大</span>
+                  </div>
+                  <p class="mt-1 text-sm leading-6 text-slate-400">
+                    砂・ほこり・接触ダメージが増える環境。レンズ寿命に大きく差が出ます。
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-card accent-border rounded-3xl p-4 sm:p-5">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-400/15 text-xl">🛡️</div>
+            <div>
+              <h2 class="text-lg font-bold sm:text-xl">2. 提案する防具（コーティング）</h2>
+              <p class="text-sm text-slate-400">防御力の違いを選んで比較します</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              class="choice-btn rounded-2xl border border-slate-700/70 p-4 text-left"
+              data-group="coating"
+              data-value="standard"
+              aria-pressed="false"
+            >
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 text-2xl">🪶</div>
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold">標準コート</span>
+                    <span class="rounded-full bg-slate-400/15 px-2 py-0.5 text-xs font-semibold text-slate-300">防御力：低</span>
+                  </div>
+                  <p class="mt-1 text-sm leading-6 text-slate-400">
+                    初期費用は抑えやすいが、日常ダメージを受け続けると消耗が早めです。
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              class="choice-btn rounded-2xl border border-slate-700/70 p-4 text-left"
+              data-group="coating"
+              data-value="hard"
+              aria-pressed="false"
+            >
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 text-2xl">🏰</div>
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold">超硬質キズ防止コート</span>
+                    <span class="rounded-full bg-sky-400/15 px-2 py-0.5 text-xs font-semibold text-sky-300">防御力：高</span>
+                  </div>
+                  <p class="mt-1 text-sm leading-6 text-slate-400">
+                    摩擦や接触に強く、長期で見た満足度と見え方の維持に有利です。
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-slate-700/70 bg-slate-900/40 p-3">
+            <div class="flex items-start gap-2">
+              <div class="mt-0.5 text-base">💡</div>
+              <p class="text-sm leading-6 text-slate-300">
+                新人スタッフ向けコツ：
+                <span class="text-slate-400">
+                  先に「どれくらい雑に扱ってしまうか」をお客様に選んでもらうと、
+                  その後のコーティング提案が押し売りに見えにくくなります。
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL -->
+      <section class="space-y-5">
+        <div id="emptyState" class="glass-card accent-border rounded-3xl p-6 sm:p-8 appear">
+          <div class="flex flex-col items-center justify-center text-center">
+            <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-[2rem] border border-sky-400/20 bg-sky-400/10 text-4xl">
+              🎮
+            </div>
+            <h3 class="text-xl font-black sm:text-2xl">装備を選ぶと、2年後のレンズ状態をシミュレート</h3>
+            <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+              左側で「ダメージ環境」と「コーティング」を1つずつ選択してください。
+              視界のキズ・白濁り、コスパ比較、提案トークが自動で表示されます。
+            </p>
+          </div>
+        </div>
+
+        <div id="resultArea" class="hidden space-y-5">
+          <!-- Simulation Card -->
+          <div class="glass-card accent-border rounded-3xl p-4 sm:p-5 lg:p-6">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-200">
+                  <span>2年後のレンズ状態シミュレーション</span>
+                </div>
+                <h2 class="text-xl font-black sm:text-2xl">見た目で伝わる「視界の差」</h2>
+              </div>
+              <div id="qualityBadge" class="self-start rounded-full border px-3 py-1 text-xs font-bold"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+              <div class="space-y-4">
+                <div class="lens-stage" id="lensStage" aria-label="レンズシミュレーション表示">
+                  <div class="arena-grid"></div>
+                  <div class="glasses">
+                    <div class="lens" id="lensLeft">
+                      <div class="scratch-layer"></div>
+                      <div class="fog-layer"></div>
+                      <div class="shield-layer"></div>
+                      <div class="impact-layer"></div>
+                    </div>
+                    <div class="bridge"></div>
+                    <div class="lens" id="lensRight">
+                      <div class="scratch-layer"></div>
+                      <div class="fog-layer"></div>
+                      <div class="shield-layer"></div>
+                      <div class="impact-layer"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div class="rounded-2xl border border-slate-700/70 bg-slate-900/40 p-3">
+                    <div class="text-xs uppercase tracking-[.16em] text-slate-500">キズ量</div>
+                    <div class="mt-2 meter-bar"><div id="scratchMeter" class="meter-fill"></div></div>
+                    <div id="scratchText" class="mt-2 text-sm font-semibold"></div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-700/70 bg-slate-900/40 p-3">
+                    <div class="text-xs uppercase tracking-[.16em] text-slate-500">白濁り</div>
+                    <div class="mt-2 meter-bar"><div id="fogMeter" class="meter-fill"></div></div>
+                    <div id="fogText" class="mt-2 text-sm font-semibold"></div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-700/70 bg-slate-900/40 p-3">
+                    <div class="text-xs uppercase tracking-[.16em] text-slate-500">防御力</div>
+                    <div class="mt-2 meter-bar"><div id="shieldMeter" class="meter-fill"></div></div>
+                    <div id="shieldText" class="mt-2 text-sm font-semibold"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div class="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4">
+                  <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
+                    <span>🧪</span>
+                    <span>診断結果</span>
+                  </div>
+                  <h3 id="summaryTitle" class="text-lg font-black sm:text-xl"></h3>
+                  <p id="summaryBody" class="mt-3 text-sm leading-7 text-slate-300"></p>
+                </div>
+
+                <div class="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4">
+                  <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-300">
+                    <span>📌</span>
+                    <span>一言で伝えるなら</span>
+                  </div>
+                  <p id="oneLinePitch" class="text-sm leading-7 text-slate-200"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cost Card -->
+          <div class="glass-card accent-border rounded-3xl p-4 sm:p-5 lg:p-6">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                  <span>コスパ比較解説</span>
+                </div>
+                <h2 class="text-xl font-black sm:text-2xl">「安い方が得」とは限らない理由</h2>
+              </div>
+              <div class="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-200">
+                3年間で比較
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div class="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-base font-bold">標準コート運用</h3>
+                  <span class="rounded-full bg-slate-400/15 px-2 py-1 text-xs font-semibold text-slate-300">初期費用は低い</span>
+                </div>
+                <div class="space-y-3 text-sm">
+                  <div class="flex items-center justify-between rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+                    <span class="text-slate-400">初回レンズ代</span>
+                    <span id="stdInitial" class="font-bold text-slate-100"></span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+                    <span class="text-slate-400">想定交換回数（3年）</span>
+                    <span id="stdReplacements" class="font-bold text-slate-100"></span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+                    <span class="text-slate-400">3年総額</span>
+                    <span id="stdTotal" class="font-black text-lg text-rose-300"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-3xl border border-sky-500/25 bg-sky-500/5 p-4">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-base font-bold">超硬質キズ防止コート運用</h3>
+                  <span class="rounded-full bg-sky-400/15 px-2 py-1 text-xs font-semibold text-sky-200">長持ち重視</span>
+                </div>
+                <div class="space-y-3 text-sm">
+                  <div class="flex items-center justify-between rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+                    <span class="text-slate-400">初回レンズ代</span>
+                    <span id="hardInitial" class="font-bold text-slate-100"></span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+                    <span class="text-slate-400">想定交換回数（3年）</span>
+                    <span id="hardReplacements" class="font-bold text-slate-100"></span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+                    <span class="text-slate-400">3年総額</span>
+                    <span id="hardTotal" class="font-black text-lg text-emerald-300"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-3xl border border-amber-400/20 bg-amber-400/10 p-4">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div class="text-sm font-semibold text-amber-100">結果</div>
+                  <p id="costSummary" class="mt-1 text-base font-black sm:text-lg"></p>
+                </div>
+                <div id="costBadge" class="self-start rounded-full border px-3 py-1 text-xs font-bold"></div>
+              </div>
+              <p id="costDetail" class="mt-3 text-sm leading-7 text-slate-200"></p>
+              <p class="small-note mt-3">
+                ※試算前提：標準レンズ一式 12,000円、超硬質キズ防止コート付き 16,000円で計算。
+                想定寿命は選択された使い方に応じて変動します。店舗の価格に合わせて簡単に調整できます。
+              </p>
+            </div>
+          </div>
+
+          <!-- Talk Script -->
+          <div class="glass-card accent-border rounded-3xl p-4 sm:p-5 lg:p-6">
+            <div class="mb-4">
+              <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                <span>背中を押す提案トーク</span>
+              </div>
+              <h2 class="text-xl font-black sm:text-2xl">そのまま使える接客スクリプト</h2>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
+              <div class="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4">
+                <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-300">
+                  <span>🗣️</span>
+                  <span>推奨トーク例</span>
+                </div>
+                <p id="talkScript" class="whitespace-pre-line text-sm leading-7 text-slate-100"></p>
+              </div>
+
+              <div class="rounded-3xl border border-slate-700/70 bg-slate-900/45 p-4">
+                <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-300">
+                  <span>🎯</span>
+                  <span>押さえるべき要点</span>
+                </div>
+                <ul id="talkTips" class="space-y-3 text-sm leading-6 text-slate-300"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const state = {
+        damage: null,
+        coating: null
+      };
+
+      const DAMAGE = {
+        low: {
+          label: "ダメージ小",
+          icon: "💧",
+          description: "専用クロスで水洗いしてから拭く",
+          severity: 22,
+          stdLife: 3.0,
+          hardLife: 4.2
+        },
+        mid: {
+          label: "ダメージ中",
+          icon: "🧻",
+          description: "ティッシュや服の裾で乾拭きしがち",
+          severity: 58,
+          stdLife: 1.4,
+          hardLife: 3.0
+        },
+        high: {
+          label: "ダメージ大",
+          icon: "🏃‍♂️",
+          description: "屋外仕事・スポーツ・カバンに直入れ",
+          severity: 86,
+          stdLife: 1.0,
+          hardLife: 2.2
+        }
+      };
+
+      const COATING = {
+        standard: {
+          label: "標準コート",
+          icon: "🪶",
+          defense: 26,
+          price: 12000,
+          shield: "低"
+        },
+        hard: {
+          label: "超硬質キズ防止コート",
+          icon: "🏰",
+          defense: 84,
+          price: 16000,
+          shield: "高"
+        }
+      };
+
+      const els = {
+        currentDamageLabel: document.getElementById("currentDamageLabel"),
+        currentCoatingLabel: document.getElementById("currentCoatingLabel"),
+        emptyState: document.getElementById("emptyState"),
+        resultArea: document.getElementById("resultArea"),
+        qualityBadge: document.getElementById("qualityBadge"),
+        summaryTitle: document.getElementById("summaryTitle"),
+        summaryBody: document.getElementById("summaryBody"),
+        oneLinePitch: document.getElementById("oneLinePitch"),
+        scratchMeter: document.getElementById("scratchMeter"),
+        fogMeter: document.getElementById("fogMeter"),
+        shieldMeter: document.getElementById("shieldMeter"),
+        scratchText: document.getElementById("scratchText"),
+        fogText: document.getElementById("fogText"),
+        shieldText: document.getElementById("shieldText"),
+        costSummary: document.getElementById("costSummary"),
+        costDetail: document.getElementById("costDetail"),
+        costBadge: document.getElementById("costBadge"),
+        stdInitial: document.getElementById("stdInitial"),
+        stdReplacements: document.getElementById("stdReplacements"),
+        stdTotal: document.getElementById("stdTotal"),
+        hardInitial: document.getElementById("hardInitial"),
+        hardReplacements: document.getElementById("hardReplacements"),
+        hardTotal: document.getElementById("hardTotal"),
+        talkScript: document.getElementById("talkScript"),
+        talkTips: document.getElementById("talkTips"),
+        lensLeft: document.getElementById("lensLeft"),
+        lensRight: document.getElementById("lensRight"),
+        lensStage: document.getElementById("lensStage")
+      };
+
+      const fmtYen = (n) => `¥${Math.round(n).toLocaleString("ja-JP")}`;
+      const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+      function seedRandom(seed) {
+        let value = seed % 2147483647;
+        if (value <= 0) value += 2147483646;
+        return () => (value = value * 16807 % 2147483647) / 2147483647;
+      }
+
+      function chooseButton(group, value) {
+        const buttons = document.querySelectorAll(`[data-group="${group}"]`);
+        buttons.forEach(btn => {
+          const active = btn.dataset.value === value;
+          btn.classList.toggle(group === "damage" ? "active-damage" : "active-coating", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      function bindButtons() {
+        document.querySelectorAll("[data-group]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const group = btn.dataset.group;
+            const value = btn.dataset.value;
+            state[group] = value;
+            chooseButton(group, value);
+            updateHeaderSelections();
+            render();
+          });
+        });
+      }
+
+      function updateHeaderSelections() {
+        els.currentDamageLabel.textContent = state.damage ? `${DAMAGE[state.damage].icon} ${DAMAGE[state.damage].label}` : "未選択";
+        els.currentCoatingLabel.textContent = state.coating ? `${COATING[state.coating].icon} ${COATING[state.coating].label}` : "未選択";
+      }
+
+      function getScenario() {
+        if (!state.damage || !state.coating) return null;
+
+        const damage = DAMAGE[state.damage];
+        const coating = COATING[state.coating];
+
+        const netRisk = clamp(damage.severity - coating.defense * 0.55, 4, 95);
+        const scratch = clamp(Math.round(netRisk * 1.08), 3, 98);
+        const fog = clamp(Math.round(damage.severity * 0.72 - coating.defense * 0.38), 1, 92);
+        const shield = clamp(Math.round(coating.defense - damage.severity * 0.12), 10, 96);
+
+        let grade = "S";
+        let title = "ほぼクリア。見え方を長く維持";
+        let body = "2年後でも視界の透明感が保たれやすい組み合わせです。細かな使用キズは出ても、日常で気になる白っぽさはかなり抑えられます。";
+        let pitch = "この使い方なら、硬いコーティングを付けておくと“きれいが長持ちする安心感”をしっかり実感しやすいです。";
+
+        if (scratch >= 65 || fog >= 52) {
+          grade = "C";
+          title = "キズが蓄積しやすく、視界の白濁りが目立つ";
+          body = "摩擦や接触のダメージが積み重なり、2年後には細かい線キズと白っぽいにじみが視界に出やすい状態です。見え方の満足度が落ち、買い替え相談につながりやすくなります。";
+          pitch = "初期費用は抑えられても、レンズを早く傷ませると結局もったいないので、防御力を上げる価値が高いです。";
+        } else if (scratch >= 36 || fog >= 24) {
+          grade = "B";
+          title = "使い方次第で差が出る、分かれ目の状態";
+          body = "一見まだ使えても、照明や夜間の対向車ライトで細かなキズが気になり始めるレベルです。コーティングの差が“見え方の快適さ”に表れやすいゾーンです。";
+          pitch = "毎日使うものなので、“今は大丈夫”より“2年後も快適か”で選ぶのがおすすめです。";
+        }
+
+        if (state.damage === "high" && state.coating === "standard") {
+          grade = "DANGER";
+          title = "かなり傷みやすい。2年待たずに不満が出やすい";
+          body = "砂・ほこり・収納時の接触ダメージで、レンズ表面がかなり消耗しやすい組み合わせです。日差しや照明でキズが浮いて見えやすく、快適さを大きく損ねる可能性があります。";
+          pitch = "この使い方なら、標準のままだと“安く買ったのに早くダメになる”典型パターンになりやすいです。";
+        }
+
+        return { damage, coating, scratch, fog, shield, grade, title, body, pitch };
+      }
+
+      function createScratchPattern(lensEl, scratch, fog, shield, seedBase) {
+        const scratchLayer = lensEl.querySelector(".scratch-layer");
+        const fogLayer = lensEl.querySelector(".fog-layer");
+        const shieldLayer = lensEl.querySelector(".shield-layer");
+        const impactLayer = lensEl.querySelector(".impact-layer");
+
+        [scratchLayer, impactLayer].forEach(layer => layer.innerHTML = "");
+        shieldLayer.innerHTML = "";
+        shieldLayer.style.opacity = "0";
+
+        const rnd = seedRandom(seedBase);
+        const count = Math.max(4, Math.round(scratch * 0.55));
+        const deepCount = Math.round(count * (scratch / 100) * 0.22);
+        const impactCount = scratch > 55 ? Math.max(1, Math.round((scratch - 45) / 18)) : 0;
+
+        for (let i = 0; i < count; i++) {
+          const s = document.createElement("div");
+          s.className = "scratch" + (i < deepCount ? " deep-scratch" : "");
+          const width = 14 + rnd() * 40 + scratch * 0.18;
+          const left = rnd() * 75;
+          const top = rnd() * 90;
+          const angle = -55 + rnd() * 110;
+          const opacity = 0.16 + rnd() * 0.45 + scratch / 260;
+          s.style.width = `${width}%`;
+          s.style.left = `${left}%`;
+          s.style.top = `${top}%`;
+          s.style.opacity = String(Math.min(opacity, .92));
+          s.style.transform = `rotate(${angle}deg)`;
+          scratchLayer.appendChild(s);
+        }
+
+        fogLayer.style.opacity = String(clamp(fog / 88, 0.04, 0.92));
+        fogLayer.style.backdropFilter = `blur(${Math.max(0, fog / 26).toFixed(1)}px) saturate(${(1 - fog / 160).toFixed(2)})`;
+        fogLayer.style.background = `
+          radial-gradient(circle at 40% 50%, rgba(255,255,255,${(fog/500 + .04).toFixed(3)}), transparent 38%),
+          radial-gradient(circle at 70% 50%, rgba(255,255,255,${(fog/420 + .05).toFixed(3)}), transparent 40%),
+          radial-gradient(circle at 52% 58%, rgba(255,255,255,${(fog/900 + .02).toFixed(3)}), transparent 55%)
+        `;
+
+        for (let i = 0; i < impactCount; i++) {
+          const p = document.createElement("div");
+          p.className = "impact";
+          p.style.left = `${10 + rnd() * 75}%`;
+          p.style.top = `${10 + rnd() * 72}%`;
+          p.style.animationDelay = `${(rnd() * 1.4).toFixed(2)}s`;
+          impactLayer.appendChild(p);
+        }
+
+        if (shield >= 52) {
+          shieldLayer.style.opacity = String(clamp(shield / 100, 0.45, 0.95));
+          const hex = document.createElement("div");
+          hex.className = "shield-hex";
+          const ring = document.createElement("div");
+          ring.className = "shield-ring";
+          shieldLayer.appendChild(hex);
+          shieldLayer.appendChild(ring);
+        }
+      }
+
+      function renderLens(scenario) {
+        const leftSeed = `${state.damage}-${state.coating}-L`.split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+        const rightSeed = `${state.damage}-${state.coating}-R`.split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+        createScratchPattern(els.lensLeft, scenario.scratch, scenario.fog, scenario.shield, leftSeed);
+        createScratchPattern(els.lensRight, Math.round(scenario.scratch * 1.05), Math.round(scenario.fog * 1.02), scenario.shield, rightSeed);
+
+        const stageGlow =
+          scenario.grade === "DANGER"
+            ? "0 0 0 1px rgba(251,113,133,.25), 0 16px 45px rgba(127,29,29,.18)"
+            : scenario.grade === "C"
+              ? "0 0 0 1px rgba(251,191,36,.20), 0 16px 45px rgba(120,53,15,.15)"
+              : "0 0 0 1px rgba(56,189,248,.22), 0 16px 45px rgba(14,116,144,.14)";
+
+        els.lensStage.style.boxShadow = `inset 0 0 0 1px rgba(255,255,255,.04), ${stageGlow}`;
+      }
+
+      function renderMeters(s) {
+        els.scratchMeter.style.width = `${s.scratch}%`;
+        els.fogMeter.style.width = `${s.fog}%`;
+        els.shieldMeter.style.width = `${s.shield}%`;
+
+        els.scratchText.textContent = s.scratch >= 70 ? "かなり多い" : s.scratch >= 40 ? "やや目立つ" : "少ない";
+        els.fogText.textContent = s.fog >= 50 ? "白濁り強め" : s.fog >= 25 ? "少し出る" : "かなりクリア";
+        els.shieldText.textContent = s.shield >= 75 ? "高防御" : s.shield >= 45 ? "中防御" : "低防御";
+      }
+
+      function renderQuality(s) {
+        const map = {
+          S: {
+            text: "評価 S / かなり安心",
+            cls: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+          },
+          B: {
+            text: "評価 B / 比較で差が伝わる",
+            cls: "border-amber-400/30 bg-amber-400/10 text-amber-200"
+          },
+          C: {
+            text: "評価 C / 劣化が見えやすい",
+            cls: "border-orange-400/30 bg-orange-400/10 text-orange-200"
+          },
+          DANGER: {
+            text: "要注意 / 交換前倒しリスク",
+            cls: "border-rose-400/30 bg-rose-400/10 text-rose-200"
+          }
+        };
+
+        const badge = map[s.grade] || map.B;
+        els.qualityBadge.className = `self-start rounded-full border px-3 py-1 text-xs font-bold ${badge.cls}`;
+        els.qualityBadge.textContent = badge.text;
+
+        els.summaryTitle.textContent = s.title;
+        els.summaryBody.textContent = s.body;
+        els.oneLinePitch.textContent = s.pitch;
+      }
+
+      function replacementsOver3Years(lifeYears) {
+        if (!Number.isFinite(lifeYears) || lifeYears <= 0) return 99;
+        return Math.max(0, Math.ceil(3 / lifeYears) - 1);
+      }
+
+      function renderCost(s) {
+        const stdLife = s.damage.stdLife;
+        const hardLife = s.damage.hardLife;
+
+        const stdRepl = replacementsOver3Years(stdLife);
+        const hardRepl = replacementsOver3Years(hardLife);
+
+        const stdTotal = COATING.standard.price * (1 + stdRepl);
+        const hardTotal = COATING.hard.price * (1 + hardRepl);
+        const diff = stdTotal - hardTotal;
+
+        els.stdInitial.textContent = fmtYen(COATING.standard.price);
+        els.hardInitial.textContent = fmtYen(COATING.hard.price);
+        els.stdReplacements.textContent = `${stdRepl}回`;
+        els.hardReplacements.textContent = `${hardRepl}回`;
+        els.stdTotal.textContent = fmtYen(stdTotal);
+        els.hardTotal.textContent = fmtYen(hardTotal);
+
+        if (diff > 0) {
+          els.costSummary.textContent = `超硬質キズ防止コートのほうが、3年間で ${fmtYen(diff)} お得です。`;
+          els.costDetail.textContent =
+            `初回は ${fmtYen(COATING.hard.price - COATING.standard.price)} 高く見えても、標準コートは傷みが早いと交換コストが積み上がります。特に「${s.damage.description}」の使い方では、長持ちする防御力のほうが結果的に出費を抑えやすくなります。`;
+          els.costBadge.className = "self-start rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-200";
+          els.costBadge.textContent = "長期では得";
+        } else if (diff === 0) {
+          els.costSummary.textContent = "3年間の総額はほぼ同等です。";
+          els.costDetail.textContent =
+            "金額差が小さい場合でも、キズの少なさ・見え方の快適さ・買い替えの手間を考えると、硬いコーティングを選ぶ価値は十分あります。";
+          els.costBadge.className = "self-start rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-200";
+          els.costBadge.textContent = "快適さで優位";
+        } else {
+          els.costSummary.textContent = `金額だけなら標準コートが ${fmtYen(Math.abs(diff))} 安い想定です。`;
+          els.costDetail.textContent =
+            "ただし差額が小さい場合でも、夜間の見やすさや見た目のきれいさ、交換のタイミングを先延ばしできる安心感まで含めると、超硬質キズ防止コートは十分提案価値があります。";
+          els.costBadge.className = "self-start rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-bold text-sky-200";
+          els.costBadge.textContent = "体験価値で提案";
+        }
+      }
+
+      function renderTalk(s) {
+        let script = "";
+        const tips = [];
+
+        if (state.damage === "low" && state.coating === "standard") {
+          script =
+`普段かなり丁寧に扱われるので、標準コートでもすぐに困る可能性は高くありません。
+ただ、毎日使うメガネですので、もし“できるだけ長くきれいな状態を保ちたい”というお気持ちがあれば、超硬質キズ防止コートを付けておくと安心感がぐっと上がります。
+見え方のきれいさを長く保ちたい方には、実は相性がいいオプションです。`;
+          tips.push("丁寧に使う人には“さらに長くきれいに使える安心”で提案する");
+          tips.push("押し売りより“満足度アップ”の言い方が刺さりやすい");
+          tips.push("予算重視なら無理押しせず、上位選択肢として提示");
+        } else if (state.damage === "low" && state.coating === "hard") {
+          script =
+`この使い方なら、超硬質キズ防止コートの良さをいちばんきれいに活かせます。
+普段丁寧に扱われる分、レンズの透明感が長く続きやすいので、結果的に“買ったときの快適さ”を長く楽しめます。
+長く使う前提なら、とても理にかなった選び方です。`;
+          tips.push("“今の丁寧な習慣を無駄にしない選択”として肯定する");
+          tips.push("快適さの持続を価値に変換して伝える");
+          tips.push("高級感・満足感で背中を押す");
+        } else if (state.damage === "mid" && state.coating === "standard") {
+          script =
+`実はティッシュや服の裾は、見た目以上にレンズへ摩擦ダメージがかかりやすいんです。
+標準コートのまま乾拭きが続くと、2年後にはこのように細かいキズが積み重なって、視界が白っぽく感じやすくなります。
+この“超硬質キズ防止コート”を付けておくと、同じ使い方でもダメージをかなり受けにくくなるので、結果的に長持ちしてコスパが良くなります。`;
+          tips.push("“ティッシュ＝やさしそう”という思い込みを崩す");
+          tips.push("2年後の視界を先に見せてから価格の話に入る");
+          tips.push("“同じ使い方でも差が出る”と伝える");
+        } else if (state.damage === "mid" && state.coating === "hard") {
+          script =
+`普段どうしても乾拭きしてしまう方には、この超硬質キズ防止コートがかなり相性いいです。
+使い方を無理に変えなくても、レンズ側の防御力を上げておくことで、2年後の細かなキズや白っぽさをかなり抑えやすくなります。
+“実際の生活に合ったレンズ選び”として、とてもおすすめしやすい組み合わせです。`;
+          tips.push("習慣を責めず、“生活に合う選択”として提案");
+          tips.push("防御力アップで失敗しにくいことを伝える");
+          tips.push("“楽にきれいを保てる”が刺さる");
+        } else if (state.damage === "high" && state.coating === "standard") {
+          script =
+`この使い方ですと、標準コートだとかなり早い段階で細かなキズが増えやすいです。
+屋外のほこりや収納時の接触が重なると、1〜2年で“見え方がなんとなく悪い”“夜のライトがにじむ”という不満につながりやすいんですね。
+最初に少しだけ防御力を上げておくと、交換の前倒しを防ぎやすくなるので、実はこのケースこそ超硬質キズ防止コートがいちばんコスパを発揮しやすいです。`;
+          tips.push("最もアップセルしやすいパターン。自信を持って提案");
+          tips.push("“交換前倒しリスク”を金額と視界の両面で説明");
+          tips.push("夜間のにじみ・白っぽさなど実感しやすい不満に言及");
+        } else if (state.damage === "high" && state.coating === "hard") {
+          script =
+`この使い方なら、超硬質キズ防止コートはかなりおすすめです。
+ダメージ環境が強いほど、標準コートとの差が分かりやすく出るので、最初に守りを固めておく意味が大きいです。
+“傷みやすい使い方だからこそ、先に防御力を持たせておく”という選び方は、とても合理的です。`;
+          tips.push("高ダメージ環境には“守りを固める”言い方が有効");
+          tips.push("価格より交換回避・長持ちを軸にする");
+          tips.push("スポーツ・仕事用は“道具として強い”表現が刺さる");
+        }
+
+        els.talkScript.textContent = script;
+        els.talkTips.innerHTML = tips.map(t => `
+          <li class="flex items-start gap-2 rounded-2xl border border-slate-700/60 bg-slate-950/35 px-3 py-3">
+            <span class="mt-0.5 text-emerald-300">✓</span>
+            <span>${escapeHtml(t)}</span>
+          </li>
+        `).join("");
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function render() {
+        const s = getScenario();
+        if (!s) {
+          els.emptyState.classList.remove("hidden");
+          els.resultArea.classList.add("hidden");
+          return;
+        }
+
+        els.emptyState.classList.add("hidden");
+        els.resultArea.classList.remove("hidden");
+
+        renderLens(s);
+        renderMeters(s);
+        renderQuality(s);
+        renderCost(s);
+        renderTalk(s);
+      }
+
+      bindButtons();
+      updateHeaderSelections();
+      render();
+    })();
+  </script>
+</body>
+</html>
