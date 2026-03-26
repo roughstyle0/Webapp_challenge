@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カラーレンズ 実用性シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        resort: {
+                            blue: '#0284c7', // sky-600
+                            light: '#e0f2fe', // sky-100
+                            orange: '#f97316', // orange-500
+                            sun: '#fef08a', // yellow-200
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 視界シミュレーション用の背景（CSSのみで晴れた屋外を表現） */
+        .simulation-bg {
+            background: 
+                radial-gradient(circle at 85% 15%, #ffffff 0%, #fef08a 10%, transparent 40%), /* 太陽 */
+                linear-gradient(to bottom, #38bdf8 0%, #bae6fd 55%, #86efac 55%, #16a34a 100%); /* 空と大地 */
+            position: relative;
+            overflow: hidden;
+        }
+        /* まぶしさのエフェクト */
+        .glare-effect {
+            background: radial-gradient(circle at 85% 15%, rgba(255,255,255,0.8) 0%, transparent 60%);
+            mix-blend-mode: screen;
+        }
+        /* レンズフィルター */
+        .lens-filter {
+            background-color: #4b5563; /* グレー系のレンズを想定 */
+            mix-blend-mode: multiply; /* 光を吸収するリアルな見え方 */
+            transition: opacity 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- ヘッダー -->
+    <header class="bg-gradient-to-r from-resort-blue to-cyan-500 text-white p-6 shadow-md rounded-b-3xl mb-6 mx-2 mt-2 md:mx-6 md:mt-4">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                    <svg class="w-8 h-8 text-resort-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    Lens Simulator
+                </h1>
+                <p class="text-sm md:text-base mt-2 opacity-90">お客様にピッタリのカラー濃度と、快適な見え方を提案しましょう</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 pb-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- 左カラム：入力エリア -->
+        <section class="space-y-8">
+            
+            <!-- STEP 1: シーン選択 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <span class="bg-resort-blue text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm">1</span>
+                    メインで使いたいシーンは？
+                </h2>
+                <div class="space-y-3" id="scene-buttons">
+                    <button data-scene="office" class="w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-resort-blue hover:bg-resort-light transition-all duration-200 group">
+                        <div class="font-bold text-slate-800 group-hover:text-resort-blue">🏢 普段使い・オフィス</div>
+                        <div class="text-sm text-slate-500 mt-1">仕事でも浮かないファッション重視</div>
+                    </button>
+                    <button data-scene="drive" class="w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-resort-blue hover:bg-resort-light transition-all duration-200 group">
+                        <div class="font-bold text-slate-800 group-hover:text-resort-blue">🚗 日中の運転・ちょっとした外出</div>
+                        <div class="text-sm text-slate-500 mt-1">日常的なまぶしさ対策</div>
+                    </button>
+                    <button data-scene="outdoor" class="w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-resort-blue hover:bg-resort-light transition-all duration-200 group">
+                        <div class="font-bold text-slate-800 group-hover:text-resort-blue">🏖 海や山・日差しの強い屋外</div>
+                        <div class="text-sm text-slate-500 mt-1">本格的な遮光・アウトドア</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: 濃度選択 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <span class="bg-resort-blue text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm">2</span>
+                    試してみたいレンズ濃度は？
+                </h2>
+                <div class="grid grid-cols-3 gap-3" id="density-buttons">
+                    <button data-density="15" class="relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-slate-200 hover:border-resort-blue transition-all duration-200 overflow-hidden">
+                        <!-- レンズ色のプレビュー -->
+                        <div class="absolute inset-0 bg-gray-600 opacity-15"></div>
+                        <span class="relative z-10 text-xl font-bold">15%</span>
+                        <span class="relative z-10 text-xs mt-1 text-slate-600 font-medium">ごく薄い</span>
+                    </button>
+                    <button data-density="35" class="relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-slate-200 hover:border-resort-blue transition-all duration-200 overflow-hidden">
+                        <div class="absolute inset-0 bg-gray-600 opacity-35"></div>
+                        <span class="relative z-10 text-xl font-bold text-slate-800">35%</span>
+                        <span class="relative z-10 text-xs mt-1 text-slate-700 font-medium">中程度</span>
+                    </button>
+                    <button data-density="50" class="relative flex flex-col items-center justify-center p-4 rounded-xl border-2 border-slate-200 hover:border-resort-blue transition-all duration-200 overflow-hidden">
+                        <div class="absolute inset-0 bg-gray-600 opacity-50"></div>
+                        <span class="relative z-10 text-xl font-bold text-white">50%+</span>
+                        <span class="relative z-10 text-xs mt-1 text-gray-100 font-medium">濃い</span>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 text-center">※数値が高いほど色が濃くなります</p>
+            </div>
+            
+        </section>
+
+        <!-- 右カラム：結果表示エリア -->
+        <section class="h-full">
+            
+            <!-- プレースホルダー（未選択時） -->
+            <div id="placeholder" class="h-full bg-slate-100 border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
+                <svg class="w-16 h-16 text-slate-300 mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                <h3 class="text-lg font-bold text-slate-500">シーンと濃度を選択してください</h3>
+                <p class="text-sm text-slate-400 mt-2">選択すると、見え方のシミュレーションと<br>おすすめの提案トークが表示されます。</p>
+            </div>
+
+            <!-- 結果カード（選択時） -->
+            <div id="result-card" class="hidden bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden flex flex-col h-full animate-fade-in">
+                
+                <!-- 1. 視界シミュレーション -->
+                <div class="relative h-48 md:h-56 simulation-bg group">
+                    <!-- まぶしさレイヤー（太陽の光） -->
+                    <div class="absolute inset-0 glare-effect transition-opacity duration-300" id="sun-glare"></div>
+                    
+                    <!-- レンズフィルターレイヤー -->
+                    <div class="absolute inset-0 lens-filter" id="lens-simulation" style="opacity: 0;"></div>
+                    
+                    <!-- ガイドテキスト -->
+                    <div class="absolute top-3 left-3 bg-black/40 text-white text-xs px-2 py-1 rounded backdrop-blur-sm flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        見え方のイメージ
+                    </div>
+                </div>
+
+                <div class="p-6 flex-grow flex flex-col">
+                    <!-- 2. ヘッドラインとおすすめ度 -->
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-slate-800" id="result-title">シーン × 濃度</h3>
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs text-slate-500 font-bold mb-1">相性</span>
+                            <div id="recommend-stars" class="flex text-resort-orange text-xl">
+                                <!-- JSで星を挿入 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 夜間運転ルール（最重要） -->
+                    <div id="night-drive-alert" class="mb-5 rounded-lg p-3 flex items-center gap-3 border font-medium">
+                        <!-- JSで動的にクラスとコンテンツを変更 -->
+                    </div>
+
+                    <!-- 4. 提案トークスクリプト（新人スタッフ向け） -->
+                    <div class="mt-auto bg-slate-50 rounded-2xl p-4 relative border border-slate-100">
+                        <div class="absolute -top-3 left-6 bg-resort-blue text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                            プロの提案トーク
+                        </div>
+                        <div class="flex gap-4 items-start pt-2">
+                            <div class="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center text-xl overflow-hidden border-2 border-white shadow-sm">
+                                🧑‍💼
+                            </div>
+                            <div class="relative">
+                                <p id="talk-script" class="text-slate-700 text-sm md:text-base leading-relaxed font-medium">
+                                    <!-- トークスクリプトが挿入される -->
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // データベース（ロジック定義）
+        const data = {
+            office: {
+                title: "普段使い・オフィス",
+                15: {
+                    stars: "★★★",
+                    nightDrive: true,
+                    talk: "オフィスでも自然な印象で、PC画面の眩しさも和らげてくれます。初めてのカラーレンズにぴったりで、一番使いやすい濃さです！"
+                },
+                35: {
+                    stars: "★★☆",
+                    nightDrive: false,
+                    talk: "室内だと少し暗く感じたり、周りから『サングラスをかけている』という印象を持たれやすい濃さです。職場の環境や服装のルールに合わせて選ぶのがポイントです。"
+                },
+                50: {
+                    stars: "★☆☆",
+                    nightDrive: false,
+                    talk: "室内用としては暗すぎます。手元の書類などが見づらくなる可能性が高いため、お仕事用メインであれば、もっと薄い色がおすすめです。"
+                }
+            },
+            drive: {
+                title: "日中の運転・外出",
+                15: {
+                    stars: "★★☆",
+                    nightDrive: true,
+                    talk: "眩しさよけとしては少し物足りないかもしれません。ただ、25%未満なので夜間の運転もそのままできるのが最大のメリットです。掛け外しの手間がありません。"
+                },
+                35: {
+                    stars: "★★★",
+                    nightDrive: false,
+                    talk: "日中のドライブなら35%が一番おすすめです！眩しさをしっかり抑えつつ、トンネルに入っても暗くなりすぎないので安心です。ただ、夜間の運転には法律上使えない濃さになりますので、夜は必ずいつものクリアレンズに掛け替えてくださいね！"
+                },
+                50: {
+                    stars: "★★☆",
+                    nightDrive: false,
+                    talk: "日差しが強い日の運転には最適です！ただ、トンネルなど急に暗い場所に入ると見えにくくなるのでご注意ください。もちろん夜間運転はNGです。"
+                }
+            },
+            outdoor: {
+                title: "海や山・屋外",
+                15: {
+                    stars: "★☆☆",
+                    nightDrive: true,
+                    talk: "強い日差しを防ぐにはかなり物足りません。ファッションとしては良いですが、レジャーでの眩しさ対策や目の保護を優先するなら、もっと濃い色が必須です。"
+                },
+                35: {
+                    stars: "★★☆",
+                    nightDrive: false,
+                    talk: "ほどよく眩しさを防ぎつつ、目元も見えるので写真写りも良いですよ！ただ、真夏の海や照り返しの強い場所では、もう少し濃くても良いかもしれません。"
+                },
+                50: {
+                    stars: "★★★",
+                    nightDrive: false,
+                    talk: "アウトドアやレジャーなら50%以上が絶対おすすめです！強い日差しや地面からの照り返しをしっかりカットして、一日の目の疲れを劇的に軽減してくれます。"
+                }
+            }
+        };
+
+        // 状態管理
+        let currentScene = null;
+        let currentDensity = null;
+
+        // DOM要素
+        const sceneButtons = document.querySelectorAll('#scene-buttons button');
+        const densityButtons = document.querySelectorAll('#density-buttons button');
+        const placeholder = document.getElementById('placeholder');
+        const resultCard = document.getElementById('result-card');
+        const lensSimulation = document.getElementById('lens-simulation');
+        const sunGlare = document.getElementById('sun-glare');
+        const resultTitle = document.getElementById('result-title');
+        const recommendStars = document.getElementById('recommend-stars');
+        const nightDriveAlert = document.getElementById('night-drive-alert');
+        const talkScript = document.getElementById('talk-script');
+
+        // イベントリスナーの設定
+        sceneButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 選択状態のUI更新
+                sceneButtons.forEach(b => {
+                    b.classList.remove('border-resort-blue', 'bg-resort-light', 'ring-2', 'ring-resort-blue', 'ring-offset-1');
+                    b.classList.add('border-slate-200');
+                });
+                btn.classList.remove('border-slate-200');
+                btn.classList.add('border-resort-blue', 'bg-resort-light', 'ring-2', 'ring-resort-blue', 'ring-offset-1');
+                
+                currentScene = btn.dataset.scene;
+                checkAndUpdate();
+            });
+        });
+
+        densityButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 選択状態のUI更新
+                densityButtons.forEach(b => {
+                    b.classList.remove('border-resort-blue', 'ring-2', 'ring-resort-blue', 'ring-offset-1', 'scale-105', 'shadow-md');
+                    b.classList.add('border-slate-200');
+                });
+                btn.classList.remove('border-slate-200');
+                btn.classList.add('border-resort-blue', 'ring-2', 'ring-resort-blue', 'ring-offset-1', 'scale-105', 'shadow-md');
+                
+                currentDensity = btn.dataset.density;
+                checkAndUpdate();
+            });
+        });
+
+        // 判定とUI更新処理
+        function checkAndUpdate() {
+            if (currentScene && currentDensity) {
+                // プレースホルダーを隠して結果を表示
+                placeholder.classList.add('hidden');
+                resultCard.classList.remove('hidden');
+
+                const result = data[currentScene][currentDensity];
+                const sceneTitle = data[currentScene].title;
+
+                // 1. シミュレーションの更新
+                // 濃度に応じてフィルターの不透明度を変更 (50%以上の場合は0.65くらいまで暗くする)
+                let filterOpacity = parseInt(currentDensity) / 100;
+                if(currentDensity === '50') filterOpacity = 0.65; 
+                lensSimulation.style.opacity = filterOpacity;
+                
+                // 眩しさの軽減エフェクト（濃いほど眩しさのエフェクトが消える）
+                sunGlare.style.opacity = 1 - (filterOpacity * 1.2);
+
+                // 2. テキスト・おすすめ度更新
+                resultTitle.textContent = `${sceneTitle} × ${currentDensity}%`;
+                
+                // 星の描画
+                recommendStars.innerHTML = '';
+                for(let char of result.stars) {
+                    if(char === '★') {
+                        recommendStars.innerHTML += `<svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+                    } else {
+                        recommendStars.innerHTML += `<svg class="w-6 h-6 fill-current opacity-30" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
+                    }
+                }
+
+                // 3. 夜間運転ルールの更新
+                if (result.nightDrive) {
+                    nightDriveAlert.className = 'mb-5 rounded-lg p-3 flex items-center gap-3 border font-medium bg-green-50 border-green-200 text-green-800';
+                    nightDriveAlert.innerHTML = `
+                        <div class="bg-green-100 p-2 rounded-full text-green-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">夜間運転 OK</div>
+                            <div class="text-xs mt-0.5 opacity-80">この濃度は夜間の運転・路上使用が可能です</div>
+                        </div>
+                    `;
+                } else {
+                    nightDriveAlert.className = 'mb-5 rounded-lg p-3 flex items-center gap-3 border font-medium bg-red-50 border-red-200 text-red-800 animate-pulse-slow';
+                    nightDriveAlert.innerHTML = `
+                        <div class="bg-red-100 p-2 rounded-full text-red-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">夜間運転 NG (不適合)</div>
+                            <div class="text-xs mt-0.5 opacity-80">※視力低下の危険があるため夜間は使用できません</div>
+                        </div>
+                    `;
+                }
+
+                // 4. トークスクリプトの更新
+                // アニメーション用に一度透明にする
+                talkScript.style.opacity = 0;
+                setTimeout(() => {
+                    talkScript.innerHTML = result.talk;
+                    talkScript.style.transition = 'opacity 0.3s';
+                    talkScript.style.opacity = 1;
+                }, 100);
+            }
+        }
+    </script>
+</body>
+</html>
