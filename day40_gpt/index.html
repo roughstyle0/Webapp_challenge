@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スマホ老眼・ピント調節アシスト必要度チェッカー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            neon: '0 0 0 1px rgba(34,197,94,.24), 0 0 30px rgba(34,197,94,.18)',
+            blue: '0 0 0 1px rgba(59,130,246,.24), 0 0 30px rgba(59,130,246,.18)',
+            soft: '0 20px 50px rgba(2,6,23,.45)'
+          },
+          colors: {
+            panel: '#0f172a',
+            panel2: '#111827',
+            line: 'rgba(148,163,184,0.16)'
+          },
+          backgroundImage: {
+            grid: 'radial-gradient(circle at 1px 1px, rgba(148,163,184,0.12) 1px, transparent 0)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(34,197,94,0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(59,130,246,0.10), transparent 30%),
+        linear-gradient(180deg, #020617 0%, #0b1220 45%, #030712 100%);
+    }
+
+    .glass-card {
+      background: linear-gradient(180deg, rgba(15,23,42,.84), rgba(17,24,39,.92));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .grid-bg {
+      background-size: 18px 18px;
+    }
+
+    .device-pill.active {
+      border-color: rgba(34,197,94,0.75);
+      background: linear-gradient(135deg, rgba(34,197,94,.20), rgba(59,130,246,.12));
+      box-shadow: 0 0 0 1px rgba(34,197,94,.35), 0 0 28px rgba(34,197,94,.16);
+      transform: translateY(-1px);
+    }
+
+    .signal-chip.selected {
+      border-color: rgba(59,130,246,0.8);
+      background: linear-gradient(135deg, rgba(59,130,246,.18), rgba(16,185,129,.10));
+      box-shadow: 0 0 0 1px rgba(59,130,246,.28), 0 0 24px rgba(59,130,246,.12);
+    }
+
+    .gauge-ring {
+      background:
+        radial-gradient(closest-side, rgba(2,6,23,1) 74%, transparent 76% 100%),
+        conic-gradient(var(--gauge-color) calc(var(--value) * 1%), rgba(30,41,59,.8) 0);
+    }
+
+    .lens-diagram {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.5rem;
+      background:
+        linear-gradient(180deg, rgba(59,130,246,.22) 0 52%, rgba(34,197,94,.24) 52% 100%),
+        linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: 1px solid rgba(148,163,184,.16);
+      min-height: 290px;
+    }
+
+    .lens-diagram::before,
+    .lens-diagram::after {
+      content: "";
+      position: absolute;
+      top: 12%;
+      width: 42%;
+      height: 76%;
+      border: 2px solid rgba(226,232,240,.55);
+      border-radius: 42% 42% 46% 46% / 34% 34% 50% 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+      box-shadow: inset 0 1px 16px rgba(255,255,255,.08), 0 0 32px rgba(59,130,246,.12);
+    }
+
+    .lens-diagram::before { left: 6%; }
+    .lens-diagram::after { right: 6%; }
+
+    .bridge {
+      position: absolute;
+      top: 38%;
+      left: 50%;
+      width: 8%;
+      height: 10px;
+      transform: translateX(-50%);
+      border-top: 2px solid rgba(226,232,240,.55);
+      border-radius: 999px;
+    }
+
+    .split-line {
+      position: absolute;
+      left: 5%;
+      right: 5%;
+      top: 52%;
+      border-top: 1.5px dashed rgba(226,232,240,.45);
+    }
+
+    .scan-line {
+      animation: scan 3.2s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(-140px); opacity: 0; }
+      15% { opacity: .9; }
+      50% { opacity: .55; }
+      100% { transform: translateY(330px); opacity: 0; }
+    }
+
+    .fade-up {
+      animation: fadeUp .45s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .meter-bar > span {
+      transition: width .6s cubic-bezier(.2,.8,.2,1);
+    }
+
+    @media (max-width: 420px) {
+      .lens-diagram {
+        min-height: 250px;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 antialiased">
+  <div class="absolute inset-0 pointer-events-none bg-grid grid-bg opacity-30"></div>
+
+  <main class="relative mx-auto w-full max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+    <section class="mb-6 rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6 lg:p-8">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl">
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium tracking-[0.18em] text-emerald-300 uppercase">
+            Focus Fitness for Eyes
+          </div>
+          <h1 class="text-2xl font-black leading-tight text-white sm:text-3xl lg:text-4xl">
+            スマホ老眼・ピント調節アシスト
+            <span class="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">必要度チェッカー</span>
+          </h1>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+            新人スタッフでも伝えやすい、“目の筋肉疲労”ベースの提案支援ツールです。
+            デジタル使用量と夕方のSOSサインから、サポートレンズの必要度と自然な提案トークをその場で整理できます。
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 self-stretch lg:w-[360px]">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+            <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400">Mode</p>
+            <p class="mt-1 text-sm font-semibold text-emerald-300">Digital Eye Fit</p>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+            <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400">UI</p>
+            <p class="mt-1 text-sm font-semibold text-cyan-300">Mobile First</p>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+            <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400">Goal</p>
+            <p class="mt-1 text-sm font-semibold text-white">提案しやすさUP</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+      <div class="space-y-6">
+        <div class="rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Step 1</p>
+              <h2 class="mt-2 text-lg font-bold text-white sm:text-xl">1日のデジタル使用時間</h2>
+            </div>
+            <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-right">
+              <p class="text-[11px] uppercase tracking-[0.16em] text-emerald-300">Current</p>
+              <p id="selectedUsageLabel" class="mt-1 text-sm font-semibold text-white">未選択</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-3">
+            <button type="button" class="device-pill w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition duration-200 hover:border-emerald-300/40 hover:bg-white/10" data-usage="light" data-score="15">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm font-semibold text-white">3時間未満</p>
+                  <p class="mt-1 text-sm text-slate-400">軽度 / 休憩が取れていれば負担は比較的少なめ</p>
+                </div>
+                <span class="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">軽度</span>
+              </div>
+            </button>
+
+            <button type="button" class="device-pill w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition duration-200 hover:border-emerald-300/40 hover:bg-white/10" data-usage="medium" data-score="35">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm font-semibold text-white">3〜6時間</p>
+                  <p class="mt-1 text-sm text-slate-400">中等度 / 夕方に疲れが表面化しやすいゾーン</p>
+                </div>
+                <span class="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">中等度</span>
+              </div>
+            </button>
+
+            <button type="button" class="device-pill w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition duration-200 hover:border-emerald-300/40 hover:bg-white/10" data-usage="heavy" data-score="55">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm font-semibold text-white">6時間以上</p>
+                  <p class="mt-1 text-sm text-slate-400">重度 / ピント調節筋が緊張し続けやすい状態</p>
+                </div>
+                <span class="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-200">重度</span>
+              </div>
+            </button>
+          </div>
+
+          <p class="mt-4 text-xs leading-5 text-slate-400">
+            接客時は「使用時間が長いほど、夕方にピント調節筋の疲れが出やすいです」と説明すると自然です。
+          </p>
+        </div>
+
+        <div class="rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Step 2</p>
+              <h2 class="mt-2 text-lg font-bold text-white sm:text-xl">夕方以降の目のSOSサイン</h2>
+            </div>
+            <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-right">
+              <p class="text-[11px] uppercase tracking-[0.16em] text-cyan-300">Selected</p>
+              <p id="selectedSignalCount" class="mt-1 text-sm font-semibold text-white">0個</p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-3">
+            <label class="signal-chip flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition duration-200 hover:border-cyan-300/40 hover:bg-white/10">
+              <input type="checkbox" class="signal-input mt-1 h-4 w-4 rounded border-slate-500 bg-slate-900 text-cyan-400 focus:ring-cyan-400" value="focusSlow" />
+              <div>
+                <p class="text-sm font-semibold text-white">スマホから遠くを見た時、ピントが合うまで数秒かかる</p>
+                <p class="mt-1 text-sm text-slate-400">近く見続けた後の“切り替え遅れ”サイン</p>
+              </div>
+            </label>
+
+            <label class="signal-chip flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition duration-200 hover:border-cyan-300/40 hover:bg-white/10">
+              <input type="checkbox" class="signal-input mt-1 h-4 w-4 rounded border-slate-500 bg-slate-900 text-cyan-400 focus:ring-cyan-400" value="pain" />
+              <div>
+                <p class="text-sm font-semibold text-white">目の奥が重い、または頭痛や肩こりがする</p>
+                <p class="mt-1 text-sm text-slate-400">目の筋肉疲労が首肩まわりに波及している可能性</p>
+              </div>
+            </label>
+
+            <label class="signal-chip flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 transition duration-200 hover:border-cyan-300/40 hover:bg-white/10">
+              <input type="checkbox" class="signal-input mt-1 h-4 w-4 rounded border-slate-500 bg-slate-900 text-cyan-400 focus:ring-cyan-400" value="blur" />
+              <div>
+                <p class="text-sm font-semibold text-white">夕方になると、細かい文字がかすんで見える</p>
+                <p class="mt-1 text-sm text-slate-400">疲れが溜まる時間帯に見え方が落ちるサイン</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-3 text-sm leading-6 text-amber-100">
+            ポイント：1つでも当てはまれば、単なる“気のせい”ではなく
+            <span class="font-semibold text-amber-200">ピント調節筋の疲労</span>
+            として話を組み立てやすくなります。
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6">
+          <button id="diagnoseBtn" class="group flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-5 py-4 text-sm font-black text-slate-950 transition duration-200 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-emerald-300/30">
+            <span>目の筋肉疲労度を診断</span>
+            <span class="transition group-hover:translate-x-1">→</span>
+          </button>
+          <p id="errorText" class="mt-3 hidden rounded-2xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"></p>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="rounded-3xl border border-dashed border-white/10 bg-white/[0.03] p-5 shadow-soft sm:p-6 lg:p-7">
+        <div class="flex min-h-[520px] flex-col items-center justify-center text-center">
+          <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 text-3xl shadow-neon">◎</div>
+          <h2 class="text-xl font-bold text-white sm:text-2xl">診断結果がここに表示されます</h2>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
+            使用時間と夕方のSOSサインを入力して診断すると、
+            目の筋肉疲労度、サポートレンズの図解、接客でそのまま使える提案トークが表示されます。
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const usageButtons = document.querySelectorAll('.device-pill');
+      const signalInputs = document.querySelectorAll('.signal-input');
+      const selectedUsageLabel = document.getElementById('selectedUsageLabel');
+      const selectedSignalCount = document.getElementById('selectedSignalCount');
+      const diagnoseBtn = document.getElementById('diagnoseBtn');
+      const resultPanel = document.getElementById('resultPanel');
+      const errorText = document.getElementById('errorText');
+
+      let selectedUsage = null;
+
+      const usageMap = {
+        light: { label: '3時間未満（軽度）', base: 15, badge: '軽度負荷', color: 'emerald' },
+        medium: { label: '3〜6時間（中等度）', base: 35, badge: '中等度負荷', color: 'cyan' },
+        heavy: { label: '6時間以上（重度）', base: 55, badge: '高負荷', color: 'rose' }
+      };
+
+      const signalMeta = {
+        focusSlow: {
+          label: 'ピント切り替えが遅い',
+          score: 28,
+          priority: 3
+        },
+        pain: {
+          label: '目の奥の重さ・頭痛・肩こり',
+          score: 18,
+          priority: 2
+        },
+        blur: {
+          label: '夕方の文字かすみ',
+          score: 20,
+          priority: 2
+        }
+      };
+
+      const talkTemplates = {
+        max: `診断の結果、目のピントを合わせる筋肉が、1日を通してかなり緊張し続けている状態です。特にスマホやPCを長く使う方に多い“目の筋肉のコリ”が強く出ています。今回おすすめしたいサポートレンズは、レンズの下側だけ見え方をやさしく補助して、スマホを見る時にピント調節筋をふわっと休ませやすくする設計です。いわば、目のための“マッサージチェア”のような1本なので、お仕事用・日常用としてかなり相性がいいと思います。`,
+        high: `かなり頑張ってピントを合わせ続けているサインが出ています。見えないというより、夕方に向かって“合わせ続ける筋肉”が疲れてくるタイプですね。サポートレンズは、近くを見る時だけ少し力を抜きやすくしてくれるので、スマホやPCが多い方の“夕方のしんどさ対策”としてご案内しやすいです。`,
+        medium: `今すぐ強い不調ではなくても、夕方に向けて目の筋肉疲労が積み上がりやすい傾向があります。サポートレンズは、スマホやPCを見る時間が長い方の“予防的な快適さアップ”としてご案内しやすいです。特に、仕事終わりの見え方の落差が気になる方に向いています。`,
+        low: `現時点では強い疲労サインは多くありませんが、デジタル時間が増える時期にはピント調節筋の負担が高まりやすくなります。サポートレンズは、目がつらくなってからではなく、快適に使い続けるための選択肢としてご紹介できます。`
+      };
+
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      }
+
+      function updateUsageSelection(button) {
+        usageButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        selectedUsage = button.dataset.usage;
+        selectedUsageLabel.textContent = usageMap[selectedUsage]?.label ?? '未選択';
+        hideError();
+      }
+
+      function updateSignalStyles() {
+        let count = 0;
+        signalInputs.forEach(input => {
+          const wrapper = input.closest('.signal-chip');
+          if (input.checked) {
+            count += 1;
+            wrapper.classList.add('selected');
+          } else {
+            wrapper.classList.remove('selected');
+          }
+        });
+        selectedSignalCount.textContent = `${count}個`;
+        hideError();
+      }
+
+      function getSelectedSignals() {
+        return Array.from(signalInputs)
+          .filter(input => input.checked)
+          .map(input => input.value);
+      }
+
+      function showError(message) {
+        errorText.textContent = message;
+        errorText.classList.remove('hidden');
+      }
+
+      function hideError() {
+        errorText.classList.add('hidden');
+        errorText.textContent = '';
+      }
+
+      function computeScore(usage, signals) {
+        const usageData = usageMap[usage];
+        if (!usageData) return null;
+
+        let score = usageData.base;
+        let strongest = 0;
+
+        signals.forEach(key => {
+          const meta = signalMeta[key];
+          if (!meta) return;
+          score += meta.score;
+          strongest = Math.max(strongest, meta.priority);
+        });
+
+        if (usage === 'heavy' && signals.includes('focusSlow')) score += 18;
+        if (usage === 'heavy' && signals.length >= 2) score += 8;
+        if (usage === 'medium' && signals.includes('focusSlow')) score += 10;
+        if (signals.length === 3) score += 6;
+        if (signals.length === 0) score -= 5;
+
+        score = Math.max(8, Math.min(100, score));
+
+        let level = 'low';
+        if (score >= 85) level = 'max';
+        else if (score >= 65) level = 'high';
+        else if (score >= 40) level = 'medium';
+
+        return { score, level, strongest };
+      }
+
+      function getGaugeColor(score) {
+        if (score >= 85) return '#fb7185';
+        if (score >= 65) return '#22c55e';
+        if (score >= 40) return '#38bdf8';
+        return '#94a3b8';
+      }
+
+      function getLevelLabel(level) {
+        const map = {
+          max: '筋肉コリ度 MAX',
+          high: '筋肉コリ度 HIGH',
+          medium: '筋肉コリ度 MIDDLE',
+          low: '筋肉コリ度 LOW'
+        };
+        return map[level] || '判定';
+      }
+
+      function getSummary(usage, signals, level) {
+        const usageText = usageMap[usage]?.label || '未選択';
+        const signalLabels = signals.length
+          ? signals.map(key => signalMeta[key]?.label).filter(Boolean).join(' / ')
+          : '明確なSOSサインは少なめ';
+
+        const baseSummary = {
+          max: 'かなり強い疲労傾向。接客では「見えない」ではなく「ピント調節筋がずっと緊張している状態」と表現すると自然です。',
+          high: '疲労サインがはっきり出ています。夕方の不快感対策としてサポートレンズ提案がしやすい状態です。',
+          medium: '疲労が積み上がりやすい傾向です。仕事用・スマホ用の快適性アップ提案に向いています。',
+          low: '現時点の強い疲労は限定的ですが、予防提案のきっかけは十分あります。'
+        };
+
+        return { usageText, signalLabels, text: baseSummary[level] || '' };
+      }
+
+      function getSupportReason(signals, score) {
+        const points = [];
+        if (signals.includes('focusSlow')) {
+          points.push('近くから遠くへの切り替えが遅いので、ピント調節筋の緊張が長引いている可能性があります。');
+        }
+        if (signals.includes('pain')) {
+          points.push('目の奥の重さや頭痛・肩こりは、目まわりの頑張りが体全体の疲れ感につながっているサインです。');
+        }
+        if (signals.includes('blur')) {
+          points.push('夕方の文字かすみは、1日の終わりにピント調節筋の余力が減っている状態として説明しやすいです。');
+        }
+        if (!points.length) {
+          points.push('今は目立つSOSサインが少なくても、長時間の近方作業が続くと疲労はじわじわ蓄積しやすいです。');
+        }
+        if (score >= 65) {
+          points.push('サポートレンズで近くを見る時の負担を分散すると、“夕方のつらさ”を実感ベースで軽くしやすくなります。');
+        } else {
+          points.push('サポートレンズは、つらくなる前の予防ケアとしても案内しやすい選択肢です。');
+        }
+        return points;
+      }
+
+      function renderResults(usage, signals) {
+        const result = computeScore(usage, signals);
+        if (!result) return;
+
+        const { score, level } = result;
+        const gaugeColor = getGaugeColor(score);
+        const summary = getSummary(usage, signals, level);
+        const reasons = getSupportReason(signals, score);
+        const talk = talkTemplates[level];
+        const badgeClass =
+          score >= 85
+            ? 'border-rose-400/25 bg-rose-400/10 text-rose-200'
+            : score >= 65
+            ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+            : score >= 40
+            ? 'border-cyan-400/25 bg-cyan-400/10 text-cyan-200'
+            : 'border-slate-400/20 bg-slate-400/10 text-slate-200';
+
+        const checklistHtml = reasons
+          .map(item => `
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-xs text-cyan-300">✓</span>
+              <span class="text-sm leading-6 text-slate-300">${escapeHtml(item)}</span>
+            </li>
+          `)
+          .join('');
+
+        const selectedSignalBadges = signals.length
+          ? signals.map(key => `
+              <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200">
+                ${escapeHtml(signalMeta[key]?.label || key)}
+              </span>
+            `).join('')
+          : `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">SOSサイン少なめ</span>`;
+
+        resultPanel.innerHTML = `
+          <div class="fade-up space-y-6">
+            <div class="grid gap-4 xl:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+              <section class="rounded-3xl border border-white/10 glass-card p-5 shadow-blue sm:p-6">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Diagnostic Score</p>
+                    <h2 class="mt-2 text-lg font-bold text-white">目の毛様体筋のコリ度</h2>
+                  </div>
+                  <span class="rounded-full border px-3 py-1 text-xs font-semibold ${badgeClass}">
+                    ${escapeHtml(getLevelLabel(level))}
+                  </span>
+                </div>
+
+                <div class="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div class="gauge-ring relative h-40 w-40 shrink-0 rounded-full" style="--value:${score}; --gauge-color:${gaugeColor};">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span class="text-4xl font-black text-white">${score}</span>
+                      <span class="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">Fatigue %</span>
+                    </div>
+                  </div>
+
+                  <div class="w-full space-y-4">
+                    <div>
+                      <div class="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.16em] text-slate-400">
+                        <span>Usage Load</span>
+                        <span>${escapeHtml(summary.usageText)}</span>
+                      </div>
+                      <div class="meter-bar h-3 overflow-hidden rounded-full bg-slate-800">
+                        <span class="block h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" style="width:${usageMap[usage].base + (usage === 'heavy' ? 12 : usage === 'medium' ? 6 : 0)}%"></span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.16em] text-slate-400">
+                        <span>SOS Signs</span>
+                        <span>${signals.length} / 3</span>
+                      </div>
+                      <div class="meter-bar h-3 overflow-hidden rounded-full bg-slate-800">
+                        <span class="block h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-400" style="width:${Math.max(8, signals.length * 33.33)}%"></span>
+                      </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <p class="text-sm leading-6 text-slate-300">${escapeHtml(summary.text)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-5">
+                  <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">今回のサイン</p>
+                  <div class="flex flex-wrap gap-2">${selectedSignalBadges}</div>
+                </div>
+              </section>
+
+              <section class="rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Lens Structure</p>
+                    <h2 class="mt-2 text-lg font-bold text-white">サポートレンズの構造イメージ</h2>
+                  </div>
+                  <span class="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+                    上：遠く / 下：リラックス
+                  </span>
+                </div>
+
+                <div class="mt-5 lens-diagram">
+                  <div class="bridge"></div>
+                  <div class="split-line"></div>
+                  <div class="scan-line absolute left-0 right-0 h-10 bg-gradient-to-b from-cyan-300/0 via-cyan-300/20 to-cyan-300/0"></div>
+
+                  <div class="absolute left-5 top-5 rounded-2xl border border-cyan-300/25 bg-slate-950/40 px-3 py-2 text-xs text-cyan-100">
+                    <p class="font-semibold text-cyan-300">上部：遠く用ゾーン</p>
+                    <p class="mt-1 leading-5 text-slate-300">日常視・歩行・接客時の見え方をキープ</p>
+                  </div>
+
+                  <div class="absolute bottom-5 right-5 rounded-2xl border border-emerald-300/25 bg-slate-950/40 px-3 py-2 text-xs text-emerald-100">
+                    <p class="font-semibold text-emerald-300">下部：リラックスゾーン</p>
+                    <p class="mt-1 leading-5 text-slate-300">スマホやPCを見る時に目の筋肉を休ませやすい</p>
+                  </div>
+
+                  <div class="absolute inset-x-0 top-[18%] text-center">
+                    <span class="inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-200">
+                      視線を下げると補助が入る設計
+                    </span>
+                  </div>
+
+                  <div class="absolute bottom-[18%] left-1/2 -translate-x-1/2 text-center">
+                    <span class="inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                      “頑張りすぎ”を和らげる
+                    </span>
+                  </div>
+                </div>
+
+                <ul class="mt-5 space-y-3">${checklistHtml}</ul>
+              </section>
+            </div>
+
+            <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+              <div class="rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Talk Script</p>
+                    <h2 class="mt-2 text-lg font-bold text-white">提案トーク（そのまま使えます）</h2>
+                  </div>
+                  <span class="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-100">
+                    禁止ワード回避済み
+                  </span>
+                </div>
+
+                <div class="mt-5 rounded-3xl border border-amber-300/15 bg-gradient-to-br from-amber-400/10 to-orange-400/10 p-5">
+                  <p class="text-sm leading-7 text-slate-100">${escapeHtml(talk)}</p>
+                </div>
+
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">言い出しのコツ</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-300">「見えない」ではなく、<span class="font-semibold text-white">“夕方に目の筋肉が疲れてくる感じ、ありませんか？”</span> と聞くと角が立ちにくいです。</p>
+                  </div>
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">クロージングのコツ</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-300">「スマホ用だけ特別な眼鏡」ではなく、<span class="font-semibold text-white">“日中の仕事をラクにする1本”</span> と置き換えると受け入れられやすいです。</p>
+                  </div>
+                </div>
+              </div>
+
+              <aside class="rounded-3xl border border-white/10 glass-card p-5 shadow-soft sm:p-6">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Staff Memo</p>
+                <h3 class="mt-2 text-lg font-bold text-white">接客メモ</h3>
+
+                <div class="mt-5 space-y-3">
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">使用時間</p>
+                    <p class="mt-2 text-sm font-semibold text-white">${escapeHtml(summary.usageText)}</p>
+                  </div>
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">主なSOS</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-300">${escapeHtml(summary.signalLabels)}</p>
+                  </div>
+                  <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p class="text-xs uppercase tracking-[0.16em] text-slate-400">提案温度感</p>
+                    <p class="mt-2 text-sm font-semibold text-white">${score >= 65 ? '今日は積極提案しやすい' : score >= 40 ? '自然に提案しやすい' : '予防提案向き'}</p>
+                  </div>
+                </div>
+              </aside>
+            </section>
+          </div>
+        `;
+      }
+
+      usageButtons.forEach(button => {
+        button.addEventListener('click', () => updateUsageSelection(button));
+      });
+
+      signalInputs.forEach(input => {
+        input.addEventListener('change', updateSignalStyles);
+      });
+
+      diagnoseBtn.addEventListener('click', () => {
+        const signals = getSelectedSignals();
+
+        if (!selectedUsage) {
+          showError('まずは「1日のデジタル使用時間」を選択してください。');
+          return;
+        }
+
+        renderResults(selectedUsage, signals);
+        hideError();
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      updateSignalStyles();
+    })();
+  </script>
+</body>
+</html>
