@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>調光レンズ リアルタイム・シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            900: '#134e4a',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* CSS Variables for Lens Animation */
+        :root {
+            --lens-color: rgba(240, 248, 255, 0.1); /* 初期はほぼ透明 */
+            --bg-gradient-start: #f0fdfa; /* 初期背景 */
+            --bg-gradient-end: #e0f2fe;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            transition: background 2s ease-in-out;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* * [こだわりポイント]
+         * 調光レンズの「ジワ〜ッ」と変化するリアルな挙動を再現するため、
+         * transition に 4秒 の長めの時間を設定し、イージングを調整。
+         */
+        .lens-glass {
+            fill: var(--lens-color);
+            transition: fill 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        /* グラスのハイライト（ツヤ感） */
+        .glass-reflection {
+            fill: url(#reflection-gradient);
+            pointer-events: none;
+        }
+
+        /* スクロールバーの美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(20, 184, 166, 0.8);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="antialiased p-4 md:p-8 flex flex-col items-center justify-center">
+
+    <!-- Header -->
+    <header class="w-full max-w-6xl mb-8 text-center md:text-left flex flex-col md:flex-row items-center justify-between">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-brand-900">
+                Magic Lens Simulator
+            </h1>
+            <p class="text-sm md:text-base text-gray-500 mt-1">
+                お客様と一緒に見る「調光レンズ」リアルタイム体感ツール
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-2 text-sm font-medium text-brand-600 bg-brand-50 px-4 py-2 rounded-full border border-brand-100 shadow-sm">
+            <svg class="w-4 h-4 animate-pulse-slow" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+            <span id="status-text">お客様の行き先を選択してください</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Visualizer & Controls -->
+        <section class="lg:col-span-7 bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-6 md:p-8 flex flex-col">
+            
+            <!-- 3D-like Glasses SVG -->
+            <div class="relative w-full h-48 md:h-64 flex items-center justify-center mb-8">
+                <!-- 背景の太陽/光エフェクト (JSで不透明度制御) -->
+                <div id="sun-effect" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-yellow-300 rounded-full blur-3xl opacity-0 transition-opacity duration-1000"></div>
+                
+                <svg viewBox="0 0 500 200" class="w-full max-w-lg z-10 drop-shadow-2xl">
+                    <defs>
+                        <!-- レンズのツヤ用グラデーション -->
+                        <linearGradient id="reflection-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="white" stop-opacity="0.6"/>
+                            <stop offset="15%" stop-color="white" stop-opacity="0.1"/>
+                            <stop offset="30%" stop-color="white" stop-opacity="0"/>
+                            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+                        </linearGradient>
+                        <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity="0.3"/>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Glasses Frame -->
+                    <g filter="url(#drop-shadow)">
+                        <!-- テンプル（つる） -->
+                        <path d="M 40,70 Q 20,70 15,90 L 10,110" fill="none" stroke="#222" stroke-width="10" stroke-linecap="round"/>
+                        <path d="M 460,70 Q 480,70 485,90 L 490,110" fill="none" stroke="#222" stroke-width="10" stroke-linecap="round"/>
+                        
+                        <!-- 左レンズ -->
+                        <g transform="translate(60, 50)">
+                            <!-- フレーム -->
+                            <rect x="0" y="0" width="160" height="110" rx="40" fill="none" stroke="#111" stroke-width="12" />
+                            <!-- レンズ本体（色が変化する） -->
+                            <rect x="6" y="6" width="148" height="98" rx="34" class="lens-glass" />
+                            <!-- 反射ハイライト -->
+                            <rect x="6" y="6" width="148" height="98" rx="34" class="glass-reflection" />
+                        </g>
+                        
+                        <!-- ブリッジ（鼻当て部分） -->
+                        <path d="M 220,85 Q 250,70 280,85" fill="none" stroke="#111" stroke-width="12" stroke-linecap="round"/>
+
+                        <!-- 右レンズ -->
+                        <g transform="translate(280, 50)">
+                            <!-- フレーム -->
+                            <rect x="0" y="0" width="160" height="110" rx="40" fill="none" stroke="#111" stroke-width="12" />
+                            <!-- レンズ本体（色が変化する） -->
+                            <rect x="6" y="6" width="148" height="98" rx="34" class="lens-glass" />
+                            <!-- 反射ハイライト -->
+                            <rect x="6" y="6" width="148" height="98" rx="34" class="glass-reflection" />
+                        </g>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Controls (Buttons) -->
+            <div class="mt-auto">
+                <h2 class="text-sm font-bold text-gray-500 mb-3 uppercase tracking-wider">今日の行き先は？</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button onclick="handleSituation('office')" id="btn-office" class="sit-btn group relative flex flex-col items-center justify-center p-3 md:p-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-brand-500 hover:shadow-md transition-all">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🏢</span>
+                        <span class="text-xs md:text-sm font-semibold text-gray-700">室内・オフィス</span>
+                    </button>
+                    <button onclick="handleSituation('picnic')" id="btn-picnic" class="sit-btn group relative flex flex-col items-center justify-center p-3 md:p-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-brand-500 hover:shadow-md transition-all">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🌸</span>
+                        <span class="text-xs md:text-sm font-semibold text-gray-700">春先のピクニック</span>
+                    </button>
+                    <button onclick="handleSituation('beach')" id="btn-beach" class="sit-btn group relative flex flex-col items-center justify-center p-3 md:p-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-brand-500 hover:shadow-md transition-all">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🏖️</span>
+                        <span class="text-xs md:text-sm font-semibold text-gray-700">真夏のビーチ</span>
+                    </button>
+                    <button onclick="handleSituation('drive')" id="btn-drive" class="sit-btn group relative flex flex-col items-center justify-center p-3 md:p-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-brand-500 hover:shadow-md transition-all">
+                        <span class="text-2xl mb-1 group-hover:scale-110 transition-transform">🚗</span>
+                        <span class="text-xs md:text-sm font-semibold text-gray-700">車でのドライブ</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Information & Talk Script -->
+        <section class="lg:col-span-5 relative">
+            <!-- プレースホルダー（未選択時） -->
+            <div id="placeholder" class="absolute inset-0 bg-white/60 backdrop-blur-sm rounded-3xl border border-dashed border-gray-300 flex flex-col items-center justify-center p-8 text-center z-20 transition-opacity duration-500">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-700 mb-2">シチュエーションを選択</h3>
+                <p class="text-sm text-gray-500">左のボタンから行き先を選ぶと、<br>レンズの変化と提案トークが表示されます。</p>
+            </div>
+
+            <!-- 情報パネル本体 -->
+            <div id="info-panel" class="h-full bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden flex flex-col opacity-0 pointer-events-none transition-opacity duration-500">
+                
+                <!-- ヘッダー部分：環境データ -->
+                <div class="bg-gray-50 border-b border-gray-100 p-6">
+                    <h3 id="panel-title" class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <!-- JSで挿入 -->
+                    </h3>
+                    <div class="flex space-x-4">
+                        <div class="flex-1 bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex items-center space-x-3">
+                            <div class="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 font-semibold">紫外線量</p>
+                                <p id="uv-level" class="text-sm font-bold text-gray-700">-</p>
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex items-center space-x-3">
+                            <div class="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 font-semibold">気温</p>
+                                <p id="temp-level" class="text-sm font-bold text-gray-700">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-6">
+                    <!-- なぜそうなる？（仕組みと弱点） -->
+                    <div>
+                        <h4 class="text-sm font-bold text-brand-600 mb-2 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            仕組みと注意点（スタッフ用）
+                        </h4>
+                        <p id="explanation-text" class="text-sm text-gray-600 leading-relaxed bg-brand-50/50 p-4 rounded-xl border border-brand-100">
+                            <!-- JSで挿入 -->
+                        </p>
+                    </div>
+
+                    <!-- 提案トークスクリプト（超重要） -->
+                    <div class="mt-auto">
+                        <div class="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-5 shadow-lg text-white">
+                            <!-- 吹き出しの尻尾 -->
+                            <div class="absolute -top-3 left-6 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-b-[16px] border-b-gray-800"></div>
+                            
+                            <h4 class="text-xs font-bold text-amber-400 mb-2 tracking-wider flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg>
+                                プロの提案トーク（そのまま読めます）
+                            </h4>
+                            <p id="talk-script" class="text-base md:text-lg font-medium leading-relaxed">
+                                <!-- JSで挿入 -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Error Toast Notification -->
+    <div id="error-toast" class="fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 pointer-events-none">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span id="error-message" class="text-sm font-medium">エラーが発生しました</span>
+    </div>
+
+    <script>
+        /**
+         * シチュエーションごとのデータ定義（状態管理）
+         * - レンズの色（RGBA）
+         * - 背景のグラデーション色
+         * - 表示テキストデータ
+         */
+        const situations = {
+            office: {
+                title: '🏢 室内・オフィス',
+                lensColor: 'rgba(240, 248, 255, 0.1)', // ほぼ透明（反射のみ）
+                bgStart: '#f8fafc', bgEnd: '#f1f5f9',
+                sunOpacity: '0',
+                uv: 'ゼロ', temp: '適温（エアコン）',
+                explanation: '室内には紫外線が入らないため、レンズはクリアな状態を保ちます。通常のダテメガネやPCメガネと同じ感覚でお使いいただけます。',
+                talk: '「室内では普通のメガネと全く同じように透明なので、お仕事中も相手に違和感を与えません。ブルーライトカットを付ければデスクワークにも最適ですよ！」'
+            },
+            picnic: {
+                title: '🌸 春先のピクニック',
+                lensColor: 'rgba(30, 35, 40, 0.85)', // 一番濃い黒/グレー
+                bgStart: '#f0fdf4', bgEnd: '#dcfce7', // 春らしい緑系
+                sunOpacity: '0.4',
+                uv: '強い', temp: '低め〜適温',
+                explanation: '調光レンズは【紫外線が強く、気温が低い】ほど濃く発色する性質があります。そのため、真夏よりも春先や秋口の晴れた日の方が、レンズの色が最も濃くなります。これが最大の落とし穴（弱点）です。',
+                talk: '「実は調光レンズが一番濃くなるのは、真夏ではなく春先や秋なんです！気温が低いほどしっかり色づくので、今日のようなピクニックやアウトドアには最高のパフォーマンスを発揮しますよ！」'
+            },
+            beach: {
+                title: '🏖️ 真夏のビーチ',
+                lensColor: 'rgba(45, 50, 55, 0.55)', // 少し薄い（退色作用）
+                bgStart: '#fffbeb', bgEnd: '#fef08a', // 夏らしい黄色系
+                sunOpacity: '0.8',
+                uv: '非常に強い', temp: '猛暑',
+                explanation: '紫外線は非常に強いですが、気温が高すぎるとレンズの色が元に戻ろうとする働き（退色）も活発になります。そのため、お客様の想像よりも少し薄い発色に留まることがあり、これが「色が変わらない」というクレームに繋がります。',
+                talk: '「真夏は日差しが強いですが、実は気温が高すぎるとレンズが自ら色を薄くしようとするんです。真っ黒にはならないので、目元が少し透けて見えて涼しげな印象になりますよ。もし真っ黒がお好みなら、専用のサングラスがおすすめです！」'
+            },
+            drive: {
+                title: '🚗 車でのドライブ',
+                lensColor: 'rgba(240, 248, 255, 0.1)', // 透明のまま
+                bgStart: '#f3f4f6', bgEnd: '#e5e7eb',
+                sunOpacity: '0',
+                uv: 'カット（窓ガラス）', temp: '適温',
+                explanation: '最近の車のフロントガラスはUVカット機能が標準装備されています。調光レンズは主に【紫外線】に反応するため、車内では日差しがどんなに眩しくても色は全く変わりません。ドライブ目的のお客様には必ず説明が必要です。',
+                talk: '「実はお車の中だと、窓ガラスが紫外線をカットしてしまうので色は変わらないんです。ドライブメインで使いたい場合は、光そのものに反応する『可視光線調光レンズ』にするか、運転用のサングラスと2本持ちするのが一番安全で快適ですよ！」'
+            }
+        };
+
+        // DOM Elements
+        const root = document.documentElement;
+        const statusText = document.getElementById('status-text');
+        const placeholder = document.getElementById('placeholder');
+        const infoPanel = document.getElementById('info-panel');
+        const sunEffect = document.getElementById('sun-effect');
+        
+        // Data Elements
+        const panelTitle = document.getElementById('panel-title');
+        const uvLevel = document.getElementById('uv-level');
+        const tempLevel = document.getElementById('temp-level');
+        const explanationText = document.getElementById('explanation-text');
+        const talkScript = document.getElementById('talk-script');
+
+        /**
+         * メインのロジック：シチュエーション変更処理
+         */
+        function handleSituation(situationId) {
+            try {
+                const data = situations[situationId];
+                if (!data) throw new Error("無効なシチュエーションIDが選択されました。");
+
+                // 1. UI状態の更新 (ボタンのアクティブ化)
+                document.querySelectorAll('.sit-btn').forEach(btn => {
+                    btn.classList.remove('border-brand-500', 'ring-2', 'ring-brand-200', 'bg-brand-50');
+                });
+                const activeBtn = document.getElementById(`btn-${situationId}`);
+                if (activeBtn) {
+                    activeBtn.classList.add('border-brand-500', 'ring-2', 'ring-brand-200', 'bg-brand-50');
+                }
+
+                // 2. CSS変数を更新し、アニメーションを発火
+                statusText.textContent = "レンズ調光中... (約4秒)";
+                root.style.setProperty('--lens-color', data.lensColor);
+                root.style.setProperty('--bg-gradient-start', data.bgStart);
+                root.style.setProperty('--bg-gradient-end', data.bgEnd);
+                sunEffect.style.opacity = data.sunOpacity;
+
+                // 3. データパネルの更新
+                // アニメーションをリセットするために一度非表示にする工夫
+                infoPanel.classList.remove('animate-fade-in');
+                void infoPanel.offsetWidth; // リフローを強制
+
+                panelTitle.textContent = data.title;
+                uvLevel.textContent = data.uv;
+                tempLevel.textContent = data.temp;
+                explanationText.innerHTML = data.explanation;
+                talkScript.innerHTML = data.talk;
+
+                // プレースホルダーを消し、パネルを表示
+                placeholder.style.opacity = '0';
+                placeholder.style.pointerEvents = 'none';
+                
+                infoPanel.classList.remove('opacity-0', 'pointer-events-none');
+                infoPanel.classList.add('animate-fade-in');
+
+                // 調光完了後のステータス更新
+                setTimeout(() => {
+                    statusText.textContent = "調光完了（シミュレーション）";
+                }, 4000); // CSS transition の 4s と同期
+
+            } catch (error) {
+                showError(error.message);
+                console.error(error);
+            }
+        }
+
+        /**
+         * エラーハンドリング（回復力）
+         */
+        function showError(message) {
+            const toast = document.getElementById('error-toast');
+            document.getElementById('error-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
