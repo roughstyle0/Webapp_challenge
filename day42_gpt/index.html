@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>調光レンズ リアルタイム変化＆弱点シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.85), rgba(255,255,255,0) 28%),
+        radial-gradient(circle at top right, rgba(255,244,214,0.8), rgba(255,244,214,0) 22%),
+        linear-gradient(180deg, #eefcf6 0%, #f7fbff 48%, #ffffff 100%);
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: 0 12px 40px rgba(31, 41, 55, 0.08);
+    }
+
+    .lens-fill {
+      transition:
+        background-color 2400ms cubic-bezier(.22, 1, .36, 1),
+        opacity 2400ms cubic-bezier(.22, 1, .36, 1),
+        box-shadow 2400ms cubic-bezier(.22, 1, .36, 1),
+        transform 2400ms cubic-bezier(.22, 1, .36, 1);
+      opacity: 0.04;
+      transform: scale(0.98);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+    }
+
+    .lens-glint {
+      background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.08) 42%, transparent 55%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .selected-scenario {
+      box-shadow:
+        0 0 0 2px rgba(13, 148, 136, 0.25),
+        0 12px 24px rgba(13, 148, 136, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .fade-up {
+      animation: fadeUp 540ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .pulse-sun {
+      animation: pulseSun 2.8s ease-in-out infinite;
+    }
+
+    .float-leaf {
+      animation: floatLeaf 4.2s ease-in-out infinite;
+    }
+
+    .progress-bar {
+      transition: width 700ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseSun {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.95;
+      }
+      50% {
+        transform: scale(1.06);
+        opacity: 1;
+      }
+    }
+
+    @keyframes floatLeaf {
+      0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-7px) rotate(6deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .lens-fill,
+      .progress-bar {
+        transition: none !important;
+      }
+
+      .fade-up,
+      .pulse-sun,
+      .float-leaf {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 selection:bg-emerald-200 selection:text-slate-900">
+  <main class="relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="pulse-sun absolute top-8 right-6 sm:right-10 w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-amber-200 via-yellow-200 to-orange-200 blur-sm opacity-80"></div>
+      <div class="float-leaf absolute top-28 left-6 sm:left-14 text-3xl opacity-50">🍃</div>
+      <div class="float-leaf absolute top-52 right-12 sm:right-24 text-2xl opacity-40" style="animation-delay:.8s;">🌿</div>
+      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-[38rem] h-[38rem] bg-emerald-100/40 blur-3xl rounded-full"></div>
+    </div>
+
+    <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 lg:py-14">
+      <div class="grid gap-6 lg:gap-8 xl:grid-cols-[1.08fr_0.92fr] items-start">
+        <!-- Left Column -->
+        <div class="space-y-5 sm:space-y-6">
+          <div class="glass-card rounded-3xl p-5 sm:p-7 lg:p-8">
+            <div class="flex flex-wrap items-center gap-3 mb-4">
+              <span class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs sm:text-sm font-semibold">
+                新人スタッフ向け 接客支援ツール
+              </span>
+              <span class="inline-flex items-center rounded-full bg-sky-100 text-sky-700 px-3 py-1 text-xs sm:text-sm font-semibold">
+                調光レンズの“誤解”を防ぐ
+              </span>
+            </div>
+
+            <div class="space-y-3">
+              <h1 class="text-2xl sm:text-4xl lg:text-[2.6rem] font-black tracking-tight text-slate-900 leading-tight">
+                調光レンズ
+                <span class="bg-gradient-to-r from-emerald-600 via-teal-500 to-sky-500 bg-clip-text text-transparent">
+                  リアルタイム変化
+                </span>
+                ＆弱点シミュレーター
+              </h1>
+              <p class="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed">
+                お客様の行き先を選ぶだけで、
+                <span class="font-semibold text-slate-800">「どのくらい色が変わるか」</span>
+                と
+                <span class="font-semibold text-slate-800">「なぜ期待通りにならないことがあるのか」</span>
+                を、見てすぐ伝えられます。
+              </p>
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                class="scenario-btn text-left rounded-2xl border border-emerald-100 bg-white/80 hover:bg-white px-4 py-4 transition duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                data-key="indoor"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="text-2xl">🏢</div>
+                  <div>
+                    <div class="font-bold text-slate-900">室内・オフィス</div>
+                    <div class="text-sm text-slate-500">紫外線ゼロ / ほぼ透明</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="scenario-btn text-left rounded-2xl border border-emerald-100 bg-white/80 hover:bg-white px-4 py-4 transition duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                data-key="picnic"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="text-2xl">🧺</div>
+                  <div>
+                    <div class="font-bold text-slate-900">春先のピクニック</div>
+                    <div class="text-sm text-slate-500">紫外線：強 / 気温：低め</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="scenario-btn text-left rounded-2xl border border-emerald-100 bg-white/80 hover:bg-white px-4 py-4 transition duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                data-key="beach"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="text-2xl">🏖️</div>
+                  <div>
+                    <div class="font-bold text-slate-900">真夏のビーチ</div>
+                    <div class="text-sm text-slate-500">紫外線：強 / 気温：猛暑</div>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                class="scenario-btn text-left rounded-2xl border border-emerald-100 bg-white/80 hover:bg-white px-4 py-4 transition duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                data-key="drive"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="text-2xl">🚗</div>
+                  <div>
+                    <div class="font-bold text-slate-900">車でのドライブ</div>
+                    <div class="text-sm text-slate-500">窓ガラスでUVカット</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div class="mt-5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 p-4">
+              <div class="flex items-start gap-3">
+                <div class="text-xl">💡</div>
+                <p class="text-sm sm:text-[15px] leading-relaxed text-slate-700">
+                  コツ：
+                  <span class="font-semibold">「紫外線の量」だけでなく「気温」や「車のガラス」も結果を左右します。</span>
+                  先に弱点を伝えると、むしろ信頼感が上がります。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail Cards -->
+          <div id="detailsPanel" class="grid gap-5">
+            <div class="glass-card rounded-3xl p-5 sm:p-6 lg:p-7 fade-up">
+              <div class="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Lens Simulation</p>
+                  <h2 id="scenarioTitle" class="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900">
+                    シチュエーションを選んでください
+                  </h2>
+                </div>
+                <div id="scenarioBadge" class="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-3 py-1.5 text-sm font-semibold">
+                  未選択
+                </div>
+              </div>
+
+              <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                  <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">紫外線</div>
+                  <div id="uvText" class="mt-2 text-lg font-extrabold text-slate-900">-</div>
+                </div>
+                <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                  <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">気温</div>
+                  <div id="tempText" class="mt-2 text-lg font-extrabold text-slate-900">-</div>
+                </div>
+                <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                  <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">想定濃度</div>
+                  <div id="densityText" class="mt-2 text-lg font-extrabold text-slate-900">-</div>
+                </div>
+              </div>
+
+              <div class="mt-6 rounded-[2rem] bg-gradient-to-br from-sky-100 via-cyan-50 to-emerald-50 border border-white/60 p-4 sm:p-6">
+                <div class="flex flex-col gap-4">
+                  <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-slate-600">レンズ濃度の変化</p>
+                      <h3 class="text-lg sm:text-xl font-extrabold text-slate-900">ジワ〜ッと色づく様子を再現</h3>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-slate-600">
+                      <span>透明</span>
+                      <div class="w-16 h-2 rounded-full bg-gradient-to-r from-white via-slate-300 to-slate-700 border border-white/80"></div>
+                      <span>濃い</span>
+                    </div>
+                  </div>
+
+                  <div class="grid lg:grid-cols-[1fr_220px] gap-5 items-center">
+                    <div class="relative mx-auto w-full max-w-[520px]">
+                      <div class="relative rounded-[2rem] bg-white/70 p-3 sm:p-5 border border-white/80 shadow-inner">
+                        <div class="aspect-[16/10] rounded-[1.5rem] bg-gradient-to-b from-sky-200 via-sky-100 to-emerald-100 overflow-hidden relative">
+                          <div id="sceneSky" class="absolute inset-0 transition-all duration-[2200ms] ease-out"></div>
+
+                          <div class="absolute left-0 right-0 bottom-0 h-16 sm:h-20 bg-gradient-to-t from-emerald-300/70 to-transparent"></div>
+
+                          <div id="sceneDecor" class="absolute inset-0 pointer-events-none">
+                            <div class="absolute top-4 right-5 text-3xl sm:text-4xl">☀️</div>
+                          </div>
+
+                          <!-- Glasses -->
+                          <div class="absolute inset-0 flex items-center justify-center px-3">
+                            <div class="relative w-full max-w-[420px] h-[140px] sm:h-[180px]">
+                              <!-- frame bridge -->
+                              <div class="absolute left-1/2 top-[48%] -translate-x-1/2 w-10 sm:w-14 h-3 rounded-full bg-slate-800/80"></div>
+
+                              <!-- temples -->
+                              <div class="absolute left-0 top-[46%] w-14 sm:w-20 h-2 rounded-full bg-slate-700/70 -translate-x-7 sm:-translate-x-10 rotate-[9deg]"></div>
+                              <div class="absolute right-0 top-[46%] w-14 sm:w-20 h-2 rounded-full bg-slate-700/70 translate-x-7 sm:translate-x-10 -rotate-[9deg]"></div>
+
+                              <!-- left lens -->
+                              <div class="absolute left-[8%] top-[16%] w-[40%] h-[68%] rounded-[1.8rem] border-[8px] sm:border-[10px] border-slate-800/85 bg-white/20 overflow-hidden shadow-lg">
+                                <div id="lensLeft" class="lens-fill absolute inset-0 rounded-[1.2rem]"></div>
+                                <div class="lens-glint absolute inset-0 rounded-[1.2rem]"></div>
+                              </div>
+
+                              <!-- right lens -->
+                              <div class="absolute right-[8%] top-[16%] w-[40%] h-[68%] rounded-[1.8rem] border-[8px] sm:border-[10px] border-slate-800/85 bg-white/20 overflow-hidden shadow-lg">
+                                <div id="lensRight" class="lens-fill absolute inset-0 rounded-[1.2rem]"></div>
+                                <div class="lens-glint absolute inset-0 rounded-[1.2rem]"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="space-y-4">
+                      <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                        <div class="flex items-center justify-between gap-3">
+                          <span class="text-sm font-semibold text-slate-600">現在の見え方</span>
+                          <span id="liveLevel" class="text-sm font-bold text-emerald-700">透明寄り</span>
+                        </div>
+                        <div class="mt-3 h-3 rounded-full bg-slate-100 overflow-hidden">
+                          <div id="levelBar" class="progress-bar h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-slate-700 w-[4%]"></div>
+                        </div>
+                        <p id="liveCaption" class="mt-3 text-sm leading-relaxed text-slate-600">
+                          選択した環境に応じてレンズ濃度が変化します。
+                        </p>
+                      </div>
+
+                      <div class="rounded-2xl bg-slate-900 text-white p-4">
+                        <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-300">接客ワンポイント</div>
+                        <p id="quickTip" class="mt-2 text-sm sm:text-[15px] leading-relaxed text-slate-100">
+                          まずはシチュエーションを選ぶと、接客トークの土台が表示されます。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-5 text-sm text-slate-500">
+                ※ 演出は理解促進のためのシミュレーションです。実際の発色速度・濃度はレンズ設計や使用環境で変動します。
+              </div>
+            </div>
+
+            <div class="grid gap-5 xl:grid-cols-3">
+              <article class="glass-card rounded-3xl p-5 sm:p-6 fade-up">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100 text-xl">⚠️</div>
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Weak Point</p>
+                    <h3 class="text-lg font-extrabold text-slate-900">弱点</h3>
+                  </div>
+                </div>
+                <p id="weaknessText" class="mt-4 text-sm sm:text-[15px] leading-relaxed text-slate-700">
+                  シチュエーションを選ぶと、誤解されやすいポイントを表示します。
+                </p>
+              </article>
+
+              <article class="glass-card rounded-3xl p-5 sm:p-6 fade-up">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-xl">🔬</div>
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-sky-500">Mechanism</p>
+                    <h3 class="text-lg font-extrabold text-slate-900">仕組み</h3>
+                  </div>
+                </div>
+                <p id="mechanismText" class="mt-4 text-sm sm:text-[15px] leading-relaxed text-slate-700">
+                  紫外線量、温度、ガラス越しなどの影響をここで整理できます。
+                </p>
+              </article>
+
+              <article class="glass-card rounded-3xl p-5 sm:p-6 fade-up">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-xl">🗣️</div>
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-500">Sales Script</p>
+                    <h3 class="text-lg font-extrabold text-slate-900">プロの提案トーク</h3>
+                  </div>
+                </div>
+                <p id="scriptText" class="mt-4 text-sm sm:text-[15px] leading-relaxed text-slate-700 whitespace-pre-line">
+                  お客様への伝え方を、自然な会話調で表示します。
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <aside class="space-y-5 sm:space-y-6">
+          <div class="glass-card rounded-3xl p-5 sm:p-6 lg:sticky lg:top-6">
+            <div class="flex items-center gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-sky-400 text-white text-xl shadow-lg">
+                🎯
+              </div>
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">Goal</p>
+                <h2 class="text-xl font-extrabold text-slate-900">クレーム予防の伝え方</h2>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-3">
+              <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                <div class="text-sm font-bold text-slate-900">1. 先に“弱点”を伝える</div>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                  「万能ではない部分」を先に言うと、あとからの期待ズレを防げます。
+                </p>
+              </div>
+              <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                <div class="text-sm font-bold text-slate-900">2. でも代替案まで出す</div>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                  可視光線調光、2本持ち、用途別提案まで言えると一気にプロ感が出ます。
+                </p>
+              </div>
+              <div class="rounded-2xl bg-white/80 border border-slate-100 p-4">
+                <div class="text-sm font-bold text-slate-900">3. “見せながら説明”する</div>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                  言葉だけより、濃さの変化を一緒に見る方が圧倒的に伝わります。
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white p-5">
+              <div class="text-sm font-bold uppercase tracking-[0.16em] text-emerald-100">おすすめの使い方</div>
+              <p class="mt-3 text-sm sm:text-[15px] leading-relaxed text-white/95">
+                タブレットでお客様にボタンを押してもらい、
+                「今日はどんな場面で使いたいですか？」から会話を始めると自然です。
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const scenarios = {
+        indoor: {
+          key: "indoor",
+          label: "室内・オフィス",
+          badge: "透明に近い",
+          icon: "🏢",
+          uv: "ほぼゼロ",
+          temp: "空調環境 / 安定",
+          density: 4,
+          densityText: "ほぼ透明",
+          lensColor: "rgba(71, 85, 105, 0.10)",
+          sky: "linear-gradient(180deg, rgba(236,253,245,0.35), rgba(255,255,255,0.15))",
+          decor: "💼",
+          liveLabel: "透明寄り",
+          liveCaption: "紫外線がない室内では、調光レンズはほぼクリアのままです。",
+          quickTip: "室内中心なら『サングラスのようには色づかない』と先に伝えると安心です。",
+          weakness: "お客様が“常に少し色付きになる”と想像していると、室内で透明に見えて『変わっていない』と誤解されやすい点が弱点です。",
+          mechanism: "通常の調光レンズは主に紫外線をきっかけに色が変わります。室内は紫外線が極めて少ないため、発色スイッチが入りにくく、ほぼ透明の状態になります。",
+          script: "室内では基本的にクリアでお使いいただけます。なので、普段使いしやすいのが調光レンズの魅力です。ただし、室内でも色付きになるサングラスのような使い方を想像されている場合は、イメージが少し違うので最初にそこだけ共有しておきますね。",
+        },
+        picnic: {
+          key: "picnic",
+          label: "春先のピクニック",
+          badge: "しっかり濃くなる",
+          icon: "🧺",
+          uv: "強い",
+          temp: "低め / ひんやり",
+          density: 88,
+          densityText: "かなり濃い",
+          lensColor: "rgba(31, 41, 55, 0.78)",
+          sky: "linear-gradient(180deg, rgba(125,211,252,0.30), rgba(74,222,128,0.10)), radial-gradient(circle at 80% 15%, rgba(253,224,71,0.36), transparent 22%)",
+          decor: "🌼",
+          liveLabel: "濃く発色",
+          liveCaption: "紫外線が強く、気温が低めなので、真夏以上にしっかり濃く見えやすい場面です。",
+          quickTip: "“春の方が濃くなることがある”は、お客様が驚きやすい大事な説明ポイントです。",
+          weakness: "『夏が一番濃くなるはず』と思われやすいので、春先や肌寒い日の方が濃く感じる場合があることを知らないと、後から不思議に思われやすい点です。",
+          mechanism: "調光レンズは紫外線で発色しますが、同時に温度の影響も受けます。一般に気温が低い方が色が抜けにくく、濃く発色しやすいため、春先の晴天ではかなり濃く見えることがあります。",
+          script: "このシーン、実はすごく調光レンズが活躍します。紫外線がしっかりあって、しかも気温が低めだと、真夏より濃く感じることもあるんです。『春のお出かけでまぶしさ対策したい』という方には、むしろ相性がいいですよ。",
+        },
+        beach: {
+          key: "beach",
+          label: "真夏のビーチ",
+          badge: "濃くなるが春先よりは控えめなことも",
+          icon: "🏖️",
+          uv: "強い",
+          temp: "猛暑 / 高温",
+          density: 66,
+          densityText: "中〜やや濃い",
+          lensColor: "rgba(51, 65, 85, 0.58)",
+          sky: "linear-gradient(180deg, rgba(56,189,248,0.34), rgba(34,197,94,0.08)), radial-gradient(circle at 82% 16%, rgba(251,191,36,0.42), transparent 24%)",
+          decor: "🌴",
+          liveLabel: "しっかり変化",
+          liveCaption: "紫外線は強いですが、高温の影響で“期待より少し薄い”と感じる場合があります。",
+          quickTip: "“紫外線は強い＝必ず最大濃度”ではない、と温度要因をひと言添えるのがコツです。",
+          weakness: "ビーチ＝一番濃いはず、という期待を持たれやすい一方で、猛暑時は思ったほど最大濃度までいかないことがあり、そのギャップが不満につながることがあります。",
+          mechanism: "紫外線量は非常に多いので発色はしますが、調光レンズは高温だと色が濃くなりにくい傾向があります。そのため、真夏はしっかり変化しつつも、春の涼しい日より少し薄めに見えるケースがあります。",
+          script: "真夏のビーチでもちゃんと色は変わります。ただ、実は調光レンズは暑い環境だと少し濃くなりにくい性質があるんです。なので『しっかり変わるけれど、春の涼しい日よりは少し控えめなこともあります』と先にお伝えしています。そのうえで、強いまぶしさ対策を最優先なら、濃いめのサングラスを併用する提案もできますよ。",
+        },
+        drive: {
+          key: "drive",
+          label: "車でのドライブ",
+          badge: "ほぼ変化なし",
+          icon: "🚗",
+          uv: "窓ガラスでカット",
+          temp: "車内温度の影響あり",
+          density: 6,
+          densityText: "ほぼ透明",
+          lensColor: "rgba(71, 85, 105, 0.12)",
+          sky: "linear-gradient(180deg, rgba(191,219,254,0.28), rgba(226,232,240,0.18))",
+          decor: "🛣️",
+          liveLabel: "変化しにくい",
+          liveCaption: "通常の調光レンズは紫外線反応型のため、UVカットガラス越しではほぼ透明のままです。",
+          quickTip: "運転用途が多い方には、“通常の調光だけでは足りない可能性”を明確に言うのが親切です。",
+          weakness: "もっともクレームにつながりやすいのがこの場面です。『外では変わるのに、車では変わらない』ことを購入前に知らないと、不良品と誤解されやすいです。",
+          mechanism: "通常の調光レンズは紫外線を受けて色が変わる仕組みです。しかし多くの車のフロントガラスや窓ガラスはUVを大きくカットするため、レンズに必要な刺激が届かず、発色しにくくなります。",
+          script: "実は通常の調光レンズは『紫外線』に反応するので、UVカットガラスの車内では色が変わりません。もしドライブメインで使いたい場合は、光そのものに反応する『可視光線調光レンズ』にするか、運転用サングラスとの2本持ちが一番安全で快適ですよ。",
+        }
+      };
+
+      const els = {
+        buttons: [...document.querySelectorAll(".scenario-btn")],
+        scenarioTitle: document.getElementById("scenarioTitle"),
+        scenarioBadge: document.getElementById("scenarioBadge"),
+        uvText: document.getElementById("uvText"),
+        tempText: document.getElementById("tempText"),
+        densityText: document.getElementById("densityText"),
+        weaknessText: document.getElementById("weaknessText"),
+        mechanismText: document.getElementById("mechanismText"),
+        scriptText: document.getElementById("scriptText"),
+        liveLevel: document.getElementById("liveLevel"),
+        liveCaption: document.getElementById("liveCaption"),
+        quickTip: document.getElementById("quickTip"),
+        levelBar: document.getElementById("levelBar"),
+        lensLeft: document.getElementById("lensLeft"),
+        lensRight: document.getElementById("lensRight"),
+        sceneSky: document.getElementById("sceneSky"),
+        sceneDecor: document.getElementById("sceneDecor"),
+        detailsPanel: document.getElementById("detailsPanel")
+      };
+
+      function safeScenario(key) {
+        return scenarios[key] || scenarios.indoor;
+      }
+
+      function setSelectedButton(activeKey) {
+        els.buttons.forEach((btn) => {
+          const isActive = btn.dataset.key === activeKey;
+          btn.classList.toggle("selected-scenario", isActive);
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      function updateDecor(scenario) {
+        const decorMap = {
+          indoor: `
+            <div class="absolute top-4 right-5 text-3xl sm:text-4xl">💡</div>
+            <div class="absolute left-6 bottom-5 text-xl sm:text-2xl opacity-80">🪴</div>
+          `,
+          picnic: `
+            <div class="absolute top-4 right-5 text-3xl sm:text-4xl">☀️</div>
+            <div class="absolute left-4 bottom-3 text-2xl sm:text-3xl">🌼</div>
+            <div class="absolute right-8 bottom-4 text-xl sm:text-2xl">🧺</div>
+          `,
+          beach: `
+            <div class="absolute top-4 right-5 text-3xl sm:text-4xl">☀️</div>
+            <div class="absolute left-5 bottom-3 text-2xl sm:text-3xl">🌊</div>
+            <div class="absolute right-8 bottom-4 text-xl sm:text-2xl">🏖️</div>
+          `,
+          drive: `
+            <div class="absolute top-4 right-5 text-3xl sm:text-4xl">☀️</div>
+            <div class="absolute left-4 bottom-4 text-2xl sm:text-3xl">🚙</div>
+            <div class="absolute right-6 bottom-4 text-xl sm:text-2xl">🛣️</div>
+          `
+        };
+        els.sceneDecor.innerHTML = decorMap[scenario.key] || decorMap.indoor;
+      }
+
+      function animateLens(scenario) {
+        const densityRatio = Math.max(0, Math.min(100, scenario.density));
+        const opacity = Math.max(0.04, densityRatio / 100);
+        const shadowStrength = 0.12 + (densityRatio / 100) * 0.35;
+
+        [els.lensLeft, els.lensRight].forEach((lens) => {
+          lens.style.backgroundColor = scenario.lensColor;
+          lens.style.opacity = opacity.toFixed(2);
+          lens.style.transform = densityRatio > 8 ? "scale(1)" : "scale(0.985)";
+          lens.style.boxShadow = `inset 0 0 20px rgba(15, 23, 42, ${shadowStrength.toFixed(2)})`;
+        });
+
+        els.levelBar.style.width = `${Math.max(4, densityRatio)}%`;
+      }
+
+      function refreshCards(scenario) {
+        els.scenarioTitle.textContent = scenario.label;
+        els.scenarioBadge.textContent = `${scenario.icon} ${scenario.badge}`;
+        els.scenarioBadge.className = "inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1.5 text-sm font-semibold";
+        els.uvText.textContent = scenario.uv;
+        els.tempText.textContent = scenario.temp;
+        els.densityText.textContent = scenario.densityText;
+        els.weaknessText.textContent = scenario.weakness;
+        els.mechanismText.textContent = scenario.mechanism;
+        els.scriptText.textContent = scenario.script;
+        els.liveLevel.textContent = scenario.liveLabel;
+        els.liveCaption.textContent = scenario.liveCaption;
+        els.quickTip.textContent = scenario.quickTip;
+        els.sceneSky.style.background = scenario.sky;
+      }
+
+      function replayFade() {
+        const cards = els.detailsPanel.querySelectorAll(".fade-up");
+        cards.forEach((card) => {
+          card.classList.remove("fade-up");
+          void card.offsetWidth;
+          card.classList.add("fade-up");
+        });
+      }
+
+      function applyScenario(key) {
+        const scenario = safeScenario(key);
+        setSelectedButton(scenario.key);
+        refreshCards(scenario);
+        updateDecor(scenario);
+
+        // 一度クリアっぽく戻してから再発色させ、変化を見えやすくする
+        [els.lensLeft, els.lensRight].forEach((lens) => {
+          lens.style.opacity = "0.04";
+          lens.style.backgroundColor = "rgba(255,255,255,0.08)";
+          lens.style.transform = "scale(0.985)";
+          lens.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.35)";
+        });
+        els.levelBar.style.width = "4%";
+
+        window.requestAnimationFrame(() => {
+          window.setTimeout(() => animateLens(scenario), 120);
+        });
+
+        replayFade();
+      }
+
+      els.buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          try {
+            const key = btn.dataset.key;
+            applyScenario(key);
+          } catch (error) {
+            console.error("シミュレーション更新エラー:", error);
+            alert("表示の更新に失敗しました。もう一度お試しください。");
+          }
+        });
+      });
+
+      // 初期表示
+      applyScenario("picnic");
+    })();
+  </script>
+</body>
+</html>
