@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>好感度爆上げフレーム診断 - 眼鏡スタイリングサポート</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sakura': '#FFD1DC',
+                        'sakura-dark': '#FFB6C1',
+                        'fresh-green': '#4ade80',
+                        'fresh-green-dark': '#22c55e',
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                        'pop-in': 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.8)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムラジオボタン用の非表示スタイル */
+        input[type="radio"].hidden-radio {
+            display: none;
+        }
+        
+        /* 選択されたカードのスタイル */
+        .option-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        input[type="radio"]:checked + .option-card {
+            border-color: #FFB6C1; /* sakura-dark */
+            background-color: #fff0f3;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(255, 182, 193, 0.4);
+        }
+
+        /* パーティクル（花びら・キラキラ）用のアニメーション */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-20px) rotate(0deg) scale(0); opacity: 0; }
+            10% { opacity: 1; transform: translateY(0px) rotate(20deg) scale(1); }
+            80% { opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg) scale(0.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-20">
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm border-b-4 border-sakura relative overflow-hidden">
+        <div class="max-w-4xl mx-auto px-4 py-6 sm:py-8 text-center relative z-10">
+            <span class="inline-block bg-sakura text-pink-800 text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">Staff Support Tool</span>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">
+                顔タイプ × なりたい印象<br class="sm:hidden">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">好感度爆上げフレーム診断</span>
+            </h1>
+            <p class="text-slate-500 text-sm sm:text-base max-w-xl mx-auto">
+                新生活を迎えるお客様へ。顔のコンプレックスを魅力に変え、理想の職業イメージに近づける最高の1本をご提案します。
+            </p>
+        </div>
+        <!-- 装飾的な背景円 -->
+        <div class="absolute top-0 left-0 w-32 h-32 bg-pink-50 rounded-full mix-blend-multiply filter blur-xl opacity-70 transform -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="absolute bottom-0 right-0 w-40 h-40 bg-green-50 rounded-full mix-blend-multiply filter blur-xl opacity-70 transform translate-x-1/3 translate-y-1/3"></div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-8 space-y-10">
+        
+        <!-- STEP 1: 顔の輪郭 -->
+        <section class="bg-white rounded-2xl shadow-sm p-6 sm:p-8 animate-fade-in-up">
+            <div class="flex items-center mb-6">
+                <div class="bg-sakura text-pink-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg mr-3 shadow-sm">1</div>
+                <h2 class="text-xl font-bold">お客様のお顔のタイプは？</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="face-group">
+                <!-- 丸顔 -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="face" value="round" class="hidden-radio">
+                    <div class="option-card h-full bg-slate-50 rounded-xl p-5 text-center flex flex-col items-center justify-center gap-3">
+                        <div class="w-16 h-16 rounded-full border-4 border-slate-200 bg-white"></div>
+                        <div>
+                            <div class="font-bold text-lg text-slate-800">丸顔</div>
+                            <div class="text-xs text-slate-500 mt-1">親しみやすいが<br>幼く見られがち</div>
+                        </div>
+                    </div>
+                </label>
+                <!-- 四角顔/ベース顔 -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="face" value="square" class="hidden-radio">
+                    <div class="option-card h-full bg-slate-50 rounded-xl p-5 text-center flex flex-col items-center justify-center gap-3">
+                        <div class="w-16 h-16 rounded-md border-4 border-slate-200 bg-white"></div>
+                        <div>
+                            <div class="font-bold text-lg text-slate-800">四角顔 / ベース顔</div>
+                            <div class="text-xs text-slate-500 mt-1">誠実そうだが<br>堅苦しく見られがち</div>
+                        </div>
+                    </div>
+                </label>
+                <!-- 面長 -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="face" value="long" class="hidden-radio">
+                    <div class="option-card h-full bg-slate-50 rounded-xl p-5 text-center flex flex-col items-center justify-center gap-3">
+                        <div class="w-12 h-16 rounded-full border-4 border-slate-200 bg-white"></div>
+                        <div>
+                            <div class="font-bold text-lg text-slate-800">面長</div>
+                            <div class="text-xs text-slate-500 mt-1">大人っぽいが<br>間延びして見えがち</div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+        </section>
+
+        <!-- STEP 2: なりたい印象 -->
+        <section class="bg-white rounded-2xl shadow-sm p-6 sm:p-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+            <div class="flex items-center mb-6">
+                <div class="bg-sakura text-pink-800 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg mr-3 shadow-sm">2</div>
+                <h2 class="text-xl font-bold">新生活での「なりたい印象」は？</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="job-group">
+                <!-- 営業・接客業 -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="job" value="sales" class="hidden-radio">
+                    <div class="option-card h-full bg-slate-50 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center">
+                        <svg class="w-8 h-8 text-orange-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div class="font-bold text-lg text-slate-800">営業・接客業</div>
+                        <div class="text-xs text-slate-500">とにかく親しみやすさ<br>優しさを重視！</div>
+                    </div>
+                </label>
+                <!-- IT・企画・クリエイター -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="job" value="it" class="hidden-radio">
+                    <div class="option-card h-full bg-slate-50 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center">
+                        <svg class="w-8 h-8 text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        <div class="font-bold text-lg text-slate-800">IT・クリエイター</div>
+                        <div class="text-xs text-slate-500">知的さ、洗練された<br>シャープさを重視！</div>
+                    </div>
+                </label>
+                <!-- 公務員・事務職 -->
+                <label class="cursor-pointer relative">
+                    <input type="radio" name="job" value="clerk" class="hidden-radio">
+                    <div class="option-card h-full bg-slate-50 rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-center">
+                        <svg class="w-8 h-8 text-green-600 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div class="font-bold text-lg text-slate-800">公務員・事務職</div>
+                        <div class="text-xs text-slate-500">誠実さ、真面目さ<br>安心感を重視！</div>
+                    </div>
+                </label>
+            </div>
+        </section>
+
+        <!-- アクションボタン -->
+        <div class="text-center animate-fade-in-up" style="animation-delay: 0.2s;">
+            <p id="error-message" class="text-rose-500 text-sm font-bold h-6 mb-2 opacity-0 transition-opacity">両方の項目を選択してください</p>
+            <button id="diagnose-btn" disabled
+                class="bg-slate-300 text-slate-500 font-bold py-4 px-10 rounded-full text-lg w-full sm:w-auto transition-all duration-300 shadow-md cursor-not-allowed flex items-center justify-center mx-auto">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <span>両方選んで診断スタート！</span>
+            </button>
+        </div>
+
+        <!-- 診断結果エリア (初期非表示) -->
+        <section id="result-area" class="hidden pt-8 pb-12">
+            <div class="bg-gradient-to-br from-white to-pink-50 rounded-3xl shadow-xl overflow-hidden border border-pink-100 relative">
+                
+                <!-- 結果ヘッダー -->
+                <div class="bg-gradient-to-r from-pink-400 to-rose-400 text-white text-center py-6 px-4 relative">
+                    <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                        <div class="absolute w-24 h-24 bg-white rounded-full mix-blend-overlay filter blur-xl -top-10 -left-10"></div>
+                        <div class="absolute w-32 h-32 bg-white rounded-full mix-blend-overlay filter blur-xl bottom-10 -right-10"></div>
+                    </div>
+                    <p class="text-pink-100 font-bold text-sm mb-1 tracking-wider uppercase" id="result-combination">丸顔 × IT・クリエイター</p>
+                    <h3 class="text-2xl sm:text-3xl font-extrabold drop-shadow-md">
+                        <span class="block text-sm font-normal mb-1">あなた専用の好感度爆上げフレームは…</span>
+                        <span id="result-frame-name" class="inline-block mt-1 bg-white text-pink-500 px-4 py-1 rounded-full shadow-inner">ハーフリム（メタル）</span>
+                    </h3>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-8">
+                    
+                    <!-- ロジカル解説 -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-blue-100 text-blue-700 p-2 rounded-lg mr-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </span>
+                            <h4 class="font-bold text-lg text-slate-800">なぜこのフレームが最適？（ロジック）</h4>
+                        </div>
+                        <p id="result-logic" class="text-slate-600 leading-relaxed text-sm sm:text-base pl-12">
+                            ここにロジカルな解説が入ります。
+                        </p>
+                    </div>
+
+                    <!-- 提案トークスクリプト (スタッフ向け) -->
+                    <div class="bg-green-50 rounded-2xl p-6 shadow-sm border border-green-200 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-fresh-green text-white text-xs font-bold px-3 py-1 rounded-bl-lg">スタッフ用トーク例</div>
+                        <div class="flex items-start mb-3">
+                            <span class="bg-green-200 text-green-800 p-2 rounded-lg mr-3 mt-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                            </span>
+                            <div>
+                                <h4 class="font-bold text-lg text-green-900">プロのスタイリスト風 提案トーク</h4>
+                                <p class="text-xs text-green-700 mt-1">※このままお客様にお話ししてみてください！</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-inner mt-4 border-l-4 border-fresh-green">
+                            <p id="result-talk" class="text-slate-700 leading-relaxed font-medium text-sm sm:text-base">
+                                ここにトークスクリプトが入ります。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- リトライボタン -->
+                    <div class="text-center pt-4">
+                        <button onclick="resetApp()" class="text-slate-500 hover:text-pink-500 underline text-sm transition-colors">
+                            別のお客様を診断する
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 診断データ ---
+        const diagnosticData = {
+            round: {
+                label: "丸顔",
+                sales: {
+                    frame: "ボストン / オーバル（セル）",
+                    logic: "丸顔さんの輪郭が持つ「曲線の柔らかさ」と、セルフレームの温かみが完全にマッチします。コンプレックスとして感じがちな「幼さ」は、営業職においては「圧倒的な親しみやすさ」という最強の武器に変換されます。",
+                    talk: "〇〇様のお顔立ちの『親しみやすさ』は、営業において本当に最強の武器になります！その柔らかい印象を最大限に活かせる『ボストン型』で、初対面での好感度をグッと引き上げましょう！"
+                },
+                it: {
+                    frame: "ハーフリム（メタル）",
+                    logic: "丸顔の柔らかさに、上半分だけの直線的なフレームで「シャープさ」をプラスします。メタル素材が知的な輝きを与え、優しさと仕事ができる感を両立させます。",
+                    talk: "丸顔さんの持つ『親しみやすさ』は素晴らしい武器ですが、ITや企画職では少し『知的でシャープな印象』を足したいですよね。そこでおすすめなのが、このハーフリムのメタルフレームです！お顔をスッキリ引き締めつつ、仕事ができる洗練された雰囲気を一瞬で演出してくれますよ！"
+                },
+                clerk: {
+                    frame: "スクエア（細めセル）",
+                    logic: "丸みのある輪郭に対し、適度な角（スクエア）を加えることで、真面目できっちりとした印象を与えます。細めにすることで強すぎる印象を避け、公務員にふさわしい安心感を生み出します。",
+                    talk: "〇〇様の優しいお顔立ちに、この細身のスクエアを合わせることで、真面目な印象が自然にプラスされます。堅苦しくなりすぎず、窓口でも『この人なら安心して任せられる』という誠実な雰囲気を演出できますよ。"
+                }
+            },
+            square: {
+                label: "四角顔 / ベース顔",
+                sales: {
+                    frame: "ラウンド / ボストン（メタル）",
+                    logic: "エラや顎の直線的なラインに対し、対極にある「丸み」を持ったフレームを合わせることで、顔全体の印象をマイルドにします。メタル素材にすることで、営業に必要な知的さもキープできます。",
+                    talk: "〇〇様の持つ誠実でしっかりとした印象は素晴らしいですが、営業では少し柔らかさを足したいですよね。丸みのあるメタルフレームなら、お顔の印象をパッと優しくしつつ、知的な雰囲気も出せますよ！"
+                },
+                it: {
+                    frame: "ウェリントン（太めセル）",
+                    logic: "しっかりとした輪郭の四角顔さんは、存在感のある太めのフレームに負けません。ウェリントンの逆台形が顔のバランスを整え、クリエイターらしい個性と洗練された印象を与えます。",
+                    talk: "しっかりとした美しい輪郭をお持ちだからこそ似合うのが、この太めのウェリントンです！ITやクリエイティブ職にぴったりの、洗練された個性的でおしゃれな印象をバッチリ作れます。自信を持っておすすめします！"
+                },
+                clerk: {
+                    frame: "オーバル（メタル）",
+                    logic: "直線的な顔のラインを、滑らかなオーバル型が優しく中和します。四角顔の「頼りがいのある印象」を活かしつつ、主張しすぎないメタルが公務員や事務職に求められる協調性を表します。",
+                    talk: "〇〇様の持つ『しっかりとした信頼感』を最大限に活かしつつ、少しマイルドな印象に変えてくれるのがこのオーバル型です。事務職に求められる『安心感』と『誠実さ』の完璧なバランスが取れる1本ですよ。"
+                }
+            },
+            long: {
+                label: "面長",
+                sales: {
+                    frame: "ウェリントン（べっ甲柄）",
+                    logic: "縦の長さをカバーするために、天地幅（上下の幅）が広いウェリントンが最適です。肌なじみの良いべっ甲柄を選ぶことで、大人っぽさを親しみやすさに変換し、接客での距離感を縮めます。",
+                    talk: "面長さんの大人っぽい雰囲気に、親しみやすさをプラスするならウェリントン一択です！さらにべっ甲柄を選ぶことで、柔らかく優しい印象になり、お客様との距離がグッと縮まりますよ！"
+                },
+                it: {
+                    frame: "ツーポイント / ふちなし",
+                    logic: "面長特有の大人っぽさ・落ち着きを極限まで引き立てるのがふちなしメガネです。顔の長さを強調することなく、素顔の良さを活かしたまま、ITエンジニアや企画職としてのプロフェッショナル感を高めます。",
+                    talk: "〇〇様の持つ落ち着いた知的な印象を、極限まで引き立てるのがこのふちなしメガネです。クリエイティブな現場で、『この人に任せたい』と思わせるシャープで洗練されたプロ感を演出してくれます！"
+                },
+                clerk: {
+                    frame: "アンダーリム（下半分フチあり）",
+                    logic: "下にフチがあることで、視線を顔の下半分に誘導し、面長の印象を自然に和らげます。個性的になりすぎないデザインを選べば、デスクワークでも邪魔にならず、知性的で落ち着いた雰囲気を醸し出します。",
+                    talk: "面長さんの縦のラインを自然にカバーしつつ、真面目で落ち着いた印象を与えるフレームです。少し珍しいデザインですが、知的で頼れる雰囲気を醸し出すので、デスクワークの多い事務職にぴったりですよ。"
+                }
+            }
+        };
+
+        const jobLabels = {
+            sales: "営業・接客業",
+            it: "IT・クリエイター",
+            clerk: "公務員・事務職"
+        };
+
+        // --- DOM要素 ---
+        const faceRadios = document.querySelectorAll('input[name="face"]');
+        const jobRadios = document.querySelectorAll('input[name="job"]');
+        const diagnoseBtn = document.getElementById('diagnose-btn');
+        const errorMessage = document.getElementById('error-message');
+        const resultArea = document.getElementById('result-area');
+
+        // --- 状態管理とイベントリスナー ---
+        function checkStatus() {
+            const selectedFace = document.querySelector('input[name="face"]:checked');
+            const selectedJob = document.querySelector('input[name="job"]:checked');
+
+            if (selectedFace && selectedJob) {
+                // ボタン活性化
+                diagnoseBtn.removeAttribute('disabled');
+                diagnoseBtn.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                diagnoseBtn.classList.add('bg-fresh-green', 'hover:bg-fresh-green-dark', 'text-white', 'hover:-translate-y-1', 'shadow-lg', 'cursor-pointer');
+                diagnoseBtn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                    <span>診断結果を見る！</span>
+                `;
+                errorMessage.classList.remove('opacity-100');
+                errorMessage.classList.add('opacity-0');
+            } else {
+                // ボタン非活性
+                diagnoseBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        // ラジオボタンの変更イベントに紐付け
+        [...faceRadios, ...jobRadios].forEach(radio => {
+            radio.addEventListener('change', () => {
+                checkStatus();
+                // 選択時の軽いフィードバック（任意）
+                if ('vibrate' in navigator) navigator.vibrate(50); 
+            });
+        });
+
+        // 診断ボタンクリック時の処理
+        diagnoseBtn.addEventListener('click', () => {
+            const faceVal = document.querySelector('input[name="face"]:checked').value;
+            const jobVal = document.querySelector('input[name="job"]:checked').value;
+
+            // データ取得
+            const resultData = diagnosticData[faceVal][jobVal];
+            const faceLabel = diagnosticData[faceVal].label;
+            const jobLabel = jobLabels[jobVal];
+
+            // DOM更新
+            document.getElementById('result-combination').textContent = `${faceLabel} × ${jobLabel}`;
+            document.getElementById('result-frame-name').textContent = resultData.frame;
+            document.getElementById('result-logic').textContent = resultData.logic;
+            document.getElementById('result-talk').textContent = resultData.talk;
+
+            // エリア表示とアニメーション
+            resultArea.classList.remove('hidden');
+            resultArea.classList.add('animate-pop-in');
+
+            // スムーズスクロール
+            setTimeout(() => {
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                createParticles(); // キラキラ・花開きエフェクト
+            }, 100);
+        });
+
+        // リセット処理
+        function resetApp() {
+            [...faceRadios, ...jobRadios].forEach(radio => radio.checked = false);
+            resultArea.classList.add('hidden');
+            resultArea.classList.remove('animate-pop-in');
+            
+            diagnoseBtn.setAttribute('disabled', 'true');
+            diagnoseBtn.className = 'bg-slate-300 text-slate-500 font-bold py-4 px-10 rounded-full text-lg w-full sm:w-auto transition-all duration-300 shadow-md cursor-not-allowed flex items-center justify-center mx-auto';
+            diagnoseBtn.innerHTML = `
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <span>両方選んで診断スタート！</span>
+            `;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- 特別感の演出：パーティクル（花びら）エフェクト ---
+        function createParticles() {
+            const colors = ['#FFD1DC', '#FFB6C1', '#FF69B4', '#FFF', '#4ade80'];
+            const particleCount = 40;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // ランダムな形状（円と四角を混ぜて花びらっぽく）
+                const size = Math.random() * 10 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                if (Math.random() > 0.5) particle.style.borderRadius = '50%';
+                
+                // 画面上部からランダムな位置でスタート
+                particle.style.left = `${Math.random() * 100}vw`;
+                
+                // アニメーションのランダム化
+                const duration = Math.random() * 2 + 2; // 2s - 4s
+                const delay = Math.random() * 0.5;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                document.body.appendChild(particle);
+
+                // アニメーション終了後にDOMから削除
+                setTimeout(() => {
+                    particle.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+    </script>
+</body>
+</html>
