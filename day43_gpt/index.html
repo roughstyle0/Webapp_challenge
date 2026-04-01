@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>顔タイプ×なりたい印象 好感度爆上げフレーム診断</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sakura: {
+              50: "#fff7fa",
+              100: "#ffeef5",
+              200: "#ffd9e7",
+              300: "#ffbfd7",
+              400: "#ff96bd",
+              500: "#ff6ea7"
+            },
+            fresh: {
+              50: "#f4fff8",
+              100: "#e7fff0",
+              200: "#c8f7d8",
+              300: "#9debb8",
+              400: "#6ddb93",
+              500: "#38c172"
+            }
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(15, 23, 42, 0.08)",
+            bloom: "0 18px 50px rgba(255, 110, 167, 0.16)"
+          },
+          keyframes: {
+            bloom: {
+              "0%": { opacity: "0", transform: "translateY(16px) scale(.96)" },
+              "60%": { opacity: "1", transform: "translateY(-4px) scale(1.02)" },
+              "100%": { opacity: "1", transform: "translateY(0) scale(1)" }
+            },
+            sparkle: {
+              "0%, 100%": { opacity: "0.25", transform: "scale(.8) rotate(0deg)" },
+              "50%": { opacity: "1", transform: "scale(1.25) rotate(18deg)" }
+            },
+            pulseRing: {
+              "0%": { transform: "scale(.85)", opacity: ".45" },
+              "100%": { transform: "scale(1.25)", opacity: "0" }
+            }
+          },
+          animation: {
+            bloom: "bloom .65s cubic-bezier(.2,.8,.2,1) both",
+            sparkle: "sparkle 2.2s ease-in-out infinite",
+            pulseRing: "pulseRing 1.8s ease-out infinite"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(255, 214, 230, .7), transparent 28%),
+        radial-gradient(circle at top right, rgba(194, 255, 214, .72), transparent 26%),
+        linear-gradient(180deg, #fffdfd 0%, #fff7fa 45%, #f7fff9 100%);
+    }
+    .glass {
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.78);
+    }
+    .sparkle::before,
+    .sparkle::after {
+      content: "✦";
+      position: absolute;
+      font-size: .95rem;
+      color: #ff7ab2;
+      animation: sparkle 2.4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .sparkle::before { top: -10px; right: 18px; }
+    .sparkle::after  { bottom: 12px; left: 18px; animation-delay: .9s; color: #46c37b; }
+    .result-enter {
+      animation: bloom .65s cubic-bezier(.2,.8,.2,1) both;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800">
+  <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <header class="relative overflow-hidden rounded-[28px] border border-white/70 glass shadow-soft">
+      <div class="absolute inset-0 bg-gradient-to-r from-sakura-100/50 via-white/40 to-fresh-100/50"></div>
+      <div class="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.2fr_.8fr] lg:p-10">
+        <div>
+          <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-sakura-200 bg-white/80 px-3 py-1 text-xs font-semibold tracking-wide text-sakura-500 shadow-sm">
+            <span class="inline-block h-2 w-2 rounded-full bg-fresh-400"></span>
+            新生活スタート支援 / 新人スタッフ向け
+          </div>
+          <h1 class="text-2xl font-black leading-tight text-slate-900 sm:text-4xl">
+            顔タイプ × なりたい印象で導く<br class="hidden sm:block" />
+            <span class="bg-gradient-to-r from-sakura-500 to-fresh-500 bg-clip-text text-transparent">
+              好感度爆上げフレーム診断
+            </span>
+          </h1>
+          <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+            「何となく無難」から卒業。お客様の顔型の補正と、目指す職種イメージを掛け合わせて、
+            新生活で好印象につながるメガネ提案をロジカルに言語化できる診断アプリです。
+          </p>
+
+          <div class="mt-6 flex flex-wrap gap-3">
+            <div class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-slate-100">
+              <p class="text-xs font-semibold text-slate-500">STEP 1</p>
+              <p class="mt-1 text-sm font-bold text-slate-800">顔の輪郭を選ぶ</p>
+            </div>
+            <div class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-slate-100">
+              <p class="text-xs font-semibold text-slate-500">STEP 2</p>
+              <p class="mt-1 text-sm font-bold text-slate-800">なりたい印象を選ぶ</p>
+            </div>
+            <div class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-slate-100">
+              <p class="text-xs font-semibold text-slate-500">STEP 3</p>
+              <p class="mt-1 text-sm font-bold text-slate-800">提案トークまで完成</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-stretch">
+          <div class="w-full rounded-[24px] border border-white/80 bg-white/80 p-5 shadow-soft">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-bold text-slate-700">診断ステータス</h2>
+              <span id="progressBadge" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                未選択
+              </span>
+            </div>
+
+            <div class="mt-4 space-y-4">
+              <div>
+                <div class="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>入力の進み具合</span>
+                  <span id="progressText">0 / 2 完了</span>
+                </div>
+                <div class="h-3 overflow-hidden rounded-full bg-slate-100">
+                  <div id="progressBar" class="h-full w-0 rounded-full bg-gradient-to-r from-sakura-400 to-fresh-400 transition-all duration-500"></div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl bg-gradient-to-r from-sakura-50 to-fresh-50 p-4 ring-1 ring-slate-100">
+                <p class="text-xs font-semibold text-slate-500">現在の選択</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span id="faceChip" class="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-slate-200">
+                    顔型：未選択
+                  </span>
+                  <span id="impressionChip" class="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-slate-200">
+                    印象：未選択
+                  </span>
+                </div>
+              </div>
+
+              <button
+                id="resetBtn"
+                type="button"
+                class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 hover:border-sakura-200 hover:text-sakura-500 hover:shadow-sm focus:outline-none focus:ring-4 focus:ring-sakura-100"
+              >
+                選択をリセットする
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="mt-6 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+      <section class="space-y-6">
+        <div class="rounded-[28px] border border-white/80 glass p-5 shadow-soft sm:p-6">
+          <div class="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.22em] text-sakura-500">Face Type</p>
+              <h2 class="mt-1 text-xl font-black text-slate-900">1. 顔の輪郭（ベース）を選ぶ</h2>
+            </div>
+            <div class="rounded-full bg-sakura-50 px-3 py-1 text-xs font-bold text-sakura-500">
+              必須
+            </div>
+          </div>
+
+          <div id="faceOptions" class="grid gap-3 sm:grid-cols-3">
+            <button data-group="face" data-value="round" class="option-btn group rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-sakura-200 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-sakura-100">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-black text-slate-900">丸顔</span>
+                <span class="rounded-full bg-sakura-50 px-2.5 py-1 text-[11px] font-bold text-sakura-500">親しみ系</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">
+                親しみやすい反面、幼く見られがち。
+              </p>
+            </button>
+
+            <button data-group="face" data-value="square" class="option-btn group rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-sakura-200 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-sakura-100">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-black text-slate-900">四角顔 / ベース顔</span>
+                <span class="rounded-full bg-fresh-50 px-2.5 py-1 text-[11px] font-bold text-fresh-500">誠実系</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">
+                誠実そうに見える反面、堅苦しく見られがち。
+              </p>
+            </button>
+
+            <button data-group="face" data-value="long" class="option-btn group rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-sakura-200 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-sakura-100">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-black text-slate-900">面長</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">大人っぽい系</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">
+                大人っぽい反面、間延びして見えがち。
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <div class="rounded-[28px] border border-white/80 glass p-5 shadow-soft sm:p-6">
+          <div class="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.22em] text-fresh-500">Desired Impression</p>
+              <h2 class="mt-1 text-xl font-black text-slate-900">2. 新しい環境でのなりたい印象を選ぶ</h2>
+            </div>
+            <div class="rounded-full bg-fresh-50 px-3 py-1 text-xs font-bold text-fresh-500">
+              必須
+            </div>
+          </div>
+
+          <div id="impressionOptions" class="grid gap-3">
+            <button data-group="impression" data-value="sales" class="option-btn group rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-fresh-200 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-fresh-100">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-black text-slate-900">営業・接客業</span>
+                <span class="rounded-full bg-sakura-50 px-2.5 py-1 text-[11px] font-bold text-sakura-500">親しみやすさ</span>
+                <span class="rounded-full bg-fresh-50 px-2.5 py-1 text-[11px] font-bold text-fresh-500">優しさ</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">
+                第一印象で距離を縮めたい。優しさ・話しかけやすさ重視。
+              </p>
+            </button>
+
+            <button data-group="impression" data-value="creative" class="option-btn group rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-fresh-200 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-fresh-100">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-black text-slate-900">IT・企画・クリエイター</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">知的さ</span>
+                <span class="rounded-full bg-fresh-50 px-2.5 py-1 text-[11px] font-bold text-fresh-500">洗練感</span>
+                <span class="rounded-full bg-sakura-50 px-2.5 py-1 text-[11px] font-bold text-sakura-500">シャープさ</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">
+                頭の回転が速そう、センスが良さそうに見せたい。
+              </p>
+            </button>
+
+            <button data-group="impression" data-value="office" class="option-btn group rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-fresh-200 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-fresh-100">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-black text-slate-900">公務員・事務職</span>
+                <span class="rounded-full bg-fresh-50 px-2.5 py-1 text-[11px] font-bold text-fresh-500">誠実さ</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">真面目さ</span>
+                <span class="rounded-full bg-sakura-50 px-2.5 py-1 text-[11px] font-bold text-sakura-500">安心感</span>
+              </div>
+              <p class="mt-3 text-sm leading-6 text-slate-600">
+                信頼感が最優先。きちんとして見えることを大切にしたい。
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <aside class="rounded-[28px] border border-dashed border-sakura-200 bg-white/80 p-5 shadow-sm">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sakura-100 to-fresh-100 text-xl">💡</div>
+            <div>
+              <h3 class="text-sm font-black text-slate-900">接客での使い方ヒント</h3>
+              <p class="text-sm leading-6 text-slate-600">
+                いきなり形を売るのではなく、「どう見られたいか」を先に聞くと、提案が一気に説得力を持ちます。
+              </p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section>
+        <div id="emptyState" class="rounded-[28px] border border-white/80 glass p-6 shadow-soft sm:p-8">
+          <div class="mx-auto max-w-xl text-center">
+            <div class="relative mx-auto flex h-24 w-24 items-center justify-center">
+              <span class="absolute inline-flex h-20 w-20 rounded-full bg-sakura-100 animate-pulseRing"></span>
+              <span class="absolute inline-flex h-20 w-20 rounded-full bg-fresh-100 animate-pulseRing" style="animation-delay:.7s;"></span>
+              <div class="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-soft text-3xl">🌸</div>
+            </div>
+            <h2 class="mt-6 text-2xl font-black text-slate-900">診断結果がここに表示されます</h2>
+            <p class="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
+              左側で「顔型」と「なりたい印象」を1つずつ選ぶと、
+              おすすめフレーム、提案理由、接客トークまで自動で表示されます。
+            </p>
+            <div class="mt-6 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-2xl bg-sakura-50 p-4">
+                <p class="text-xs font-bold text-sakura-500">POINT 1</p>
+                <p class="mt-2 text-sm font-semibold text-slate-700">顔型補正がわかる</p>
+              </div>
+              <div class="rounded-2xl bg-fresh-50 p-4">
+                <p class="text-xs font-bold text-fresh-500">POINT 2</p>
+                <p class="mt-2 text-sm font-semibold text-slate-700">職種イメージに寄せる</p>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-xs font-bold text-slate-500">POINT 3</p>
+                <p class="mt-2 text-sm font-semibold text-slate-700">新人でも提案しやすい</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="errorState" class="hidden rounded-[28px] border border-rose-200 bg-rose-50 p-5 text-rose-700 shadow-sm">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 text-xl">⚠️</div>
+            <div>
+              <h3 class="font-black">選択内容を確認してください</h3>
+              <p class="mt-1 text-sm leading-6">
+                顔型となりたい印象の両方を選ぶと、診断結果が表示されます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultCard" class="hidden relative overflow-hidden rounded-[30px] border border-white/80 bg-white shadow-bloom">
+          <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-sakura-50 via-white to-fresh-50"></div>
+          <div class="sparkle pointer-events-none absolute inset-0"></div>
+
+          <div class="relative p-6 sm:p-8">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-sakura-500">Diagnostic Result</p>
+                <h2 class="mt-2 text-2xl font-black leading-tight text-slate-900 sm:text-3xl">
+                  あなた専用の<span class="text-sakura-500">好感度爆上げフレーム</span>
+                </h2>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span id="resultFace" class="rounded-full bg-sakura-50 px-3 py-1.5 text-xs font-bold text-sakura-500"></span>
+                <span id="resultImpression" class="rounded-full bg-fresh-50 px-3 py-1.5 text-xs font-bold text-fresh-500"></span>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
+              <div class="rounded-[24px] bg-white/90 p-5 shadow-soft ring-1 ring-slate-100">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Recommended Frame</p>
+                <h3 id="frameTitle" class="mt-2 text-2xl font-black text-slate-900"></h3>
+                <p id="frameCatch" class="mt-3 text-sm leading-7 text-slate-600 sm:text-base"></p>
+
+                <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div class="rounded-2xl bg-sakura-50 p-4">
+                    <p class="text-xs font-bold text-sakura-500">形</p>
+                    <p id="shapeLabel" class="mt-2 text-sm font-black text-slate-900"></p>
+                  </div>
+                  <div class="rounded-2xl bg-fresh-50 p-4">
+                    <p class="text-xs font-bold text-fresh-500">素材</p>
+                    <p id="materialLabel" class="mt-2 text-sm font-black text-slate-900"></p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-xs font-bold text-slate-500">印象キーワード</p>
+                    <p id="moodLabel" class="mt-2 text-sm font-black text-slate-900"></p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-[24px] bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white shadow-soft">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-sakura-200">Logic</p>
+                <h3 class="mt-2 text-xl font-black">なぜこのフレームなのか？</h3>
+                <p id="logicText" class="mt-4 text-sm leading-7 text-slate-100"></p>
+
+                <div class="mt-5 space-y-3">
+                  <div class="rounded-2xl bg-white/10 p-4">
+                    <p class="text-xs font-bold text-sakura-200">補正ポイント</p>
+                    <p id="balanceText" class="mt-2 text-sm leading-6 text-white"></p>
+                  </div>
+                  <div class="rounded-2xl bg-white/10 p-4">
+                    <p class="text-xs font-bold text-fresh-200">印象演出ポイント</p>
+                    <p id="impressionText" class="mt-2 text-sm leading-6 text-white"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-5 xl:grid-cols-[.95fr_1.05fr]">
+              <div class="rounded-[24px] border border-slate-100 bg-white/90 p-5 shadow-soft">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Sales Talk Script</p>
+                <h3 class="mt-2 text-xl font-black text-slate-900">プロのスタイリスト風 提案トーク</h3>
+                <div class="mt-4 rounded-2xl bg-gradient-to-r from-sakura-50 to-fresh-50 p-4">
+                  <p id="talkScript" class="text-sm leading-7 text-slate-700"></p>
+                </div>
+              </div>
+
+              <div class="rounded-[24px] border border-slate-100 bg-white/90 p-5 shadow-soft">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Quick Selling Points</p>
+                    <h3 class="mt-2 text-xl font-black text-slate-900">新人スタッフ用・会話の切り口</h3>
+                  </div>
+                  <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">そのまま使える</span>
+                </div>
+                <ul id="sellingPoints" class="mt-4 space-y-3"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const state = {
+        face: null,
+        impression: null
+      };
+
+      const FACE_LABELS = {
+        round: "丸顔",
+        square: "四角顔 / ベース顔",
+        long: "面長"
+      };
+
+      const IMPRESSION_LABELS = {
+        sales: "営業・接客業",
+        creative: "IT・企画・クリエイター",
+        office: "公務員・事務職"
+      };
+
+      const data = {
+        round: {
+          sales: {
+            frame: "ボストン型のやわらかプラスチックフレーム",
+            catch: "丸顔さんの親しみやすさを活かしながら、ほどよく落ち着きと優しさを足せる王道バランス。",
+            shape: "ボストン",
+            material: "プラスチック",
+            mood: "親近感 / 優しさ / 安心感",
+            logic: "丸顔さんはもともとの親しみやすさが強みです。営業・接客ではその魅力を残しつつ、『子どもっぽさ』をやわらかく整えることが重要。ボストン型の丸みは優しさを保ちながら、やや縦幅のある設計で顔全体に落ち着きを加えられます。プラスチック素材は表情を柔らかく見せやすく、初対面でも話しかけやすい空気感をつくれます。",
+            balance: "顔の丸みと自然になじみつつ、縦ラインを少し足して幼く見えすぎる印象をセーブします。",
+            impression: "優しさ・安心感・親近感を強化し、『感じのいい人』に見せやすい組み合わせです。",
+            talk: "丸顔さんの持つ親しみやすさは、接客や営業では大きな武器です。そこに少しだけ“落ち着いた優しさ”を足せるのが、このボストン型のプラスチックフレームなんです。柔らかい雰囲気はそのままに、初対面でも安心して話しかけてもらえる印象をつくれますよ。",
+            points: [
+              "『優しそうに見せたい』お客様に、そのまま言語化して提案しやすい。",
+              "丸みを活かすので無理がなく、“似合わせ感”が高い。",
+              "フレームの存在感がほどよく、表情がやさしく見えやすい。"
+            ]
+          },
+          creative: {
+            frame: "ハーフリム（上半分フチあり）のメタルフレーム",
+            catch: "親しみやすい丸顔に、知的さとシャープさを上品に上乗せする洗練フレーム。",
+            shape: "ハーフリム",
+            material: "メタル",
+            mood: "知的 / 洗練 / 仕事ができそう",
+            logic: "丸顔さんはソフトで親しみやすい反面、IT・企画・クリエイティブ系では少し輪郭を引き締めて見せると、知的で洗練された印象が出やすくなります。ハーフリムは上部に直線的なラインをつくり、顔全体をスッキリ見せるのが得意。さらにメタル素材の軽さとスマートさが、感性の良さやロジカルさを印象づけてくれます。",
+            balance: "上半分のラインで顔の輪郭を締め、丸さによる幼さを抑えて大人っぽく見せます。",
+            impression: "シャープ・知的・洗練という、企画職やIT職で好まれる空気感を自然に演出します。",
+            talk: "丸顔さんの持つ『親しみやすさ』は素晴らしい武器ですが、ITや企画職では少し『知的でシャープな印象』を足したいですよね。そこでおすすめなのが、このハーフリムのメタルフレームです。お顔をスッキリ引き締めつつ、仕事ができる洗練された雰囲気を一瞬で演出してくれますよ。",
+            points: [
+              "やさしい印象を残したまま、“デキる感”を足せる。",
+              "メタル素材で野暮ったくなりにくく、都会的に見えやすい。",
+              "新人でも『顔を引き締める』という説明がしやすい。"
+            ]
+          },
+          office: {
+            frame: "細身のスクエア型メタルフレーム",
+            catch: "丸顔のやわらかさを活かしつつ、きちんと感と信頼感を整える堅実な一本。",
+            shape: "スクエア",
+            material: "メタル",
+            mood: "誠実 / 真面目 / 信頼感",
+            logic: "丸顔さんに公務員・事務職の印象を重ねるなら、親しみやすさに『きちんと感』を足すのが鍵です。細身のスクエアは横方向の直線が入り、丸い輪郭を整えて真面目な印象を補強できます。メタル素材は軽快でクリーンに見えやすく、堅すぎず誠実な印象へ着地しやすいのが魅力です。",
+            balance: "直線的な横ラインで輪郭を引き締め、幼く見えやすい部分を整えます。",
+            impression: "公的な場や事務系で求められる“落ち着き”と“信頼感”を出しやすい組み合わせです。",
+            talk: "丸顔さんは優しく見える一方で、事務職や公務員のような場面ではもう少し“きちんと感”を足すと、ぐっと信頼感が高まります。そこで細身のスクエア型メタルがおすすめです。柔らかさを残しながら、真面目で安心感のある印象に整えやすいですよ。",
+            points: [
+              "『優しそうだけど頼れる』印象をつくりやすい。",
+              "細身メタルなので堅くなりすぎず、新社会人にも取り入れやすい。",
+              "書類・受付・公的対応などの場面に合う説明がしやすい。"
+            ]
+          }
+        },
+        square: {
+          sales: {
+            frame: "オーバル寄りボストンの軽やかセルフレーム",
+            catch: "四角顔の誠実さに、やわらかい親近感を足して話しかけやすく見せる一本。",
+            shape: "オーバル寄りボストン",
+            material: "軽やかセル",
+            mood: "やさしさ / 親近感 / 柔和",
+            logic: "四角顔・ベース顔さんは輪郭に安定感があり、誠実そうに見えやすいのが魅力です。一方で、営業や接客では少し硬く見えやすいことも。そこでおすすめなのが、角を和らげるオーバル寄りのボストン。曲線を足すことで表情が柔らかく見え、セルフレームの適度な存在感が安心感もつくってくれます。",
+            balance: "輪郭の角ばりを曲線で中和し、強さや堅さをやわらげます。",
+            impression: "優しそう・相談しやすそうという接客向きの第一印象をつくれます。",
+            talk: "四角顔さんはもともと誠実で信頼感があるので、その良さは残しつつ、営業や接客では少し柔らかさを足したいですよね。このオーバル寄りボストンなら、お顔の角をふわっと和らげて、話しかけやすい印象に整えてくれます。しっかり見えるのに冷たくならない、すごく使いやすい一本です。",
+            points: [
+              "真面目さを消さずに、親しみやすさだけを足せる。",
+              "『硬く見られやすい』お悩みにそのまま対応しやすい。",
+              "接客職の“感じの良さ”を形で説明できる。"
+            ]
+          },
+          creative: {
+            frame: "シャープすぎない多角形メタルフレーム",
+            catch: "骨格の強さを活かしながら、知性とセンスを感じさせる都会的な提案。",
+            shape: "多角形",
+            material: "メタル",
+            mood: "知的 / センス感 / モダン",
+            logic: "四角顔さんは骨格がしっかりしていて、印象が強く見えやすいタイプです。IT・企画・クリエイティブ系では、その存在感を活かしながら“洗練された知性”に変換するのがポイント。多角形メタルは直線的な良さを残しつつ、普通のスクエアより抜け感があり、感度の高い印象をつくれます。シャープすぎないサイズ感を選べば、強く見えすぎるのも防げます。",
+            balance: "骨格の強さと調和しつつ、普通のスクエアより軽さが出て重たく見えにくいです。",
+            impression: "企画力がありそう、感性がありそうという“今っぽい知性”を演出できます。",
+            talk: "四角顔さんは骨格がしっかりしているぶん、フレーム次第で一気に“センスのある知的さ”が出せます。おすすめは、このシャープすぎない多角形のメタルフレーム。真面目さは残しながら、企画職やクリエイティブ職らしい抜け感と洗練感をきれいに足せますよ。",
+            points: [
+              "普通のスクエアでは無難すぎる場面に差をつけられる。",
+              "“センス良く見せたい”ニーズに応えやすい。",
+              "強そうに見えすぎるリスクを抑えつつ、個性も出せる。"
+            ]
+          },
+          office: {
+            frame: "細身オーバルのチタンメタルフレーム",
+            catch: "誠実さを軸に、堅苦しさだけをやわらげた安心感重視の定番提案。",
+            shape: "細身オーバル",
+            material: "チタンメタル",
+            mood: "誠実 / 安心 / 清潔感",
+            logic: "四角顔さんはもともときちんと感があり、公務員・事務職の印象とは相性が良いです。ただし、輪郭の強さにさらに角ばったフレームを合わせると、堅く見えすぎることがあります。細身オーバルなら印象を和らげつつ、チタンメタルの端正さで清潔感と信頼感はしっかりキープ。まじめさを損なわず、親しみやすさを少し足せます。",
+            balance: "角を丸めることで、顔立ちの強さを整えながら自然な上品さに導きます。",
+            impression: "“間違いのない人”に見える落ち着きと、安心して任せられそうな印象が出しやすいです。",
+            talk: "四角顔さんは、公務員や事務職で求められる誠実さととても相性がいいです。ただ、さらに角の強いフレームを選ぶと少し堅く見えすぎることもあるので、この細身オーバルのチタンメタルがおすすめです。真面目で清潔感がありながら、きつく見えにくい絶妙なバランスなんです。",
+            points: [
+              "『信頼感は欲しいけど、怖く見せたくない』に応えやすい。",
+              "軽量素材の説明で、掛け心地の提案にもつなげやすい。",
+              "堅実な職種に合う“外さない一本”として紹介しやすい。"
+            ]
+          }
+        },
+        long: {
+          sales: {
+            frame: "天地幅のあるウェリントンの柔らかセルフレーム",
+            catch: "面長の大人っぽさは残しつつ、親近感と安定感を加えて距離を縮める提案。",
+            shape: "ウェリントン",
+            material: "セル",
+            mood: "親しみ / 安心感 / バランス感",
+            logic: "面長さんは大人っぽく落ち着いて見える反面、ややクールに見えたり、顔が縦に長く見えすぎることがあります。営業・接客では親しみやすさが大切なので、天地幅のあるウェリントンで縦の印象を緩和しながら、柔らかなセル素材でやさしさをプラスするのが効果的。頼れそうで話しかけやすい印象に整えられます。",
+            balance: "縦長感をフレームの天地幅で補正し、顔全体をバランスよく見せます。",
+            impression: "クールすぎず、安心して相談できそうなやわらかい空気感を演出します。",
+            talk: "面長さんは大人っぽくて素敵なのですが、接客や営業では少しだけ親しみやすさを足してあげると、もっと好印象になります。この天地幅のあるウェリントンなら、お顔の縦長感を自然に整えながら、柔らかいセル素材で優しい雰囲気も出せます。しっかりして見えるのに、ちゃんと話しかけやすい印象になりますよ。",
+            points: [
+              "顔の縦長感を補正する説明がしやすく、納得感が高い。",
+              "大人っぽさを消さずに、接客向けの柔らかさを足せる。",
+              "初対面で緊張されやすいお客様にも刺さりやすい。"
+            ]
+          },
+          creative: {
+            frame: "クラウンパント寄りの細メタルフレーム",
+            catch: "面長の知的さを活かしながら、センスと抜け感を両立させる上級者見えフレーム。",
+            shape: "クラウンパント",
+            material: "細メタル",
+            mood: "知的 / 感度高め / 洗練",
+            logic: "面長さんはもともと大人っぽく知的に見えやすく、IT・企画・クリエイティブ職との相性は良好です。そこで重要なのは、ただ真面目に見せるだけでなく、少しの個性と抜け感を加えること。クラウンパント寄りの細メタルは、上部の直線が知性を強めつつ、丸みで硬さを抜いてくれる絶妙なデザイン。顔の縦長感もほどよく分散し、センス良くまとまります。",
+            balance: "上部のラインで顔の重心を上げつつ、丸みで縦長の印象をほぐします。",
+            impression: "頭の良さだけでなく、企画力や美意識まで感じさせる印象に導けます。",
+            talk: "面長さんは、もともと知的で大人っぽい雰囲気があるので、ITや企画職にはすごく相性がいいです。さらに一歩洗練させるなら、このクラウンパント寄りの細メタルがおすすめです。知性はしっかり出しつつ、少しだけセンスの良い抜け感が加わるので、“できる人感”がぐっと高まりますよ。",
+            points: [
+              "知的さを活かしながら、没個性になりにくい。",
+              "“普通すぎないけど奇抜じゃない”絶妙な提案ができる。",
+              "デザイン職・企画職への提案で差別化しやすい。"
+            ]
+          },
+          office: {
+            frame: "やや天地深めのオーバルメタルフレーム",
+            catch: "面長の落ち着きを活かしながら、安心感と誠実さを自然に底上げする一本。",
+            shape: "オーバル",
+            material: "メタル",
+            mood: "安心感 / 真面目 / 落ち着き",
+            logic: "面長さんは落ち着いた大人っぽさがあり、公務員・事務職で求められる誠実な印象と好相性です。ただし、細すぎる横長フレームだと顔の長さを強調しやすいため、やや天地深めのオーバルを選ぶのがポイント。柔らかな曲線で親しみを出しつつ、メタル素材できちんと感も保てるため、真面目で安心感のある表情にまとまります。",
+            balance: "縦長感をほどよくカバーし、顔全体のバランスを穏やかに見せます。",
+            impression: "堅実で丁寧、安心して任せられそうな事務・公務系の空気感を演出できます。",
+            talk: "面長さんの大人っぽさは、公務員や事務職では大きな強みになります。ただ、細すぎるフレームだとお顔の長さが目立ちやすいので、この少し天地深めのオーバルメタルがとてもおすすめです。誠実さはそのままに、やわらかい安心感も出せるので、信頼されやすい印象に整いますよ。",
+            points: [
+              "“落ち着いて見える”長所を最大限活かせる。",
+              "細すぎるフレームを避ける理由まで説明でき、説得力がある。",
+              "安心感を重視する職種提案と非常に相性が良い。"
+            ]
+          }
+        }
+      };
+
+      const elements = {
+        progressBar: document.getElementById("progressBar"),
+        progressText: document.getElementById("progressText"),
+        progressBadge: document.getElementById("progressBadge"),
+        faceChip: document.getElementById("faceChip"),
+        impressionChip: document.getElementById("impressionChip"),
+        emptyState: document.getElementById("emptyState"),
+        errorState: document.getElementById("errorState"),
+        resultCard: document.getElementById("resultCard"),
+        resultFace: document.getElementById("resultFace"),
+        resultImpression: document.getElementById("resultImpression"),
+        frameTitle: document.getElementById("frameTitle"),
+        frameCatch: document.getElementById("frameCatch"),
+        shapeLabel: document.getElementById("shapeLabel"),
+        materialLabel: document.getElementById("materialLabel"),
+        moodLabel: document.getElementById("moodLabel"),
+        logicText: document.getElementById("logicText"),
+        balanceText: document.getElementById("balanceText"),
+        impressionText: document.getElementById("impressionText"),
+        talkScript: document.getElementById("talkScript"),
+        sellingPoints: document.getElementById("sellingPoints"),
+        resetBtn: document.getElementById("resetBtn")
+      };
+
+      function sanitizeText(value) {
+        return String(value ?? "").replace(/[<>]/g, "");
+      }
+
+      function updateProgress() {
+        const done = Number(!!state.face) + Number(!!state.impression);
+        const percent = done * 50;
+
+        elements.progressBar.style.width = percent + "%";
+        elements.progressText.textContent = `${done} / 2 完了`;
+
+        if (done === 0) {
+          elements.progressBadge.textContent = "未選択";
+          elements.progressBadge.className = "rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600";
+        } else if (done === 1) {
+          elements.progressBadge.textContent = "あと1つ";
+          elements.progressBadge.className = "rounded-full bg-sakura-50 px-3 py-1 text-xs font-semibold text-sakura-500";
+        } else {
+          elements.progressBadge.textContent = "診断完了";
+          elements.progressBadge.className = "rounded-full bg-fresh-50 px-3 py-1 text-xs font-semibold text-fresh-500";
+        }
+
+        elements.faceChip.textContent = state.face ? `顔型：${FACE_LABELS[state.face]}` : "顔型：未選択";
+        elements.faceChip.className = state.face
+          ? "rounded-full bg-sakura-50 px-3 py-1.5 text-xs font-semibold text-sakura-500 ring-1 ring-sakura-100"
+          : "rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-slate-200";
+
+        elements.impressionChip.textContent = state.impression
+          ? `印象：${IMPRESSION_LABELS[state.impression]}`
+          : "印象：未選択";
+        elements.impressionChip.className = state.impression
+          ? "rounded-full bg-fresh-50 px-3 py-1.5 text-xs font-semibold text-fresh-500 ring-1 ring-fresh-100"
+          : "rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-slate-200";
+      }
+
+      function updateOptionStyles(group, selectedValue) {
+        document.querySelectorAll(`[data-group="${group}"]`).forEach(btn => {
+          const active = btn.dataset.value === selectedValue;
+          btn.classList.toggle("border-sakura-300", active && group === "face");
+          btn.classList.toggle("border-fresh-300", active && group === "impression");
+          btn.classList.toggle("bg-sakura-50", active && group === "face");
+          btn.classList.toggle("bg-fresh-50", active && group === "impression");
+          btn.classList.toggle("shadow-soft", active);
+          btn.classList.toggle("-translate-y-1", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      function renderSellingPoints(points) {
+        elements.sellingPoints.innerHTML = "";
+        points.forEach((point, index) => {
+          const li = document.createElement("li");
+          li.className = "flex items-start gap-3 rounded-2xl bg-slate-50 p-4";
+          li.innerHTML = `
+            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-slate-700 ring-1 ring-slate-200">
+              ${index + 1}
+            </span>
+            <p class="text-sm leading-6 text-slate-700">${sanitizeText(point)}</p>
+          `;
+          elements.sellingPoints.appendChild(li);
+        });
+      }
+
+      function hideAllStates() {
+        elements.emptyState.classList.add("hidden");
+        elements.errorState.classList.add("hidden");
+        elements.resultCard.classList.add("hidden");
+      }
+
+      function showError() {
+        hideAllStates();
+        elements.errorState.classList.remove("hidden");
+      }
+
+      function showEmpty() {
+        hideAllStates();
+        elements.emptyState.classList.remove("hidden");
+      }
+
+      function renderResult() {
+        if (!state.face && !state.impression) {
+          showEmpty();
+          return;
+        }
+
+        if (!state.face || !state.impression) {
+          showError();
+          return;
+        }
+
+        const result = data?.[state.face]?.[state.impression];
+        if (!result) {
+          showError();
+          return;
+        }
+
+        elements.resultFace.textContent = sanitizeText(FACE_LABELS[state.face]);
+        elements.resultImpression.textContent = sanitizeText(IMPRESSION_LABELS[state.impression]);
+        elements.frameTitle.textContent = sanitizeText(result.frame);
+        elements.frameCatch.textContent = sanitizeText(result.catch);
+        elements.shapeLabel.textContent = sanitizeText(result.shape);
+        elements.materialLabel.textContent = sanitizeText(result.material);
+        elements.moodLabel.textContent = sanitizeText(result.mood);
+        elements.logicText.textContent = sanitizeText(result.logic);
+        elements.balanceText.textContent = sanitizeText(result.balance);
+        elements.impressionText.textContent = sanitizeText(result.impression);
+        elements.talkScript.textContent = sanitizeText(result.talk);
+        renderSellingPoints(Array.isArray(result.points) ? result.points : []);
+
+        hideAllStates();
+        elements.resultCard.classList.remove("hidden");
+        elements.resultCard.classList.remove("result-enter");
+        void elements.resultCard.offsetWidth;
+        elements.resultCard.classList.add("result-enter");
+
+        requestAnimationFrame(() => {
+          elements.resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+
+      function selectOption(group, value) {
+        if (group === "face") state.face = value;
+        if (group === "impression") state.impression = value;
+        updateOptionStyles(group, value);
+        updateProgress();
+        renderResult();
+      }
+
+      document.querySelectorAll(".option-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const group = btn.dataset.group;
+          const value = btn.dataset.value;
+          if (!group || !value) return;
+          selectOption(group, value);
+        });
+      });
+
+      elements.resetBtn.addEventListener("click", () => {
+        state.face = null;
+        state.impression = null;
+        updateOptionStyles("face", "");
+        updateOptionStyles("impression", "");
+        updateProgress();
+        showEmpty();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      updateProgress();
+      showEmpty();
+    })();
+  </script>
+</body>
+</html>
