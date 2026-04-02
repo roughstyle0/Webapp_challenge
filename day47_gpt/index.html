@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>チークカラー（美容）レンズ・メイクアップシミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pearl: '#fbf7f3',
+            shell: '#f4ece7',
+            rosegold: '#d9a69b',
+            champagne: '#d8bd8a',
+            plum: '#6f4757',
+            cocoa: '#8f6f67',
+            smoke: '#7d726d',
+            ink: '#322b29'
+          },
+          fontFamily: {
+            serif: ['"Noto Serif JP"', '"Yu Mincho"', 'serif'],
+            sans: ['"Noto Sans JP"', 'system-ui', 'sans-serif']
+          },
+          keyframes: {
+            shimmer: {
+              '0%': { transform: 'translateX(-120%)', opacity: '0' },
+              '20%': { opacity: '.75' },
+              '100%': { transform: 'translateX(120%)', opacity: '0' }
+            },
+            blushPulse: {
+              '0%,100%': { opacity: '.18', transform: 'scale(.96)' },
+              '50%': { opacity: '.72', transform: 'scale(1.04)' }
+            },
+            floatSoft: {
+              '0%,100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' }
+            },
+            glowBreath: {
+              '0%,100%': { boxShadow: '0 0 0 1px rgba(255,255,255,.25), inset 0 0 0 1px rgba(255,255,255,.18), 0 12px 36px rgba(180,135,125,.10)' },
+              '50%': { boxShadow: '0 0 0 1px rgba(255,255,255,.48), inset 0 0 0 1px rgba(255,255,255,.24), 0 18px 48px rgba(180,135,125,.18)' }
+            }
+          },
+          animation: {
+            shimmer: 'shimmer 2.8s linear infinite',
+            blushPulse: 'blushPulse 2.2s ease-in-out infinite',
+            floatSoft: 'floatSoft 5s ease-in-out infinite',
+            glowBreath: 'glowBreath 3s ease-in-out infinite'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root{
+      --bg1:#fdf9f6;
+      --bg2:#f5ece7;
+      --bg3:#f2e2d9;
+      --ink:#352d2b;
+      --muted:#7e7470;
+      --line:rgba(111,71,87,.14);
+      --glass:rgba(255,255,255,.26);
+      --glass-strong:rgba(255,255,255,.42);
+      --rose:#f3a5b8;
+      --burgundy:#8b3d56;
+      --apricot:#f1b074;
+      --lavender:#cbb7f3;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 15% 18%, rgba(255,255,255,.95), transparent 28%),
+        radial-gradient(circle at 80% 10%, rgba(217,166,155,.18), transparent 25%),
+        radial-gradient(circle at 72% 76%, rgba(216,189,138,.18), transparent 30%),
+        linear-gradient(135deg, var(--bg1), var(--bg2) 46%, var(--bg3));
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.28) 0 1px, transparent 1px),
+        radial-gradient(circle at 60% 40%, rgba(255,255,255,.18) 0 1px, transparent 1px),
+        radial-gradient(circle at 80% 76%, rgba(255,255,255,.18) 0 1px, transparent 1px);
+      background-size:180px 180px, 220px 220px, 260px 260px;
+      opacity:.55;
+      mix-blend-mode:screen;
+    }
+
+    .mirror-shell{
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.42);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.12)),
+        linear-gradient(135deg, rgba(255,255,255,.35), rgba(255,255,255,.06));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      clip-path: polygon(0 18px, 18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px));
+      animation: glowBreath 3s ease-in-out infinite;
+    }
+
+    .mirror-shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(120deg, transparent 0 35%, rgba(255,255,255,.46) 46%, transparent 58%);
+      transform:translateX(-120%);
+      animation: shimmer 3.4s linear infinite;
+    }
+
+    .frame-line{
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(143,111,103,.26), transparent);
+    }
+
+    .lux-btn{
+      position:relative;
+      width:100%;
+      text-align:left;
+      padding:14px 14px 15px;
+      border:1px solid rgba(255,255,255,.38);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.36), rgba(255,255,255,.10));
+      backdrop-filter: blur(10px);
+      clip-path: polygon(0 12px, 12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px));
+      transition:.28s ease;
+      min-width:0;
+      overflow:hidden;
+    }
+    .lux-btn::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(100deg, transparent 20%, rgba(255,255,255,.42) 50%, transparent 80%);
+      transform:translateX(-120%);
+      transition:transform .75s ease;
+    }
+    .lux-btn:hover::after,
+    .lux-btn:focus-visible::after{ transform:translateX(120%) }
+    .lux-btn:hover,
+    .lux-btn:focus-visible{
+      outline:none;
+      border-color:rgba(217,166,155,.52);
+      transform:translateY(-1px);
+    }
+    .lux-btn.active{
+      border-color:rgba(143,61,86,.35);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.46), rgba(255,255,255,.15)),
+        radial-gradient(circle at top right, rgba(217,166,155,.18), transparent 42%);
+      box-shadow:0 10px 30px rgba(143,61,86,.08);
+    }
+
+    .mirror-stage{
+      position:relative;
+      aspect-ratio: 4 / 5;
+      min-height:420px;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.6), transparent 30%),
+        linear-gradient(180deg, rgba(255,255,255,.40), rgba(255,255,255,.16));
+    }
+    @media (min-width: 768px){
+      .mirror-stage{ aspect-ratio: 5 / 6; min-height:520px; }
+    }
+
+    .beauty-ring{
+      position:absolute;
+      inset:4.5%;
+      border:1px solid rgba(255,255,255,.55);
+      pointer-events:none;
+      clip-path: polygon(0 18px, 18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px));
+    }
+
+    .face-wrap{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      animation: floatSoft 5s ease-in-out infinite;
+    }
+
+    .portrait{
+      position:relative;
+      width:min(90%, 360px);
+      aspect-ratio: 0.83 / 1;
+    }
+
+    .hair{
+      position:absolute;
+      inset:4% 12% 0;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(110,82,72,.72), rgba(83,60,54,.95) 56%, rgba(62,43,39,1) 100%);
+      border-radius: 44% 44% 38% 38% / 34% 34% 54% 54%;
+      filter: drop-shadow(0 10px 28px rgba(80,58,52,.16));
+    }
+
+    .face{
+      position:absolute;
+      inset:16% 22% 8%;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(255,244,236,.94), rgba(247,223,210,.95) 58%, rgba(230,198,184,.98) 100%);
+      border-radius: 40% 40% 42% 42% / 28% 28% 48% 48%;
+      box-shadow: inset 0 -12px 24px rgba(201,160,148,.15);
+    }
+
+    .bang{
+      position:absolute;
+      inset:12% 24% auto;
+      height:18%;
+      background: radial-gradient(circle at 50% 10%, rgba(98,72,64,.75), rgba(70,50,46,.95));
+      border-radius: 0 0 46% 46%;
+      opacity:.95;
+    }
+
+    .brow{
+      position:absolute;
+      width:18%;
+      height:2%;
+      background:rgba(104,74,66,.65);
+      border-radius:999px;
+      top:34%;
+    }
+    .brow.left{ left:28%; transform:rotate(-7deg); }
+    .brow.right{ right:28%; transform:rotate(7deg); }
+
+    .eye{
+      position:absolute;
+      width:16%;
+      height:6.5%;
+      top:39%;
+      border-bottom:2px solid rgba(86,66,61,.62);
+      border-radius:0 0 999px 999px;
+      opacity:.88;
+    }
+    .eye.left{ left:28%; }
+    .eye.right{ right:28%; }
+
+    .under-eye{
+      position:absolute;
+      width:16%;
+      height:4%;
+      top:46%;
+      border-radius:999px;
+      background:rgba(120,107,130,.10);
+      transition:background .35s ease, opacity .35s ease;
+      opacity:.75;
+    }
+    .under-eye.left{ left:28%; }
+    .under-eye.right{ right:28%; }
+
+    .nose{
+      position:absolute;
+      left:50%;
+      top:42%;
+      width:8%;
+      height:16%;
+      transform:translateX(-50%);
+      border-right:2px solid rgba(173,127,116,.28);
+      border-bottom:2px solid rgba(173,127,116,.22);
+      border-radius:0 0 60% 30%;
+      opacity:.8;
+    }
+
+    .mouth{
+      position:absolute;
+      left:50%;
+      top:66%;
+      width:18%;
+      height:5%;
+      transform:translateX(-50%);
+      border-bottom:2px solid rgba(177,104,118,.6);
+      border-radius:0 0 999px 999px;
+      opacity:.82;
+    }
+
+    .cheek{
+      position:absolute;
+      top:53%;
+      width:20%;
+      height:12%;
+      border-radius:999px;
+      filter:blur(8px);
+      opacity:.22;
+      animation: blushPulse 2.2s ease-in-out infinite;
+      transition:background .35s ease, opacity .35s ease;
+      mix-blend-mode:multiply;
+    }
+    .cheek.left{ left:20%; }
+    .cheek.right{ right:20%; }
+
+    .skin-glow{
+      position:absolute;
+      inset:18% 20% 10%;
+      border-radius:40% 40% 42% 42% / 28% 28% 48% 48%;
+      opacity:.12;
+      transition:background .35s ease, opacity .35s ease;
+      mix-blend-mode:screen;
+      pointer-events:none;
+    }
+
+    .glasses{
+      position:absolute;
+      left:50%;
+      top:42%;
+      width:78%;
+      height:28%;
+      transform:translate(-50%, -50%);
+      z-index:3;
+    }
+    .bridge{
+      position:absolute;
+      left:50%;
+      top:45%;
+      width:8%;
+      height:2px;
+      transform:translateX(-50%);
+      background:linear-gradient(90deg, rgba(130,101,95,.75), rgba(214,183,173,.95), rgba(130,101,95,.75));
+      opacity:.85;
+    }
+    .temple{
+      position:absolute;
+      top:43%;
+      width:14%;
+      height:2px;
+      background:linear-gradient(90deg, rgba(141,111,102,.2), rgba(141,111,102,.8), rgba(141,111,102,.2));
+    }
+    .temple.left{ left:-10%; }
+    .temple.right{ right:-10%; }
+
+    .lens{
+      position:absolute;
+      width:42%;
+      height:82%;
+      top:8%;
+      overflow:hidden;
+      border:2px solid rgba(133,101,93,.62);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.10));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.26);
+      backdrop-filter: blur(2px);
+    }
+    .lens.left{
+      left:0;
+      border-radius: 34% 30% 30% 34% / 28% 28% 34% 34%;
+    }
+    .lens.right{
+      right:0;
+      border-radius: 30% 34% 34% 30% / 28% 28% 34% 34%;
+    }
+    .lens::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(115deg, rgba(255,255,255,.44), transparent 38%, transparent 62%, rgba(255,255,255,.18));
+      pointer-events:none;
+    }
+    .lens-color{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      height:58%;
+      opacity:.62;
+      transition: background .35s ease, opacity .35s ease;
+      background:linear-gradient(180deg, rgba(255,255,255,0), rgba(243,165,184,.46) 52%, rgba(243,165,184,.72) 100%);
+    }
+
+    .mirror-readout{
+      position:absolute;
+      left:16px;
+      right:16px;
+      top:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      font-size:11px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      color:rgba(79,65,62,.62);
+      z-index:4;
+    }
+
+    .spark{
+      position:absolute;
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 70%);
+      opacity:.7;
+    }
+    .spark.s1{ top:14%; left:17%; }
+    .spark.s2{ top:20%; right:15%; width:10px; height:10px; }
+    .spark.s3{ bottom:15%; right:22%; width:8px; height:8px; }
+
+    .fade-swap{
+      opacity:0;
+      transform:translateY(10px);
+      transition:opacity .35s ease, transform .35s ease;
+    }
+    .fade-swap.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    .meter{
+      position:relative;
+      height:10px;
+      background:rgba(255,255,255,.28);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.38);
+    }
+    .meter-fill{
+      position:absolute;
+      inset:0 auto 0 0;
+      width:0%;
+      transition:width 1.2s cubic-bezier(.22,.8,.2,1);
+      background:linear-gradient(90deg, rgba(217,166,155,.6), rgba(216,189,138,.8), rgba(255,255,255,.85));
+    }
+
+    .tag{
+      border:1px solid rgba(255,255,255,.42);
+      background:rgba(255,255,255,.16);
+      padding:.38rem .65rem;
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:rgba(66,55,52,.72);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="font-sans text-ink">
+  <main class="px-4 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-8">
+    <section class="max-w-7xl mx-auto">
+      <div class="mirror-shell p-4 sm:p-5 lg:p-8">
+        <div class="flex flex-col gap-5 lg:gap-7">
+          <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+            <div class="min-w-0">
+              <p class="text-[11px] tracking-[0.32em] uppercase text-smoke/80 mb-3">
+                Beauty Lens Consultation Mirror
+              </p>
+              <h1 class="font-serif font-light text-[clamp(1.9rem,5.4vw,4.6rem)] leading-[1.07] tracking-[0.04em]">
+                チークカラー レンズで、<br />
+                <span class="text-plum">“塗らない血色感”</span>を見せる
+              </h1>
+              <p class="mt-4 max-w-3xl text-sm sm:text-base lg:text-lg leading-7 text-smoke/90">
+                色付きレンズを“サングラスっぽい”で終わらせず、
+                <span class="text-plum">顔色補正・くすみ飛ばし・透明感アップ</span>として提案するための、
+                デジタル・ビューティーミラー風シミュレーターです。
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 sm:gap-3">
+              <span class="tag">beauty mirror</span>
+              <span class="tag">glass mood</span>
+              <span class="tag">mobile first</span>
+            </div>
+          </div>
+
+          <div class="frame-line"></div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)] gap-4 lg:gap-6">
+            <aside class="min-w-0 flex flex-col gap-4">
+              <div class="mirror-shell p-4 sm:p-5">
+                <p class="text-[11px] tracking-[0.26em] uppercase text-smoke/75 mb-3">Select Concern</p>
+                <h2 class="font-serif text-xl sm:text-2xl font-light leading-tight">目元・お肌のお悩み</h2>
+                <p class="mt-3 text-sm sm:text-[15px] leading-7 text-smoke/85">
+                  お客様が一番気になる印象に近いものを選んでください。
+                </p>
+
+                <div class="mt-4 grid gap-3">
+                  <button class="lux-btn concern-btn active" data-concern="pale" aria-pressed="true">
+                    <div class="text-[11px] tracking-[0.2em] uppercase text-smoke/70 mb-1">concern 01</div>
+                    <div class="font-medium text-[15px] sm:text-base">夕方になると顔が青白く、血色感がなくなる</div>
+                  </button>
+
+                  <button class="lux-btn concern-btn" data-concern="dark" aria-pressed="false">
+                    <div class="text-[11px] tracking-[0.2em] uppercase text-smoke/70 mb-1">concern 02</div>
+                    <div class="font-medium text-[15px] sm:text-base">目の下のクマや、目元のくすみが気になる</div>
+                  </button>
+
+                  <button class="lux-btn concern-btn" data-concern="yellow" aria-pressed="false">
+                    <div class="text-[11px] tracking-[0.2em] uppercase text-smoke/70 mb-1">concern 03</div>
+                    <div class="font-medium text-[15px] sm:text-base">お肌の黄ぐすみを飛ばして、透明感が欲しい</div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="mirror-shell p-4 sm:p-5">
+                <p class="text-[11px] tracking-[0.26em] uppercase text-smoke/75 mb-3">Select Lens Color</p>
+                <h2 class="font-serif text-xl sm:text-2xl font-light leading-tight">チークカラーを選ぶ</h2>
+                <p class="mt-3 text-sm sm:text-[15px] leading-7 text-smoke/85">
+                  レンズ下部だけにやさしく色が入る、美容提案向けのカラーです。
+                </p>
+
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button class="lux-btn color-btn active" data-color="rose" aria-pressed="true">
+                    <div class="flex items-center gap-3">
+                      <span class="block w-4 h-4 rounded-full bg-rose-300 border border-white/70"></span>
+                      <div>
+                        <div class="font-medium">ローズピンク</div>
+                        <div class="text-xs text-smoke/70 mt-1">王道の血色感アップ</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="lux-btn color-btn" data-color="burgundy" aria-pressed="false">
+                    <div class="flex items-center gap-3">
+                      <span class="block w-4 h-4 rounded-full border border-white/70" style="background:#8b3d56"></span>
+                      <div>
+                        <div class="font-medium">バーガンディ</div>
+                        <div class="text-xs text-smoke/70 mt-1">上品な血色感・引き締め</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="lux-btn color-btn" data-color="apricot" aria-pressed="false">
+                    <div class="flex items-center gap-3">
+                      <span class="block w-4 h-4 rounded-full border border-white/70" style="background:#f1b074"></span>
+                      <div>
+                        <div class="font-medium">アプリコットオレンジ</div>
+                        <div class="text-xs text-smoke/70 mt-1">クマ隠し・健康的な明るさ</div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button class="lux-btn color-btn" data-color="lavender" aria-pressed="false">
+                    <div class="flex items-center gap-3">
+                      <span class="block w-4 h-4 rounded-full border border-white/70" style="background:#cbb7f3"></span>
+                      <div>
+                        <div class="font-medium">クリアラベンダー</div>
+                        <div class="text-xs text-smoke/70 mt-1">黄ぐすみ飛ばし・透明感</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <p id="helperText" class="mt-4 text-xs sm:text-sm leading-6 text-smoke/75">
+                  お悩みとカラーの組み合わせに応じて、鏡の中の印象と提案トークが切り替わります。
+                </p>
+              </div>
+            </aside>
+
+            <section class="min-w-0 flex flex-col gap-4 lg:gap-6">
+              <div class="mirror-shell p-3 sm:p-4 lg:p-5">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+                  <div>
+                    <p class="text-[11px] tracking-[0.26em] uppercase text-smoke/75 mb-2">Makeup Simulation</p>
+                    <h2 class="font-serif text-xl sm:text-3xl font-light leading-tight">ビューティーミラー・シミュレーション</h2>
+                  </div>
+                  <p class="text-xs sm:text-sm text-smoke/72">レンズ下半分のカラー × 頬の血色感アップ</p>
+                </div>
+
+                <div class="mirror-stage">
+                  <div class="beauty-ring"></div>
+
+                  <div class="mirror-readout">
+                    <span>mirror mode</span>
+                    <span id="mirrorStatus">rose pink / blush enhance</span>
+                    <span>beauty consult</span>
+                  </div>
+
+                  <div class="face-wrap">
+                    <div class="portrait">
+                      <div class="hair"></div>
+                      <div class="bang"></div>
+
+                      <div class="face">
+                        <div id="skinGlow" class="skin-glow"></div>
+                        <div class="brow left"></div>
+                        <div class="brow right"></div>
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div id="underLeft" class="under-eye left"></div>
+                        <div id="underRight" class="under-eye right"></div>
+                        <div id="cheekLeft" class="cheek left"></div>
+                        <div id="cheekRight" class="cheek right"></div>
+                        <div class="nose"></div>
+                        <div class="mouth"></div>
+                      </div>
+
+                      <div class="glasses">
+                        <div class="temple left"></div>
+                        <div class="temple right"></div>
+                        <div class="bridge"></div>
+                        <div class="lens left">
+                          <div id="lensColorLeft" class="lens-color"></div>
+                        </div>
+                        <div class="lens right">
+                          <div id="lensColorRight" class="lens-color"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span class="spark s1"></span>
+                  <span class="spark s2"></span>
+                  <span class="spark s3"></span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
+                  <div class="min-w-0">
+                    <p id="simHeadline" class="text-sm sm:text-base lg:text-lg font-medium text-plum">
+                      ローズピンクの反射ニュアンスで、顔色がふわっと上向いて見えます。
+                    </p>
+                    <p id="simSubtext" class="mt-2 text-sm sm:text-[15px] leading-7 text-smoke/85">
+                      下半分に入るチークカラーが、頬まわりにやさしい血色の印象を足し、サングラスのような強い色付きではなく“肌映えの補正”として見せられます。
+                    </p>
+                  </div>
+
+                  <div class="mirror-shell p-4">
+                    <p class="text-[11px] tracking-[0.22em] uppercase text-smoke/75">Beauty Effect Meter</p>
+                    <div class="mt-3 flex items-end justify-between gap-3">
+                      <div>
+                        <div id="beautyPercent" class="font-serif text-[2rem] sm:text-[2.4rem] leading-none text-plum">72%</div>
+                        <div id="beautyLabel" class="text-xs sm:text-sm text-smoke/72 mt-2">血色感アップ</div>
+                      </div>
+                      <div class="text-right text-[11px] tracking-[0.18em] uppercase text-smoke/65">
+                        visual<br>effect
+                      </div>
+                    </div>
+                    <div class="mt-4 meter">
+                      <div id="meterFill" class="meter-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 lg:gap-6">
+                <div id="guideBlock" class="mirror-shell p-4 sm:p-5 fade-swap show">
+                  <p class="text-[11px] tracking-[0.26em] uppercase text-smoke/75 mb-2">Why It Works</p>
+                  <h3 class="font-serif text-xl sm:text-2xl font-light leading-tight">なぜ“塗らないチーク”に見えるのか</h3>
+
+                  <div class="frame-line my-4"></div>
+
+                  <div class="space-y-3 text-sm sm:text-[15px] leading-7 text-smoke/85">
+                    <div class="flex gap-3">
+                      <span class="mt-3 w-2 h-2 rounded-full bg-rose-300 shrink-0"></span>
+                      <p id="why1">レンズ下部にだけ色を入れることで、頬まわりへ自然な反射ニュアンスが生まれます。</p>
+                    </div>
+                    <div class="flex gap-3">
+                      <span class="mt-3 w-2 h-2 rounded-full bg-amber-300 shrink-0"></span>
+                      <p id="why2">強い全面カラーではないため、サングラス感より“肌補正”として受け入れられやすいです。</p>
+                    </div>
+                    <div class="flex gap-3">
+                      <span class="mt-3 w-2 h-2 rounded-full bg-violet-300 shrink-0"></span>
+                      <p id="why3">お悩みに合わせて色を変えると、血色感・クマカバー・透明感の見せ方を調整できます。</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="talkBlock" class="mirror-shell p-4 sm:p-5 fade-swap show">
+                  <p class="text-[11px] tracking-[0.26em] uppercase text-smoke/75 mb-2">Beauty Adviser Talk</p>
+                  <h3 class="font-serif text-xl sm:text-2xl font-light leading-tight">美容部員風・提案トーク</h3>
+
+                  <p id="talkLead" class="mt-4 text-base sm:text-lg lg:text-xl leading-8 text-plum font-medium">
+                    塗らないチークとして大人気です。マスクをしていても血色良く見えますよ。
+                  </p>
+                  <p id="talkBody" class="mt-3 text-sm sm:text-[15px] leading-7 text-smoke/85">
+                    レンズの下だけにカラーが入るので、サングラスのような強い印象ではなく、頬まわりにやさしく色が差す感じになります。メイクを足しすぎなくても、顔色を明るく見せたい方にすごく人気です。
+                  </p>
+
+                  <div class="frame-line my-4"></div>
+
+                  <div class="space-y-3 text-sm sm:text-[15px] leading-7">
+                    <div>
+                      <p class="text-[11px] tracking-[0.22em] uppercase text-smoke/70 mb-1">Recommended phrase</p>
+                      <p id="phrase1" class="text-ink/90">“サングラスっぽい色”ではなく、“肌をきれいに見せる色”として選ばれる方が多いです。</p>
+                    </div>
+                    <div>
+                      <p class="text-[11px] tracking-[0.22em] uppercase text-smoke/70 mb-1">Customer hook</p>
+                      <p id="phrase2" class="text-ink/90">夕方の顔色や、目元の疲れ感が気になる日に特に差が出やすいです。</p>
+                    </div>
+                    <div>
+                      <p class="text-[11px] tracking-[0.22em] uppercase text-smoke/70 mb-1">Closing</p>
+                      <p id="closing" class="text-smoke/85">メイクを盛るというより、“印象を整えるレンズ”として試していただくと分かりやすいですよ。</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-xs sm:text-sm leading-6 text-smoke/76">
+                  接客ポイント: 「色付きレンズ」ではなく、
+                  <span class="text-plum">“顔色補正フィルター”</span>や
+                  <span class="text-plum">“塗らないチーク”</span>として言い換えると受け入れられやすくなります。
+                </p>
+                <button id="resetBtn" class="lux-btn sm:max-w-[220px]">
+                  <div class="text-[11px] tracking-[0.22em] uppercase text-smoke/70 mb-1">reset mirror</div>
+                  <div class="font-medium">初期提案に戻す</div>
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const concernData = {
+        pale: {
+          title: '夕方の青白さには、顔色をふわっと持ち上げる血色カラーが効果的です。',
+          sub: '夕方になると沈んで見えやすい頬まわりに、チークカラーの反射ニュアンスを足すことで、疲れて見えにくい印象へ寄せられます。',
+          why1: '青白く見えやすい方は、頬まわりにほんのり赤みを足すと印象がやわらぎます。',
+          why2: 'レンズ下部の色が下顔面にだけ作用するので、自然な血色感として見せやすいです。',
+          why3: '特にローズ系やバーガンディ系は、“顔色が戻る感じ”を伝えやすいカラーです。',
+          label: '血色感アップ'
+        },
+        dark: {
+          title: 'クマや目元のくすみには、影をやわらげる暖色系カラーが相性良好です。',
+          sub: '目の下に落ちる疲れ感は、暖かみのあるカラーで印象を持ち上げるとやわらぎやすく、顔全体まで元気に見せやすくなります。',
+          why1: 'クマやくすみは、冷たく沈んだ色として見えやすいのがポイントです。',
+          why2: 'アプリコットやローズ系は、目元の影にあたたかさを足す方向で提案できます。',
+          why3: 'メイク感を足しすぎず、普段使いしやすい美容提案に変換しやすいのが強みです。',
+          label: 'くすみ補正'
+        },
+        yellow: {
+          title: '黄ぐすみには、透明感を引き出す寒色ニュアンスがきれいに効きます。',
+          sub: '肌の黄みが気になる方には、ラベンダー系の澄んだニュアンスを足すことで、明るく抜けるような透明感の印象をつくりやすくなります。',
+          why1: '黄ぐすみは、肌全体が重たく見えやすい原因になりやすいです。',
+          why2: 'クリアラベンダーのような補色系ニュアンスが、くすみを飛ばして見せやすくします。',
+          why3: '透明感を求める方には“白くする”より“濁りを抜く”と説明するのが効果的です。',
+          label: '透明感アップ'
+        }
+      };
+
+      const colorData = {
+        rose: {
+          name: 'rose pink',
+          lens: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(243,165,184,.46) 52%, rgba(243,165,184,.74) 100%)',
+          cheek: 'radial-gradient(circle, rgba(243,165,184,.95), rgba(243,165,184,.18) 68%, rgba(243,165,184,0) 74%)',
+          skin: 'radial-gradient(circle at 50% 54%, rgba(255,214,225,.58), rgba(255,214,225,0) 56%)',
+          underEye: 'rgba(130,112,145,.06)',
+          percentBase: { pale: 72, dark: 68, yellow: 52 },
+          lead: '塗らないチークとして大人気です。マスクをしていても血色良く見えますよ。',
+          body: 'レンズの下だけにカラーが入るので、サングラスのような強い印象ではなく、頬まわりにやさしく色が差す感じになります。メイクを足しすぎなくても、顔色を明るく見せたい方にすごく人気です。',
+          phrase1: '“サングラスっぽい色”ではなく、“肌をきれいに見せる色”として選ばれる方が多いです。',
+          phrase2: '夕方の顔色や、目元の疲れ感が気になる日に特に差が出やすいです。',
+          closing: 'メイクを盛るというより、“印象を整えるレンズ”として試していただくと分かりやすいですよ。'
+        },
+        burgundy: {
+          name: 'burgundy',
+          lens: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(139,61,86,.42) 52%, rgba(139,61,86,.70) 100%)',
+          cheek: 'radial-gradient(circle, rgba(171,84,107,.92), rgba(171,84,107,.18) 68%, rgba(171,84,107,0) 74%)',
+          skin: 'radial-gradient(circle at 50% 54%, rgba(201,150,170,.38), rgba(201,150,170,0) 58%)',
+          underEye: 'rgba(120,100,126,.05)',
+          percentBase: { pale: 78, dark: 63, yellow: 48 },
+          lead: '甘すぎない血色感が欲しい方には、このバーガンディがすごく上品です。',
+          body: 'ほんのり深みがあるので、頬に色気を足しながら顔全体をきゅっと引き締めて見せやすいカラーです。可愛すぎるピンクが苦手な方にも提案しやすい一本です。',
+          phrase1: '“大人の血色感”を出したい方には、ローズよりこちらを選ばれることも多いです。',
+          phrase2: '目元がぼやけて見えやすい方にも、印象を締めながら顔色を上げられます。',
+          closing: '落ち着いた服装やきれいめメイクが多い方には、特に相性がいいですよ。'
+        },
+        apricot: {
+          name: 'apricot orange',
+          lens: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(241,176,116,.44) 52%, rgba(241,176,116,.72) 100%)',
+          cheek: 'radial-gradient(circle, rgba(241,176,116,.96), rgba(241,176,116,.20) 68%, rgba(241,176,116,0) 74%)',
+          skin: 'radial-gradient(circle at 50% 54%, rgba(255,225,183,.52), rgba(255,225,183,0) 58%)',
+          underEye: 'rgba(106,95,122,.02)',
+          percentBase: { pale: 66, dark: 82, yellow: 58 },
+          lead: 'クマや疲れ感をやわらげたい方には、アプリコット系がとても使いやすいです。',
+          body: 'オレンジ寄りのあたたかさが目元の影をやわらげて、健康的で明るい印象に見せやすくなります。メイクでいうと、コンシーラーやコーラルチークに近い発想です。',
+          phrase1: 'クマ隠しをしたいけれど、厚塗り感は出したくない方にすごく人気です。',
+          phrase2: '顔色を上げつつ、目元の疲れ感まで和らげたように見せやすいカラーです。',
+          closing: '“元気に見える一本”として選ばれる方が多いですよ。'
+        },
+        lavender: {
+          name: 'clear lavender',
+          lens: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(203,183,243,.38) 52%, rgba(203,183,243,.66) 100%)',
+          cheek: 'radial-gradient(circle, rgba(214,205,255,.78), rgba(214,205,255,.18) 68%, rgba(214,205,255,0) 74%)',
+          skin: 'radial-gradient(circle at 50% 54%, rgba(226,231,255,.62), rgba(226,231,255,0) 58%)',
+          underEye: 'rgba(109,121,168,.03)',
+          percentBase: { pale: 50, dark: 60, yellow: 88 },
+          lead: '黄ぐすみが気になる方には、クリアラベンダーで透明感を出す提案がとても人気です。',
+          body: 'ピンクほど血色を足すというより、肌のにごり感をすっと抜いて澄んだ印象に見せやすいカラーです。明るく見せたいけれど、甘い印象にはしたくない方にもおすすめです。',
+          phrase1: '“顔色を足す”より、“濁りを払う”イメージでかけていただくと分かりやすいです。',
+          phrase2: '透明感重視の方や、黄みが気になる方には一番反応が良いカラーです。',
+          closing: '上品に肌をきれいに見せたい方には、この色が一番しっくりきやすいですよ。'
+        }
+      };
+
+      const concernButtons = [...document.querySelectorAll('.concern-btn')];
+      const colorButtons = [...document.querySelectorAll('.color-btn')];
+
+      const lensLeft = document.getElementById('lensColorLeft');
+      const lensRight = document.getElementById('lensColorRight');
+      const cheekLeft = document.getElementById('cheekLeft');
+      const cheekRight = document.getElementById('cheekRight');
+      const skinGlow = document.getElementById('skinGlow');
+      const underLeft = document.getElementById('underLeft');
+      const underRight = document.getElementById('underRight');
+
+      const refs = {
+        mirrorStatus: document.getElementById('mirrorStatus'),
+        simHeadline: document.getElementById('simHeadline'),
+        simSubtext: document.getElementById('simSubtext'),
+        why1: document.getElementById('why1'),
+        why2: document.getElementById('why2'),
+        why3: document.getElementById('why3'),
+        beautyPercent: document.getElementById('beautyPercent'),
+        beautyLabel: document.getElementById('beautyLabel'),
+        meterFill: document.getElementById('meterFill'),
+        talkLead: document.getElementById('talkLead'),
+        talkBody: document.getElementById('talkBody'),
+        phrase1: document.getElementById('phrase1'),
+        phrase2: document.getElementById('phrase2'),
+        closing: document.getElementById('closing'),
+        helperText: document.getElementById('helperText')
+      };
+
+      const fadeBlocks = [
+        document.getElementById('guideBlock'),
+        document.getElementById('talkBlock')
+      ];
+
+      let concern = 'pale';
+      let color = 'rose';
+      let rafId = null;
+
+      function animatePercent(target){
+        if (rafId) cancelAnimationFrame(rafId);
+        const current = parseInt(refs.beautyPercent.textContent, 10) || 0;
+        const start = current;
+        const end = Number(target) || 0;
+        const duration = 1100;
+        let startTime = null;
+
+        function frame(ts){
+          if (!startTime) startTime = ts;
+          const progress = Math.min((ts - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const value = Math.round(start + (end - start) * eased);
+          refs.beautyPercent.textContent = value + '%';
+          refs.meterFill.style.width = value + '%';
+          if (progress < 1) rafId = requestAnimationFrame(frame);
+        }
+        rafId = requestAnimationFrame(frame);
+      }
+
+      function replayFade(){
+        fadeBlocks.forEach(el => el.classList.remove('show'));
+        requestAnimationFrame(() => fadeBlocks.forEach(el => el.classList.add('show')));
+      }
+
+      function getCombinedHeadline(concernKey, colorKey){
+        const map = {
+          pale: {
+            rose: 'ローズピンクの反射ニュアンスで、顔色がふわっと上向いて見えます。',
+            burgundy: 'バーガンディの深みで、夕方の青白さに上品な血色感を足せます。',
+            apricot: 'アプリコットのあたたかさで、疲れた印象を健康的に持ち上げます。',
+            lavender: 'ラベンダーで澄んだ明るさを足しつつ、夕方の沈み感をやわらげます。'
+          },
+          dark: {
+            rose: 'ローズのやわらかい赤みが、目元のくすみに血色を添えます。',
+            burgundy: 'バーガンディの深みで、くすみ感を引き締めながら華やかさを足します。',
+            apricot: 'アプリコットが目元の影感をやわらげ、元気な印象へ寄せます。',
+            lavender: 'ラベンダーで暗さを重く見せず、すっきりとした抜け感を演出します。'
+          },
+          yellow: {
+            rose: 'ローズで顔色をやわらかく整えつつ、くすみ感をやさしくカバーします。',
+            burgundy: 'バーガンディで品のある赤みを足し、黄ぐすみに奥行きを与えます。',
+            apricot: 'アプリコットで健康感を出しながら、重たい黄みを明るく見せます。',
+            lavender: 'クリアラベンダーが黄ぐすみを飛ばし、透明感をぐっと引き上げます。'
+          }
+        };
+        return map[concernKey][colorKey];
+      }
+
+      function getCombinedSub(concernKey, colorKey){
+        const concernText = concernData[concernKey];
+        const colorText = {
+          rose: '血色感を足す王道カラー',
+          burgundy: '上品に引き締める大人カラー',
+          apricot: 'クマ感をぼかす健康カラー',
+          lavender: '黄ぐすみを払う透明感カラー'
+        };
+        return `${colorText[colorKey]}として、下半分だけに入るレンズカラーが頬まわりへ自然に映り込みます。${concernText.sub}`;
+      }
+
+      function render(){
+        const c = concernData[concern];
+        const col = colorData[color];
+        if (!c || !col) {
+          refs.helperText.textContent = '表示データに問題がありました。別の選択肢をお試しください。';
+          return;
+        }
+
+        concernButtons.forEach(btn => {
+          const active = btn.dataset.concern === concern;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', String(active));
+        });
+
+        colorButtons.forEach(btn => {
+          const active = btn.dataset.color === color;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', String(active));
+        });
+
+        lensLeft.style.background = col.lens;
+        lensRight.style.background = col.lens;
+        cheekLeft.style.background = col.cheek;
+        cheekRight.style.background = col.cheek;
+        skinGlow.style.background = col.skin;
+        underLeft.style.background = col.underEye;
+        underRight.style.background = col.underEye;
+
+        refs.mirrorStatus.textContent = `${col.name} / ${c.label.toLowerCase()}`;
+        refs.simHeadline.textContent = getCombinedHeadline(concern, color);
+        refs.simSubtext.textContent = getCombinedSub(concern, color);
+        refs.why1.textContent = c.why1;
+        refs.why2.textContent = c.why2;
+        refs.why3.textContent = c.why3;
+        refs.beautyLabel.textContent = c.label;
+        refs.talkLead.textContent = col.lead;
+        refs.talkBody.textContent = col.body;
+        refs.phrase1.textContent = col.phrase1;
+        refs.phrase2.textContent = col.phrase2;
+        refs.closing.textContent = col.closing;
+
+        animatePercent(col.percentBase[concern]);
+        replayFade();
+        refs.helperText.textContent = `お悩み「${document.querySelector('.concern-btn.active .font-medium').textContent}」に合わせて、「${document.querySelector('.color-btn.active .font-medium').textContent}」の見え方を表示中です。`;
+      }
+
+      concernButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          try {
+            concern = btn.dataset.concern;
+            render();
+          } catch (error) {
+            console.error(error);
+            refs.helperText.textContent = 'お悩みの切り替え時にエラーが発生しました。もう一度お試しください。';
+          }
+        });
+      });
+
+      colorButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          try {
+            color = btn.dataset.color;
+            render();
+          } catch (error) {
+            console.error(error);
+            refs.helperText.textContent = 'カラーの切り替え時にエラーが発生しました。もう一度お試しください。';
+          }
+        });
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        concern = 'pale';
+        color = 'rose';
+        render();
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
