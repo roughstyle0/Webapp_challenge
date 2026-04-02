@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>春の瞳ストレス＆おうちリセットメガネ提案シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Noto Serif JP"', '"Yu Mincho"', '"Hiragino Mincho ProN"', 'serif'],
+            sans: ['"Noto Sans JP"', '"Hiragino Sans"', 'sans-serif']
+          },
+          colors: {
+            paper: '#f7f2eb',
+            ivory: '#fbf7f1',
+            taupe: '#8a7d74',
+            ink: '#292321',
+            blush: '#ead8cf',
+            sand: '#dcc7aa',
+            warm: '#c89f6a',
+            moss: '#8ea08d',
+            smoke: '#beb4ae',
+            rosewood: '#8f665e'
+          },
+          keyframes: {
+            drift: {
+              '0%,100%': { transform: 'translateY(0px) translateX(0px)' },
+              '50%': { transform: 'translateY(-8px) translateX(4px)' }
+            },
+            breathe: {
+              '0%,100%': { opacity: '0.45', transform: 'scale(0.98)' },
+              '50%': { opacity: '0.95', transform: 'scale(1.03)' }
+            },
+            haze: {
+              '0%,100%': { opacity: '0.22' },
+              '50%': { opacity: '0.52' }
+            },
+            grain: {
+              '0%': { transform: 'translate(0,0)' },
+              '25%': { transform: 'translate(1%, -1%)' },
+              '50%': { transform: 'translate(-1%, 1%)' },
+              '75%': { transform: 'translate(1%, 1%)' },
+              '100%': { transform: 'translate(0,0)' }
+            },
+            settle: {
+              '0%': { opacity: '0', transform: 'translateY(18px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            glowSoft: {
+              '0%,100%': { opacity: '0.28', transform: 'scale(0.98)' },
+              '50%': { opacity: '0.72', transform: 'scale(1.04)' }
+            },
+            switchPulse: {
+              '0%,100%': { boxShadow: '0 0 0 1px rgba(41,35,33,.14)' },
+              '50%': { boxShadow: '0 0 0 1px rgba(200,159,106,.42)' }
+            }
+          },
+          animation: {
+            drift: 'drift 7s ease-in-out infinite',
+            breathe: 'breathe 3.2s ease-in-out infinite',
+            haze: 'haze 2.8s ease-in-out infinite',
+            grain: 'grain 7s steps(4) infinite',
+            settle: 'settle .55s ease-out both',
+            glowSoft: 'glowSoft 3s ease-in-out infinite',
+            switchPulse: 'switchPulse 2.4s ease-in-out infinite'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root{
+      --bg1:#fbf7f1;
+      --bg2:#f4ede4;
+      --bg3:#efe3d6;
+      --ink:#292321;
+      --muted:#7f746d;
+      --warm:#c89f6a;
+      --blush:#ead8cf;
+      --sand:#dcc7aa;
+      --moss:#8ea08d;
+      --rose:#8f665e;
+      --line:rgba(41,35,33,.14);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 15% 18%, rgba(255,255,255,.92), transparent 28%),
+        radial-gradient(circle at 82% 14%, rgba(220,199,170,.33), transparent 24%),
+        radial-gradient(circle at 70% 78%, rgba(234,216,207,.36), transparent 30%),
+        linear-gradient(135deg, var(--bg1), var(--bg2) 48%, var(--bg3));
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(0,0,0,.18) 0 1px, transparent 1px),
+        radial-gradient(circle at 65% 60%, rgba(0,0,0,.12) 0 1px, transparent 1px),
+        radial-gradient(circle at 80% 30%, rgba(0,0,0,.10) 0 1px, transparent 1px);
+      background-size: 180px 180px, 220px 220px, 160px 160px;
+      animation: grain 7s steps(4) infinite;
+      mix-blend-mode:multiply;
+    }
+
+    .editorial-line{
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(41,35,33,.22), transparent);
+    }
+
+    .glass-slice{
+      position:relative;
+      border:1px solid rgba(255,255,255,.48);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.12)),
+        linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,.04));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      overflow:hidden;
+    }
+
+    .glass-slice::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:linear-gradient(120deg, transparent 0 35%, rgba(255,255,255,.42) 48%, transparent 60%);
+      transform:translateX(-120%);
+      animation: drift 7s ease-in-out infinite;
+      opacity:.45;
+    }
+
+    .stress-btn{
+      position:relative;
+      width:100%;
+      text-align:left;
+      border-top:1px solid rgba(41,35,33,.16);
+      border-bottom:1px solid rgba(41,35,33,.16);
+      padding:16px 0;
+      transition:.28s ease;
+      background:transparent;
+    }
+    .stress-btn::after{
+      content:"";
+      position:absolute;
+      left:0;
+      bottom:-1px;
+      width:0;
+      height:1px;
+      background:linear-gradient(90deg, rgba(200,159,106,.95), rgba(143,102,94,.75));
+      transition:width .35s ease;
+    }
+    .stress-btn:hover::after,
+    .stress-btn:focus-visible::after,
+    .stress-btn.active::after{
+      width:100%;
+    }
+    .stress-btn:hover,
+    .stress-btn:focus-visible,
+    .stress-btn.active{
+      color:var(--rose);
+      outline:none;
+    }
+
+    .reset-toggle{
+      position:relative;
+      border:1px solid rgba(41,35,33,.14);
+      background:linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.08));
+      padding:14px 16px;
+      transition:.28s ease;
+      animation:switchPulse 2.4s ease-in-out infinite;
+    }
+    .reset-toggle.active{
+      border-color: rgba(200,159,106,.55);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.12)),
+        radial-gradient(circle at top right, rgba(200,159,106,.18), transparent 48%);
+      color:var(--ink);
+    }
+
+    .feature-sheet{
+      position:relative;
+      min-height:420px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.08));
+      overflow:hidden;
+      isolation:isolate;
+    }
+
+    .feature-sheet::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(90deg, transparent 0 22%, rgba(41,35,33,.06) 22% 22.3%, transparent 22.3% 100%);
+      opacity:.65;
+    }
+
+    .sheet-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      min-height:420px;
+    }
+
+    @media (min-width: 1024px){
+      .sheet-grid{
+        grid-template-columns: 1.05fr 0.95fr;
+      }
+    }
+
+    .portrait-pane{
+      position:relative;
+      padding:28px 20px 28px 20px;
+      min-height:420px;
+    }
+
+    .copy-pane{
+      position:relative;
+      padding:28px 20px 28px 20px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+    }
+
+    @media (min-width: 640px){
+      .portrait-pane, .copy-pane{ padding:34px 28px; }
+    }
+
+    .mirror-space{
+      position:relative;
+      width:min(100%, 420px);
+      margin:0 auto;
+      aspect-ratio: 4 / 5;
+      animation: drift 7s ease-in-out infinite;
+    }
+
+    .soft-halo{
+      position:absolute;
+      inset:10% 14%;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(255,249,240,.86), rgba(255,249,240,0) 68%);
+      filter: blur(12px);
+      z-index:0;
+    }
+
+    .warm-glow{
+      position:absolute;
+      inset:8% 8% 6%;
+      border-radius:44% 44% 40% 40% / 34% 34% 46% 46%;
+      background: radial-gradient(circle at 50% 52%, rgba(233,201,158,.55), rgba(233,201,158,0) 60%);
+      filter: blur(20px);
+      opacity:0;
+      transition:opacity .55s ease;
+      z-index:1;
+      pointer-events:none;
+    }
+
+    .scene.reset-on .warm-glow{ opacity:.95; }
+
+    .face-wrap{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      z-index:2;
+    }
+
+    .portrait{
+      position:relative;
+      width:68%;
+      max-width:300px;
+      aspect-ratio: .82 / 1;
+    }
+
+    .hair{
+      position:absolute;
+      inset:4% 8% 0;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(110,91,82,.8), rgba(84,66,58,.96) 58%, rgba(64,49,44,1));
+      border-radius:42% 42% 38% 38% / 32% 32% 50% 50%;
+      filter: drop-shadow(0 10px 24px rgba(90,70,63,.14));
+    }
+
+    .face{
+      position:absolute;
+      inset:15% 18% 8%;
+      background:
+        radial-gradient(circle at 50% 24%, rgba(255,244,237,.95), rgba(246,225,212,.96) 58%, rgba(229,198,185,.98));
+      border-radius: 40% 40% 42% 42% / 28% 28% 48% 48%;
+      overflow:hidden;
+      box-shadow: inset 0 -16px 24px rgba(205,170,156,.12);
+    }
+
+    .brow,.eye,.mouth,.nose,.under{
+      position:absolute;
+    }
+
+    .brow{
+      top:33%;
+      width:17%;
+      height:1.8%;
+      background:rgba(103,82,73,.6);
+      border-radius:999px;
+    }
+    .brow.left{ left:28%; transform:rotate(-7deg); }
+    .brow.right{ right:28%; transform:rotate(7deg); }
+
+    .eye{
+      top:39%;
+      width:16%;
+      height:6%;
+      border-bottom:2px solid rgba(88,70,63,.62);
+      border-radius:0 0 999px 999px;
+      opacity:.86;
+    }
+    .eye.left{ left:28%; }
+    .eye.right{ right:28%; }
+
+    .under{
+      top:46%;
+      width:16%;
+      height:5%;
+      border-radius:999px;
+      background:rgba(125,120,145,.12);
+      transition: background .45s ease, opacity .45s ease;
+      opacity:.95;
+    }
+    .under.left{ left:28%; }
+    .under.right{ right:28%; }
+
+    .nose{
+      left:50%;
+      top:42%;
+      width:8%;
+      height:16%;
+      transform:translateX(-50%);
+      border-right:2px solid rgba(170,129,118,.26);
+      border-bottom:2px solid rgba(170,129,118,.22);
+      border-radius:0 0 60% 30%;
+      opacity:.78;
+    }
+
+    .mouth{
+      left:50%;
+      top:67%;
+      width:18%;
+      height:4.5%;
+      transform:translateX(-50%);
+      border-bottom:2px solid rgba(182,106,117,.58);
+      border-radius:0 0 999px 999px;
+      opacity:.84;
+    }
+
+    .cheek{
+      position:absolute;
+      top:54%;
+      width:19%;
+      height:11%;
+      border-radius:999px;
+      filter: blur(8px);
+      opacity:.12;
+      transition: opacity .55s ease, background .55s ease;
+      animation:breathe 3.2s ease-in-out infinite;
+      mix-blend-mode:multiply;
+    }
+    .cheek.left{ left:20%; }
+    .cheek.right{ right:20%; }
+
+    .scene.reset-on .cheek{ opacity:.58; }
+
+    .glasses{
+      position:absolute;
+      left:50%;
+      top:43%;
+      width:80%;
+      height:29%;
+      transform:translate(-50%, -50%);
+      z-index:4;
+    }
+
+    .lens{
+      position:absolute;
+      top:8%;
+      width:42%;
+      height:82%;
+      border:2px solid rgba(121,95,86,.6);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.08)),
+        linear-gradient(180deg, rgba(232,201,168,.12), rgba(232,201,168,.18));
+      overflow:hidden;
+    }
+
+    .lens.left{
+      left:0;
+      border-radius:34% 30% 30% 34% / 28% 28% 34% 34%;
+    }
+    .lens.right{
+      right:0;
+      border-radius:30% 34% 34% 30% / 28% 28% 34% 34%;
+    }
+
+    .bridge{
+      position:absolute;
+      left:50%;
+      top:44%;
+      width:8%;
+      height:2px;
+      transform:translateX(-50%);
+      background:linear-gradient(90deg, rgba(126,102,94,.74), rgba(206,182,170,.95), rgba(126,102,94,.74));
+    }
+
+    .temple{
+      position:absolute;
+      top:43%;
+      width:13%;
+      height:2px;
+      background:linear-gradient(90deg, rgba(125,100,92,.18), rgba(125,100,92,.78), rgba(125,100,92,.18));
+    }
+    .temple.left{ left:-9%; }
+    .temple.right{ right:-9%; }
+
+    .stress-overlay,
+    .clear-overlay,
+    .dust-layer,
+    .blue-layer,
+    .dry-layer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      transition: opacity .55s ease;
+    }
+
+    .stress-overlay{
+      z-index:5;
+      opacity:.9;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,255,255,.02), rgba(255,255,255,.18) 60%, rgba(245,236,229,.48) 100%);
+      filter: blur(1.8px) saturate(.88);
+      animation:haze 2.8s ease-in-out infinite;
+    }
+
+    .clear-overlay{
+      z-index:5;
+      opacity:0;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,249,240,.08), rgba(255,249,240,.01) 55%, rgba(255,249,240,0) 100%);
+    }
+
+    .scene.reset-on .stress-overlay{ opacity:.06; filter: blur(.2px) saturate(1); }
+    .scene.reset-on .clear-overlay{ opacity:1; }
+
+    .dust-layer,
+    .blue-layer,
+    .dry-layer{ z-index:6; }
+
+    .dust{
+      position:absolute;
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      background: radial-gradient(circle, rgba(167,158,137,.72), rgba(167,158,137,0) 70%);
+      animation: drift 5.6s ease-in-out infinite;
+      opacity:0;
+    }
+
+    .blue-ray{
+      position:absolute;
+      width:10%;
+      height:50%;
+      top:-4%;
+      background:linear-gradient(180deg, rgba(120,196,255,0), rgba(120,196,255,.46), rgba(120,196,255,.05));
+      filter: blur(3px);
+      opacity:0;
+      animation:breathe 2.4s ease-in-out infinite;
+    }
+
+    .crack{
+      position:absolute;
+      inset:12% 16%;
+      opacity:0;
+      background:
+        repeating-linear-gradient(122deg, rgba(214,186,143,.18) 0 2px, transparent 2px 16px),
+        repeating-linear-gradient(62deg, rgba(214,186,143,.12) 0 2px, transparent 2px 18px);
+      mix-blend-mode:multiply;
+      animation:breathe 3s ease-in-out infinite;
+    }
+
+    .scene.scene-pollen .dust{ opacity:.85; }
+    .scene.scene-pc .blue-ray{ opacity:.85; }
+    .scene.scene-contact .crack{ opacity:.82; }
+
+    .scene.reset-on .dust,
+    .scene.reset-on .blue-ray,
+    .scene.reset-on .crack{
+      opacity:.08;
+    }
+
+    .caption-stack{
+      animation:settle .55s ease-out both;
+    }
+
+    .mag-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:28px;
+    }
+    @media (min-width: 1024px){
+      .mag-grid{
+        grid-template-columns: 0.95fr 1.05fr;
+      }
+    }
+
+    .info-col{
+      position:relative;
+      padding-top:8px;
+    }
+
+    .metric{
+      display:flex;
+      align-items:flex-end;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .soft-pill{
+      border-top:1px solid rgba(41,35,33,.16);
+      border-bottom:1px solid rgba(41,35,33,.16);
+      padding:10px 0;
+    }
+
+    .fade-swap{
+      opacity:0;
+      transform:translateY(14px);
+      transition:opacity .4s ease, transform .4s ease;
+    }
+    .fade-swap.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+  </style>
+</head>
+<body class="font-sans text-ink">
+  <main class="px-4 sm:px-6 lg:px-10 py-5 sm:py-7 lg:py-10">
+    <section class="max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8 lg:gap-12 items-start">
+        <div class="info-col min-w-0">
+          <p class="font-serif text-[11px] tracking-[0.34em] uppercase text-taupe/80 mb-4">
+            Spring Eye Stress × Home Reset Glasses
+          </p>
+          <div class="editorial-line mb-6"></div>
+
+          <h1 class="font-serif font-light leading-[1.08] text-[clamp(2.1rem,6vw,5rem)] tracking-[0.03em]">
+            春の瞳ストレスを、
+            <br />
+            <span class="text-rosewood">“おうちでほどく”</span>
+            リセット提案
+          </h1>
+
+          <p class="mt-6 max-w-2xl text-[15px] sm:text-[17px] leading-8 text-taupe/95 font-light">
+            コンタクトで限界まで頑張った目に必要なのは、ただの安い家用メガネではなく、
+            <span class="text-ink font-medium">軽くて、締め付けず、すっぴんでも浮かない</span>
+            “リセットのための一本”。
+            新人スタッフでも、雑誌の特集ページのように美しく、その価値を伝えられる接客補助ツールです。
+          </p>
+
+          <div class="mt-10">
+            <p class="font-serif text-[11px] tracking-[0.3em] uppercase text-taupe/80 mb-4">
+              Select Today’s Eye Stress
+            </p>
+
+            <div class="space-y-1">
+              <button class="stress-btn active stress-option" data-scene="pollen" aria-pressed="true">
+                <span class="block text-[11px] tracking-[0.22em] uppercase text-taupe/75 mb-2">01 / Spring Dust</span>
+                <span class="block font-serif text-[1.1rem] sm:text-[1.25rem] leading-7">春一番と花粉</span>
+                <span class="block mt-2 text-sm sm:text-[15px] text-taupe/90">ホコリで目がゴロゴロ・かゆい</span>
+              </button>
+
+              <button class="stress-btn stress-option" data-scene="pc" aria-pressed="false">
+                <span class="block text-[11px] tracking-[0.22em] uppercase text-taupe/75 mb-2">02 / Digital Load</span>
+                <span class="block font-serif text-[1.1rem] sm:text-[1.25rem] leading-7">一日中のPC作業・スマホ</span>
+                <span class="block mt-2 text-sm sm:text-[15px] text-taupe/90">ブルーライトで目の奥が重い</span>
+              </button>
+
+              <button class="stress-btn stress-option" data-scene="contact" aria-pressed="false">
+                <span class="block text-[11px] tracking-[0.22em] uppercase text-taupe/75 mb-2">03 / Contact Fatigue</span>
+                <span class="block font-serif text-[1.1rem] sm:text-[1.25rem] leading-7">長時間のコンタクト着用</span>
+                <span class="block mt-2 text-sm sm:text-[15px] text-taupe/90">夕方にはパサパサ・充血</span>
+              </button>
+            </div>
+
+            <div class="mt-8">
+              <p class="font-serif text-[11px] tracking-[0.3em] uppercase text-taupe/80 mb-4">
+                Switch the View
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button id="stressViewBtn" class="reset-toggle active text-left" aria-pressed="true">
+                  <span class="block text-[11px] tracking-[0.2em] uppercase text-taupe/75 mb-2">Before</span>
+                  <span class="block font-serif text-lg">ストレス状態を見る</span>
+                </button>
+                <button id="resetViewBtn" class="reset-toggle text-left" aria-pressed="false">
+                  <span class="block text-[11px] tracking-[0.2em] uppercase text-taupe/75 mb-2">After</span>
+                  <span class="block font-serif text-lg">リセットメガネを掛ける</span>
+                </button>
+              </div>
+              <p id="helperText" class="mt-4 text-sm leading-7 text-taupe/85">
+                ストレスの原因を選び、「リセットメガネを掛ける」に切り替えると、視界がほどける演出に変わります。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="min-w-0">
+          <div class="glass-slice feature-sheet">
+            <div class="sheet-grid">
+              <div class="portrait-pane">
+                <div id="scene" class="scene scene-pollen">
+                  <div class="mirror-space">
+                    <div class="soft-halo"></div>
+                    <div class="warm-glow"></div>
+
+                    <div class="face-wrap">
+                      <div class="portrait">
+                        <div class="hair"></div>
+
+                        <div class="face">
+                          <div id="underLeft" class="under left"></div>
+                          <div id="underRight" class="under right"></div>
+                          <div id="cheekLeft" class="cheek left"></div>
+                          <div id="cheekRight" class="cheek right"></div>
+                          <div class="brow left"></div>
+                          <div class="brow right"></div>
+                          <div class="eye left"></div>
+                          <div class="eye right"></div>
+                          <div class="nose"></div>
+                          <div class="mouth"></div>
+                        </div>
+
+                        <div class="glasses">
+                          <div class="temple left"></div>
+                          <div class="temple right"></div>
+                          <div class="bridge"></div>
+                          <div class="lens left"></div>
+                          <div class="lens right"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="stress-overlay"></div>
+                    <div class="clear-overlay"></div>
+
+                    <div class="dust-layer">
+                      <span class="dust left-[16%] top-[20%]" style="animation-delay:0s"></span>
+                      <span class="dust left-[72%] top-[28%]" style="animation-delay:1.1s"></span>
+                      <span class="dust left-[24%] top-[64%]" style="animation-delay:.6s"></span>
+                      <span class="dust left-[66%] top-[70%]" style="animation-delay:1.6s"></span>
+                    </div>
+
+                    <div class="blue-layer">
+                      <span class="blue-ray left-[20%]" style="animation-delay:0s"></span>
+                      <span class="blue-ray left-[42%]" style="animation-delay:.5s"></span>
+                      <span class="blue-ray left-[64%]" style="animation-delay:1s"></span>
+                    </div>
+
+                    <div class="dry-layer">
+                      <div class="crack"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="copy-pane">
+                <div id="copyBlock" class="caption-stack fade-swap show">
+                  <p class="font-serif text-[11px] tracking-[0.3em] uppercase text-taupe/80 mb-3">
+                    Reset Simulation
+                  </p>
+                  <h2 id="simTitle" class="font-serif font-light text-[clamp(1.7rem,3vw,2.8rem)] leading-[1.25]">
+                    花粉と春風で荒れた視界を、
+                    ひと呼吸でやわらげる。
+                  </h2>
+                  <p id="simBody" class="mt-5 text-[15px] sm:text-[17px] leading-8 text-taupe/92 font-light">
+                    ざらついた刺激やぼんやり感を抱えたまま帰宅しても、軽いフレームとやさしいPCレンズに掛け替えるだけで、
+                    目も気分も“家モード”へ。温かい光に包まれるように、視界がほどけていくイメージです。
+                  </p>
+
+                  <div class="mt-8 soft-pill">
+                    <p class="text-[11px] tracking-[0.22em] uppercase text-taupe/75 mb-3">Current Mood Meter</p>
+                    <div class="metric">
+                      <div id="moodValue" class="font-serif text-[2.2rem] sm:text-[2.8rem] leading-none text-rosewood">
+                        22%
+                      </div>
+                      <div id="moodLabel" class="text-sm sm:text-base text-taupe/85 pb-1">
+                        まだ瞳が張りつめている状態
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-6">
+                    <p id="stateCaption" class="text-sm sm:text-[15px] leading-7 text-ink/85">
+                      いまはストレス状態。花粉やホコリがまとわりつくような不快感を表現しています。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mag-grid mt-8 lg:mt-10">
+            <div id="differenceBlock" class="fade-swap show">
+              <p class="font-serif text-[11px] tracking-[0.3em] uppercase text-taupe/80 mb-3">
+                Why Not Just a Cheap Home Pair?
+              </p>
+              <h3 id="diffTitle" class="font-serif font-light text-[clamp(1.5rem,2.8vw,2.3rem)] leading-[1.3]">
+                「安い家用メガネ」とは、
+                役割がまるで違います。
+              </h3>
+
+              <div class="editorial-line my-5"></div>
+
+              <div class="space-y-4 text-[15px] sm:text-[17px] leading-8 text-taupe/92 font-light">
+                <p id="diff1">締め付けない極上の軽さで、帰宅後すぐに掛け替えたくなること。</p>
+                <p id="diff2">PCレンズで、夜のスマホや動画視聴まで含めて“瞳を休める流れ”を作れること。</p>
+                <p id="diff3">すっぴんでも部屋着でも浮かない、顔なじみの良いデザインであること。</p>
+              </div>
+            </div>
+
+            <div id="talkBlock" class="fade-swap show">
+              <p class="font-serif text-[11px] tracking-[0.3em] uppercase text-taupe/80 mb-3">
+                Lifestyle Proposal Talk
+              </p>
+              <h3 class="font-serif font-light text-[clamp(1.5rem,2.8vw,2.3rem)] leading-[1.3]">
+                そのまま使える提案トーク
+              </h3>
+
+              <div class="editorial-line my-5"></div>
+
+              <p id="talkLead" class="font-serif text-[1.05rem] sm:text-[1.18rem] leading-8 sm:leading-9 text-rosewood">
+                おうちに帰ってからもコンタクトのままだと、瞳が“休憩なし”になってしまうんです。
+              </p>
+
+              <p id="talkBody" class="mt-4 text-[15px] sm:text-[17px] leading-8 text-taupe/92 font-light">
+                だからこそ、ただ安い家用メガネを一本置くというより、軽くて顔なじみがよくて、スマホやPCの光までやわらげてくれる
+                “おうちリセットメガネ”として持っておくと、毎日の快適さがかなり変わります。
+              </p>
+
+              <p id="closing" class="mt-5 text-[15px] sm:text-[17px] leading-8 text-ink/85">
+                「外出用とは別に、家で目を回復させるための一本を持つ」という考え方でご案内すると、価格ではなく必要性でご納得いただきやすいです。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const sceneData = {
+        pollen: {
+          simTitle: '花粉と春風で荒れた視界を、\nひと呼吸でやわらげる。',
+          simBody: 'ざらついた刺激やぼんやり感を抱えたまま帰宅しても、軽いフレームとやさしいPCレンズに掛け替えるだけで、目も気分も“家モード”へ。温かい光に包まれるように、視界がほどけていくイメージです。',
+          diffTitle: '「安い家用メガネ」とは、\n役割がまるで違います。',
+          diff1: '花粉で敏感になった目に、軽くて締め付け感の少ないフレームはそれだけで大きな休息になります。',
+          diff2: '帰宅後のスマホやテレビ時間まで含めて、刺激を増やしにくいPCレンズ仕様にできるのが強みです。',
+          diff3: '“部屋でだけ掛ける適当な一本”ではなく、鏡を見ても気分が下がらないデザイン性があります。',
+          talkLead: '花粉でつらい日は、コンタクトを外してからの時間こそ、目を休ませるチャンスなんです。',
+          talkBody: 'このタイプのリセットメガネは、ただの家用ではなく、軽さ・掛け心地・夜の光対策まで考えた一本です。帰宅後の不快感を引きずりにくくなるので、春の時期ほど価値を感じていただきやすいです。',
+          closing: '「春だけでも、目を守るための家時間用メガネを持っておくとすごく楽ですよ」とお伝えすると自然です。',
+          underEye: 'rgba(132,125,144,.11)',
+          cheek: 'radial-gradient(circle, rgba(240,184,171,.86), rgba(240,184,171,.16) 68%, rgba(240,184,171,0) 74%)',
+          moodBefore: 22,
+          moodAfter: 91,
+          beforeLabel: 'まだ瞳が張りつめている状態',
+          afterLabel: 'ほっと力が抜けるような回復感',
+          beforeCaption: 'いまはストレス状態。花粉やホコリがまとわりつくような不快感を表現しています。',
+          afterCaption: 'リセットメガネ装着後。視界のざらつきが引き、温かな室内光に包まれるような安心感へ切り替わります。'
+        },
+        pc: {
+          simTitle: '画面の奥にたまった重さを、\n夜のやさしい光でほどいていく。',
+          simBody: '一日中モニターを見た目は、帰宅後まで情報過多のまま。軽量フレームとPCレンズに掛け替えることで、視界の輪郭をやわらげつつ、気持ちもオフに切り替える演出です。',
+          diffTitle: '“家で掛けるだけ”でも、\nレンズ性能で快適さは変わります。',
+          diff1: '安い家用メガネでは、夜のスマホやタブレット時間まで見越した快適設計になっていないことが多いです。',
+          diff2: '高機能PCレンズなら、見え方を保ちながら刺激を和らげやすく、瞳だけでなく気分の切り替えにもつながります。',
+          diff3: '超軽量フレームなら、こめかみや鼻への負担感が少なく、“外したくならない家メガネ”になります。',
+          talkLead: '一日中PCを見た日は、家に帰ってからも同じ緊張感のままだと目が休まらないんです。',
+          talkBody: 'このリセットメガネは、軽さと見た目のやさしさに加えて、夜のデジタル光にも配慮できるのがポイントです。安い家用メガネではなく、“目を仕事モードから外すための一本”としてご提案できます。',
+          closing: '「家でまで頑張る目を、ちゃんとオフにするメガネです」と言い換えると伝わりやすいです。',
+          underEye: 'rgba(120,125,158,.14)',
+          cheek: 'radial-gradient(circle, rgba(238,189,166,.84), rgba(238,189,166,.15) 68%, rgba(238,189,166,0) 74%)',
+          moodBefore: 18,
+          moodAfter: 93,
+          beforeLabel: '画面疲れが残り、奥が重たい状態',
+          afterLabel: '視界も気持ちもオフへ切り替わる',
+          beforeCaption: 'いまはストレス状態。青い光が刺さるような重さと、視界の疲れを表現しています。',
+          afterCaption: 'リセットメガネ装着後。硬い光がやわらぎ、夜の室内に合う穏やかな視界へ整っていきます。'
+        },
+        contact: {
+          simTitle: '夕方のパサつきと充血を、\n家で静かにほどく一本。',
+          simBody: 'コンタクトを長く入れた日の目は、乾きと緊張で限界に近いことも。帰宅後すぐに軽やかなリセットメガネへ掛け替えることで、瞳に“これ以上頑張らなくていい”と伝えるような演出です。',
+          diffTitle: 'コンタクト疲れの目には、\n“適当な家メガネ”では足りません。',
+          diff1: '長時間コンタクト後は、鼻や耳まで楽な軽量フレームの価値が特に大きくなります。',
+          diff2: 'PCレンズを組み合わせることで、外した後のスマホ時間まで瞳の負担を増やしにくくできます。',
+          diff3: 'すっぴんでも顔から浮きにくい上品なデザインなら、家の中だけでなく近所使いにも自然です。',
+          talkLead: 'コンタクトを外した瞬間って、見えるだけじゃなく“目がほっとするか”が大事なんです。',
+          talkBody: 'このリセットメガネは、軽さ・掛け心地・家時間の光対策を全部まとめて考えた一本です。単なる予備メガネではなく、毎日コンタクトを頑張る方の“回復用”として持つ価値があります。',
+          closing: '「おうちで目を休めるためのメガネを別で持つ」と聞くと、皆さま一気にイメージしやすくなります。',
+          underEye: 'rgba(136,121,138,.17)',
+          cheek: 'radial-gradient(circle, rgba(241,191,176,.88), rgba(241,191,176,.17) 68%, rgba(241,191,176,0) 74%)',
+          moodBefore: 14,
+          moodAfter: 95,
+          beforeLabel: '乾きと充血で、もう限界に近い',
+          afterLabel: '肩の力まで抜けるような解放感',
+          beforeCaption: 'いまはストレス状態。乾いた膜のようなパサつきと、張りつめた見え方を表現しています。',
+          afterCaption: 'リセットメガネ装着後。乾きの印象が引き、瞳を休ませるための穏やかな視界に変わります。'
+        }
+      };
+
+      const sceneEl = document.getElementById('scene');
+      const underLeft = document.getElementById('underLeft');
+      const underRight = document.getElementById('underRight');
+      const cheekLeft = document.getElementById('cheekLeft');
+      const cheekRight = document.getElementById('cheekRight');
+
+      const stressButtons = [...document.querySelectorAll('.stress-option')];
+      const stressViewBtn = document.getElementById('stressViewBtn');
+      const resetViewBtn = document.getElementById('resetViewBtn');
+
+      const refs = {
+        helperText: document.getElementById('helperText'),
+        simTitle: document.getElementById('simTitle'),
+        simBody: document.getElementById('simBody'),
+        moodValue: document.getElementById('moodValue'),
+        moodLabel: document.getElementById('moodLabel'),
+        stateCaption: document.getElementById('stateCaption'),
+        diffTitle: document.getElementById('diffTitle'),
+        diff1: document.getElementById('diff1'),
+        diff2: document.getElementById('diff2'),
+        diff3: document.getElementById('diff3'),
+        talkLead: document.getElementById('talkLead'),
+        talkBody: document.getElementById('talkBody'),
+        closing: document.getElementById('closing')
+      };
+
+      const swapBlocks = [
+        document.getElementById('copyBlock'),
+        document.getElementById('differenceBlock'),
+        document.getElementById('talkBlock')
+      ];
+
+      let currentScene = 'pollen';
+      let resetOn = false;
+      let rafId = null;
+
+      function animateMood(target) {
+        if (rafId) cancelAnimationFrame(rafId);
+        const start = parseInt(refs.moodValue.textContent, 10) || 0;
+        const end = Number(target) || 0;
+        const duration = 1100;
+        let startTime = null;
+
+        function step(ts) {
+          if (!startTime) startTime = ts;
+          const p = Math.min((ts - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          const value = Math.round(start + (end - start) * eased);
+          refs.moodValue.textContent = value + '%';
+          if (p < 1) rafId = requestAnimationFrame(step);
+        }
+
+        rafId = requestAnimationFrame(step);
+      }
+
+      function replaySwap() {
+        swapBlocks.forEach(el => el.classList.remove('show'));
+        requestAnimationFrame(() => swapBlocks.forEach(el => el.classList.add('show')));
+      }
+
+      function setMode(isReset) {
+        resetOn = isReset;
+        sceneEl.classList.toggle('reset-on', isReset);
+
+        stressViewBtn.classList.toggle('active', !isReset);
+        resetViewBtn.classList.toggle('active', isReset);
+        stressViewBtn.setAttribute('aria-pressed', String(!isReset));
+        resetViewBtn.setAttribute('aria-pressed', String(isReset));
+
+        render();
+      }
+
+      function render() {
+        const data = sceneData[currentScene];
+        if (!data) {
+          refs.helperText.textContent = '表示データの読み込みに失敗しました。別の項目をお試しください。';
+          return;
+        }
+
+        stressButtons.forEach(btn => {
+          const active = btn.dataset.scene === currentScene;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', String(active));
+        });
+
+        sceneEl.classList.remove('scene-pollen', 'scene-pc', 'scene-contact');
+        sceneEl.classList.add(`scene-${currentScene}`);
+
+        underLeft.style.background = data.underEye;
+        underRight.style.background = data.underEye;
+        cheekLeft.style.background = data.cheek;
+        cheekRight.style.background = data.cheek;
+
+        refs.simTitle.innerHTML = data.simTitle.replace('\n', '<br>');
+        refs.simBody.textContent = data.simBody;
+        refs.diffTitle.innerHTML = data.diffTitle.replace('\n', '<br>');
+        refs.diff1.textContent = data.diff1;
+        refs.diff2.textContent = data.diff2;
+        refs.diff3.textContent = data.diff3;
+        refs.talkLead.textContent = data.talkLead;
+        refs.talkBody.textContent = data.talkBody;
+        refs.closing.textContent = data.closing;
+
+        if (resetOn) {
+          animateMood(data.moodAfter);
+          refs.moodLabel.textContent = data.afterLabel;
+          refs.stateCaption.textContent = data.afterCaption;
+          refs.helperText.textContent = 'リセットメガネ装着後の状態を表示中。視界がやわらぎ、家時間へ気持ちを切り替える演出になっています。';
+        } else {
+          animateMood(data.moodBefore);
+          refs.moodLabel.textContent = data.beforeLabel;
+          refs.stateCaption.textContent = data.beforeCaption;
+          refs.helperText.textContent = 'ストレス状態を表示中。原因別のつらさを見せてから、リセットメガネへの切り替え提案につなげられます。';
+        }
+
+        replaySwap();
+      }
+
+      stressButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          try {
+            currentScene = btn.dataset.scene;
+            render();
+          } catch (error) {
+            console.error(error);
+            refs.helperText.textContent = 'ストレス要因の切り替え時にエラーが発生しました。もう一度お試しください。';
+          }
+        });
+      });
+
+      stressViewBtn.addEventListener('click', () => {
+        try {
+          setMode(false);
+        } catch (error) {
+          console.error(error);
+          refs.helperText.textContent = '表示切り替え時にエラーが発生しました。もう一度お試しください。';
+        }
+      });
+
+      resetViewBtn.addEventListener('click', () => {
+        try {
+          setMode(true);
+        } catch (error) {
+          console.error(error);
+          refs.helperText.textContent = '表示切り替え時にエラーが発生しました。もう一度お試しください。';
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
