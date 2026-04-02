@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>キッズメガネ・サバイバル（耐久力＆保証）シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            sans: ['system-ui', 'sans-serif']
+          },
+          colors: {
+            game: {
+              bg: '#0a0a12',
+              panel: '#181826',
+              line: '#f8f8f2',
+              cyan: '#7ef9ff',
+              green: '#9eff6b',
+              yellow: '#ffe66d',
+              orange: '#ffb347',
+              red: '#ff6b6b',
+              pink: '#ff84c1',
+              purple: '#8b7bff'
+            }
+          },
+          keyframes: {
+            shake: {
+              '0%,100%': { transform: 'translate(0,0)' },
+              '20%': { transform: 'translate(-3px, 2px)' },
+              '40%': { transform: 'translate(3px, -2px)' },
+              '60%': { transform: 'translate(-2px, -1px)' },
+              '80%': { transform: 'translate(2px, 2px)' }
+            },
+            flash: {
+              '0%,100%': { opacity: '0' },
+              '50%': { opacity: '0.95' }
+            },
+            blink: {
+              '0%,100%': { opacity: '1' },
+              '50%': { opacity: '0.4' }
+            },
+            floaty: {
+              '0%,100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-4px)' }
+            },
+            dangerPulse: {
+              '0%,100%': { boxShadow: '0 0 0 0 rgba(255,107,107,0.0)' },
+              '50%': { boxShadow: '0 0 0 4px rgba(255,107,107,0.2)' }
+            }
+          },
+          animation: {
+            shake: 'shake 0.38s steps(2,end) 1',
+            flash: 'flash 0.34s steps(2,end) 1',
+            blink: 'blink 1.2s steps(2,end) infinite',
+            floaty: 'floaty 1.8s steps(2,end) infinite',
+            dangerPulse: 'dangerPulse 1s steps(2,end) infinite'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root{
+      --bg:#0a0a12;
+      --panel:#181826;
+      --line:#f8f8f2;
+      --cyan:#7ef9ff;
+      --green:#9eff6b;
+      --yellow:#ffe66d;
+      --orange:#ffb347;
+      --red:#ff6b6b;
+      --pink:#ff84c1;
+      --purple:#8b7bff;
+    }
+
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--line);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(126,249,255,.08), transparent 18%),
+        radial-gradient(circle at 80% 20%, rgba(139,123,255,.08), transparent 16%),
+        linear-gradient(180deg, #0a0a12 0%, #0f1020 100%);
+      image-rendering: pixelated;
+      overflow-x:hidden;
+      font-family: "Press Start 2P", monospace;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size: 14px 14px;
+      opacity:.55;
+      mix-blend-mode:screen;
+    }
+
+    .pixel-window{
+      position:relative;
+      background:var(--panel);
+      border:4px solid var(--line);
+      box-shadow:
+        inset 0 0 0 4px #0f1020,
+        0 0 0 4px #000;
+    }
+
+    .pixel-btn{
+      position:relative;
+      width:100%;
+      text-align:left;
+      padding:14px 12px;
+      background:#12121d;
+      border:4px solid var(--line);
+      box-shadow: inset 0 0 0 4px #0b0b13;
+      color:var(--line);
+      transition: transform .08s steps(1,end), border-color .12s steps(1,end), background .12s steps(1,end);
+      min-width:0;
+    }
+    .pixel-btn:hover,
+    .pixel-btn:focus-visible{
+      outline:none;
+      transform: translateY(-2px);
+      border-color: var(--yellow);
+      background:#171725;
+    }
+    .pixel-btn.active{
+      border-color: var(--cyan);
+      background:#151b27;
+    }
+
+    .tiny{
+      font-size:10px;
+      line-height:1.7;
+    }
+    .mini{
+      font-size:9px;
+      line-height:1.8;
+    }
+    .pixel-text{
+      font-size:11px;
+      line-height:1.8;
+    }
+    .pixel-title{
+      font-size:14px;
+      line-height:1.6;
+    }
+    .pixel-hero{
+      font-size:18px;
+      line-height:1.55;
+    }
+
+    @media (min-width: 640px){
+      .pixel-text{ font-size:12px; }
+      .pixel-title{ font-size:16px; }
+      .pixel-hero{ font-size:24px; }
+    }
+
+    .battle-bg{
+      position:relative;
+      min-height:360px;
+      background:
+        linear-gradient(180deg, #212240 0 16%, #0e1230 16% 68%, #1f1422 68% 100%);
+      border:4px solid var(--line);
+      box-shadow: inset 0 0 0 4px #070812;
+      overflow:hidden;
+    }
+
+    @media (min-width: 768px){
+      .battle-bg{ min-height:430px; }
+    }
+
+    .battle-bg::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(transparent 0 92%, rgba(255,255,255,.09) 92% 100%),
+        linear-gradient(90deg, transparent 0 96%, rgba(255,255,255,.04) 96% 100%);
+      background-size: 100% 18px, 18px 100%;
+      opacity:.25;
+      pointer-events:none;
+    }
+
+    .scanline{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.02) 0 2px,
+        rgba(255,255,255,0) 2px 4px
+      );
+      opacity:.28;
+    }
+
+    .arena-ground{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      height:32%;
+      background:
+        linear-gradient(180deg, #49304a 0%, #271327 100%);
+      border-top:4px solid var(--line);
+    }
+
+    .hero-area{
+      position:relative;
+      z-index:2;
+      min-height:320px;
+      padding:18px 12px 110px;
+    }
+
+    .sprite-wrap{
+      position:relative;
+      width:min(100%, 320px);
+      margin:0 auto;
+    }
+
+    .glasses-sprite{
+      position:relative;
+      width:210px;
+      height:120px;
+      margin:40px auto 0;
+      transform-origin:center;
+    }
+
+    @media (min-width: 640px){
+      .glasses-sprite{
+        width:270px;
+        height:148px;
+      }
+    }
+
+    .lens-box{
+      position:absolute;
+      top:20px;
+      width:82px;
+      height:56px;
+      border:6px solid var(--line);
+      background:linear-gradient(180deg, rgba(126,249,255,.18), rgba(255,255,255,.06));
+    }
+
+    @media (min-width: 640px){
+      .lens-box{
+        width:104px;
+        height:68px;
+      }
+    }
+
+    .lens-left{ left:0; }
+    .lens-right{ right:0; }
+
+    .bridge{
+      position:absolute;
+      left:50%;
+      top:42px;
+      width:28px;
+      height:8px;
+      transform:translateX(-50%);
+      background:var(--line);
+    }
+
+    @media (min-width: 640px){
+      .bridge{ top:50px; width:34px; height:8px; }
+    }
+
+    .arm{
+      position:absolute;
+      top:42px;
+      width:34px;
+      height:8px;
+      background:var(--line);
+    }
+    .arm.left{ left:-26px; }
+    .arm.right{ right:-26px; }
+
+    @media (min-width: 640px){
+      .arm{ top:50px; width:40px; }
+      .arm.left{ left:-30px; }
+      .arm.right{ right:-30px; }
+    }
+
+    .memory-aura{
+      position:absolute;
+      inset:-10px;
+      border:4px dashed rgba(158,255,107,.7);
+      opacity:0;
+      transition:opacity .2s steps(2,end);
+      pointer-events:none;
+    }
+    .memory-on .memory-aura{ opacity:1; }
+
+    .impact-flash{
+      position:absolute;
+      inset:0;
+      background: rgba(255,255,255,.92);
+      opacity:0;
+      pointer-events:none;
+      z-index:6;
+    }
+
+    .damage-tag{
+      position:absolute;
+      left:50%;
+      top:0;
+      transform:translateX(-50%);
+      background:#000;
+      color:var(--yellow);
+      border:4px solid var(--line);
+      padding:8px 10px;
+      font-size:10px;
+      line-height:1.6;
+      text-align:center;
+      max-width:min(92%, 420px);
+      z-index:8;
+    }
+
+    .hp-shell{
+      background:#000;
+      border:4px solid var(--line);
+      padding:8px;
+    }
+
+    .hp-track{
+      position:relative;
+      height:24px;
+      background:#2b2134;
+      border:4px solid var(--line);
+      overflow:hidden;
+    }
+
+    .hp-fill{
+      position:absolute;
+      inset:0 auto 0 0;
+      width:100%;
+      background:
+        linear-gradient(90deg,
+          var(--green) 0 55%,
+          var(--yellow) 55% 76%,
+          var(--orange) 76% 90%,
+          var(--red) 90% 100%);
+      transition:width .65s steps(14,end);
+    }
+
+    .hp-text{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#000;
+      font-size:10px;
+      z-index:2;
+    }
+
+    .prob-ring{
+      width:112px;
+      height:112px;
+      border:4px solid var(--line);
+      box-shadow: inset 0 0 0 4px #000;
+      background:conic-gradient(var(--red) 0deg, var(--red) 0deg, #222 0deg 360deg);
+      display:grid;
+      place-items:center;
+      margin:0 auto;
+    }
+    .prob-core{
+      width:74px;
+      height:74px;
+      border:4px solid var(--line);
+      background:#111;
+      display:grid;
+      place-items:center;
+      text-align:center;
+    }
+
+    .event-log{
+      min-height:120px;
+      background:#0d0d15;
+      border:4px solid var(--line);
+      padding:12px;
+    }
+
+    .meter-label{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+      font-size:10px;
+      line-height:1.8;
+    }
+
+    .blink-low{
+      animation: blink 1s steps(2,end) infinite;
+      color: var(--red);
+    }
+
+    .sprite-shake{
+      animation: shake .38s steps(2,end) 1;
+    }
+
+    .flash-on{
+      animation: flash .34s steps(2,end) 1;
+    }
+
+    .class-badge{
+      display:inline-block;
+      padding:6px 8px;
+      border:4px solid var(--line);
+      background:#0e0e16;
+      font-size:9px;
+      line-height:1.8;
+    }
+
+    .stat-box{
+      border:4px solid var(--line);
+      background:#0f1018;
+      padding:12px;
+    }
+
+    .prompt-line{
+      border-top:4px solid var(--line);
+      padding-top:12px;
+    }
+
+    .dot{
+      display:inline-block;
+      width:8px;
+      height:8px;
+      background:var(--yellow);
+      margin-right:8px;
+      vertical-align:middle;
+    }
+  </style>
+</head>
+<body class="font-pixel">
+  <main class="px-3 sm:px-5 lg:px-8 py-3 sm:py-5">
+    <section class="max-w-7xl mx-auto">
+      <div class="pixel-window p-3 sm:p-4 lg:p-6">
+        <div class="flex flex-col gap-4 sm:gap-5">
+          <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+            <div class="min-w-0">
+              <p class="tiny text-game-cyan">OPTICAL SHOP / KIDS GLASSES SURVIVAL SIM</p>
+              <h1 class="pixel-hero text-game-yellow mt-2">
+                キッズメガネ・<br class="sm:hidden">サバイバル
+              </h1>
+              <p class="pixel-text text-white/85 mt-3 max-w-4xl">
+                学校・休み時間・転倒・踏みつけ…。
+                お子様の“日常ダメージ”をレトロゲーム風に見える化して、
+                <span class="text-game-cyan">形状記憶フレーム</span>と
+                <span class="text-game-green">W保証プラン</span>の必要性を、
+                新人スタッフでもわかりやすく伝える接客支援ツールです。
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <span class="class-badge text-game-pink">16BIT MODE</span>
+              <span class="class-badge text-game-cyan">MOBILE SAFE</span>
+              <span class="class-badge text-game-green">SALES READY</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)] gap-4 lg:gap-6">
+            <aside class="min-w-0 flex flex-col gap-4">
+              <div class="pixel-window p-3 sm:p-4">
+                <p class="tiny text-game-cyan">SELECT CLASS</p>
+                <h2 class="pixel-title text-game-yellow mt-2">お子様の活発度</h2>
+                <p class="pixel-text text-white/80 mt-3">
+                  近いタイプを選ぶと、1年のサバイバル状況を自動で再生します。
+                </p>
+
+                <div class="mt-4 grid gap-3">
+                  <button class="pixel-btn class-btn active" data-class="mage" aria-pressed="true">
+                    <div class="tiny text-game-cyan">CLASS 01</div>
+                    <div class="pixel-text text-game-yellow mt-2">読書やゲームが好き</div>
+                    <div class="mini text-white/75 mt-2">おとなしい魔法使いタイプ</div>
+                  </button>
+
+                  <button class="pixel-btn class-btn" data-class="fighter" aria-pressed="false">
+                    <div class="tiny text-game-cyan">CLASS 02</div>
+                    <div class="pixel-text text-game-yellow mt-2">休み時間は常に外遊び</div>
+                    <div class="mini text-white/75 mt-2">活発な戦士タイプ</div>
+                  </button>
+
+                  <button class="pixel-btn class-btn" data-class="destroyer" aria-pressed="false">
+                    <div class="tiny text-game-cyan">CLASS 03</div>
+                    <div class="pixel-text text-game-yellow mt-2">予測不能でよく転ぶ</div>
+                    <div class="mini text-white/75 mt-2">破壊神タイプ</div>
+                  </button>
+                </div>
+
+                <div class="prompt-line mt-4">
+                  <p id="helperText" class="mini text-white/78">
+                    クラスを選ぶと、ダメージイベント・HP・破損確率・提案トークが切り替わります。
+                  </p>
+                </div>
+              </div>
+
+              <div class="pixel-window p-3 sm:p-4">
+                <p class="tiny text-game-cyan">ONE YEAR BREAK RISK</p>
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-[112px_minmax(0,1fr)] gap-4 items-center">
+                  <div id="riskRing" class="prob-ring">
+                    <div class="prob-core">
+                      <div>
+                        <div id="riskPercent" class="pixel-title text-game-red">28%</div>
+                        <div class="mini text-white/75 mt-1">RISK</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="stat-box">
+                    <p id="riskHeadline" class="pixel-text text-game-yellow">
+                      まずは基本装備で十分。ただし保証があると安心です。
+                    </p>
+                    <p id="riskBody" class="mini text-white/80 mt-3">
+                      おとなしいタイプでも、学校や家の中で“置きっぱなし→圧迫”の事故は起こります。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button id="rerunBtn" class="pixel-btn">
+                <div class="tiny text-game-cyan">COMMAND</div>
+                <div class="pixel-text text-game-green mt-2">もう一度バトル再生</div>
+              </button>
+            </aside>
+
+            <section class="min-w-0 flex flex-col gap-4">
+              <div class="pixel-window p-3 sm:p-4">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                  <div>
+                    <p class="tiny text-game-cyan">DURABILITY BATTLE SCREEN</p>
+                    <h2 class="pixel-title text-game-yellow mt-2">メガネ HP シミュレーション</h2>
+                  </div>
+                  <div id="enemyLabel" class="class-badge text-game-pink">ENEMY: MAGIC KID</div>
+                </div>
+
+                <div class="battle-bg mt-4">
+                  <div class="scanline"></div>
+                  <div class="impact-flash" id="impactFlash"></div>
+
+                  <div class="hero-area">
+                    <div id="damageTag" class="damage-tag text-game-yellow">
+                      バトル待機中…
+                    </div>
+
+                    <div class="sprite-wrap">
+                      <div id="glassesSprite" class="glasses-sprite memory-on">
+                        <div class="memory-aura"></div>
+                        <div class="arm left"></div>
+                        <div class="arm right"></div>
+                        <div class="lens-box lens-left"></div>
+                        <div class="lens-box lens-right"></div>
+                        <div class="bridge"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="arena-ground"></div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
+                  <div class="min-w-0">
+                    <div class="meter-label mb-2">
+                      <span class="text-game-cyan">FRAME HP</span>
+                      <span id="hpStateText" class="text-game-green">STABLE</span>
+                    </div>
+                    <div class="hp-shell">
+                      <div class="hp-track">
+                        <div id="hpFill" class="hp-fill"></div>
+                        <div id="hpText" class="hp-text">HP 100 / 100</div>
+                      </div>
+                    </div>
+
+                    <div class="event-log mt-4">
+                      <p class="tiny text-game-cyan">EVENT LOG</p>
+                      <div id="eventLog" class="mini text-white/85 mt-3">
+                        クラスを選択すると、1年以内に起こりがちなイベントがここに表示されます。
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="stat-box">
+                    <p class="tiny text-game-cyan">RECOMMENDED LOADOUT</p>
+                    <div class="mt-3 space-y-3">
+                      <p class="mini text-white/85">
+                        <span class="dot"></span><span id="loadout1">形状記憶フレーム</span>
+                      </p>
+                      <p class="mini text-white/85">
+                        <span class="dot"></span><span id="loadout2">破損保証プラン</span>
+                      </p>
+                      <p class="mini text-white/85">
+                        <span class="dot"></span><span id="loadout3">見え方保証もセット</span>
+                      </p>
+                    </div>
+
+                    <div class="prompt-line mt-4">
+                      <p class="tiny text-game-cyan">SURVIVAL SCORE</p>
+                      <p id="survivalText" class="pixel-text text-game-yellow mt-3">
+                        いざという時の保証があると、親御さんの安心感が大きく変わります。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
+                <div class="pixel-window p-3 sm:p-4" id="analysisBlock">
+                  <p class="tiny text-game-cyan">ANALYSIS</p>
+                  <h3 id="analysisTitle" class="pixel-title text-game-yellow mt-2">
+                    おとなしい子でも“静かな事故”はあります。
+                  </h3>
+                  <div class="mt-4 space-y-3 mini text-white/82">
+                    <p><span class="text-game-cyan">▶</span> <span id="point1">机に置いたまま本を重ねる、カバンの下敷きになるなど、家の中の圧迫事故は意外と多いです。</span></p>
+                    <p><span class="text-game-cyan">▶</span> <span id="point2">安価フレームは軽い衝撃では大丈夫でも、毎日の小ダメージで歪みやすくなります。</span></p>
+                    <p><span class="text-game-cyan">▶</span> <span id="point3">「壊れにくさ」と「保証」を一緒に提案すると、価格ではなく総コストで比較してもらえます。</span></p>
+                  </div>
+                </div>
+
+                <div class="pixel-window p-3 sm:p-4" id="talkBlock">
+                  <p class="tiny text-game-cyan">PARENT TALK SCRIPT</p>
+                  <h3 class="pixel-title text-game-yellow mt-2">親御さん向け提案トーク</h3>
+                  <p id="talkLead" class="pixel-text text-game-green mt-4">
+                    お子様のパワーに耐えるには、この形状記憶フレームとW保証プランが結局いちばんコスパが良いです。
+                  </p>
+                  <p id="talkBody" class="mini text-white/82 mt-4">
+                    安いメガネを何度も買い替えるより、曲がりや衝撃に強いフレームと、見え方・破損の両方をカバーできる保証を最初からつけておく方が、1年トータルでは安心しやすいです。
+                  </p>
+
+                  <div class="prompt-line mt-4">
+                    <p class="tiny text-game-cyan">CLOSING</p>
+                    <p id="closing" class="mini text-white/82 mt-3">
+                      「元気なお子様ほど、メガネは“安さ”より“生き残る装備”で選ぶ方が、結局お得になりやすいです」と伝えると納得されやすいです。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pixel-window p-3 sm:p-4">
+                <p class="tiny text-game-cyan">STAFF TIP</p>
+                <p class="mini text-white/82 mt-3">
+                  「安いと壊れますよ」と言い切るより、
+                  <span class="text-game-yellow">“このクラスの生活だと、1年で何回ダメージイベントが起きるか”</span>
+                  を見せてから、
+                  <span class="text-game-green">形状記憶フレーム + 見え方・破損のW保証</span>
+                  を提案すると、価格ではなくコスパの話に変えやすくなります。
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const classData = {
+        mage: {
+          enemy: 'ENEMY: MAGIC KID',
+          risk: 28,
+          riskHeadline: 'まずは基本装備で十分。ただし保証があると安心です。',
+          riskBody: 'おとなしいタイプでも、学校や家の中で“置きっぱなし→圧迫”の事故は起こります。',
+          analysisTitle: 'おとなしい子でも“静かな事故”はあります。',
+          point1: '机に置いたまま本を重ねる、カバンの下敷きになるなど、家の中の圧迫事故は意外と多いです。',
+          point2: '安価フレームは軽い衝撃では大丈夫でも、毎日の小ダメージで歪みやすくなります。',
+          point3: '「壊れにくさ」と「保証」を一緒に提案すると、価格ではなく総コストで比較してもらえます。',
+          talkLead: 'おとなしいお子様でも、学校生活の中でメガネに小さなダメージは積み重なります。',
+          talkBody: 'だからこそ、最初から形状記憶フレームにしておくと歪みにくく、さらに見え方・破損のW保証があると、急なトラブルでも慌てにくいです。',
+          closing: '「大きな事故は少なくても、毎日の小ダメージ対策として安心ですよ」と伝えると自然です。',
+          loadout1: '軽くてしなやかな形状記憶フレーム',
+          loadout2: '1年の破損保証プラン',
+          loadout3: '度数変化にも対応しやすい見え方保証',
+          survivalText: '軽度クラスでも、“もしも”対策があると買い替えリスクを抑えやすいです。',
+          events: [
+            { text: '教科書の下敷きにされた！', damage: 12, delay: 400 },
+            { text: '寝る前にメガネの上へゴロン！', damage: 18, delay: 1300 },
+            { text: 'カバンの底で文房具に圧迫！', damage: 16, delay: 2200 }
+          ]
+        },
+        fighter: {
+          enemy: 'ENEMY: FIGHTER KID',
+          risk: 68,
+          riskHeadline: '外遊びクラスは、保証込みで考えた方がコスパが良くなりやすいです。',
+          riskBody: '走る・投げる・ぶつかる・汗をかく。毎日がメガネにとってバトルです。',
+          analysisTitle: '活発な子は、メガネに“ちゃんと戦わせる装備”が必要です。',
+          point1: '休み時間の外遊びでは、ドッジボール・鬼ごっこ・転倒など、フレームに瞬間的な強い力がかかります。',
+          point2: '安価フレームは一度の衝撃で歪み、見え方までズレるケースがあります。',
+          point3: 'このタイプは、形状記憶フレームと破損保証を最初から組み合わせた方が、結果的に買い直しを減らしやすいです。',
+          talkLead: 'このタイプのお子様なら、形状記憶フレームとW保証プランが結局いちばんコスパが良いです。',
+          talkBody: '安いメガネを何度も買い替えるより、曲がりや衝撃に強いフレームと、見え方・破損の両方をカバーできる保証を最初からつけておく方が、1年トータルでは安心しやすいです。',
+          closing: '「元気なお子様ほど、メガネは“安さ”より“生き残る装備”で選ぶ方が結局お得です」と言うと伝わりやすいです。',
+          loadout1: '衝撃に強い形状記憶フレーム',
+          loadout2: '破損時も安心のW保証プラン',
+          loadout3: '鼻あて・フィット調整を含む定期メンテ',
+          survivalText: '戦士クラスは“壊れにくさ”と“壊れた後の保険”の両方が重要です。',
+          events: [
+            { text: 'ドッジボール直撃！', damage: 26, delay: 400 },
+            { text: '鬼ごっこで転倒！', damage: 32, delay: 1400 },
+            { text: 'ランドセルに勢いよく収納！', damage: 22, delay: 2400 }
+          ]
+        },
+        destroyer: {
+          enemy: 'ENEMY: DESTROYER GOD',
+          risk: 94,
+          riskHeadline: 'このクラスは“買う前から保証までセット”で考えるべきタイプです。',
+          riskBody: '転ぶ、踏む、投げる、なくす…。普通フレームでは1年サバイバルがかなり厳しい想定です。',
+          analysisTitle: '破壊神タイプは、最初から最強装備前提で提案すべきです。',
+          point1: '予測不能な動きが多い子は、親御さんが注意していても事故イベントをゼロにするのが難しいです。',
+          point2: '一撃でフレームがゆがむ・レンズが外れる・買い替えになるケースまで想定すべきクラスです。',
+          point3: 'このタイプは価格の安さより、“壊れにくさ + 保証で守る総額”の説明が最も刺さります。',
+          talkLead: 'このタイプのお子様には、この形状記憶フレームと見え方・破損のW保証プランが必須級です。',
+          talkBody: '普通の安価フレームだと、踏みつけや転倒で一撃アウトになりやすいです。最初からしなやかで復元力のあるフレームにして、さらに破損も見え方も保証で守っておく方が、結局いちばん安心で出費も読みやすいです。',
+          closing: '「このクラスは“壊れたらどうするか”まで含めて買うのが正解です」と言うと納得につながりやすいです。',
+          loadout1: '最上位クラスの形状記憶フレーム',
+          loadout2: '破損・見え方のW保証をフル装備',
+          loadout3: '頻繁なフィッティング再調整込みで提案',
+          survivalText: '破壊神クラスは、“保証込みでやっと安心”と考えるのが現実的です。',
+          events: [
+            { text: '階段でつまずいて転倒！', damage: 34, delay: 400 },
+            { text: 'メガネを置いたまま踏んづけた！', damage: 48, delay: 1400 },
+            { text: '体育後にカバンへ投げ込み！', damage: 30, delay: 2500 }
+          ]
+        }
+      };
+
+      const classButtons = [...document.querySelectorAll('.class-btn')];
+      const hpFill = document.getElementById('hpFill');
+      const hpText = document.getElementById('hpText');
+      const hpStateText = document.getElementById('hpStateText');
+      const damageTag = document.getElementById('damageTag');
+      const eventLog = document.getElementById('eventLog');
+      const riskRing = document.getElementById('riskRing');
+      const riskPercent = document.getElementById('riskPercent');
+      const impactFlash = document.getElementById('impactFlash');
+      const glassesSprite = document.getElementById('glassesSprite');
+      const helperText = document.getElementById('helperText');
+
+      const refs = {
+        enemyLabel: document.getElementById('enemyLabel'),
+        riskHeadline: document.getElementById('riskHeadline'),
+        riskBody: document.getElementById('riskBody'),
+        analysisTitle: document.getElementById('analysisTitle'),
+        point1: document.getElementById('point1'),
+        point2: document.getElementById('point2'),
+        point3: document.getElementById('point3'),
+        talkLead: document.getElementById('talkLead'),
+        talkBody: document.getElementById('talkBody'),
+        closing: document.getElementById('closing'),
+        loadout1: document.getElementById('loadout1'),
+        loadout2: document.getElementById('loadout2'),
+        loadout3: document.getElementById('loadout3'),
+        survivalText: document.getElementById('survivalText')
+      };
+
+      let currentClass = 'mage';
+      let hp = 100;
+      let timeouts = [];
+
+      function clearTimers() {
+        timeouts.forEach(clearTimeout);
+        timeouts = [];
+      }
+
+      function setHpState(value) {
+        hpFill.style.width = `${Math.max(0, value)}%`;
+        hpText.textContent = `HP ${Math.max(0, value)} / 100`;
+
+        hpStateText.classList.remove('text-game-green', 'text-game-yellow', 'text-game-orange', 'text-game-red', 'blink-low');
+        if (value > 60) {
+          hpStateText.textContent = 'STABLE';
+          hpStateText.classList.add('text-game-green');
+        } else if (value > 30) {
+          hpStateText.textContent = 'CAUTION';
+          hpStateText.classList.add('text-game-yellow');
+        } else if (value > 0) {
+          hpStateText.textContent = 'DANGER';
+          hpStateText.classList.add('text-game-red', 'blink-low');
+        } else {
+          hpStateText.textContent = 'KO / BREAK';
+          hpStateText.classList.add('text-game-red', 'blink-low');
+        }
+      }
+
+      function setRiskRing(percent) {
+        const deg = Math.round((percent / 100) * 360);
+        riskRing.style.background = `conic-gradient(#ff6b6b 0deg ${deg}deg, #222 ${deg}deg 360deg)`;
+        riskPercent.textContent = `${percent}%`;
+      }
+
+      function animateHit(eventText, damage, index, total) {
+        damageTag.textContent = eventText;
+        damageTag.classList.remove('text-game-yellow', 'text-game-red');
+        damageTag.classList.add(damage >= 40 ? 'text-game-red' : 'text-game-yellow');
+
+        glassesSprite.classList.remove('sprite-shake');
+        impactFlash.classList.remove('flash-on');
+        void glassesSprite.offsetWidth;
+        glassesSprite.classList.add('sprite-shake');
+        impactFlash.classList.add('flash-on');
+
+        hp = Math.max(0, hp - damage);
+        setHpState(hp);
+
+        const logLine = `${index + 1}/${total} ▶ ${eventText}  -${damage}HP`;
+        eventLog.innerHTML += `<div>${logLine}</div>`;
+
+        if (hp <= 0) {
+          eventLog.innerHTML += `<div class="text-game-red">▶ フレーム耐久力ゼロ… 買い替え or 保証出動！</div>`;
+        }
+      }
+
+      function runSimulation() {
+        clearTimers();
+        const data = classData[currentClass];
+        if (!data) {
+          helperText.textContent = 'クラス情報の読み込みに失敗しました。別のボタンをお試しください。';
+          return;
+        }
+
+        hp = 100;
+        setHpState(hp);
+        damageTag.textContent = 'バトル開始！ 1年サバイバルを予測中…';
+        eventLog.innerHTML = `<div class="text-game-cyan">▶ シミュレーション開始</div>`;
+
+        data.events.forEach((event, index) => {
+          const t = setTimeout(() => {
+            animateHit(event.text, event.damage, index, data.events.length);
+            if (index === data.events.length - 1 && hp > 0) {
+              const tail = hp > 50
+                ? '▶ まだ戦える！ でも保証があるとさらに安心。'
+                : hp > 0
+                ? '▶ かなり消耗。 次の事故で一気に危険域です。'
+                : '▶ 生存失敗。 保証がないと出費が重くなります。';
+              eventLog.innerHTML += `<div class="${hp > 50 ? 'text-game-green' : 'text-game-red'}">${tail}</div>`;
+            }
+          }, event.delay);
+          timeouts.push(t);
+        });
+      }
+
+      function renderScene() {
+        const data = classData[currentClass];
+        if (!data) return;
+
+        classButtons.forEach(btn => {
+          const active = btn.dataset.class === currentClass;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', String(active));
+        });
+
+        refs.enemyLabel.textContent = data.enemy;
+        refs.riskHeadline.textContent = data.riskHeadline;
+        refs.riskBody.textContent = data.riskBody;
+        refs.analysisTitle.textContent = data.analysisTitle;
+        refs.point1.textContent = data.point1;
+        refs.point2.textContent = data.point2;
+        refs.point3.textContent = data.point3;
+        refs.talkLead.textContent = data.talkLead;
+        refs.talkBody.textContent = data.talkBody;
+        refs.closing.textContent = data.closing;
+        refs.loadout1.textContent = data.loadout1;
+        refs.loadout2.textContent = data.loadout2;
+        refs.loadout3.textContent = data.loadout3;
+        refs.survivalText.textContent = data.survivalText;
+
+        setRiskRing(data.risk);
+
+        helperText.textContent =
+          currentClass === 'mage'
+            ? '魔法使いタイプは小ダメージ蓄積型。保証を添えると安心訴求がしやすいです。'
+            : currentClass === 'fighter'
+            ? '戦士タイプは衝撃イベント多め。形状記憶フレームとW保証のセット提案が有効です。'
+            : '破壊神タイプは一撃事故を前提に。最初から最強装備として説明すると伝わりやすいです。';
+
+        runSimulation();
+      }
+
+      classButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          try {
+            currentClass = btn.dataset.class;
+            renderScene();
+          } catch (error) {
+            console.error(error);
+            helperText.textContent = 'クラス切り替え中にエラーが発生しました。もう一度お試しください。';
+          }
+        });
+      });
+
+      document.getElementById('rerunBtn').addEventListener('click', () => {
+        try {
+          runSimulation();
+        } catch (error) {
+          console.error(error);
+          helperText.textContent = '再生時にエラーが発生しました。もう一度お試しください。';
+        }
+      });
+
+      renderScene();
+    })();
+  </script>
+</body>
+</html>
