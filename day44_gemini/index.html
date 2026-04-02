@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瞳のスキンケア・シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Shippori+Mincho:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* * Typography & Base Design
+         * 高級感を生み出す明朝体とセリフ体のハイブリッド
+         */
+        :root {
+            --color-bg: #FDFCF8;
+            --color-text-main: #2A2522;
+            --color-text-muted: #8C8681;
+            --color-accent: #B89C72; /* シャンパンゴールド */
+        }
+        
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text-main);
+            font-family: 'Shippori Mincho', serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-image: radial-gradient(circle at 50% 0%, #ffffff 0%, rgba(253, 252, 248, 0) 70%);
+            min-height: 100vh;
+        }
+
+        .font-en {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* * Card-less UI Utils
+         * 枠線や影に頼らない、余白とタイポグラフィによる階層表現
+         */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* * Custom Button Design
+         */
+        .scene-btn {
+            position: relative;
+            transition: all 0.5s ease;
+        }
+        .scene-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            width: 0;
+            height: 1px;
+            background-color: var(--color-accent);
+            transition: all 0.5s ease;
+            transform: translateX(-50%);
+        }
+        .scene-btn.active {
+            color: var(--color-text-main);
+        }
+        .scene-btn.active::after {
+            width: 100%;
+        }
+
+        /* * SVG Animations for Eye Simulation
+         */
+        #sclera {
+            transition: fill 1.5s ease;
+        }
+        #highlight {
+            transition: opacity 1.5s ease;
+        }
+
+        /* UV Effect */
+        @keyframes uvRay {
+            0% { stroke-dashoffset: 200; opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { stroke-dashoffset: -200; opacity: 0; }
+        }
+        .uv-ray {
+            stroke: #9d4edd;
+            stroke-width: 2;
+            stroke-dasharray: 200;
+            animation: uvRay 2s infinite linear;
+        }
+
+        /* Dry Eye Effect */
+        @keyframes evaporate {
+            0% { transform: translateY(0) scale(1); opacity: 0.6; }
+            100% { transform: translateY(-50px) scale(0); opacity: 0; }
+        }
+        .evaporate-particle {
+            fill: #90e0ef;
+            animation: evaporate 1.5s infinite ease-out;
+        }
+
+        /* Wind/Dust Effect */
+        @keyframes windBlow {
+            0% { transform: translateX(200px); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateX(-200px); opacity: 0; }
+        }
+        .wind-line {
+            stroke: #d6d3d1;
+            stroke-width: 1;
+            animation: windBlow 1s infinite linear;
+        }
+        .dust-particle {
+            fill: #78716c;
+            animation: windBlow 1.2s infinite linear;
+        }
+        
+        /* Blur background shape for elegance */
+        .ambient-light {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            transition: all 2s ease;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="relative overflow-x-hidden selection:bg-[#B89C72] selection:text-white">
+
+    <!-- Ambient Background Light -->
+    <div id="ambient-bg" class="ambient-light w-[60vw] h-[60vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-stone-200"></div>
+
+    <main class="max-w-5xl mx-auto px-6 py-12 md:py-20 flex flex-col min-h-screen">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-16 fade-in-up" style="animation-delay: 0.1s;">
+            <p class="font-en text-sm tracking-[0.3em] text-[#B89C72] uppercase mb-4">Naked Eye Simulation</p>
+            <h1 class="text-3xl md:text-4xl font-medium tracking-widest leading-relaxed">
+                コンタクトレンズは、<br class="md:hidden">瞳の「日傘」にはならない。
+            </h1>
+            <p class="mt-6 text-[15px] text-[#8C8681] tracking-wide font-light max-w-2xl mx-auto leading-loose">
+                お客様の1日の過ごし方をお選びください。<br>
+                無防備な状態の瞳が、どのようなダメージを受けているかをシミュレーションします。
+            </p>
+        </header>
+
+        <!-- Main Content Area (Layout split on desktop) -->
+        <div class="flex-1 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-20">
+            
+            <!-- Left: Visual Simulator -->
+            <div class="w-full lg:w-1/2 relative flex justify-center fade-in-up" style="animation-delay: 0.3s;">
+                <!-- SVG Eye -->
+                <svg viewBox="0 0 400 240" class="w-full max-w-md drop-shadow-sm overflow-visible z-10" id="eye-svg">
+                    <!-- Effects Back Layer -->
+                    <g id="effect-back"></g>
+
+                    <!-- The Eye Structure -->
+                    <g id="the-eye" class="transition-transform duration-1000 origin-center">
+                        <!-- Sclera (白目) -->
+                        <path id="sclera" d="M 40 120 Q 200 30 360 120 Q 200 210 40 120 Z" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5" />
+                        
+                        <!-- Iris (虹彩) -->
+                        <circle id="iris" cx="200" cy="120" r="45" fill="#3E342F" class="transition-all duration-1000"/>
+                        
+                        <!-- Pupil (瞳孔) -->
+                        <circle cx="200" cy="120" r="18" fill="#1A1715" />
+                        
+                        <!-- Eye Highlights (潤い・輝き) -->
+                        <g id="highlight">
+                            <circle cx="185" cy="100" r="10" fill="#ffffff" opacity="0.8"/>
+                            <circle cx="215" cy="135" r="4" fill="#ffffff" opacity="0.6"/>
+                        </g>
+
+                        <!-- Eyelids (まぶた/まつげのライン) -->
+                        <path d="M 30 120 Q 200 15 370 120" fill="none" stroke="#2A2522" stroke-width="3.5" stroke-linecap="round"/>
+                        <path d="M 40 120 Q 200 220 360 120" fill="none" stroke="#2A2522" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+                        
+                        <!-- Double Eyelid Line (二重幅) -->
+                        <path d="M 60 95 Q 200 45 340 95" fill="none" stroke="#8C8681" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+                    </g>
+
+                    <!-- Effects Front Layer -->
+                    <g id="effect-front"></g>
+                </svg>
+            </div>
+
+            <!-- Right: Interactive Controls & Suggestion -->
+            <div class="w-full lg:w-1/2 flex flex-col justify-center fade-in-up" style="animation-delay: 0.5s;">
+                
+                <!-- Scene Selectors -->
+                <nav class="flex flex-col gap-5 mb-12">
+                    <button onclick="selectScene('outdoor')" id="btn-outdoor" class="scene-btn text-left group w-full text-[#8C8681] hover:text-[#2A2522]">
+                        <div class="flex items-center gap-4 pb-2">
+                            <span class="font-en text-xs tracking-widest opacity-50">01</span>
+                            <span class="text-lg tracking-widest font-light group-hover:font-medium transition-all">屋外での営業・レジャー</span>
+                        </div>
+                    </button>
+                    <button onclick="selectScene('office')" id="btn-office" class="scene-btn text-left group w-full text-[#8C8681] hover:text-[#2A2522]">
+                        <div class="flex items-center gap-4 pb-2">
+                            <span class="font-en text-xs tracking-widest opacity-50">02</span>
+                            <span class="text-lg tracking-widest font-light group-hover:font-medium transition-all">オフィスで一日中PC作業</span>
+                        </div>
+                    </button>
+                    <button onclick="selectScene('bike')" id="btn-bike" class="scene-btn text-left group w-full text-[#8C8681] hover:text-[#2A2522]">
+                        <div class="flex items-center gap-4 pb-2">
+                            <span class="font-en text-xs tracking-widest opacity-50">03</span>
+                            <span class="text-lg tracking-widest font-light group-hover:font-medium transition-all">自転車やバイクでの通勤</span>
+                        </div>
+                    </button>
+                </nav>
+
+                <!-- Suggestion Area (Initially Hidden/Placeholder) -->
+                <div id="suggestion-area" class="opacity-0 transition-opacity duration-1000 border-l px-6 border-[#E5E2DC]">
+                    <p class="font-en text-xs tracking-[0.2em] text-[#B89C72] mb-3">Professional Suggestion</p>
+                    <h3 id="suggestion-title" class="text-xl tracking-widest mb-4 font-medium"></h3>
+                    <p id="suggestion-talk" class="text-[15px] leading-loose tracking-wide font-light text-[#4A4542]">
+                        <!-- トーク内容がここに挿入されます -->
+                    </p>
+                </div>
+
+                <!-- Initial Placeholder -->
+                <div id="initial-prompt" class="border-l px-6 border-[#E5E2DC] transition-opacity duration-500 absolute lg:static">
+                    <p class="text-[15px] leading-loose tracking-wide font-light text-[#8C8681]">
+                        上のリストから、お客様のライフスタイルに最も近いものをお選びください。
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const scenes = {
+            outdoor: {
+                title: "太陽光と紫外線の蓄積ダメージ",
+                talk: "「実は目から入る紫外線で、お肌まで日焼けしてしまうんです！コンタクトむき出しの状態は非常に無防備なので、屋外では『度付きサングラス』に掛け替えるか、最低でもUVカット付きのクリアメガネを上から掛ける『瞳のUVケア』が絶対に必要ですよ！」",
+                bgColor: "rgba(224, 175, 230, 0.15)", // うっすら紫
+                scleraColor: "#FFF0F0", // 充血
+                highlightOpacity: "0.8",
+                eyeTransform: "scale(1)",
+                irisColor: "#4E3636", // 少し赤茶に
+                renderEffects: (back, front) => {
+                    // 紫外線レーザーエフェクト
+                    for(let i=0; i<8; i++) {
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        const startX = 100 + Math.random() * 200;
+                        line.setAttribute("x1", startX - 50);
+                        line.setAttribute("y1", "-20");
+                        line.setAttribute("x2", startX + 50);
+                        line.setAttribute("y2", "260");
+                        line.setAttribute("class", "uv-ray");
+                        line.style.animationDelay = `${Math.random() * 2}s`;
+                        front.appendChild(line);
+                    }
+                }
+            },
+            office: {
+                title: "ブルーライトとエアコン乾燥の連鎖",
+                talk: "「エアコンの風と長時間のまばたき不足で、コンタクトの水分は急激に奪われています。角膜に傷がつく前に、ブルーライトカット機能付きの『PC用ダテメガネ』で瞳の潤いを閉じ込めるベールを作ってあげましょう。」",
+                bgColor: "rgba(144, 224, 239, 0.1)", // うっすら水色
+                scleraColor: "#F8F5F2", // 少しくすむ
+                highlightOpacity: "0.1", // 潤いが消える
+                eyeTransform: "scaleY(0.85)", // 目が細まる（シパシパする感じ）
+                irisColor: "#3E3A37", // 輝きを失う
+                renderEffects: (back, front) => {
+                    // 水分蒸発エフェクト
+                    for(let i=0; i<15; i++) {
+                        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        circle.setAttribute("cx", 150 + Math.random() * 100);
+                        circle.setAttribute("cy", 100 + Math.random() * 40);
+                        circle.setAttribute("r", 1.5 + Math.random() * 2);
+                        circle.setAttribute("class", "evaporate-particle");
+                        circle.style.animationDelay = `${Math.random() * 2}s`;
+                        front.appendChild(circle);
+                    }
+                }
+            },
+            bike: {
+                title: "物理的衝撃と直風による乾燥のダブルパンチ",
+                talk: "「自転車やバイクの走行中、コンタクトは常に強風とホコリの直撃を受けています。大切な瞳を物理的に守り、風の巻き込みを防ぐ『カーブ付きの保護用メガネ』や『スポーツサングラス』が、安全で快適な視界のお供になります。」",
+                bgColor: "rgba(214, 211, 209, 0.2)", // うっすらグレー
+                scleraColor: "#FDF8F5", // 少し赤みとくすみ
+                highlightOpacity: "0.4",
+                eyeTransform: "scaleY(0.7) scaleX(0.95)", // 風で目を細める
+                irisColor: "#3E342F",
+                renderEffects: (back, front) => {
+                    // 風エフェクト
+                    for(let i=0; i<6; i++) {
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        const y = 80 + Math.random() * 80;
+                        line.setAttribute("x1", "0");
+                        line.setAttribute("y1", y);
+                        line.setAttribute("x2", "60");
+                        line.setAttribute("y2", y);
+                        line.setAttribute("class", "wind-line");
+                        line.style.animationDelay = `${Math.random()}s`;
+                        front.appendChild(line);
+                    }
+                    // ホコリエフェクト
+                    for(let i=0; i<10; i++) {
+                        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        circle.setAttribute("cx", "0");
+                        circle.setAttribute("cy", 70 + Math.random() * 100);
+                        circle.setAttribute("r", 1 + Math.random() * 1.5);
+                        circle.setAttribute("class", "dust-particle");
+                        circle.style.animationDelay = `${Math.random() * 1.5}s`;
+                        front.appendChild(circle);
+                    }
+                }
+            }
+        };
+
+        function selectScene(sceneId) {
+            const scene = scenes[sceneId];
+            if (!scene) return;
+
+            // 1. UI状態の更新
+            document.querySelectorAll('.scene-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-[#2A2522]');
+                btn.classList.add('text-[#8C8681]');
+            });
+            const activeBtn = document.getElementById(`btn-${sceneId}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-[#8C8681]');
+
+            // 2. 背景光の更新
+            document.getElementById('ambient-bg').style.backgroundColor = scene.bgColor;
+
+            // 3. テキストエリアの更新とフェードイン
+            const suggestionArea = document.getElementById('suggestion-area');
+            const initialPrompt = document.getElementById('initial-prompt');
+            
+            initialPrompt.style.opacity = '0';
+            setTimeout(() => initialPrompt.style.display = 'none', 500);
+
+            // 一旦フェードアウトさせてから内容を書き換えてフェードイン
+            suggestionArea.style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('suggestion-title').innerText = scene.title;
+                
+                // トークテキストのキーワードをハイライト（ゴールド色に）
+                let highlightedTalk = scene.talk
+                    .replace(/『([^』]+)』/g, '<span class="text-[#B89C72] font-medium tracking-widest px-1">『$1』</span>')
+                    .replace(/絶対に必要ですよ！/g, '<strong class="font-medium">絶対に必要ですよ！</strong>')
+                    .replace(/ベールを作ってあげましょう/g, '<strong class="font-medium">ベールを作ってあげましょう</strong>')
+                    .replace(/安全で快適な視界のお供になります/g, '<strong class="font-medium">安全で快適な視界のお供になります</strong>');
+                
+                document.getElementById('suggestion-talk').innerHTML = highlightedTalk;
+                suggestionArea.style.opacity = '1';
+            }, 300);
+
+            // 4. SVGアニメーションの更新
+            updateEyeVisuals(scene);
+        }
+
+        function updateEyeVisuals(scene) {
+            // 基本パーツの状態変更
+            document.getElementById('sclera').style.fill = scene.scleraColor;
+            document.getElementById('highlight').style.opacity = scene.highlightOpacity;
+            document.getElementById('the-eye').style.transform = scene.eyeTransform;
+            document.getElementById('iris').style.fill = scene.irisColor;
+
+            // エフェクトレイヤーのクリア
+            const effectBack = document.getElementById('effect-back');
+            const effectFront = document.getElementById('effect-front');
+            effectBack.innerHTML = '';
+            effectFront.innerHTML = '';
+
+            // 新しいエフェクトの描画（DOM生成のため少し遅延させて自然に見せる）
+            setTimeout(() => {
+                scene.renderEffects(effectBack, effectFront);
+            }, 200);
+        }
+    </script>
+</body>
+</html>
