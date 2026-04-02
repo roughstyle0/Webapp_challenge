@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>瞳ダメージ防御シミュレーター | Contact Eyes Defense</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Yu Mincho"', '"Hiragino Mincho ProN"', '"Noto Serif JP"', 'serif'],
+            sans: ['"Hiragino Sans"', '"Noto Sans JP"', 'sans-serif']
+          },
+          colors: {
+            pearl: '#f8f5f1',
+            roseMist: '#ead9d4',
+            champagne: '#e8d8b9',
+            smoke: '#6f6a66',
+            ink: '#211c1a',
+            wine: '#6d3844',
+            gold: '#b79357',
+            ice: '#dbe7f2'
+          },
+          letterSpacing: {
+            wide2: '0.18em'
+          },
+          animation: {
+            floatSlow: 'floatSlow 8s ease-in-out infinite',
+            pulseSoft: 'pulseSoft 2.6s ease-in-out infinite',
+            blink: 'blink 5.2s infinite',
+            shimmerLine: 'shimmerLine 2.8s linear infinite',
+            uvBeam: 'uvBeam 1.6s linear infinite',
+            dryCrack: 'dryCrack 2.5s ease-in-out infinite',
+            dustMove: 'dustMove 3s linear infinite',
+            concern: 'concern 2.2s ease-in-out infinite'
+          },
+          keyframes: {
+            floatSlow: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' }
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '0.55', transform: 'scale(0.98)' },
+              '50%': { opacity: '1', transform: 'scale(1.02)' }
+            },
+            blink: {
+              '0%, 46%, 100%': { transform: 'scaleY(1)' },
+              '48%, 50%': { transform: 'scaleY(0.08)' }
+            },
+            shimmerLine: {
+              '0%': { transform: 'translateX(-120%)', opacity: '0' },
+              '20%': { opacity: '0.9' },
+              '100%': { transform: 'translateX(120%)', opacity: '0' }
+            },
+            uvBeam: {
+              '0%': { transform: 'translateY(-8px) scaleY(0.95)', opacity: '0.15' },
+              '50%': { transform: 'translateY(0px) scaleY(1.08)', opacity: '0.9' },
+              '100%': { transform: 'translateY(8px) scaleY(0.95)', opacity: '0.15' }
+            },
+            dryCrack: {
+              '0%,100%': { opacity: '0.25', transform: 'scale(0.98)' },
+              '50%': { opacity: '0.9', transform: 'scale(1.03)' }
+            },
+            dustMove: {
+              '0%': { transform: 'translateX(-16px) translateY(4px)', opacity: '0' },
+              '15%': { opacity: '0.9' },
+              '100%': { transform: 'translateX(18px) translateY(-6px)', opacity: '0' }
+            },
+            concern: {
+              '0%,100%': { transform: 'translateY(0)', opacity: '0.7' },
+              '50%': { transform: 'translateY(-4px)', opacity: '1' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root{
+      --bg1:#fbf8f4;
+      --bg2:#efe2dc;
+      --bg3:#f5ecd9;
+      --ink:#231d1a;
+      --muted:#7a716d;
+      --line:rgba(86,59,42,0.12);
+      --accent:#7f4653;
+      --gold:#b79357;
+      --danger:#d45a5a;
+      --eye-white:#f8f4ef;
+      --eye-shadow:#dccfc5;
+      --iris:#5f7d8e;
+      --pupil:#1f1f20;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at 10% 15%, rgba(234, 217, 212, 0.55), transparent 28%),
+        radial-gradient(circle at 85% 18%, rgba(232, 216, 185, 0.35), transparent 24%),
+        radial-gradient(circle at 60% 78%, rgba(219, 231, 242, 0.35), transparent 30%),
+        linear-gradient(135deg, var(--bg1), var(--bg2) 52%, var(--bg3));
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .noise::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(0,0,0,.08) 0 1px, transparent 1px),
+        radial-gradient(circle at 70% 40%, rgba(0,0,0,.07) 0 1px, transparent 1px),
+        radial-gradient(circle at 40% 80%, rgba(0,0,0,.05) 0 1px, transparent 1px);
+      background-size: 180px 180px, 220px 220px, 160px 160px;
+      mix-blend-mode:multiply;
+    }
+
+    .section-line{
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(86,59,42,0.18), transparent);
+    }
+
+    .lux-button{
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(70,48,35,.16);
+      background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.08));
+      transition:.35s ease;
+      backdrop-filter: blur(8px);
+    }
+    .lux-button::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(100deg, transparent 20%, rgba(255,255,255,.45) 48%, transparent 76%);
+      transform:translateX(-130%);
+      transition:transform .8s ease;
+    }
+    .lux-button:hover::before,
+    .lux-button:focus-visible::before{
+      transform:translateX(130%);
+    }
+    .lux-button:hover,
+    .lux-button:focus-visible{
+      border-color: rgba(127,70,83,.35);
+      background:linear-gradient(180deg, rgba(255,255,255,.56), rgba(255,255,255,.12));
+    }
+    .lux-button.active{
+      border-color: rgba(127,70,83,.48);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.54), rgba(255,255,255,.18)),
+        radial-gradient(circle at top, rgba(183,147,87,.16), transparent 55%);
+    }
+
+    .eyestage{
+      position:relative;
+      min-height: 410px;
+      isolation:isolate;
+    }
+
+    .eye-shell{
+      position:relative;
+      width:min(92vw, 560px);
+      aspect-ratio: 1.55 / 1;
+      margin-inline:auto;
+      filter: drop-shadow(0 16px 48px rgba(96,72,57,.10));
+      animation: floatSlow 8s ease-in-out infinite;
+    }
+
+    .eye-shape{
+      position:absolute;
+      inset:8% 4%;
+      background:
+        radial-gradient(circle at 50% 43%, rgba(255,255,255,.98) 0 44%, rgba(244,236,230,.96) 64%, rgba(218,205,194,.9) 100%);
+      border-radius: 55% 45% 55% 45% / 62% 38% 62% 38%;
+      clip-path: path("M 30 145 C 110 32, 340 20, 530 145 C 340 270, 110 258, 30 145 Z");
+      border: 1px solid rgba(129,95,71,.18);
+      overflow:hidden;
+      transform-origin:center;
+      animation: blink 5.2s infinite;
+    }
+
+    .eye-outline{
+      position:absolute;
+      inset:8% 4%;
+      border-radius: 55% 45% 55% 45% / 62% 38% 62% 38%;
+      clip-path: path("M 30 145 C 110 32, 340 20, 530 145 C 340 270, 110 258, 30 145 Z");
+      border-top: 2px solid rgba(73,49,40,.32);
+      border-bottom: 2px solid rgba(73,49,40,.18);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .iris{
+      position:absolute;
+      top:50%;
+      left:50%;
+      width:34%;
+      aspect-ratio:1;
+      transform:translate(-50%, -50%);
+      border-radius:9999px;
+      background:
+        radial-gradient(circle at 40% 38%, rgba(188,220,231,.9) 0 10%, rgba(109,150,168,.85) 16%, rgba(76,111,125,.95) 46%, rgba(44,66,76,1) 66%, rgba(26,37,44,1) 100%);
+      box-shadow:
+        inset 0 0 40px rgba(255,255,255,.22),
+        0 0 0 10px rgba(240,240,238,.32);
+    }
+
+    .pupil{
+      position:absolute;
+      top:50%;
+      left:50%;
+      width:28%;
+      aspect-ratio:1;
+      transform:translate(-50%, -50%);
+      border-radius:9999px;
+      background: radial-gradient(circle at 40% 35%, rgba(60,60,60,.9), rgba(15,15,16,1) 62%);
+    }
+
+    .gloss{
+      position:absolute;
+      inset:auto auto 58% 38%;
+      width:14%;
+      aspect-ratio:1.45;
+      border-radius: 9999px;
+      background: radial-gradient(circle, rgba(255,255,255,.96), rgba(255,255,255,.15) 70%, transparent 72%);
+      filter: blur(1px);
+      transform: rotate(-22deg);
+      opacity:.86;
+    }
+
+    .contact-ring{
+      position:absolute;
+      top:50%;
+      left:50%;
+      width:38%;
+      aspect-ratio:1;
+      transform:translate(-50%, -50%);
+      border-radius:9999px;
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,.68),
+        inset 0 0 0 2px rgba(202,232,240,.55);
+      opacity:.85;
+    }
+
+    .eyelid-top,
+    .eyelid-bottom{
+      position:absolute;
+      left:7%;
+      width:86%;
+      height:28%;
+      border-radius:50%;
+      pointer-events:none;
+      filter: blur(14px);
+      opacity:.36;
+    }
+    .eyelid-top{
+      top:1%;
+      background: linear-gradient(180deg, rgba(166,129,114,.28), transparent);
+    }
+    .eyelid-bottom{
+      bottom:3%;
+      background: linear-gradient(0deg, rgba(166,129,114,.18), transparent);
+    }
+
+    .vein{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      transition: opacity .45s ease;
+      mix-blend-mode:multiply;
+    }
+    .vein span{
+      position:absolute;
+      height:2px;
+      background: linear-gradient(90deg, rgba(206,86,86,.05), rgba(206,86,86,.45), rgba(206,86,86,.05));
+      border-radius:9999px;
+      filter: blur(.2px);
+    }
+
+    .dry-overlay{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      transition: opacity .45s ease;
+      background:
+        radial-gradient(circle at 50% 52%, transparent 0 26%, rgba(255,244,220,.12) 33%, transparent 44%),
+        repeating-linear-gradient(122deg, rgba(210,180,120,.15) 0 3px, transparent 3px 19px),
+        repeating-linear-gradient(58deg, rgba(215,188,136,.1) 0 2px, transparent 2px 17px);
+      mix-blend-mode:multiply;
+      animation: dryCrack 2.5s ease-in-out infinite;
+    }
+
+    .uv-layer,
+    .wind-layer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .45s ease;
+    }
+
+    .uv-beam{
+      position:absolute;
+      top:-5%;
+      width:9%;
+      height:64%;
+      background:linear-gradient(180deg, rgba(255,253,215,0), rgba(255,241,152,.35), rgba(171,227,255,.42), rgba(129,212,250,.04));
+      filter: blur(2px);
+      transform-origin:top center;
+      animation: uvBeam 1.6s linear infinite;
+      border-radius:999px;
+    }
+
+    .uv-beam::after{
+      content:"";
+      position:absolute;
+      bottom:-10%;
+      left:50%;
+      width:150%;
+      height:30%;
+      transform:translateX(-50%);
+      background: radial-gradient(circle, rgba(255,248,192,.75), rgba(255,248,192,0) 68%);
+    }
+
+    .wind-stream{
+      position:absolute;
+      width:32%;
+      height:2px;
+      background: linear-gradient(90deg, rgba(170,170,170,0), rgba(135,135,135,.45), rgba(170,170,170,0));
+      animation: dustMove 3s linear infinite;
+      border-radius:999px;
+    }
+
+    .dust{
+      position:absolute;
+      width:9px;
+      height:9px;
+      border-radius:9999px;
+      background: radial-gradient(circle, rgba(174,161,141,.85), rgba(174,161,141,0) 70%);
+      animation: dustMove 2.6s linear infinite;
+    }
+
+    .selected-outdoor .uv-layer{ opacity:1; }
+    .selected-outdoor .vein{ opacity:.82; }
+    .selected-outdoor .eye-shape{
+      background:
+        radial-gradient(circle at 50% 43%, rgba(255,252,243,.98) 0 41%, rgba(248,236,218,.96) 60%, rgba(230,195,178,.92) 100%);
+    }
+
+    .selected-office .dry-overlay{ opacity:1; }
+    .selected-office .eye-shape{
+      background:
+        radial-gradient(circle at 50% 43%, rgba(248,244,235,.98) 0 40%, rgba(239,231,214,.94) 58%, rgba(219,203,181,.92) 100%);
+    }
+    .selected-office .contact-ring{
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,.54),
+        inset 0 0 0 2px rgba(238,216,176,.72);
+      opacity: .78;
+    }
+
+    .selected-commute .wind-layer{ opacity:1; }
+    .selected-commute .vein{ opacity:.48; }
+    .selected-commute .eye-shape{
+      background:
+        radial-gradient(circle at 50% 43%, rgba(249,246,242,.98) 0 39%, rgba(241,233,226,.95) 57%, rgba(224,210,201,.92) 100%);
+    }
+
+    .proposal-fade{
+      animation: pulseSoft 2.6s ease-in-out infinite;
+    }
+
+    .data-line{
+      position:relative;
+      padding-left:1.15rem;
+    }
+    .data-line::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:.75rem;
+      width:.45rem;
+      height:.45rem;
+      border-radius:9999px;
+      background:linear-gradient(180deg, rgba(183,147,87,.95), rgba(127,70,83,.95));
+      opacity:.88;
+    }
+
+    .micro-glow{
+      position:absolute;
+      inset:auto;
+      width:36vw;
+      height:36vw;
+      max-width:380px;
+      max-height:380px;
+      border-radius:9999px;
+      filter: blur(36px);
+      opacity:.22;
+      background: radial-gradient(circle, rgba(250,234,203,.8), rgba(250,234,203,0) 70%);
+      pointer-events:none;
+    }
+
+    .fade-up{
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity .55s ease, transform .55s ease;
+    }
+    .fade-up.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 640px){
+      .eyestage{ min-height: 320px; }
+      .eye-shell{ width:min(96vw, 480px); }
+    }
+  </style>
+</head>
+<body class="noise font-sans text-ink selection:bg-rose-200/60">
+  <div class="micro-glow top-10 left-[-10vw]"></div>
+  <div class="micro-glow bottom-0 right-[-8vw]"></div>
+
+  <main class="relative z-10">
+    <section class="px-6 sm:px-8 lg:px-14">
+      <div class="max-w-7xl mx-auto pt-10 sm:pt-14 lg:pt-20 pb-8 sm:pb-12">
+        <p class="font-serif text-[11px] sm:text-xs tracking-[0.35em] text-smoke/80 uppercase mb-5">
+          Contact Lens × Eye Protection Proposal Simulator
+        </p>
+
+        <div class="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-start">
+          <div>
+            <div class="section-line mb-6"></div>
+            <h1 class="font-serif font-light leading-[1.18] text-[clamp(2rem,5vw,4.8rem)] tracking-[0.03em] text-ink">
+              コンタクト派に伝える、<br />
+              <span class="italic text-wine/95">“むき出しの瞳”の防御提案</span>
+            </h1>
+            <p class="mt-6 max-w-2xl text-[15px] sm:text-[17px] leading-8 text-smoke/90 font-light">
+              新人スタッフでも、感覚ではなく
+              <span class="text-wine">視覚的な納得感</span>で説明できる接客補助ツールです。
+              お客様の生活シーンを選ぶだけで、コンタクト着用時の瞳ダメージをアニメーション表示し、
+              その場で自然につながる提案トークまで整えます。
+            </p>
+
+            <div class="mt-10">
+              <p class="font-serif tracking-[0.22em] text-[11px] sm:text-xs text-smoke/70 uppercase mb-4">
+                Select Main Lifestyle Scene
+              </p>
+
+              <div class="grid sm:grid-cols-3 gap-3 sm:gap-4">
+                <button class="lux-button scenario-btn active px-5 py-5 text-left min-h-[116px]" data-scene="outdoor" aria-pressed="true">
+                  <span class="block text-[11px] tracking-[0.2em] uppercase text-smoke/65 mb-2">Outdoor</span>
+                  <span class="block font-serif text-lg leading-7">屋外での営業・レジャー</span>
+                  <span class="block mt-2 text-sm text-smoke/80 leading-6">紫外線ダメージMAX</span>
+                </button>
+
+                <button class="lux-button scenario-btn px-5 py-5 text-left min-h-[116px]" data-scene="office" aria-pressed="false">
+                  <span class="block text-[11px] tracking-[0.2em] uppercase text-smoke/65 mb-2">Office</span>
+                  <span class="block font-serif text-lg leading-7">オフィスで一日中PC作業</span>
+                  <span class="block mt-2 text-sm text-smoke/80 leading-6">乾燥・疲労ダメージMAX</span>
+                </button>
+
+                <button class="lux-button scenario-btn px-5 py-5 text-left min-h-[116px]" data-scene="commute" aria-pressed="false">
+                  <span class="block text-[11px] tracking-[0.2em] uppercase text-smoke/65 mb-2">Commute</span>
+                  <span class="block font-serif text-lg leading-7">自転車・バイク通勤</span>
+                  <span class="block mt-2 text-sm text-smoke/80 leading-6">風・ホコリの物理ダメージMAX</span>
+                </button>
+              </div>
+
+              <p id="helperMessage" class="mt-4 text-sm text-smoke/70 leading-6">
+                ボタンを押すと、瞳への負担と提案トークが切り替わります。
+              </p>
+            </div>
+          </div>
+
+          <div class="relative pt-2 lg:pt-10">
+            <div id="eyestage" class="eyestage selected-outdoor">
+              <div class="absolute inset-x-0 top-[8%] h-[1px] bg-gradient-to-r from-transparent via-stone-500/20 to-transparent"></div>
+
+              <div class="eye-shell">
+                <div class="eye-shape">
+                  <div class="eyelid-top"></div>
+                  <div class="eyelid-bottom"></div>
+
+                  <div class="uv-layer">
+                    <span class="uv-beam left-[18%]" style="animation-delay:0s;"></span>
+                    <span class="uv-beam left-[34%]" style="animation-delay:.25s;"></span>
+                    <span class="uv-beam left-[50%]" style="animation-delay:.55s;"></span>
+                    <span class="uv-beam left-[66%]" style="animation-delay:.82s;"></span>
+                  </div>
+
+                  <div class="wind-layer">
+                    <span class="wind-stream left-[8%] top-[36%]" style="animation-delay:0s;"></span>
+                    <span class="wind-stream left-[14%] top-[48%]" style="animation-delay:.55s;"></span>
+                    <span class="wind-stream left-[22%] top-[60%]" style="animation-delay:1.15s;"></span>
+                    <span class="dust left-[26%] top-[42%]" style="animation-delay:.2s;"></span>
+                    <span class="dust left-[56%] top-[58%]" style="animation-delay:.9s;"></span>
+                    <span class="dust left-[66%] top-[34%]" style="animation-delay:1.4s;"></span>
+                  </div>
+
+                  <div class="dry-overlay"></div>
+
+                  <div class="vein">
+                    <span class="left-[8%] top-[30%] w-[26%] rotate-[18deg]"></span>
+                    <span class="left-[10%] top-[60%] w-[22%] rotate-[-12deg]"></span>
+                    <span class="right-[11%] top-[34%] w-[24%] rotate-[-18deg]"></span>
+                    <span class="right-[8%] top-[62%] w-[20%] rotate-[10deg]"></span>
+                    <span class="left-[18%] top-[20%] w-[18%] rotate-[35deg]"></span>
+                    <span class="right-[16%] top-[70%] w-[16%] rotate-[-30deg]"></span>
+                  </div>
+
+                  <div class="iris">
+                    <div class="pupil"></div>
+                    <div class="gloss"></div>
+                  </div>
+                  <div class="contact-ring"></div>
+                </div>
+                <div class="eye-outline"></div>
+              </div>
+
+              <div class="absolute inset-x-0 bottom-0 flex justify-center">
+                <div class="text-center">
+                  <p class="font-serif text-sm sm:text-base text-smoke/75 tracking-[0.14em] uppercase">
+                    Visible Simulation
+                  </p>
+                  <p id="eyeStatusLabel" class="mt-2 font-serif text-[clamp(1.15rem,2.2vw,1.65rem)] text-wine animate-concern">
+                    UVが刺さるように降り注ぎ、白目がじわじわ充血
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="px-6 sm:px-8 lg:px-14 pb-14 sm:pb-20 lg:pb-24">
+      <div class="max-w-7xl mx-auto">
+        <div class="section-line mb-8 sm:mb-10"></div>
+
+        <div class="grid lg:grid-cols-[0.92fr_1.08fr] gap-10 lg:gap-16 items-start">
+          <div class="fade-up show" id="summaryBlock">
+            <p class="font-serif tracking-[0.22em] text-[11px] sm:text-xs text-smoke/70 uppercase mb-4">
+              Damage Interpretation
+            </p>
+            <h2 id="sceneTitle" class="font-serif font-light text-[clamp(1.8rem,3.5vw,3rem)] leading-[1.25]">
+              屋外レジャー時の“裸眼感覚”は、<br>実はかなり無防備です。
+            </h2>
+            <p id="sceneDescription" class="mt-6 text-[15px] sm:text-[17px] leading-8 text-smoke/90 font-light">
+              コンタクトレンズをしていると視界は快適でも、瞳そのものは露出したまま。
+              とくに屋外では紫外線が直接入りやすく、白目の充血・刺激感・疲れ目につながります。
+              「見えているから大丈夫」と思われやすい場面ほど、保護提案が効くシーンです。
+            </p>
+
+            <div class="mt-8 space-y-4 text-smoke/88 text-[15px] leading-8">
+              <p class="data-line" id="point1">コンタクト着用＝瞳の表面が保護されている、ではありません。</p>
+              <p class="data-line" id="point2">UV・乾燥・風は、レンズの有無に関係なく眼表面へ負担をかけます。</p>
+              <p class="data-line" id="point3">“上から掛ける1本”を提案すると、受け入れられやすくなります。</p>
+            </div>
+          </div>
+
+          <div class="fade-up show">
+            <div class="flex items-end justify-between gap-4 mb-5">
+              <div>
+                <p class="font-serif tracking-[0.22em] text-[11px] sm:text-xs text-smoke/70 uppercase mb-3">
+                  Professional Solution Talk
+                </p>
+                <h3 class="font-serif text-[clamp(1.4rem,2.6vw,2.2rem)] font-light leading-[1.35]">
+                  そのまま使える提案トーク
+                </h3>
+              </div>
+              <p class="text-[11px] sm:text-xs tracking-[0.2em] uppercase text-gold">
+                Luxury LP style / staff support
+              </p>
+            </div>
+
+            <div class="relative overflow-hidden border-y border-stone-700/10 py-6 sm:py-8">
+              <div class="absolute inset-0 bg-gradient-to-r from-white/10 via-white/30 to-white/10"></div>
+              <div class="relative">
+                <p id="talkLead" class="font-serif text-[1.05rem] sm:text-[1.18rem] leading-8 sm:leading-9 text-wine/95">
+                  実は目から入る紫外線で、お肌まで日焼けしてしまうんです。
+                </p>
+                <p id="talkBody" class="mt-4 text-[15px] sm:text-[17px] leading-8 text-smoke/90 font-light">
+                  コンタクトむき出しの状態は非常に無防備なので、屋外では
+                  <span class="text-ink font-medium">「度付きサングラス」</span>に掛け替えるか、
+                  最低でも<span class="text-ink font-medium">UVカット付きのクリアメガネ</span>を上から掛ける
+                  “瞳のUVケア”が大切です。
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-7 proposal-fade">
+              <p class="font-serif tracking-[0.22em] text-[11px] sm:text-xs text-smoke/70 uppercase mb-4">
+                Recommended Proposal
+              </p>
+              <div class="grid sm:grid-cols-2 gap-x-8 gap-y-5">
+                <div>
+                  <p class="text-[11px] tracking-[0.18em] uppercase text-gold mb-2">Primary Suggestion</p>
+                  <p id="solution1" class="font-serif text-lg sm:text-xl leading-8">度付きサングラスに掛け替える</p>
+                </div>
+                <div>
+                  <p class="text-[11px] tracking-[0.18em] uppercase text-gold mb-2">Alternative</p>
+                  <p id="solution2" class="font-serif text-lg sm:text-xl leading-8">UVカット付きクリアメガネを上から掛ける</p>
+                </div>
+                <div class="sm:col-span-2 pt-2">
+                  <p class="text-[11px] tracking-[0.18em] uppercase text-gold mb-2">Closing Phrase</p>
+                  <p id="closing" class="text-[15px] sm:text-[17px] leading-8 text-smoke/90 font-light">
+                    「コンタクトで見えること」と「瞳が守られていること」は別なんです。外に出る日は、瞳を守る1本も一緒に考えてみませんか？
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-line mt-12 sm:mt-16 mb-6"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p class="font-serif text-lg sm:text-xl">接客のポイント</p>
+            <p class="mt-2 text-sm sm:text-base text-smoke/80 leading-7 font-light">
+              「見えている」安心感の裏にある、“守れていない瞳”を見せると提案が通りやすくなります。
+            </p>
+          </div>
+          <button id="resetBtn" class="lux-button px-5 py-3 text-sm tracking-[0.18em] uppercase self-start md:self-auto">
+            Reset Scene
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const scenes = {
+        outdoor: {
+          stageClass: 'selected-outdoor',
+          title: '屋外レジャー時の“裸眼感覚”は、<br>実はかなり無防備です。',
+          description:
+            'コンタクトレンズをしていると視界は快適でも、瞳そのものは露出したまま。とくに屋外では紫外線が直接入りやすく、白目の充血・刺激感・疲れ目につながります。「見えているから大丈夫」と思われやすい場面ほど、保護提案が効くシーンです。',
+          eyeStatus: 'UVが刺さるように降り注ぎ、白目がじわじわ充血',
+          point1: 'コンタクト着用＝瞳の表面が保護されている、ではありません。',
+          point2: '紫外線は視界の快適さとは別に、眼表面へじわじわ負担を与えます。',
+          point3: '「外にいる時間が長いなら、見え方より先に“守り方”を整えましょう」と伝えるのが効果的です。',
+          talkLead: '実は目から入る紫外線で、お肌まで日焼けしてしまうんです。',
+          talkBody:
+            'コンタクトむき出しの状態は非常に無防備なので、屋外では <span class="text-ink font-medium">「度付きサングラス」</span> に掛け替えるか、最低でも <span class="text-ink font-medium">UVカット付きのクリアメガネ</span> を上から掛ける“瞳のUVケア”が大切です。',
+          solution1: '度付きサングラスに掛け替える',
+          solution2: 'UVカット付きクリアメガネを上から掛ける',
+          closing:
+            '「コンタクトで見えること」と「瞳が守られていること」は別なんです。外に出る日は、瞳を守る1本も一緒に考えてみませんか？'
+        },
+        office: {
+          stageClass: 'selected-office',
+          title: 'オフィスの快適空間こそ、<br>瞳には乾燥ストレスが蓄積します。',
+          description:
+            'PC作業に集中するとまばたき回数が減り、さらにエアコンの風で水分が奪われます。コンタクト着用時は乾燥感・ゴロつき・夕方のかすみ目が出やすく、「なんとなく疲れる」を放置しがちです。そこに“見た目ケア”と“実用品”を両立した提案が刺さります。',
+          eyeStatus: '表面のうるおいが奪われ、瞳がカサついて曇る',
+          point1: 'PC凝視でまばたきが減ると、涙の膜が乱れやすくなります。',
+          point2: 'コンタクトの上から掛ける軽いメガネは、乾燥対策の入口として説明しやすいです。',
+          point3: '「疲れ目対策」ではなく「夕方も快適に過ごす工夫」と言い換えると受け入れられやすくなります。',
+          talkLead: '乾燥って、目薬だけで追いつかないことが多いんです。',
+          talkBody:
+            'オフィスではエアコンの風と長時間のPC作業で、コンタクト越しの瞳が乾きやすくなります。そこで <span class="text-ink font-medium">軽いクリアメガネ</span> を上から掛けるだけでも、風よけになって楽になる方が多いです。必要に応じて <span class="text-ink font-medium">ブルーライト配慮タイプ</span> もご案内できます。',
+          solution1: '風よけになる軽量クリアメガネ',
+          solution2: 'ブルーライト配慮レンズの保護メガネ',
+          closing:
+            '「コンタクトを外せない日ほど、瞳の表面を守る1本があると夕方のつらさが変わりやすいですよ」と添えると自然です。'
+        },
+        commute: {
+          stageClass: 'selected-commute',
+          title: '自転車・バイク通勤では、<br>風とホコリが瞳に直接当たります。',
+          description:
+            '通勤時の風圧や舞い上がるホコリは、コンタクト派の瞳にとって物理的な刺激そのものです。乾き・異物感・しみる感覚が起こりやすく、朝から不快感を抱えたまま一日が始まることも。ここでは“かっこよさ”と“防御力”の両立が提案の鍵になります。',
+          eyeStatus: '風と微粒子が流れ込み、瞳表面がこすられるように刺激',
+          point1: '風は涙を奪い、ホコリは眼表面の違和感を強めます。',
+          point2: '自転車・バイクでは、サングラスや保護フレームが“実用品”として納得されやすいです。',
+          point3: '「朝の通勤で目がつらい方、多いんです」と共感から入ると会話が開きます。',
+          talkLead: '通勤の風って、実はかなり強い“外的刺激”なんです。',
+          talkBody:
+            'コンタクトのままだと、風やホコリが瞳に直接当たりやすくなります。自転車やバイクの日は <span class="text-ink font-medium">フィット感の高い保護メガネ</span> や <span class="text-ink font-medium">薄色サングラス</span> を合わせると、朝の不快感をかなり減らしやすいです。',
+          solution1: '顔に沿う保護メガネ・防風フレーム',
+          solution2: '通勤用の薄色サングラス',
+          closing:
+            '「見え方だけでなく、通勤中の刺激から守るための1本」という切り口にすると、機能提案として受け取っていただきやすいです。'
+        }
+      };
+
+      const stage = document.getElementById('eyestage');
+      const helperMessage = document.getElementById('helperMessage');
+      const buttons = [...document.querySelectorAll('.scenario-btn')];
+      const summaryBlock = document.getElementById('summaryBlock');
+
+      const refs = {
+        title: document.getElementById('sceneTitle'),
+        description: document.getElementById('sceneDescription'),
+        eyeStatus: document.getElementById('eyeStatusLabel'),
+        point1: document.getElementById('point1'),
+        point2: document.getElementById('point2'),
+        point3: document.getElementById('point3'),
+        talkLead: document.getElementById('talkLead'),
+        talkBody: document.getElementById('talkBody'),
+        solution1: document.getElementById('solution1'),
+        solution2: document.getElementById('solution2'),
+        closing: document.getElementById('closing')
+      };
+
+      const renderScene = (key) => {
+        const scene = scenes[key];
+        if (!scene) {
+          helperMessage.textContent = '表示できるシーンが見つかりませんでした。別のボタンをお試しください。';
+          return;
+        }
+
+        stage.classList.remove('selected-outdoor', 'selected-office', 'selected-commute');
+        stage.classList.add(scene.stageClass);
+
+        refs.title.innerHTML = scene.title;
+        refs.description.textContent = scene.description;
+        refs.eyeStatus.textContent = scene.eyeStatus;
+        refs.point1.textContent = scene.point1;
+        refs.point2.textContent = scene.point2;
+        refs.point3.textContent = scene.point3;
+        refs.talkLead.textContent = scene.talkLead;
+        refs.talkBody.innerHTML = scene.talkBody;
+        refs.solution1.textContent = scene.solution1;
+        refs.solution2.textContent = scene.solution2;
+        refs.closing.textContent = scene.closing;
+
+        buttons.forEach((btn) => {
+          const active = btn.dataset.scene === key;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        helperMessage.textContent = '生活シーンに合わせて、瞳ダメージの見せ方と提案トークを自動で切り替えています。';
+
+        [summaryBlock, refs.talkLead.parentElement.parentElement].forEach((el) => {
+          el.classList.remove('show');
+          void el.offsetWidth;
+          el.classList.add('show');
+        });
+      };
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          try {
+            renderScene(button.dataset.scene);
+          } catch (error) {
+            console.error(error);
+            helperMessage.textContent = '切り替え時に問題が発生しました。もう一度お試しください。';
+          }
+        });
+
+        button.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            button.click();
+          }
+        });
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        renderScene('outdoor');
+      });
+
+      renderScene('outdoor');
+    })();
+  </script>
+</body>
+</html>
