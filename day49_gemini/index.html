@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spring Eye-Stress & Reset Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- 上質なエディトリアルデザインのためのフォント選定: Zen Old Mincho (明朝) と Zen Kaku Gothic Antique (ゴシック) -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+Antique:wght@300;400;500&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* カスタム設定 */
+        :root {
+            --color-paper: #F8F6F0; /* 上質な紙のベージュ */
+            --color-ink: #2b2a27;   /* 墨のようなチャコールグレー */
+            --color-accent: #B8860B; /* 落ち着いたゴールド */
+        }
+        body {
+            background-color: var(--color-paper);
+            color: var(--color-ink);
+            font-family: 'Zen Kaku Gothic Antique', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Zen Old Mincho', serif;
+        }
+        
+        /* エディトリアル用ユーティリティ */
+        .text-justify-custom { text-align: justify; text-justify: inter-ideograph; }
+        .writing-vertical { writing-mode: vertical-rl; }
+        
+        /* --- シミュレーション・エフェクト --- */
+        #vision-canvas {
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 1. 花粉（霞み・白飛び） */
+        .effect-kafun {
+            backdrop-filter: blur(6px) brightness(1.2);
+            background: rgba(255, 255, 255, 0.5);
+        }
+        /* 2. PC・スマホ（ブルーライト・重み） */
+        .effect-pc {
+            backdrop-filter: blur(2px) contrast(0.9) brightness(0.7);
+            background: linear-gradient(to bottom, rgba(20, 30, 60, 0.4), rgba(10, 20, 40, 0.6));
+        }
+        /* 3. コンタクト（パサつき・充血感） */
+        .effect-contact {
+            backdrop-filter: contrast(1.3) sepia(0.4);
+            background: radial-gradient(circle at center, transparent 0%, rgba(180, 50, 50, 0.1) 100%);
+        }
+        
+        /* リセット後（クリア・温かい光） */
+        .effect-reset {
+            backdrop-filter: blur(0px) contrast(1.05) brightness(1.05);
+            background: radial-gradient(circle at top right, rgba(255, 240, 210, 0.6) 0%, transparent 60%);
+            box-shadow: inset 0 0 100px rgba(255, 220, 180, 0.2);
+        }
+
+        /* ふんわりした背景のアブストラクトアート（画像の代替） */
+        .bg-abstract {
+            background: linear-gradient(135deg, #e8e4d9 0%, #f0ede6 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .bg-abstract::before {
+            content: "";
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+
+        /* 装飾的な細線 */
+        .hairline-b { border-bottom: 1px solid rgba(43, 42, 39, 0.15); }
+        .hairline-t { border-top: 1px solid rgba(43, 42, 39, 0.15); }
+        .hairline-l { border-left: 1px solid rgba(43, 42, 39, 0.15); }
+    </style>
+</head>
+<body class="min-h-screen overflow-x-hidden selection:bg-[#B8860B] selection:text-white">
+
+    <!-- ========== 画面1: 質問セクション ========== -->
+    <section id="screen-question" class="min-h-screen flex flex-col justify-center px-6 md:px-12 lg:px-24 py-12 transition-opacity duration-1000 ease-out">
+        <div class="max-w-4xl mx-auto w-full">
+            
+            <header class="mb-16 md:mb-24">
+                <p class="text-sm tracking-[0.3em] uppercase text-[#B8860B] mb-4">Spring Editorial</p>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-serif leading-tight tracking-wide">
+                    春の瞳に、<br class="md:hidden">深呼吸を。
+                </h1>
+            </header>
+
+            <div class="md:grid md:grid-cols-12 gap-8 items-start">
+                <div class="md:col-span-5 mb-12 md:mb-0">
+                    <p class="text-lg md:text-xl leading-relaxed tracking-wider font-light text-justify-custom">
+                        暖かな風が吹き始める季節。<br>
+                        しかし、その風は時に瞳に負担を運びます。<br><br>
+                        今のあなたの目は、<br class="hidden md:block">何に一番疲れていますか？
+                    </p>
+                </div>
+
+                <div class="md:col-span-6 md:col-start-7 flex flex-col space-y-8">
+                    <!-- 選択肢ボタン (カードではなく、雑誌の目次のようなタイポグラフィUI) -->
+                    <button onclick="selectStress('kafun')" class="group text-left relative pb-4 hairline-b transition-all duration-500 hover:pl-4">
+                        <span class="block text-xs tracking-widest text-gray-400 mb-2 transition-colors group-hover:text-[#B8860B]">01</span>
+                        <h3 class="text-xl md:text-2xl font-serif mb-1 group-hover:text-[#B8860B] transition-colors">春一番と花粉</h3>
+                        <p class="text-sm text-gray-500 tracking-wider">ホコリで目がゴロゴロ、かゆみが止まらない</p>
+                    </button>
+
+                    <button onclick="selectStress('pc')" class="group text-left relative pb-4 hairline-b transition-all duration-500 hover:pl-4">
+                        <span class="block text-xs tracking-widest text-gray-400 mb-2 transition-colors group-hover:text-[#B8860B]">02</span>
+                        <h3 class="text-xl md:text-2xl font-serif mb-1 group-hover:text-[#B8860B] transition-colors">一日中のPC・スマホ</h3>
+                        <p class="text-sm text-gray-500 tracking-wider">ブルーライトで目の奥が重く、かすむ</p>
+                    </button>
+
+                    <button onclick="selectStress('contact')" class="group text-left relative pb-4 hairline-b transition-all duration-500 hover:pl-4">
+                        <span class="block text-xs tracking-widest text-gray-400 mb-2 transition-colors group-hover:text-[#B8860B]">03</span>
+                        <h3 class="text-xl md:text-2xl font-serif mb-1 group-hover:text-[#B8860B] transition-colors">長時間のコンタクト</h3>
+                        <p class="text-sm text-gray-500 tracking-wider">夕方にはパサパサ、充血して限界が近い</p>
+                    </button>
+                    
+                    <p id="error-msg" class="text-sm text-red-800 opacity-0 transition-opacity">※いずれかの状態をお選びください。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== 画面2: シミュレーション & 提案セクション ========== -->
+    <section id="screen-result" class="hidden opacity-0 transition-opacity duration-1000 ease-out min-h-screen relative">
+        
+        <!-- シミュレーション・キャンバス (画面全体を覆う背景) -->
+        <div class="fixed inset-0 z-0 bg-abstract">
+            <!-- ここに選んだストレスのエフェクトが適用される -->
+            <div id="vision-canvas" class="absolute inset-0 w-full h-full"></div>
+        </div>
+
+        <!-- コンテンツレイヤー (z-indexで上に配置) -->
+        <div class="relative z-10 min-h-screen pt-24 pb-32 px-6 md:px-12 lg:px-24">
+            
+            <div class="max-w-6xl mx-auto">
+                <!-- シミュレーションUI (スタッフが操作する部分) -->
+                <div class="text-center mb-32 relative">
+                    <p id="stress-title" class="text-xl md:text-2xl font-serif tracking-widest mb-8 opacity-80"></p>
+                    <p id="stress-desc" class="text-sm tracking-widest text-gray-600 mb-12"></p>
+                    
+                    <!-- リセットアクションボタン -->
+                    <button id="btn-reset" onclick="applyReset()" class="relative inline-flex items-center justify-center px-8 py-4 bg-transparent border border-[var(--color-ink)] rounded-full hover:bg-[var(--color-ink)] hover:text-[var(--color-paper)] transition-colors duration-500 group overflow-hidden">
+                        <span class="font-serif tracking-[0.2em] relative z-10">リセットメガネを掛ける</span>
+                    </button>
+                    <p id="reset-hint" class="text-xs tracking-widest text-[#B8860B] mt-6 animate-pulse">Tap to Reset Your Eyes</p>
+                </div>
+
+                <!-- 提案記事セクション (リセット後にフェードイン) -->
+                <div id="editorial-content" class="opacity-0 translate-y-8 transition-all duration-1000 ease-out hidden">
+                    
+                    <div class="md:grid md:grid-cols-12 gap-12 items-start mb-32">
+                        <!-- アシンメトリーなレイアウト -->
+                        <div class="md:col-span-5 md:col-start-2 mb-12 md:mb-0">
+                            <h2 class="text-3xl md:text-4xl font-serif leading-tight mb-8">
+                                妥協しない、<br>
+                                おうち時間という贅沢。
+                            </h2>
+                            <p class="leading-loose tracking-wider font-light text-justify-custom text-gray-700">
+                                帰宅してコンタクトを外した瞬間、世界がぼやける。とりあえず見えればいいと、学生時代から使っている「安い家用メガネ」を掛けていませんか？<br><br>
+                                重いフレーム、ずり落ちる鼻当て、そして素顔の自分を見るのが少し億劫になるデザイン。<br>
+                                それは、一日頑張ったあなたの瞳を「本当にリセット」できているとは言えません。
+                            </p>
+                        </div>
+                        
+                        <div class="md:col-span-4 md:col-start-8 relative">
+                            <div class="hairline-l pl-8 py-4">
+                                <h3 class="text-lg font-serif mb-6 text-[#B8860B]">Why "Reset Glasses"?</h3>
+                                <ul class="space-y-6">
+                                    <li class="flex flex-col">
+                                        <span class="font-serif text-xl mb-1">01. 締め付けない極上の軽さ</span>
+                                        <span class="text-xs text-gray-500 tracking-wider">こめかみへの圧迫をゼロへ。掛けていることを忘れる軽量素材。</span>
+                                    </li>
+                                    <li class="flex flex-col">
+                                        <span class="font-serif text-xl mb-1">02. すっぴんを彩るデザイン</span>
+                                        <span class="text-xs text-gray-500 tracking-wider">計算されたフレームラインが、メイクを落とした素顔も美しく。</span>
+                                    </li>
+                                    <li class="flex flex-col">
+                                        <span class="font-serif text-xl mb-1">03. 瞳を守るPCレンズ</span>
+                                        <span class="text-xs text-gray-500 tracking-wider">寝る直前までのスマホタイムも、ブルーライトから優しく保護。</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- プロの提案トーク -->
+                    <div class="max-w-3xl mx-auto text-center hairline-t pt-16">
+                        <p class="text-sm tracking-[0.3em] uppercase text-gray-400 mb-6">Staff Voice</p>
+                        <p class="text-lg md:text-xl font-serif leading-loose tracking-wider text-justify-custom md:text-center italic">
+                            「靴やバッグと同じように、リラックスタイムのメガネも『自分を労るためのアイテム』にアップデートしてみませんか？<br>
+                            この軽さとクリアな視界は、明日への活力に変わるはずです。」
+                        </p>
+                        
+                        <div class="mt-16">
+                            <button onclick="resetApp()" class="text-xs tracking-widest text-gray-400 hover:text-[var(--color-ink)] transition-colors border-b border-transparent hover:border-[var(--color-ink)] pb-1">
+                                もう一度シミュレーションする
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        const screenQuestion = document.getElementById('screen-question');
+        const screenResult = document.getElementById('screen-result');
+        const visionCanvas = document.getElementById('vision-canvas');
+        const stressTitle = document.getElementById('stress-title');
+        const stressDesc = document.getElementById('stress-desc');
+        const btnReset = document.getElementById('btn-reset');
+        const resetHint = document.getElementById('reset-hint');
+        const editorialContent = document.getElementById('editorial-content');
+        
+        let currentStress = '';
+
+        // ストレスの定義
+        const stressData = {
+            kafun: {
+                title: "春一番と花粉のダメージ",
+                desc: "視界が少し白く霞み、不快感が付き纏う状態",
+                class: "effect-kafun"
+            },
+            pc: {
+                title: "PC・スマホのブルーライト",
+                desc: "画面の光で目の奥が重く、視界が沈んで感じる状態",
+                class: "effect-pc"
+            },
+            contact: {
+                title: "長時間のコンタクト着用",
+                desc: "パサつきと充血で、景色が乾いて見える状態",
+                class: "effect-contact"
+            }
+        };
+
+        // 1. ストレスを選択し、結果画面へ遷移
+        function selectStress(type) {
+            currentStress = type;
+            const data = stressData[type];
+            
+            // テキストのセット
+            stressTitle.innerHTML = `<span class="text-xs block text-gray-500 mb-2">Current State</span>${data.title}`;
+            stressDesc.innerText = data.desc;
+            
+            // キャンバスにストレスエフェクトを適用
+            visionCanvas.className = `absolute inset-0 w-full h-full ${data.class}`;
+
+            // 画面遷移アニメーション
+            screenQuestion.classList.add('opacity-0');
+            setTimeout(() => {
+                screenQuestion.classList.add('hidden');
+                screenResult.classList.remove('hidden');
+                
+                // 少し遅れて結果画面をフェードイン
+                setTimeout(() => {
+                    screenResult.classList.remove('opacity-0');
+                    // スクロールをトップへ
+                    window.scrollTo(0, 0);
+                }, 50);
+            }, 1000);
+        }
+
+        // 2. リセットメガネを掛ける（エフェクト解除＆提案表示）
+        function applyReset() {
+            // UIの変化
+            btnReset.innerHTML = '<span class="font-serif tracking-[0.2em] relative z-10 text-[#B8860B]">視界が、クリアに。</span>';
+            btnReset.classList.add('border-[#B8860B]');
+            btnReset.classList.remove('hover:bg-[var(--color-ink)]', 'hover:text-[var(--color-paper)]');
+            btnReset.disabled = true;
+            resetHint.classList.add('opacity-0');
+
+            // シミュレーションエフェクトの変化（癒やしの光へ）
+            visionCanvas.className = 'absolute inset-0 w-full h-full effect-reset';
+
+            // 提案記事セクションの表示
+            editorialContent.classList.remove('hidden');
+            setTimeout(() => {
+                editorialContent.classList.remove('opacity-0', 'translate-y-8');
+            }, 800); // エフェクトの変化を少し見せてから記事を出す
+        }
+
+        // 3. 最初に戻る
+        function resetApp() {
+            screenResult.classList.add('opacity-0');
+            setTimeout(() => {
+                screenResult.classList.add('hidden');
+                editorialContent.classList.add('hidden', 'opacity-0', 'translate-y-8');
+                
+                // ボタンを初期状態に戻す
+                btnReset.innerHTML = '<span class="font-serif tracking-[0.2em] relative z-10">リセットメガネを掛ける</span>';
+                btnReset.classList.remove('border-[#B8860B]');
+                btnReset.classList.add('hover:bg-[var(--color-ink)]', 'hover:text-[var(--color-paper)]');
+                btnReset.disabled = false;
+                resetHint.classList.remove('opacity-0');
+
+                screenQuestion.classList.remove('hidden');
+                setTimeout(() => {
+                    screenQuestion.classList.remove('opacity-0');
+                    window.scrollTo(0, 0);
+                }, 50);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
