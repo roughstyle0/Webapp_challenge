@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cheek Color Lens - Virtual Makeup Advisor</title>
+    <!-- Google Fonts: 高級感を演出する明朝体を読み込み -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif JP"', 'serif'],
+                    },
+                    colors: {
+                        'rose-gold': '#b76e79',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムCSS変数: SVGのアニメーション・カラー操作用 */
+        :root {
+            --lens-color: transparent;
+            --cheek-color: transparent;
+        }
+
+        /* 背景のオーロラ・アニメーション */
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .bg-aurora {
+            background: linear-gradient(-45deg, #fdfbfb, #fce7f3, #ffedd5, #f3e8ff);
+            background-size: 400% 400%;
+            animation: gradientMove 20s ease infinite;
+        }
+
+        /* グラスモーフィズム特有の反射光エフェクト */
+        .glass-reflect::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-20deg);
+            animation: shine 6s infinite;
+            pointer-events: none;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        /* スクロールバーの非表示（美観重視） */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* トークスクリプトのフェードトランジション */
+        #talk-script {
+            transition: opacity 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-aurora font-serif text-gray-800 min-h-screen overflow-x-hidden selection:bg-rose-300 selection:text-rose-900 pb-20 lg:pb-0">
+
+    <!-- バックグラウンドの光沢球体（デプスの演出） -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[30rem] h-[30rem] bg-rose-300/30 rounded-full blur-[80px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-orange-200/30 rounded-full blur-[80px]"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 py-8 lg:py-12 flex flex-col lg:flex-row gap-8 items-start relative z-10">
+        
+        <!-- ==========================================
+             左側：デジタル・ビューティーミラー (SVG生成)
+        =========================================== -->
+        <div class="w-full lg:w-5/12 lg:sticky lg:top-8 h-fit">
+            <!-- 鏡のフレーム（重厚なガラス感） -->
+            <div class="relative rounded-[2.5rem] p-[2px] bg-gradient-to-tr from-white/60 via-white/20 to-rose-200/40 backdrop-blur-3xl shadow-[0_15px_40px_-10px_rgba(183,110,121,0.3)]">
+                <!-- 鏡面エリア -->
+                <div class="rounded-[2.4rem] bg-white/40 backdrop-blur-xl relative overflow-hidden aspect-[3/4] flex items-center justify-center glass-reflect">
+                    
+                    <!-- SVG イラスト＆シミュレーター -->
+                    <svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" class="w-full h-full p-6 drop-shadow-xl z-10 relative">
+                        <defs>
+                            <!-- チークのポワッとしたボカシ -->
+                            <filter id="cheek-blur" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="28" />
+                            </filter>
+                            <!-- レンズ下半分グラデーション -->
+                            <linearGradient id="lens-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="35%" stop-color="transparent" />
+                                <stop offset="100%" stop-color="var(--lens-color)" />
+                            </linearGradient>
+                            <!-- レンズのガラス反射 -->
+                            <linearGradient id="glass-reflect-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="rgba(255,255,255,0.8)" />
+                                <stop offset="30%" stop-color="rgba(255,255,255,0)" />
+                                <stop offset="100%" stop-color="rgba(255,255,255,0.15)" />
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- エレガントなフェイスライン -->
+                        <path d="M 100 150 C 100 50, 300 50, 300 150 C 310 280, 270 420, 200 460 C 130 420, 90 280, 100 150 Z" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5" />
+                        <path d="M 160 440 L 140 520 M 240 440 L 260 520" stroke="#e5e7eb" stroke-width="1.5" fill="none" />
+                    
+                        <!-- 目元・眉・鼻・口のミニマルアート -->
+                        <path d="M 120 185 Q 150 165 170 185" stroke="#d1d5db" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 280 185 Q 250 165 230 185" stroke="#d1d5db" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 130 215 Q 150 205 165 215" stroke="#9ca3af" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 270 215 Q 250 205 235 215" stroke="#9ca3af" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 200 230 L 200 290 Q 205 295 210 290" stroke="#e5e7eb" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M 180 350 Q 200 360 220 350 Q 200 370 180 350 Z" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+                    
+                        <!-- 動的チークエフェクト (JSで opacity と color を操作) -->
+                        <circle cx="130" cy="290" r="50" filter="url(#cheek-blur)" fill="var(--cheek-color)" class="cheek-glow transition-all duration-[1200ms] ease-out opacity-0" />
+                        <circle cx="270" cy="290" r="50" filter="url(#cheek-blur)" fill="var(--cheek-color)" class="cheek-glow transition-all duration-[1200ms] ease-out opacity-0" />
+                    
+                        <!-- メガネフレーム (ボストン・シェイプ) -->
+                        <!-- 左レンズ -->
+                        <path d="M 110 205 C 110 175, 180 175, 180 205 C 180 260, 115 260, 110 205 Z" fill="url(#lens-grad)" stroke="#d4d4d8" stroke-width="3" class="transition-colors duration-[1200ms]" />
+                        <path d="M 110 205 C 110 175, 180 175, 180 205 C 180 260, 115 260, 110 205 Z" fill="url(#glass-reflect-grad)" />
+                        <!-- 右レンズ -->
+                        <path d="M 290 205 C 290 175, 220 175, 220 205 C 220 260, 285 260, 290 205 Z" fill="url(#lens-grad)" stroke="#d4d4d8" stroke-width="3" class="transition-colors duration-[1200ms]" />
+                        <path d="M 290 205 C 290 175, 220 175, 220 205 C 220 260, 285 260, 290 205 Z" fill="url(#glass-reflect-grad)" />
+                        <!-- ブリッジ & テンプル -->
+                        <path d="M 180 215 Q 200 200 220 215" stroke="#d4d4d8" stroke-width="3" fill="none" />
+                        <path d="M 110 215 Q 95 210 85 205" stroke="#d4d4d8" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M 290 215 Q 305 210 315 205" stroke="#d4d4d8" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    </svg>
+
+                </div>
+                <!-- 鏡下部のエレガントな装飾タグ -->
+                <div class="absolute -bottom-4 left-0 right-0 text-center z-20">
+                    <span class="inline-block px-6 py-2 rounded-full bg-white/70 backdrop-blur-xl border border-white text-xs tracking-[0.2em] text-rose-800 font-bold shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+                        BEAUTY MIRROR
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             右側：コントロールパネル＆スクリプト
+        =========================================== -->
+        <div class="w-full lg:w-7/12 flex flex-col gap-6 lg:gap-8 mt-6 lg:mt-0">
+            
+            <!-- ヘッダー -->
+            <header class="mb-2">
+                <h1 class="text-3xl lg:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-rose-800 to-amber-700 leading-tight">
+                    Cheek Color Lens <br class="hidden lg:block"/>
+                    <span class="text-xl lg:text-2xl font-normal text-rose-900/70 mt-1 block">Virtual Makeup Advisor</span>
+                </h1>
+                <p class="text-sm lg:text-base mt-4 text-rose-900/80 leading-relaxed tracking-wide font-medium">
+                    まるで「塗らないチーク」。<br>
+                    色付きレンズへの抵抗感を忘れさせる、魔法のような血色感アップ体験をお客様へ。
+                </p>
+            </header>
+
+            <!-- STEP 1: お悩み選択 -->
+            <section class="bg-white/40 backdrop-blur-2xl border border-white/60 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-200 via-rose-300 to-transparent"></div>
+                <h2 class="text-sm font-bold text-rose-800 tracking-wider mb-5 flex items-center gap-3">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                    STEP 1: お客様のお悩み
+                </h2>
+                <div class="flex flex-col gap-3" id="trouble-container">
+                    <!-- JSで動的生成 -->
+                </div>
+            </section>
+
+            <!-- STEP 2: カラー提案 -->
+            <section class="bg-white/40 backdrop-blur-2xl border border-white/60 rounded-[2rem] p-6 lg:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-200 via-rose-300 to-transparent"></div>
+                <h2 class="text-sm font-bold text-rose-800 tracking-wider mb-5 flex items-center gap-3">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                    STEP 2: 提案するカラー
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="color-container">
+                    <!-- JSで動的生成 -->
+                </div>
+            </section>
+
+            <!-- プロの提案スクリプト (ハイライト領域) -->
+            <section class="bg-gradient-to-br from-rose-900 via-rose-800 to-rose-950 text-rose-50 rounded-[2rem] p-6 lg:p-8 shadow-2xl relative overflow-hidden transform transition-all duration-500 border border-rose-700/50">
+                <!-- 背景のテクスチャ装飾 -->
+                <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                    <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+                </div>
+                
+                <h2 class="text-xs font-bold text-rose-300 tracking-[0.2em] mb-4 opacity-90 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                    PRO TALK SCRIPT
+                </h2>
+                <div id="talk-script" class="text-base lg:text-lg leading-relaxed font-medium min-h-[5rem]">
+                    <p class="opacity-70">
+                        お客様のお悩みと、気になるカラーをタップしてください。<br>
+                        魔法のように血色感がアップする様子と共に、プロの提案スクリプトがここに表示されます。
+                    </p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 仮想メイクアップ・シミュレーター Core Logic
+         * - エラーハンドリングを徹底し、堅牢に構築。
+         * - DOM要素の生成と状態管理を統合。
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // --- データ定義 ---
+                const troubles = [
+                    { id: 't1', text: '夕方になると顔が青白く、血色感がなくなる' },
+                    { id: 't2', text: '目の下のクマや、目元のくすみが気になる' },
+                    { id: 't3', text: 'お肌の黄ぐすみを飛ばして、透明感が欲しい' }
+                ];
+
+                const colors = [
+                    { 
+                        id: 'c1', name: 'ローズピンク', sub: '王道の血色感アップ', 
+                        grad: 'linear-gradient(135deg, #f472b6 0%, #be185d 100%)', 
+                        lensVar: 'rgba(236, 72, 153, 0.65)', cheekVar: 'rgba(236, 72, 153, 0.5)', 
+                        pitch: 'こちらのローズピンクが最適です。レンズの下半分にだけほんのりと色づく設計なので、サングラスのような威圧感は全くありません。まるで「塗らないチーク」のように、お顔全体をパッと華やかで血色良く見せてくれますよ。マスクをしていても表情が明るく見えると大人気です。' 
+                    },
+                    { 
+                        id: 'c2', name: 'バーガンディ', sub: '大人の上品な血色感', 
+                        grad: 'linear-gradient(135deg, #e11d48 0%, #881337 100%)', 
+                        lensVar: 'rgba(159, 18, 57, 0.65)', cheekVar: 'rgba(159, 18, 57, 0.45)', 
+                        pitch: 'こちらのバーガンディがおすすめです。深みのある色が目元を引き締め、大人の上品な血色感を与えてくれます。レンズの下半分だけのグラデーションなので、自然な陰影が生まれフェイスラインもすっきり見えます。エレガントな印象を引き立てる魔法のレンズですよ。' 
+                    },
+                    { 
+                        id: 'c3', name: 'アプリコットオレンジ', sub: 'クマ隠し・健康的な明るさ', 
+                        grad: 'linear-gradient(135deg, #fb923c 0%, #c2410c 100%)', 
+                        lensVar: 'rgba(249, 115, 22, 0.65)', cheekVar: 'rgba(249, 115, 22, 0.5)', 
+                        pitch: 'こちらのアプリコットオレンジが大変おすすめです。オレンジ系の補色効果で気になる目元のクマを自然にカバーし、健康的な明るさをプラスします。メガネをかけるだけで、まるでプロがコンシーラーとチークを乗せたような、若々しく元気な印象に仕上がりますよ。' 
+                    },
+                    { 
+                        id: 'c4', name: 'クリアラベンダー', sub: '黄ぐすみ飛ばし・透明感', 
+                        grad: 'linear-gradient(135deg, #c084fc 0%, #7e22ce 100%)', 
+                        lensVar: 'rgba(168, 85, 247, 0.65)', cheekVar: 'rgba(168, 85, 247, 0.45)', 
+                        pitch: 'こちらのクリアラベンダーがぴったりです。パープル系の色味がコントロールカラーの役割を果たし、黄ぐすみを綺麗に飛ばして圧倒的な透明感を引き出します。下半分だけの淡いグラデーションなので、涼しげで洗練された目元を自然に演出できます。' 
+                    }
+                ];
+
+                // --- 状態管理 ---
+                let state = {
+                    troubleId: null,
+                    colorId: null
+                };
+
+                // --- UI構築関数 ---
+                const renderTroubleButtons = () => {
+                    const container = document.getElementById('trouble-container');
+                    if (!container) throw new Error('trouble-container not found');
+
+                    container.innerHTML = troubles.map(t => `
+                        <button type="button" data-id="${t.id}" class="trouble-btn w-full text-left px-5 py-4 rounded-[1.25rem] bg-white/40 border border-white/80 text-rose-900 transition-all duration-300 hover:bg-white/70 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-300 relative group overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-rose-100 to-transparent opacity-0 transition-opacity duration-300 group-[.is-active]:opacity-100"></div>
+                            <div class="flex items-center justify-between relative z-10">
+                                <span class="text-sm lg:text-base font-semibold tracking-wide">${t.text}</span>
+                                <div class="w-6 h-6 rounded-full border border-rose-300 flex items-center justify-center transition-colors group-[.is-active]:bg-rose-500 group-[.is-active]:border-rose-500 bg-white/50 shadow-sm">
+                                    <svg class="w-3.5 h-3.5 text-white opacity-0 group-[.is-active]:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </div>
+                        </button>
+                    `).join('');
+
+                    container.querySelectorAll('.trouble-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const id = e.currentTarget.dataset.id;
+                            state.troubleId = (state.troubleId === id) ? null : id; // トグル機能
+                            updateUI();
+                        });
+                    });
+                };
+
+                const renderColorButtons = () => {
+                    const container = document.getElementById('color-container');
+                    if (!container) throw new Error('color-container not found');
+
+                    container.innerHTML = colors.map(c => `
+                        <button type="button" data-id="${c.id}" class="color-btn w-full flex items-center gap-3 px-4 py-4 rounded-[1.25rem] bg-white/40 border border-white/80 text-rose-900 transition-all duration-300 hover:bg-white/70 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-rose-300 relative group overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-rose-100 to-transparent opacity-0 transition-opacity duration-300 group-[.is-active]:opacity-100"></div>
+                            <div class="relative z-10 flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] border border-white/50 flex-shrink-0 transition-transform group-[.is-active]:scale-110" style="background: ${c.grad}"></div>
+                                <div class="text-left leading-tight">
+                                    <span class="block text-sm lg:text-base font-bold text-gray-800">${c.name}</span>
+                                    <span class="block text-[11px] lg:text-xs font-semibold text-rose-700/70 mt-0.5">${c.sub}</span>
+                                </div>
+                            </div>
+                            <!-- アクティブインジケーター -->
+                            <div class="absolute right-4 opacity-0 group-[.is-active]:opacity-100 transition-opacity text-rose-500">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                        </button>
+                    `).join('');
+
+                    container.querySelectorAll('.color-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            state.colorId = e.currentTarget.dataset.id;
+                            updateUI();
+                        });
+                    });
+                };
+
+                // --- UI更新＆シミュレーション実行 ---
+                const updateUI = () => {
+                    // ボタンのアクティブ状態更新
+                    document.querySelectorAll('.trouble-btn').forEach(btn => {
+                        btn.classList.toggle('is-active', btn.dataset.id === state.troubleId);
+                        btn.classList.toggle('border-rose-400', btn.dataset.id === state.troubleId);
+                    });
+                    document.querySelectorAll('.color-btn').forEach(btn => {
+                        btn.classList.toggle('is-active', btn.dataset.id === state.colorId);
+                        btn.classList.toggle('border-rose-400', btn.dataset.id === state.colorId);
+                    });
+
+                    // メイクアップ・シミュレーション (CSS変数とOpacityの更新)
+                    const root = document.documentElement;
+                    const cheeks = document.querySelectorAll('.cheek-glow');
+                    
+                    if (state.colorId) {
+                        const selectedColorData = colors.find(c => c.id === state.colorId);
+                        // CSS変数を更新し、SVG内のグラデーションと塗りつぶし色を変更
+                        root.style.setProperty('--lens-color', selectedColorData.lensVar);
+                        root.style.setProperty('--cheek-color', selectedColorData.cheekVar);
+                        // チークをフェードイン（ポワッと発色）
+                        cheeks.forEach(el => el.style.opacity = '1');
+                    } else {
+                        // カラー未選択時はリセット
+                        root.style.setProperty('--lens-color', 'transparent');
+                        root.style.setProperty('--cheek-color', 'transparent');
+                        cheeks.forEach(el => el.style.opacity = '0');
+                    }
+
+                    // トークスクリプトの更新 (フェード効果付き)
+                    updateTalkScript();
+                };
+
+                const updateTalkScript = () => {
+                    const scriptEl = document.getElementById('talk-script');
+                    if (!scriptEl) return;
+
+                    scriptEl.style.opacity = 0; // フェードアウト開始
+
+                    setTimeout(() => {
+                        if (!state.colorId) {
+                            // デフォルトメッセージ
+                            scriptEl.innerHTML = `
+                                <p class="opacity-70">
+                                    お客様のお悩みと、気になるカラーをタップしてください。<br>
+                                    魔法のように血色感がアップする様子と共に、プロの提案スクリプトがここに表示されます。
+                                </p>
+                            `;
+                        } else {
+                            // スクリプト生成
+                            const cObj = colors.find(c => c.id === state.colorId);
+                            let html = '';
+                            
+                            // お悩みが選択されている場合のプレフィックス
+                            if (state.troubleId) {
+                                const tObj = troubles.find(t => t.id === state.troubleId);
+                                html += `<span class="block mb-3 text-rose-200 text-sm lg:text-base border-b border-rose-700/50 pb-2">「${tObj.text}」がお悩みのお客様には、</span>`;
+                            }
+                            
+                            html += `
+                                <span class="block text-white leading-loose tracking-wide">
+                                    <strong class="text-xl lg:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-rose-200 to-amber-100 mr-1">${cObj.name}</strong> のレンズ。<br>
+                                    ${cObj.pitch}
+                                </span>
+                            `;
+                            scriptEl.innerHTML = html;
+                        }
+                        scriptEl.style.opacity = 1; // フェードイン
+                    }, 400); // CSSトランジションの時間と合わせる
+                };
+
+                // --- 初期化実行 ---
+                renderTroubleButtons();
+                renderColorButtons();
+
+            } catch (error) {
+                console.error("Initialization error:", error);
+                // フェイルセーフ: アプリが壊れた場合のエラーメッセージ
+                document.body.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center bg-rose-50 p-4">
+                        <div class="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md">
+                            <h2 class="text-xl font-bold text-red-600 mb-4">読み込みエラー</h2>
+                            <p class="text-gray-600 mb-6">アプリの初期化中に問題が発生しました。ページを再読み込みしてください。</p>
+                            <button onclick="location.reload()" class="px-6 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700">再読み込み</button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
