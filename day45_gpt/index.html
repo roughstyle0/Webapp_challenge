@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ブルーライト＆光害ダメージ 蓄積スキャナー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"SFMono-Regular"', '"Consolas"', '"Menlo"', 'monospace'],
+            sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', 'sans-serif']
+          },
+          colors: {
+            cyber: {
+              bg: '#03070b',
+              panel: '#07141c',
+              line: '#123545',
+              blue: '#47d7ff',
+              blue2: '#1a8cff',
+              green: '#73ffbf',
+              green2: '#00ff9c',
+              danger: '#7cc7ff',
+              text: '#d9f8ff'
+            }
+          },
+          keyframes: {
+            sweep: {
+              '0%': { transform: 'translateY(-8%)', opacity: '0' },
+              '12%': { opacity: '0.85' },
+              '100%': { transform: 'translateY(108%)', opacity: '0' }
+            },
+            flicker: {
+              '0%, 19%, 21%, 63%, 65%, 100%': { opacity: '1' },
+              '20%, 64%': { opacity: '0.65' }
+            },
+            pulseGrid: {
+              '0%, 100%': { opacity: '0.18' },
+              '50%': { opacity: '0.34' }
+            },
+            beamMove: {
+              '0%': { transform: 'translateX(-8px) scaleX(0.96)', opacity: '0.18' },
+              '50%': { transform: 'translateX(0px) scaleX(1)', opacity: '1' },
+              '100%': { transform: 'translateX(8px) scaleX(0.96)', opacity: '0.18' }
+            },
+            strike: {
+              '0%': { transform: 'translateX(0)', opacity: '0.15' },
+              '30%': { opacity: '1' },
+              '100%': { transform: 'translateX(16px)', opacity: '0.15' }
+            },
+            shield: {
+              '0%, 100%': { opacity: '0.22', transform: 'scale(0.98)' },
+              '50%': { opacity: '0.9', transform: 'scale(1.03)' }
+            },
+            rebound: {
+              '0%': { transform: 'translateX(0) rotate(0deg)', opacity: '0' },
+              '20%': { opacity: '1' },
+              '100%': { transform: 'translateX(-38px) rotate(-18deg)', opacity: '0' }
+            },
+            hudBlink: {
+              '0%, 100%': { opacity: '0.45' },
+              '50%': { opacity: '1' }
+            },
+            percentGlow: {
+              '0%, 100%': { textShadow: '0 0 12px rgba(71,215,255,.35)' },
+              '50%': { textShadow: '0 0 26px rgba(71,215,255,.78)' }
+            }
+          },
+          animation: {
+            sweep: 'sweep 3.4s linear infinite',
+            flicker: 'flicker 3s linear infinite',
+            pulseGrid: 'pulseGrid 2.8s ease-in-out infinite',
+            beamMove: 'beamMove 1.2s linear infinite',
+            strike: 'strike 1s linear infinite',
+            shield: 'shield 1.8s ease-in-out infinite',
+            rebound: 'rebound 1.2s ease-out infinite',
+            hudBlink: 'hudBlink 1.8s ease-in-out infinite',
+            percentGlow: 'percentGlow 2s ease-in-out infinite'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root{
+      --bg:#03070b;
+      --grid:rgba(71,215,255,.08);
+      --line:rgba(71,215,255,.22);
+      --line-strong:rgba(115,255,191,.36);
+      --text:#d9f8ff;
+      --blue:#47d7ff;
+      --blue2:#1a8cff;
+      --green:#73ffbf;
+      --green2:#00ff9c;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(26,140,255,.14), transparent 20%),
+        radial-gradient(circle at 85% 18%, rgba(0,255,156,.08), transparent 18%),
+        radial-gradient(circle at 50% 120%, rgba(71,215,255,.10), transparent 30%),
+        linear-gradient(180deg, #020406 0%, #03070b 36%, #020508 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 34px 34px;
+      opacity: .55;
+      animation: pulseGrid 2.8s ease-in-out infinite;
+    }
+
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.00) 0px,
+          rgba(255,255,255,0.00) 2px,
+          rgba(71,215,255,0.018) 3px,
+          rgba(255,255,255,0.00) 4px
+        );
+      opacity: .45;
+      mix-blend-mode: screen;
+    }
+
+    .hud-shell{
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(71,215,255,.18);
+      background:
+        linear-gradient(180deg, rgba(7,20,28,.72), rgba(2,7,11,.82));
+      clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px));
+    }
+
+    .hud-shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(90deg, transparent, rgba(71,215,255,.07), transparent),
+        linear-gradient(180deg, rgba(115,255,191,.05), transparent 28%, transparent 72%, rgba(71,215,255,.05));
+    }
+
+    .corner{
+      position:absolute;
+      width:22px;
+      height:22px;
+      border-color: rgba(71,215,255,.85);
+      pointer-events:none;
+      filter: drop-shadow(0 0 8px rgba(71,215,255,.35));
+    }
+    .corner.tl{ top:10px; left:10px; border-top:2px solid; border-left:2px solid; }
+    .corner.tr{ top:10px; right:10px; border-top:2px solid; border-right:2px solid; }
+    .corner.bl{ bottom:10px; left:10px; border-bottom:2px solid; border-left:2px solid; }
+    .corner.br{ bottom:10px; right:10px; border-bottom:2px solid; border-right:2px solid; }
+
+    .scan-line{
+      position:absolute;
+      inset:auto 0 0 0;
+      height:22%;
+      background: linear-gradient(180deg, rgba(71,215,255,0), rgba(71,215,255,.18), rgba(115,255,191,.08), rgba(71,215,255,0));
+      pointer-events:none;
+      animation: sweep 3.4s linear infinite;
+      mix-blend-mode: screen;
+    }
+
+    .glow-blue{
+      text-shadow: 0 0 10px rgba(71,215,255,.4), 0 0 22px rgba(71,215,255,.16);
+    }
+    .glow-green{
+      text-shadow: 0 0 10px rgba(115,255,191,.45), 0 0 22px rgba(115,255,191,.18);
+    }
+    .line-glow{
+      box-shadow: 0 0 0 1px rgba(71,215,255,.16), inset 0 0 24px rgba(71,215,255,.05);
+    }
+
+    .select-btn{
+      position:relative;
+      width:100%;
+      text-align:left;
+      padding:16px 14px;
+      border:1px solid rgba(71,215,255,.18);
+      background:
+        linear-gradient(180deg, rgba(7,20,28,.7), rgba(3,10,14,.9));
+      color:#d9f8ff;
+      clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+      transition: .25s ease;
+      overflow:hidden;
+    }
+    .select-btn::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(90deg, transparent, rgba(71,215,255,.16), transparent);
+      transform: translateX(-120%);
+      transition: transform .6s ease;
+    }
+    .select-btn:hover::before,
+    .select-btn:focus-visible::before{
+      transform: translateX(120%);
+    }
+    .select-btn:hover,
+    .select-btn:focus-visible{
+      border-color: rgba(115,255,191,.55);
+      box-shadow: inset 0 0 28px rgba(71,215,255,.08), 0 0 18px rgba(71,215,255,.09);
+      outline:none;
+    }
+    .select-btn.active{
+      border-color: rgba(115,255,191,.85);
+      box-shadow:
+        inset 0 0 32px rgba(115,255,191,.06),
+        0 0 0 1px rgba(115,255,191,.24),
+        0 0 22px rgba(71,215,255,.12);
+    }
+
+    .lens-stage{
+      position: relative;
+      min-height: 430px;
+    }
+
+    .lens-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    @media (min-width: 900px){
+      .lens-grid{
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .lens-panel{
+      position:relative;
+      min-height: 260px;
+      border:1px solid rgba(71,215,255,.16);
+      background:
+        linear-gradient(180deg, rgba(5,14,20,.75), rgba(2,8,12,.9));
+      clip-path: polygon(0 12px, 12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px));
+      overflow:hidden;
+    }
+
+    .lens-panel::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(90deg, rgba(71,215,255,.06) 1px, transparent 1px),
+        linear-gradient(rgba(71,215,255,.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+      opacity:.3;
+      pointer-events:none;
+    }
+
+    .lens-header{
+      position:absolute;
+      top:12px;
+      left:12px;
+      right:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      z-index:2;
+    }
+
+    .lens-area{
+      position:relative;
+      min-height:260px;
+      padding:62px 12px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .ray-field{
+      position:absolute;
+      left:4%;
+      top:18%;
+      bottom:14%;
+      width:46%;
+      pointer-events:none;
+      z-index:1;
+    }
+
+    .ray{
+      position:absolute;
+      left:0;
+      height:3px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(71,215,255,0), rgba(71,215,255,.95) 28%, rgba(26,140,255,.95) 72%, rgba(71,215,255,.12));
+      filter: drop-shadow(0 0 8px rgba(71,215,255,.6));
+      animation: beamMove 1.2s linear infinite;
+      transform-origin:left center;
+    }
+
+    .ray.r1{ top:16%; width:88%; animation-delay:.1s; }
+    .ray.r2{ top:32%; width:96%; animation-delay:.35s; }
+    .ray.r3{ top:48%; width:84%; animation-delay:.55s; }
+    .ray.r4{ top:64%; width:92%; animation-delay:.8s; }
+
+    .lens-shape{
+      position:relative;
+      width:min(150px, 42vw);
+      aspect-ratio: 0.82 / 1;
+      border:2px solid rgba(71,215,255,.7);
+      background:
+        linear-gradient(180deg, rgba(130,225,255,.13), rgba(71,215,255,.06) 42%, rgba(2,8,12,.18)),
+        radial-gradient(circle at 50% 22%, rgba(255,255,255,.12), transparent 36%);
+      clip-path: polygon(18% 0, 82% 0, 100% 16%, 100% 84%, 82% 100%, 18% 100%, 0 84%, 0 16%);
+      box-shadow:
+        inset 0 0 26px rgba(71,215,255,.12),
+        0 0 28px rgba(71,215,255,.12);
+      z-index:2;
+    }
+
+    .lens-shape::before{
+      content:"";
+      position:absolute;
+      inset:12% 8%;
+      border:1px solid rgba(115,255,191,.18);
+      clip-path: inherit;
+      opacity:.5;
+    }
+
+    .eye-node{
+      position:absolute;
+      right:7%;
+      top:50%;
+      transform:translateY(-50%);
+      width:min(92px, 25vw);
+      aspect-ratio: 1.6 / 1;
+      border:1px solid rgba(115,255,191,.4);
+      border-radius: 999px;
+      box-shadow: inset 0 0 20px rgba(115,255,191,.06), 0 0 16px rgba(115,255,191,.08);
+      z-index:2;
+      overflow:hidden;
+    }
+
+    .eye-node::before{
+      content:"";
+      position:absolute;
+      inset:18% 23%;
+      border-radius:999px;
+      border:1px solid rgba(71,215,255,.75);
+      box-shadow: 0 0 16px rgba(71,215,255,.14);
+    }
+
+    .eye-node::after{
+      content:"";
+      position:absolute;
+      inset:34% 41%;
+      border-radius:999px;
+      background: radial-gradient(circle, rgba(71,215,255,.9), rgba(71,215,255,.22) 60%, rgba(71,215,255,0) 70%);
+      box-shadow: 0 0 14px rgba(71,215,255,.52);
+    }
+
+    .through-rays,
+    .block-effects{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:3;
+    }
+
+    .through-ray{
+      position:absolute;
+      left:58%;
+      height:3px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(71,215,255,.4), rgba(115,199,255,1), rgba(217,248,255,.2));
+      filter: drop-shadow(0 0 8px rgba(71,215,255,.7));
+      animation: strike 1s linear infinite;
+    }
+
+    .through-ray.t1{ top:34%; width:26%; animation-delay:.15s; }
+    .through-ray.t2{ top:50%; width:30%; animation-delay:.4s; }
+    .through-ray.t3{ top:66%; width:22%; animation-delay:.62s; }
+
+    .impact-ring{
+      position:absolute;
+      right:11%;
+      top:50%;
+      width:52px;
+      height:52px;
+      border-radius:999px;
+      border:1px solid rgba(124,199,255,.75);
+      transform:translateY(-50%);
+      opacity:.6;
+      box-shadow: 0 0 18px rgba(71,215,255,.24);
+      animation: shield 1.5s ease-in-out infinite;
+    }
+
+    .shield-arc{
+      position:absolute;
+      left:52%;
+      top:50%;
+      width:52px;
+      height:160px;
+      transform: translate(-50%, -50%);
+      border-left:2px solid rgba(115,255,191,.95);
+      border-top:2px solid rgba(115,255,191,.48);
+      border-bottom:2px solid rgba(115,255,191,.48);
+      border-radius: 80px 0 0 80px;
+      filter: drop-shadow(0 0 8px rgba(115,255,191,.4));
+      opacity:.9;
+      animation: shield 1.8s ease-in-out infinite;
+    }
+
+    .shield-arc::before{
+      content:"";
+      position:absolute;
+      inset:-8px -10px -8px -6px;
+      border-left:1px solid rgba(71,215,255,.4);
+      border-top:1px solid rgba(71,215,255,.24);
+      border-bottom:1px solid rgba(71,215,255,.24);
+      border-radius: 90px 0 0 90px;
+    }
+
+    .bounce{
+      position:absolute;
+      left:44%;
+      height:3px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(115,255,191,.05), rgba(115,255,191,1), rgba(71,215,255,.1));
+      filter: drop-shadow(0 0 8px rgba(115,255,191,.55));
+      transform-origin:left center;
+      animation: rebound 1.2s ease-out infinite;
+    }
+
+    .bounce.b1{ top:36%; width:20%; animation-delay:.1s; }
+    .bounce.b2{ top:51%; width:24%; animation-delay:.38s; }
+    .bounce.b3{ top:66%; width:18%; animation-delay:.7s; }
+
+    .shield-spark{
+      position:absolute;
+      left:50%;
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: radial-gradient(circle, rgba(115,255,191,1), rgba(71,215,255,.55) 55%, rgba(115,255,191,0) 70%);
+      filter: drop-shadow(0 0 10px rgba(115,255,191,.65));
+      animation: shield 1.25s ease-in-out infinite;
+    }
+
+    .shield-spark.s1{ top:32%; animation-delay:.12s; }
+    .shield-spark.s2{ top:48%; animation-delay:.44s; }
+    .shield-spark.s3{ top:64%; animation-delay:.78s; }
+
+    .meter-shell{
+      position:relative;
+      border:1px solid rgba(71,215,255,.18);
+      background: linear-gradient(180deg, rgba(5,14,20,.68), rgba(2,8,12,.88));
+      clip-path: polygon(0 12px, 12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px));
+    }
+
+    .meter-track{
+      position:relative;
+      height:10px;
+      border:1px solid rgba(71,215,255,.24);
+      background: rgba(8,25,34,.7);
+      overflow:hidden;
+    }
+
+    .meter-fill{
+      position:absolute;
+      inset:0 auto 0 0;
+      width:0%;
+      background:
+        linear-gradient(90deg, rgba(71,215,255,.72), rgba(26,140,255,.92) 55%, rgba(115,255,191,.92));
+      box-shadow: 0 0 16px rgba(71,215,255,.28);
+      transition: width 1.7s cubic-bezier(.2,.8,.15,1);
+    }
+
+    .meter-fill::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+      animation: beamMove 1.1s linear infinite;
+    }
+
+    .tiny-label{
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: rgba(217,248,255,.68);
+    }
+
+    .divider-line{
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(71,215,255,.5), transparent);
+    }
+
+    .data-row{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      min-width:0;
+    }
+
+    .data-row::before{
+      content:"";
+      flex:0 0 8px;
+      height:8px;
+      margin-top:11px;
+      background: rgba(115,255,191,.95);
+      box-shadow: 0 0 12px rgba(115,255,191,.65);
+    }
+
+    .status-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(115,255,191,.34);
+      padding:6px 10px;
+      font-size:12px;
+      color: var(--text);
+      background: rgba(2,10,14,.5);
+      clip-path: polygon(0 6px, 6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px));
+    }
+
+    .status-chip::before{
+      content:"";
+      width:8px;
+      height:8px;
+      background: rgba(115,255,191,.95);
+      box-shadow: 0 0 10px rgba(115,255,191,.65);
+    }
+
+    .fade-swap{
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .fade-swap.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 420px){
+      .lens-stage{ min-height: 380px; }
+      .lens-panel{ min-height: 235px; }
+      .lens-area{ min-height: 235px; padding-top: 58px; }
+      .lens-shape{ width: 118px; }
+      .eye-node{ width: 74px; }
+    }
+  </style>
+</head>
+<body class="font-sans text-cyber-text">
+  <main class="relative px-4 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-8">
+    <section class="max-w-7xl mx-auto">
+      <div class="hud-shell line-glow p-4 sm:p-6 lg:p-8">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="scan-line"></div>
+
+        <div class="flex flex-col gap-5 lg:gap-7">
+          <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div class="min-w-0">
+              <p class="tiny-label glow-blue">optical sales support / blue light hazard scanner</p>
+              <h1 class="mt-2 text-[clamp(1.75rem,5vw,4.1rem)] leading-[1.06] font-black tracking-[0.08em] uppercase glow-blue break-words">
+                蓄積ダメージ<br class="sm:hidden"> スキャナー
+              </h1>
+              <p class="mt-4 max-w-3xl text-sm sm:text-base lg:text-lg leading-7 text-cyber-text/80">
+                新社会人のデジタル接触時間をその場でスキャンし、
+                <span class="text-cyan-300 glow-blue">標準レンズ</span>と
+                <span class="text-emerald-300 glow-green">高機能PCレンズ</span>の差を
+                近未来HUDで可視化。新人スタッフでも、高単価レンズの価値を“体感型”で説明できます。
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 sm:gap-3">
+              <span class="status-chip">scan online</span>
+              <span class="status-chip">mobile-safe layout</span>
+              <span class="status-chip">sales mode ready</span>
+            </div>
+          </div>
+
+          <div class="divider-line"></div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-4 lg:gap-6">
+            <aside class="min-w-0">
+              <div class="hud-shell p-4 sm:p-5">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <p class="tiny-label glow-blue">input / daily device exposure</p>
+                <h2 class="mt-3 text-xl sm:text-2xl font-bold tracking-[0.08em] uppercase glow-blue">
+                  使用時間を選択
+                </h2>
+                <p class="mt-3 text-sm sm:text-[15px] leading-7 text-cyber-text/78">
+                  接客時にお客様の1日のPC・スマホ時間に近いものを選んでください。
+                </p>
+
+                <div class="mt-5 grid gap-3">
+                  <button class="select-btn active device-btn" data-scene="light" aria-pressed="true">
+                    <div class="tiny-label mb-1 glow-blue">mild exposure</div>
+                    <div class="text-base sm:text-lg font-bold tracking-[0.06em]">3時間未満</div>
+                    <div class="mt-1 text-sm text-cyber-text/70">軽度 / 短時間接触</div>
+                  </button>
+
+                  <button class="select-btn device-btn" data-scene="medium" aria-pressed="false">
+                    <div class="tiny-label mb-1 glow-blue">moderate exposure</div>
+                    <div class="text-base sm:text-lg font-bold tracking-[0.06em]">3〜7時間</div>
+                    <div class="mt-1 text-sm text-cyber-text/70">中度 / 日中の接触が長い</div>
+                  </button>
+
+                  <button class="select-btn device-btn" data-scene="heavy" aria-pressed="false">
+                    <div class="tiny-label mb-1 glow-blue">severe exposure</div>
+                    <div class="text-base sm:text-lg font-bold tracking-[0.06em]">7時間以上</div>
+                    <div class="mt-1 text-sm text-cyber-text/70">重度 / 蓄積ダメージ大</div>
+                  </button>
+                </div>
+
+                <p id="helperText" class="mt-4 text-xs sm:text-sm leading-6 text-cyber-text/68">
+                  選択に応じて、スキャン数値・比較ビジュアル・提案トークが自動で変わります。
+                </p>
+              </div>
+            </aside>
+
+            <section class="min-w-0 flex flex-col gap-4 lg:gap-6">
+              <div class="hud-shell p-3 sm:p-4 lg:p-5 lens-stage">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div class="scan-line"></div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <p class="tiny-label glow-blue">lens performance comparison</p>
+                    <h2 class="mt-1 text-lg sm:text-2xl font-bold tracking-[0.08em] uppercase glow-blue">
+                      光害透過・防御スキャン
+                    </h2>
+                  </div>
+                  <div class="text-xs sm:text-sm text-cyber-text/70">
+                    左: 標準レンズ / 右: 高機能PCレンズ
+                  </div>
+                </div>
+
+                <div class="lens-grid">
+                  <div class="lens-panel">
+                    <div class="lens-header">
+                      <div>
+                        <p class="tiny-label">standard lens</p>
+                        <p class="text-sm sm:text-base font-bold tracking-[0.06em] text-cyan-200 glow-blue">
+                          標準レンズ
+                        </p>
+                      </div>
+                      <div class="tiny-label text-right">pass-through risk</div>
+                    </div>
+                    <div class="lens-area">
+                      <div class="ray-field" aria-hidden="true">
+                        <span class="ray r1"></span>
+                        <span class="ray r2"></span>
+                        <span class="ray r3"></span>
+                        <span class="ray r4"></span>
+                      </div>
+                      <div class="lens-shape" aria-hidden="true"></div>
+                      <div class="eye-node" aria-hidden="true"></div>
+                      <div class="through-rays" aria-hidden="true">
+                        <span class="through-ray t1"></span>
+                        <span class="through-ray t2"></span>
+                        <span class="through-ray t3"></span>
+                        <span class="impact-ring"></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="lens-panel">
+                    <div class="lens-header">
+                      <div>
+                        <p class="tiny-label">high performance pc lens</p>
+                        <p class="text-sm sm:text-base font-bold tracking-[0.06em] text-emerald-300 glow-green">
+                          高機能PCレンズ
+                        </p>
+                      </div>
+                      <div class="tiny-label text-right">reflect / absorb shield</div>
+                    </div>
+                    <div class="lens-area">
+                      <div class="ray-field" aria-hidden="true">
+                        <span class="ray r1"></span>
+                        <span class="ray r2"></span>
+                        <span class="ray r3"></span>
+                        <span class="ray r4"></span>
+                      </div>
+                      <div class="lens-shape" aria-hidden="true"></div>
+                      <div class="eye-node" aria-hidden="true"></div>
+                      <div class="block-effects" aria-hidden="true">
+                        <span class="shield-arc"></span>
+                        <span class="bounce b1"></span>
+                        <span class="bounce b2"></span>
+                        <span class="bounce b3"></span>
+                        <span class="shield-spark s1"></span>
+                        <span class="shield-spark s2"></span>
+                        <span class="shield-spark s3"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 sm:mt-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
+                  <div class="min-w-0">
+                    <p id="scanHeadline" class="text-sm sm:text-base lg:text-lg font-semibold tracking-[0.04em] text-cyan-200 glow-blue">
+                      軽度でも、反射光と透過光は毎日少しずつ蓄積します。
+                    </p>
+                    <p id="scanSubtext" class="mt-2 text-sm sm:text-[15px] leading-7 text-cyber-text/76">
+                      短時間利用でも、スマホ・PC・室内照明の反射はゼロになりません。標準レンズでは通過する刺激を、高機能PCレンズは抑制しやすくなります。
+                    </p>
+                  </div>
+
+                  <div class="meter-shell p-4">
+                    <p class="tiny-label glow-blue">accumulated scan value</p>
+                    <div class="mt-2 flex items-end justify-between gap-3">
+                      <div>
+                        <div id="damagePercent" class="text-[2rem] sm:text-[2.4rem] font-black tracking-[0.08em] text-cyan-300 glow-blue animate-percentGlow">
+                          18%
+                        </div>
+                        <div id="damageLevel" class="text-xs sm:text-sm text-cyber-text/70">
+                          mild accumulation
+                        </div>
+                      </div>
+                      <div class="tiny-label text-right text-cyber-text/60">
+                        eye load<br>estimated
+                      </div>
+                    </div>
+                    <div class="mt-4 meter-track">
+                      <div id="meterFill" class="meter-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 lg:gap-6">
+                <div class="hud-shell p-4 sm:p-5 fade-swap show" id="analysisBlock">
+                  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                  <p class="tiny-label glow-blue">scan interpretation</p>
+                  <h3 id="analysisTitle" class="mt-2 text-xl sm:text-2xl font-bold tracking-[0.06em] uppercase glow-blue">
+                    軽度接触でも、説明の入口は作れます。
+                  </h3>
+                  <div class="mt-4 space-y-3 text-sm sm:text-[15px] leading-7 text-cyber-text/80">
+                    <div class="data-row"><p id="point1">短時間でも、画面の眩しさや反射はゼロにはなりません。</p></div>
+                    <div class="data-row"><p id="point2">標準レンズは“見える”ことが中心で、反射光対策までは十分に説明しづらいです。</p></div>
+                    <div class="data-row"><p id="point3">高機能PCレンズは、長時間ユーザーだけでなく“これから増える人”にも提案しやすいです。</p></div>
+                  </div>
+                </div>
+
+                <div class="hud-shell p-4 sm:p-5 fade-swap show" id="talkBlock">
+                  <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                  <p class="tiny-label glow-green">staff proposal talk</p>
+                  <h3 class="mt-2 text-xl sm:text-2xl font-bold tracking-[0.06em] uppercase glow-green">
+                    そのまま読める提案トーク
+                  </h3>
+                  <p id="talkLead" class="mt-4 text-base sm:text-lg lg:text-xl leading-8 font-semibold text-emerald-300 glow-green">
+                    ブルーライトって“色”だけじゃなく、画面の反射や眩しさも疲れに関係しやすいんです。
+                  </p>
+                  <p id="talkBody" class="mt-3 text-sm sm:text-[15px] leading-7 text-cyber-text/80">
+                    スマホのナイトモードだけでは防ぎきれない反射光もあるので、<span class="text-emerald-300">高機能PCレンズ</span>にすると、画面を見る時間が増えた時でも目の負担説明がしやすくなります。
+                  </p>
+
+                  <div class="divider-line my-4"></div>
+
+                  <div class="space-y-3 text-sm sm:text-[15px] leading-7">
+                    <div>
+                      <p class="tiny-label mb-1">primary suggestion</p>
+                      <p id="solution1" class="text-cyan-200">ブルーライトカット＋反射防止の高機能PCレンズ</p>
+                    </div>
+                    <div>
+                      <p class="tiny-label mb-1">alternative</p>
+                      <p id="solution2" class="text-cyan-200">反射防止性能を強めた上位コートレンズ</p>
+                    </div>
+                    <div>
+                      <p class="tiny-label mb-1">closing phrase</p>
+                      <p id="closing" class="text-cyber-text/80">
+                        「使う時間が長くなる前から備えておくと、働き始めてからの見え方がかなり楽になりますよ」と締めると自然です。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-xs sm:text-sm text-cyber-text/60 leading-6">
+                  接客ポイント: “ブルーライト色そのもの”だけでなく、
+                  <span class="text-cyan-300">反射・眩しさ・長時間視認</span>までセットで説明すると高機能レンズの価値が伝わりやすくなります。
+                </p>
+                <button id="resetBtn" class="select-btn sm:max-w-[220px]">
+                  <div class="tiny-label">reset scan</div>
+                  <div class="text-sm sm:text-base font-bold tracking-[0.06em]">初期スキャンに戻す</div>
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const sceneData = {
+        light: {
+          percent: 18,
+          level: 'mild accumulation',
+          headline: '軽度でも、反射光と透過光は毎日少しずつ蓄積します。',
+          subtext: '短時間利用でも、スマホ・PC・室内照明の反射はゼロになりません。標準レンズでは通過する刺激を、高機能PCレンズは抑制しやすくなります。',
+          analysisTitle: '軽度接触でも、説明の入口は作れます。',
+          point1: '短時間でも、画面の眩しさや反射はゼロにはなりません。',
+          point2: '標準レンズは“見える”ことが中心で、反射光対策までは十分に説明しづらいです。',
+          point3: '高機能PCレンズは、長時間ユーザーだけでなく“これから増える人”にも提案しやすいです。',
+          talkLead: 'ブルーライトって“色”だけじゃなく、画面の反射や眩しさも疲れに関係しやすいんです。',
+          talkBody: 'スマホのナイトモードだけでは防ぎきれない反射光もあるので、<span class="text-emerald-300">高機能PCレンズ</span>にすると、画面を見る時間が増えた時でも目の負担説明がしやすくなります。',
+          solution1: 'ブルーライトカット＋反射防止の高機能PCレンズ',
+          solution2: '反射防止性能を強めた上位コートレンズ',
+          closing: '「使う時間が長くなる前から備えておくと、働き始めてからの見え方がかなり楽になりますよ」と締めると自然です。'
+        },
+        medium: {
+          percent: 52,
+          level: 'moderate accumulation',
+          headline: '中度ゾーンでは、透過光と反射光の差が体感差になりやすいです。',
+          subtext: '日中ずっとPC、休憩中はスマホという生活になると、眩しさ・チラつき・集中力低下を感じやすくなります。ここで標準レンズとの差を見せると、高機能レンズの価値が理解されやすくなります。',
+          analysisTitle: '説明の主軸を“長時間化”に置ける段階です。',
+          point1: '3〜7時間は、仕事でも私生活でも画面を見る時間が固定化しやすいゾーンです。',
+          point2: '標準レンズでは青い光線がそのまま目方向へ抜けるイメージを見せると理解されやすいです。',
+          point3: '高機能PCレンズは、ブルーライト対策だけでなく反射防止による快適性でも差別化できます。',
+          talkLead: 'このくらい使う方だと、夜だけでなく日中の反射ストレスも無視しにくいんです。',
+          talkBody: 'ブルーライトカットだけでなく、<span class="text-emerald-300">反射防止コート</span>がしっかりしているレンズにすると、スマホのナイトモードでは防ぎきれない“跳ね返りの眩しさ”までケアしやすくなります。',
+          solution1: 'ブルーライトカット＋高反射防止のPCレンズ',
+          solution2: '仕事用メガネとして上位コートレンズを選ぶ',
+          closing: '「仕事で毎日使うなら、フレームよりレンズ性能で差が出やすいです」と伝えると、高単価でも納得につながりやすいです。'
+        },
+        heavy: {
+          percent: 86,
+          level: 'severe accumulation',
+          headline: '重度接触では、標準レンズの“素通り感”が強い弱点になります。',
+          subtext: '7時間以上のユーザーは、PC・スマホ・照明・外光反射まで含めて刺激の総量が大きくなりやすい層です。高機能PCレンズは“贅沢品”ではなく、使用環境に合った装備として提案できます。',
+          analysisTitle: '最も高機能レンズ提案が通しやすい状態です。',
+          point1: '長時間ユーザーほど、透過光だけでなく反射・眩しさ・コントラスト低下が悩みになりやすいです。',
+          point2: 'この層には“スマホ設定だけでは防ぎきれない”という説明が非常に有効です。',
+          point3: '高機能PCレンズは、見え方の快適性と仕事効率の両面で価値を伝えられます。',
+          talkLead: 'ここまで使う方は、レンズを変えるだけで快適さの差が出やすいです。',
+          talkBody: 'スマホのナイトモードや画面の明るさ調整だけでは、<span class="text-emerald-300">反射光や映り込み</span>までは抑えきれません。だからこそ、<span class="text-emerald-300">ブルーライトカット＋高反射防止＋見やすさ設計</span>が入った高機能PCレンズの価値がはっきり出ます。',
+          solution1: 'ブルーライトカット＋高反射防止＋高機能PCレンズ',
+          solution2: '長時間作業向けの上位設計レンズを選ぶ',
+          closing: '「毎日長時間使うなら、レンズは消耗品ではなく仕事道具です」と言い切ると、価格より必要性で伝えやすくなります。'
+        }
+      };
+
+      const buttons = [...document.querySelectorAll('.device-btn')];
+      const helperText = document.getElementById('helperText');
+      const damagePercent = document.getElementById('damagePercent');
+      const damageLevel = document.getElementById('damageLevel');
+      const meterFill = document.getElementById('meterFill');
+
+      const refs = {
+        headline: document.getElementById('scanHeadline'),
+        subtext: document.getElementById('scanSubtext'),
+        analysisTitle: document.getElementById('analysisTitle'),
+        point1: document.getElementById('point1'),
+        point2: document.getElementById('point2'),
+        point3: document.getElementById('point3'),
+        talkLead: document.getElementById('talkLead'),
+        talkBody: document.getElementById('talkBody'),
+        solution1: document.getElementById('solution1'),
+        solution2: document.getElementById('solution2'),
+        closing: document.getElementById('closing')
+      };
+
+      const swapBlocks = [
+        document.getElementById('analysisBlock'),
+        document.getElementById('talkBlock')
+      ];
+
+      let countAnimation = null;
+
+      function animatePercent(target) {
+        if (countAnimation) cancelAnimationFrame(countAnimation);
+
+        const currentValue = parseInt(damagePercent.textContent, 10) || 0;
+        const start = currentValue;
+        const end = Number.isFinite(target) ? target : 0;
+        const duration = 1400;
+        let startTime = null;
+
+        function tick(timestamp) {
+          if (!startTime) startTime = timestamp;
+          const progress = Math.min((timestamp - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const value = Math.round(start + (end - start) * eased);
+          damagePercent.textContent = value + '%';
+          meterFill.style.width = value + '%';
+
+          if (progress < 1) {
+            countAnimation = requestAnimationFrame(tick);
+          }
+        }
+
+        countAnimation = requestAnimationFrame(tick);
+      }
+
+      function replaySwapAnimation() {
+        swapBlocks.forEach((el) => {
+          el.classList.remove('show');
+        });
+        requestAnimationFrame(() => {
+          swapBlocks.forEach((el) => el.classList.add('show'));
+        });
+      }
+
+      function renderScene(key) {
+        const data = sceneData[key];
+        if (!data) {
+          helperText.textContent = 'スキャン対象の設定が見つかりませんでした。別の使用時間を選択してください。';
+          return;
+        }
+
+        refs.headline.textContent = data.headline;
+        refs.subtext.textContent = data.subtext;
+        refs.analysisTitle.textContent = data.analysisTitle;
+        refs.point1.textContent = data.point1;
+        refs.point2.textContent = data.point2;
+        refs.point3.textContent = data.point3;
+        refs.talkLead.textContent = data.talkLead;
+        refs.talkBody.innerHTML = data.talkBody;
+        refs.solution1.textContent = data.solution1;
+        refs.solution2.textContent = data.solution2;
+        refs.closing.textContent = data.closing;
+        damageLevel.textContent = data.level;
+
+        buttons.forEach((btn) => {
+          const active = btn.dataset.scene === key;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        animatePercent(data.percent);
+        replaySwapAnimation();
+        helperText.textContent = 'スキャン完了。使用時間に応じて、比較ビジュアルと提案トークを更新しました。';
+      }
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          try {
+            renderScene(btn.dataset.scene);
+          } catch (error) {
+            console.error(error);
+            helperText.textContent = 'スキャン更新中にエラーが発生しました。もう一度お試しください。';
+          }
+        });
+
+        btn.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            btn.click();
+          }
+        });
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        renderScene('light');
+      });
+
+      renderScene('light');
+    })();
+  </script>
+</body>
+</html>
