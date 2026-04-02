@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>POLARIZED LENS SIMULATOR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* =========================================
+       CSS Custom Properties & Optic Simulations
+       ========================================= */
+    :root {
+      --ui-color: #10b981; /* Emerald-500 for HUD */
+      --ui-color-dim: rgba(16, 185, 129, 0.3);
+    }
+
+    body {
+      background-color: #050505;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      /* Prevent scrolling and zooming for native app feel */
+      overscroll-behavior: none;
+      touch-action: pan-y;
+    }
+
+    /* Finder Corners */
+    .finder-corner {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-color: var(--ui-color);
+      border-style: solid;
+      opacity: 0.8;
+      transition: all 0.3s ease;
+    }
+    .corner-tl { top: 20px; left: 20px; border-width: 3px 0 0 3px; }
+    .corner-tr { top: 20px; right: 20px; border-width: 3px 3px 0 0; }
+    .corner-bl { bottom: 20px; left: 20px; border-width: 0 0 3px 3px; }
+    .corner-br { bottom: 20px; right: 20px; border-width: 0 3px 3px 0; }
+
+    /* Focus Area */
+    .focus-area {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      height: 100px;
+      border: 1px solid var(--ui-color-dim);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .focus-area::before, .focus-area::after {
+      content: '';
+      position: absolute;
+      background-color: var(--ui-color);
+      opacity: 0.6;
+    }
+    .focus-area::before { width: 10px; height: 1px; }
+    .focus-area::after { width: 1px; height: 10px; }
+
+    /* The Glare Effect (乱反射シミュレーション) */
+    .glare-layer {
+      position: absolute;
+      inset: -10%; /* Cover slightly more to allow animation movement */
+      background: 
+        linear-gradient(105deg, 
+          rgba(255,255,255,0) 0%, 
+          rgba(255,255,255,0.7) 45%, 
+          rgba(255,255,255,0.9) 50%, 
+          rgba(255,255,255,0.7) 55%, 
+          rgba(255,255,255,0) 100%),
+        rgba(255, 255, 255, 0.3);
+      background-size: 200% 200%;
+      animation: glare-move 4s infinite linear;
+      /* Blur and brightness to simulate scattered light blinding the eye */
+      backdrop-filter: blur(5px) brightness(1.3) contrast(0.8);
+      -webkit-backdrop-filter: blur(5px) brightness(1.3) contrast(0.8);
+      pointer-events: none;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+    }
+
+    @keyframes glare-move {
+      0% { background-position: 150% 150%; }
+      100% { background-position: -50% -50%; }
+    }
+
+    /* Polarized Image Enhancements */
+    .bg-image {
+      transition: filter 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: filter;
+    }
+    /* When Polarized is ON: deeper colors, higher contrast */
+    .polarized-on .bg-image {
+      filter: saturate(1.4) contrast(1.1) brightness(0.95);
+    }
+    .polarized-on .glare-layer {
+      opacity: 0;
+    }
+    .polarized-on .finder-corner {
+      border-color: #3b82f6; /* Blue indicator when polarized */
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    /* HUD Typography */
+    .hud-text {
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      letter-spacing: 0.05em;
+    }
+
+    /* Custom Scrollbar for side panel if needed */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--ui-color-dim); }
+  </style>
+</head>
+<body class="w-screen h-screen flex flex-col md:flex-row text-white overflow-hidden select-none">
+
+  <!-- =========================================
+       MAIN FINDER VIEW (Camera Viewfinder)
+       ========================================= -->
+  <main class="relative flex-1 bg-zinc-900 overflow-hidden flex flex-col" id="viewfinder">
+    
+    <!-- Image & Effects Layer -->
+    <div class="absolute inset-0 w-full h-full">
+      <!-- Default Image (Home) -->
+      <img id="scene-img" src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" 
+           class="bg-image w-full h-full object-cover" alt="Scene">
+      <!-- CSS Glare Effect (Off by default on Home, toggled by JS) -->
+      <div id="glare-effect" class="glare-layer opacity-0"></div>
+    </div>
+
+    <!-- HUD Overlay (Camera UI) -->
+    <div class="absolute inset-0 pointer-events-none z-20">
+      <div class="finder-corner corner-tl"></div>
+      <div class="finder-corner corner-tr"></div>
+      <div class="finder-corner corner-bl"></div>
+      <div class="finder-corner corner-br"></div>
+      <div class="focus-area"></div>
+
+      <!-- Top Status Bar -->
+      <div class="absolute top-4 left-0 w-full flex justify-between px-6 text-xs md:text-sm hud-text font-mono text-emerald-400">
+        <div class="flex gap-4">
+          <span id="hud-mode">MODE: STANDBY</span>
+          <span>REC <span class="animate-pulse text-red-500">●</span></span>
+        </div>
+        <div class="flex gap-4">
+          <span>ISO 100</span>
+          <span>F 2.8</span>
+          <span id="hud-lens-status" class="px-1 bg-emerald-500/20 border border-emerald-500">FILTER: OFF</span>
+        </div>
+      </div>
+
+      <!-- Bottom Meter (Decoration) -->
+      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-end gap-1 opacity-60">
+        <div class="w-1 h-2 bg-emerald-500"></div>
+        <div class="w-1 h-3 bg-emerald-500"></div>
+        <div class="w-1 h-4 bg-emerald-500"></div>
+        <div class="w-1 h-5 bg-emerald-400"></div>
+        <div class="w-1 h-3 bg-emerald-500"></div>
+        <div class="w-1 h-2 bg-emerald-500"></div>
+      </div>
+    </div>
+
+    <!-- Explanation & Talk Script Panel (HUD) -->
+    <div id="hud-panel" class="absolute bottom-16 left-4 right-4 md:left-8 md:right-auto md:w-96 bg-black/70 backdrop-blur-md border border-emerald-500/30 p-4 md:p-5 z-30 transform transition-all duration-500 translate-y-full opacity-0 pointer-events-auto">
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="text-emerald-400 font-bold text-sm md:text-base tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          偏光レンズの仕組み
+        </h3>
+        <button id="close-hud" class="text-gray-400 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <p id="theory-text" class="text-xs md:text-sm text-gray-300 mb-4 leading-relaxed">
+        ここに解説が入ります。
+      </p>
+      
+      <div class="bg-zinc-800/80 p-3 border-l-2 border-yellow-500">
+        <h4 class="text-yellow-400 font-bold text-xs mb-1 flex items-center gap-1">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"></path></svg>
+          提案トーク
+        </h4>
+        <p id="talk-text" class="text-xs md:text-sm text-white leading-relaxed font-medium">
+          ここにトークスクリプトが入ります。
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================================
+       CONTROL PANEL (Sidebar on PC / Bottom on Mobile)
+       ========================================= -->
+  <aside class="w-full md:w-80 bg-zinc-950 border-t md:border-t-0 md:border-l border-zinc-800 flex flex-col z-30 shrink-0 shadow-2xl">
+    
+    <div class="p-5 border-b border-zinc-800 bg-black/50">
+      <h1 class="text-lg font-bold tracking-widest text-zinc-100 flex items-center gap-2">
+        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        POLARIZED SIM
+      </h1>
+      <p class="text-xs text-zinc-500 mt-1">アクティビティ別 偏光レンズ体感ツール</p>
+    </div>
+
+    <!-- Activity Selection -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="activity-buttons">
+      <p class="text-xs text-emerald-400 font-mono mb-2">1. お客様の趣味を選択</p>
+      
+      <!-- Buttons injected by JS -->
+    </div>
+
+    <!-- Polarized Action Area -->
+    <div class="p-4 md:p-6 bg-zinc-900 border-t border-zinc-800 relative">
+      <div id="disabled-overlay" class="absolute inset-0 bg-zinc-950/80 backdrop-blur-[2px] z-10 flex items-center justify-center transition-opacity duration-300">
+        <span class="text-xs text-zinc-500 font-bold tracking-widest bg-black px-3 py-1 rounded">SELECT ACTIVITY FIRST</span>
+      </div>
+
+      <p class="text-xs text-emerald-400 font-mono mb-3">2. 偏光フィルターを適用</p>
+      
+      <!-- The Magic Button -->
+      <button id="toggle-filter" class="w-full relative group overflow-hidden bg-zinc-800 border border-zinc-600 p-4 transition-all duration-300 focus:outline-none active:scale-95">
+        <div class="relative z-10 flex flex-col items-center justify-center gap-1">
+          <span id="btn-status" class="text-xs font-bold text-zinc-400 tracking-widest">FILTER STATUS: OFF</span>
+          <span id="btn-text" class="text-xl font-bold text-white tracking-widest">裸眼 / 通常レンズ</span>
+        </div>
+        <!-- Active Background Effect -->
+        <div class="absolute inset-0 bg-blue-600 transform scale-x-0 origin-left transition-transform duration-500 ease-out" id="btn-bg"></div>
+      </button>
+
+      <!-- Toggle Help Text -->
+      <p class="text-center text-[10px] text-zinc-500 mt-3 hidden md:block">ボタンをタップして「アハ体験」を提供してください</p>
+    </div>
+
+  </aside>
+
+  <!-- =========================================
+       JAVASCRIPT LOGIC
+       ========================================= -->
+  <script>
+    // --- Data Definition ---
+    const scenes = {
+      fishing: {
+        id: 'fishing',
+        title: '釣り・マリンスポーツ',
+        imgUrl: 'https://images.unsplash.com/photo-1508138221679-760a23a2285b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
+        hudMode: 'MODE: MARINE',
+        theory: '水面の波によって太陽光が全方向に乱反射し、強烈なギラつき（雑光）を生み出します。偏光レンズの中に挟まれた「偏光膜」がブラインドカーテンのように働き、特定の方向の反射光だけをカットするため、水面下の魚や地形が透けて見えるようになります。',
+        talk: '「水面のギラギラで、ウキや魚影が見えなくて目が疲れませんか？このレンズを通すと、まるで水が消えたように水中の様子がクッキリ見えます。釣果に直結する、釣り人の必須アイテムです。一度使うと普通のサングラスには戻れませんよ。」'
+      },
+      drive: {
+        id: 'drive',
+        title: '日中のロングドライブ',
+        imgUrl: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
+        hudMode: 'MODE: DRIVE',
+        theory: 'ダッシュボードがフロントガラスに映り込む現象や、対向車のガラス、濡れた路面の照り返しはすべて乱反射によるものです。偏光レンズはこれらの下からの照り返しや斜めの反射光を遮断し、視界のコントラストを高めます。',
+        talk: '「晴れた日のドライブ、ダッシュボードがフロントガラスに映り込んで前が見えにくいこと、ありませんか？偏光レンズならその映り込みをスパッと消してくれます。白線もクッキリ見えて目が疲れにくいので、長距離運転後の疲労感が全く違いますよ。」'
+      },
+      golf: {
+        id: 'golf',
+        title: 'ゴルフ・アウトドア',
+        imgUrl: 'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
+        hudMode: 'MODE: GOLF',
+        theory: '芝生の葉の一枚一枚が太陽光を反射し、全体が白っぽく見える現象（ハレーション）が起きます。偏光レンズでこの表面反射をカットすることで、芝本来の緑色が鮮やかに蘇り、アンジュレーション（起伏）や芝目が正確に読み取れるようになります。',
+        talk: '「グリーン上で芝目が読めない原因は、芝生に反射する光なんです。偏光レンズをかけると、芝の反射が消えて、起伏や傾斜の影が立体的に浮かび上がって見えます。スコアアップを目指すなら、絶対に投資すべきアイテムです。」'
+      }
+    };
+
+    // --- State Management ---
+    let currentScene = null;
+    let isPolarized = false;
+
+    // --- DOM Elements ---
+    const elements = {
+      viewfinder: document.getElementById('viewfinder'),
+      sceneImg: document.getElementById('scene-img'),
+      glareEffect: document.getElementById('glare-effect'),
+      hudMode: document.getElementById('hud-mode'),
+      hudLensStatus: document.getElementById('hud-lens-status'),
+      hudPanel: document.getElementById('hud-panel'),
+      theoryText: document.getElementById('theory-text'),
+      talkText: document.getElementById('talk-text'),
+      closeHudBtn: document.getElementById('close-hud'),
+      activityButtonsContainer: document.getElementById('activity-buttons'),
+      disabledOverlay: document.getElementById('disabled-overlay'),
+      toggleFilterBtn: document.getElementById('toggle-filter'),
+      btnStatus: document.getElementById('btn-status'),
+      btnText: document.getElementById('btn-text'),
+      btnBg: document.getElementById('btn-bg')
+    };
+
+    // --- Initialization ---
+    function init() {
+      renderActivityButtons();
+      setupEventListeners();
+    }
+
+    function renderActivityButtons() {
+      Object.values(scenes).forEach(scene => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left p-4 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 hover:bg-zinc-800 transition-colors flex items-center justify-between group';
+        btn.innerHTML = `
+          <span class="font-bold text-zinc-300 group-hover:text-emerald-400 transition-colors">${scene.title}</span>
+          <svg class="w-5 h-5 text-zinc-600 group-hover:text-emerald-400 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        `;
+        btn.addEventListener('click', () => loadScene(scene.id));
+        elements.activityButtonsContainer.appendChild(btn);
+      });
+    }
+
+    // --- Core Logic ---
+    function loadScene(sceneId) {
+      const scene = scenes[sceneId];
+      if (!scene) return;
+
+      currentScene = scene;
+      
+      // Reset Polarized state when changing scenes
+      if (isPolarized) {
+        togglePolarized(); 
+      }
+
+      // Update UI
+      elements.sceneImg.src = scene.imgUrl;
+      elements.hudMode.textContent = scene.hudMode;
+      elements.theoryText.textContent = scene.theory;
+      elements.talkText.textContent = scene.talk;
+
+      // Highlight active button
+      elements.activityButtonsContainer.querySelectorAll('button').forEach(btn => {
+        const titleSpan = btn.querySelector('span').textContent;
+        if (titleSpan === scene.title) {
+          btn.classList.add('border-emerald-500', 'bg-zinc-800');
+          btn.classList.remove('border-zinc-800', 'bg-zinc-900');
+        } else {
+          btn.classList.remove('border-emerald-500', 'bg-zinc-800');
+          btn.classList.add('border-zinc-800', 'bg-zinc-900');
+        }
+      });
+
+      // Enable Simulation Controls
+      elements.disabledOverlay.classList.add('opacity-0', 'pointer-events-none');
+      
+      // Ensure glare is visible (since polarized is off)
+      elements.glareEffect.classList.remove('opacity-0');
+
+      // Hide HUD initially to allow user to trigger the "Aha!" moment first
+      hideHudPanel();
+    }
+
+    function togglePolarized() {
+      if (!currentScene) return;
+
+      isPolarized = !isPolarized;
+
+      if (isPolarized) {
+        // TURN ON POLARIZED
+        elements.viewfinder.classList.add('polarized-on');
+        
+        // Update HUD
+        elements.hudLensStatus.textContent = 'FILTER: POLARIZED';
+        elements.hudLensStatus.classList.replace('border-emerald-500', 'border-blue-500');
+        elements.hudLensStatus.classList.replace('bg-emerald-500/20', 'bg-blue-500/20');
+        elements.hudLensStatus.classList.replace('text-emerald-400', 'text-blue-400');
+
+        // Update Button UI
+        elements.btnStatus.textContent = 'FILTER STATUS: ACTIVE';
+        elements.btnStatus.classList.replace('text-zinc-400', 'text-blue-200');
+        elements.btnText.textContent = '偏光レンズ 体感中';
+        elements.btnBg.classList.replace('scale-x-0', 'scale-x-100');
+        
+        // Show Talk Script
+        showHudPanel();
+
+      } else {
+        // TURN OFF POLARIZED
+        elements.viewfinder.classList.remove('polarized-on');
+        
+        // Update HUD
+        elements.hudLensStatus.textContent = 'FILTER: OFF';
+        elements.hudLensStatus.classList.replace('border-blue-500', 'border-emerald-500');
+        elements.hudLensStatus.classList.replace('bg-blue-500/20', 'bg-emerald-500/20');
+        elements.hudLensStatus.classList.replace('text-blue-400', 'text-emerald-400');
+
+        // Update Button UI
+        elements.btnStatus.textContent = 'FILTER STATUS: OFF';
+        elements.btnStatus.classList.replace('text-blue-200', 'text-zinc-400');
+        elements.btnText.textContent = '裸眼 / 通常レンズ';
+        elements.btnBg.classList.replace('scale-x-100', 'scale-x-0');
+
+        hideHudPanel();
+      }
+    }
+
+    function showHudPanel() {
+      elements.hudPanel.classList.remove('translate-y-full', 'opacity-0');
+      elements.hudPanel.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function hideHudPanel() {
+      elements.hudPanel.classList.remove('translate-y-0', 'opacity-100');
+      elements.hudPanel.classList.add('translate-y-full', 'opacity-0');
+    }
+
+    // --- Event Listeners ---
+    function setupEventListeners() {
+      elements.toggleFilterBtn.addEventListener('click', () => {
+        if (!currentScene) {
+          // Fallback feedback if clicked before selection
+          elements.disabledOverlay.classList.remove('opacity-0');
+          setTimeout(() => elements.disabledOverlay.classList.add('opacity-0'), 500);
+          return;
+        }
+        togglePolarized();
+      });
+
+      elements.closeHudBtn.addEventListener('click', hideHudPanel);
+    }
+
+    // Run
+    init();
+
+  </script>
+</body>
+</html>
