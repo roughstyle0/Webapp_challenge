@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GW特需対応！特殊レンズ納期逆算＆トラベル・フライトボード</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* 空港のLEDボード風の世界観を構築するカスタムスタイル */
+        body {
+            background-color: #050505; /* 深い漆黒 */
+            font-family: 'VT323', monospace;
+        }
+        
+        /* フォーム要素のデフォルトスタイルをリセットしLED風に */
+        select, input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: none;
+        }
+        
+        /* カレンダーピッカーのアイコンを非表示（統一感のため） */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) sepia(1) saturate(5) hue-rotate(350deg);
+            cursor: pointer;
+        }
+
+        /* LEDパネルの枠と背景 */
+        .led-panel {
+            background: #111;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 0 5px rgba(217, 119, 6, 0.2);
+            border: 2px solid #333;
+        }
+
+        /* スキャンラインエフェクト（ブラウン管/古いLEDの横線） */
+        .scanlines {
+            position: relative;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #d97706; }
+    </style>
+</head>
+<body class="text-amber-500 min-h-screen flex flex-col items-center justify-start p-2 sm:p-6 scanlines">
+
+    <main class="w-full max-w-4xl mt-4">
+        <!-- ヘッダー -->
+        <header class="mb-8 text-center border-b-4 border-amber-600 pb-4">
+            <h1 class="text-4xl sm:text-6xl tracking-widest text-amber-500 drop-shadow-[0_0_8px_rgba(217,119,6,0.8)]">
+                FLIGHT INFORMATION
+            </h1>
+            <p class="text-lg sm:text-2xl mt-2 tracking-widest opacity-80">OPTICAL LENS DEPARTURE BOARD</p>
+            <div class="mt-2 text-xl" id="current-time">--:--:--</div>
+        </header>
+
+        <!-- 入力パネル -->
+        <section class="led-panel p-4 sm:p-6 mb-8 rounded-sm">
+            <h2 class="text-2xl mb-4 border-b border-gray-700 pb-2">▶ PASSENGER INPUT</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- レンズ選択 -->
+                <div class="flex flex-col">
+                    <label for="lens-type" class="text-sm mb-1 opacity-80 uppercase tracking-widest">Select Lens Type</label>
+                    <select id="lens-type" class="bg-black text-amber-400 border-2 border-amber-700 p-3 text-xl focus:outline-none focus:border-amber-400 focus:shadow-[0_0_10px_rgba(217,119,6,0.5)] transition-all cursor-pointer">
+                        <option value="" disabled selected>-- 選択してください --</option>
+                        <option value="0">【即日】クリアレンズ（通常メガネ）</option>
+                        <option value="10">【約10日】度付きカラーサングラス</option>
+                        <option value="14">【約14日】度付き偏光・調光レンズ</option>
+                    </select>
+                </div>
+
+                <!-- 出発日選択 -->
+                <div class="flex flex-col">
+                    <label for="departure-date" class="text-sm mb-1 opacity-80 uppercase tracking-widest">Departure Date (Use Date)</label>
+                    <input type="date" id="departure-date" class="bg-black text-amber-400 border-2 border-amber-700 p-3 text-xl focus:outline-none focus:border-amber-400 focus:shadow-[0_0_10px_rgba(217,119,6,0.5)] transition-all cursor-pointer">
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button id="calculate-btn" class="bg-amber-700 hover:bg-amber-600 text-black font-bold text-2xl py-3 px-8 rounded-sm transition-colors border-2 border-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.4)]">
+                    CALCULATE FLIGHT
+                </button>
+            </div>
+            
+            <!-- エラーメッセージ -->
+            <div id="error-message" class="hidden mt-4 text-red-500 text-xl text-center bg-red-950/50 p-2 border border-red-800">
+                ERROR: INPUT DATA IS INCOMPLETE OR INVALID.
+            </div>
+        </section>
+
+        <!-- 結果表示ボード (フライトボード風) -->
+        <section id="result-board" class="led-panel p-2 sm:p-4 rounded-sm hidden flex-col">
+            <!-- ヘッダー行 (PC用) -->
+            <div class="hidden md:grid grid-cols-5 gap-4 text-sm tracking-widest border-b border-gray-700 pb-2 mb-2 opacity-70">
+                <div>ORDER DATE</div>
+                <div>EST. ARRIVAL</div>
+                <div>DEPARTURE</div>
+                <div>GATE (LENS)</div>
+                <div>STATUS</div>
+            </div>
+
+            <!-- データ行 -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-xl sm:text-3xl items-center border-b border-gray-800 pb-4 md:pb-0 md:border-none">
+                <!-- スマホ表示時はラベル付きのフレックスボックス、PC時はグリッド配置 -->
+                <div class="flex justify-between md:block"><span class="md:hidden text-sm opacity-70">ORDER:</span> <span id="out-order" class="text-amber-200">----/--/--</span></div>
+                <div class="flex justify-between md:block"><span class="md:hidden text-sm opacity-70">ARRIVAL:</span> <span id="out-arrival" class="text-amber-200">----/--/--</span></div>
+                <div class="flex justify-between md:block"><span class="md:hidden text-sm opacity-70">DEPART:</span> <span id="out-depart" class="text-amber-200">----/--/--</span></div>
+                <div class="flex justify-between md:block whitespace-nowrap overflow-hidden text-ellipsis"><span class="md:hidden text-sm opacity-70">LENS:</span> <span id="out-lens">--------</span></div>
+                <div class="flex justify-between md:block"><span class="md:hidden text-sm opacity-70">STATUS:</span> <span id="out-status" class="animate-pulse">--------</span></div>
+            </div>
+
+            <!-- クロージングトーク (電光掲示板のメッセージエリア風) -->
+            <div class="mt-6 border-t-2 border-gray-700 pt-4">
+                <div class="text-sm opacity-70 mb-1">▶ STAFF CLOSING MESSAGE:</div>
+                <div id="out-message" class="text-2xl sm:text-3xl leading-relaxed p-4 bg-black border border-gray-800 text-amber-400">
+                    ...
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // デジタル時計の更新
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').innerText = now.toLocaleTimeString('ja-JP', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // フライトボード風の文字シャッフルアニメーション（世界観の要）
+        function scrambleText(element, newText, colorClass = 'text-amber-200') {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^*';
+            let iterations = 0;
+            const maxIterations = Math.max(10, newText.length);
+            
+            // 既存の色クラスを削除して新しい色を設定
+            element.className = '';
+            element.classList.add(colorClass);
+            
+            const interval = setInterval(() => {
+                element.innerText = newText.split('').map((char, index) => {
+                    if (char === ' ') return ' ';
+                    if (index < iterations) return newText[index];
+                    return chars[Math.floor(Math.random() * chars.length)];
+                }).join('');
+                
+                iterations += 0.5; // 文字の確定スピード
+                
+                if (iterations >= newText.length) {
+                    clearInterval(interval);
+                    element.innerText = newText;
+                }
+            }, 30);
+        }
+
+        // タイプライター風アニメーション（長文メッセージ用）
+        function typeWriter(element, text, speed = 20) {
+            element.innerText = '';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i) === '\n' ? '<br>' : text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // 日付フォーマットヘルパー (YYYY/MM/DD)
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}/${m}/${d}`;
+        }
+
+        document.getElementById('calculate-btn').addEventListener('click', () => {
+            const lensSelect = document.getElementById('lens-type');
+            const dateInput = document.getElementById('departure-date').value;
+            const errorMsg = document.getElementById('error-message');
+            const resultBoard = document.getElementById('result-board');
+
+            // --- 1. エラーハンドリング ---
+            if (!lensSelect.value || !dateInput) {
+                errorMsg.innerText = "ERROR: レンズ種類と出発日を両方入力してください。";
+                errorMsg.classList.remove('hidden');
+                resultBoard.classList.add('hidden');
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // 時間をリセットして純粋な日数計算にする
+            
+            const departureDate = new Date(dateInput);
+            departureDate.setHours(0, 0, 0, 0);
+
+            if (departureDate < today) {
+                errorMsg.innerText = "ERROR: 出発日には明日以降の日付を指定してください。";
+                errorMsg.classList.remove('hidden');
+                resultBoard.classList.add('hidden');
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+
+            // --- 2. ロジック計算 ---
+            const leadTimeDays = parseInt(lensSelect.value, 10);
+            const arrivalDate = new Date(today);
+            arrivalDate.setDate(today.getDate() + leadTimeDays);
+
+            // 猶予日数の計算 (出発日 - 到着予定日)
+            const timeDiff = departureDate.getTime() - arrivalDate.getTime();
+            const marginDays = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+            // --- 3. UI表示内容の決定 ---
+            let statusText = "";
+            let statusColor = "";
+            let closingMessage = "";
+            const lensNameMap = {
+                "0": "CLEAR LENS",
+                "10": "COLOR SUNGLASS",
+                "14": "POLA/PHOTO LENS"
+            };
+            const lensLabel = lensNameMap[lensSelect.value];
+
+            if (leadTimeDays === 0) {
+                // 即日対応可能（クリアレンズ）
+                statusText = "ON TIME";
+                statusColor = "text-green-500";
+                closingMessage = "こちらのクリアレンズは【店舗在庫にて即日対応可能】です！\n視力測定後、約1時間でお渡しできますので、そのままご旅行にお持ちいただけます。";
+            } else if (marginDays >= 4) {
+                // 安全圏 (完成から出発まで4日以上余裕がある)
+                statusText = "ON TIME";
+                statusColor = "text-green-500";
+                closingMessage = `ご安心ください。出発日(${formatDate(departureDate)})までに余裕をもってお渡し可能です。\n工場特注となりますので、本日測定とご注文を済ませておけば、旅行準備も万全ですね！`;
+            } else if (marginDays >= 0 && marginDays <= 3) {
+                // ギリギリ (間に合うが余裕がない)
+                statusText = "LAST CALL";
+                statusColor = "text-yellow-500";
+                closingMessage = `【警告】特注納期のため、出発日に間に合わせるには『今日のご注文がタイムリミット（ラストチャンス）』です！\n今すぐ視力測定へご案内いたします。これを逃すと旅行に間に合いません！`;
+            } else {
+                // 間に合わない (猶予日数がマイナス)
+                statusText = "DELAYED";
+                statusColor = "text-red-500";
+                closingMessage = `申し訳ありません。工場特注の納期(${leadTimeDays}日間)を考慮すると、ご出発日に間に合いません。\n【代替案】「クリアレンズ（即日）＋ 上から掛けるオーバーグラス」のセットであれば今日お持ち帰りいただけます！いかがでしょうか？`;
+            }
+
+            // --- 4. 結果の描画（アニメーション付き） ---
+            resultBoard.classList.remove('hidden');
+            resultBoard.classList.add('flex');
+
+            // 少し遅延を入れて計算している感を出す
+            scrambleText(document.getElementById('out-order'), formatDate(today));
+            setTimeout(() => scrambleText(document.getElementById('out-arrival'), formatDate(arrivalDate)), 200);
+            setTimeout(() => scrambleText(document.getElementById('out-depart'), formatDate(departureDate)), 400);
+            setTimeout(() => scrambleText(document.getElementById('out-lens'), lensLabel), 600);
+            
+            // ステータスとメッセージは最後に強調して表示
+            setTimeout(() => {
+                const statusEl = document.getElementById('out-status');
+                scrambleText(statusEl, statusText, statusColor);
+                // Last CallやDelayedの場合は点滅させる
+                if(statusText !== "ON TIME") {
+                    statusEl.classList.add('animate-pulse', 'font-bold');
+                } else {
+                    statusEl.classList.remove('animate-pulse', 'font-bold');
+                }
+            }, 1000);
+
+            setTimeout(() => {
+                const msgEl = document.getElementById('out-message');
+                msgEl.className = `text-xl sm:text-2xl leading-relaxed p-4 bg-black border border-gray-800 ${statusColor}`;
+                typeWriter(msgEl, closingMessage, 30); // 1文字ずつ表示
+            }, 1300);
+        });
+    </script>
+</body>
+</html>
