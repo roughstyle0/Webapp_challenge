@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>GW特需対応！特殊レンズ納期逆算＆トラベル・フライトボード</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg:#06101b;
+      --bg2:#0a1625;
+      --line:#1f2f45;
+      --line-soft:#152235;
+      --led:#ffb000;
+      --led-soft:#ffd66e;
+      --ok:#6df7a8;
+      --warn:#ffd84d;
+      --danger:#ff6b57;
+      --text:#d7e6ff;
+      --muted:#7f93b3;
+      --blue:#4db5ff;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html,body{
+      margin:0;
+      min-height:100%;
+      background:
+        radial-gradient(circle at top, rgba(31,65,110,.25), transparent 30%),
+        linear-gradient(180deg, #04101d 0%, #06101b 40%, #030913 100%);
+      color:var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    body{
+      overflow-x:hidden;
+    }
+
+    .board-shell{
+      position:relative;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)),
+        repeating-linear-gradient(
+          0deg,
+          rgba(255,255,255,.015) 0px,
+          rgba(255,255,255,.015) 1px,
+          transparent 1px,
+          transparent 28px
+        ),
+        linear-gradient(180deg, var(--bg2), var(--bg));
+      border:1px solid #21324a;
+      box-shadow:
+        0 12px 40px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.05),
+        inset 0 -1px 0 rgba(0,0,0,.4);
+    }
+
+    .board-title{
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:var(--led-soft);
+      text-shadow:0 0 10px rgba(255,176,0,.28);
+    }
+
+    .led{
+      color:var(--led);
+      text-shadow:
+        0 0 6px rgba(255,176,0,.35),
+        0 0 18px rgba(255,176,0,.18);
+      letter-spacing:.05em;
+    }
+
+    .led-soft{
+      color:var(--led-soft);
+      text-shadow:0 0 8px rgba(255,214,110,.2);
+    }
+
+    .muted{
+      color:var(--muted);
+    }
+
+    .line-grid{
+      background-image:
+        linear-gradient(180deg, transparent, rgba(255,255,255,.02)),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:100% 100%, 24px 24px, 24px 24px;
+      background-position:0 0, 0 0, 0 0;
+    }
+
+    .ticker{
+      position:relative;
+      overflow:hidden;
+      border-top:1px solid #293850;
+      border-bottom:1px solid #293850;
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      min-height:40px;
+    }
+
+    .ticker-track{
+      display:inline-block;
+      white-space:nowrap;
+      padding-left:100%;
+      animation:ticker 20s linear infinite;
+    }
+
+    @keyframes ticker{
+      0%{ transform:translateX(0); }
+      100%{ transform:translateX(-100%); }
+    }
+
+    .status-ok{ color:var(--ok); text-shadow:0 0 10px rgba(109,247,168,.25); }
+    .status-warn{ color:var(--warn); text-shadow:0 0 10px rgba(255,216,77,.22); }
+    .status-danger{ color:var(--danger); text-shadow:0 0 10px rgba(255,107,87,.22); }
+
+    .board-button{
+      width:100%;
+      text-align:left;
+      padding:.9rem .9rem;
+      border:1px solid #30415b;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+        linear-gradient(180deg, #0b1827, #091320);
+      color:#dbe8ff;
+      transition:transform .15s ease, border-color .15s ease, background .15s ease;
+      min-height:74px;
+    }
+
+    .board-button:hover,
+    .board-button:focus-visible{
+      outline:none;
+      transform:translateY(-1px);
+      border-color:#5e7698;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015)),
+        linear-gradient(180deg, #102036, #0a1523);
+    }
+
+    .board-button.active{
+      border-color:#ffb000;
+      box-shadow: inset 0 0 0 1px rgba(255,176,0,.35), 0 0 16px rgba(255,176,0,.08);
+      background:
+        linear-gradient(180deg, rgba(255,176,0,.10), rgba(255,176,0,.02)),
+        linear-gradient(180deg, #122032, #0a1522);
+    }
+
+    .field{
+      width:100%;
+      background:#09131f;
+      border:1px solid #31435f;
+      color:#e5efff;
+      min-height:52px;
+      padding:.85rem .9rem;
+      border-radius:0;
+      appearance:none;
+    }
+
+    .field:focus{
+      outline:none;
+      border-color:#ffb000;
+      box-shadow:0 0 0 2px rgba(255,176,0,.14);
+    }
+
+    .board-row{
+      border-top:1px solid var(--line);
+      border-bottom:1px solid rgba(0,0,0,.25);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+    }
+
+    .flip{
+      position:relative;
+      overflow:hidden;
+    }
+
+    .flip::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), transparent 45%, rgba(0,0,0,.14) 46%, transparent 52%);
+      pointer-events:none;
+    }
+
+    .tiny-label{
+      font-size:.72rem;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+
+    .safe-wrap{
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
+    .blinker{
+      animation:blink 1.1s step-end infinite;
+    }
+
+    @keyframes blink{
+      50%{ opacity:.35; }
+    }
+
+    @media (min-width: 768px){
+      .ticker-track{ animation-duration:24s; }
+    }
+  </style>
+</head>
+<body>
+  <main class="min-h-screen w-full px-3 py-3 sm:px-4 sm:py-4">
+    <section class="mx-auto w-full max-w-7xl board-shell line-grid">
+      <!-- Header -->
+      <header class="border-b border-slate-700/60 px-3 py-3 sm:px-5 sm:py-4">
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div class="min-w-0">
+              <p class="board-title text-[11px] sm:text-xs">Optical Travel Deadline Control</p>
+              <h1 class="led text-base sm:text-xl md:text-2xl font-bold leading-snug safe-wrap">
+                GW特需対応！特殊レンズ納期逆算＆トラベル・フライトボード
+              </h1>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-[11px] sm:text-xs shrink-0">
+              <div class="border border-slate-700/70 px-2 py-2 bg-slate-950/40">
+                <div class="muted tiny-label">Today</div>
+                <div id="todayDisplay" class="led-soft mt-1">--</div>
+              </div>
+              <div class="border border-slate-700/70 px-2 py-2 bg-slate-950/40">
+                <div class="muted tiny-label">Board</div>
+                <div class="led-soft mt-1">LIVE</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ticker flex items-center no-scrollbar">
+            <div class="ticker-track py-2 text-xs sm:text-sm led-soft">
+              ◆ 出発日が決まったら、まず納期を逆算 ◆ 特注レンズは工場手配が必要 ◆ GW・旅行前は「今日の判断」が重要 ◆ 即日可の商品と特注商品を明確に切り分けてご案内 ◆
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Controls -->
+      <section class="px-3 py-4 sm:px-5 sm:py-5">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div class="min-w-0">
+            <div class="board-row px-3 py-2">
+              <div class="tiny-label muted">Step 1 / Lens Selection</div>
+              <div class="led-soft text-sm sm:text-base mt-1">お客様が作りたいメガネ・レンズを選択</div>
+            </div>
+
+            <div class="mt-2 grid grid-cols-1 gap-2">
+              <button type="button" class="board-button lens-btn flip" data-lens="clear">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="led text-sm sm:text-base font-bold safe-wrap">普通の透明なメガネ</div>
+                    <div class="mt-1 text-xs sm:text-sm text-slate-300 safe-wrap">在庫があれば即日OK / 最短お渡しを案内しやすい</div>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <div class="tiny-label muted">Lead</div>
+                    <div class="status-ok text-xs sm:text-sm font-bold">SAME DAY</div>
+                  </div>
+                </div>
+              </button>
+
+              <button type="button" class="board-button lens-btn flip" data-lens="color">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="led text-sm sm:text-base font-bold safe-wrap">度付きカラーサングラス</div>
+                    <div class="mt-1 text-xs sm:text-sm text-slate-300 safe-wrap">工場特注 / 約10日</div>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <div class="tiny-label muted">Lead</div>
+                    <div class="status-warn text-xs sm:text-sm font-bold">10 DAYS</div>
+                  </div>
+                </div>
+              </button>
+
+              <button type="button" class="board-button lens-btn flip" data-lens="photo">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="led text-sm sm:text-base font-bold safe-wrap">度付き偏光・調光レンズ</div>
+                    <div class="mt-1 text-xs sm:text-sm text-slate-300 safe-wrap">工場特注 / 約14日</div>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <div class="tiny-label muted">Lead</div>
+                    <div class="status-danger text-xs sm:text-sm font-bold">14 DAYS</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="min-w-0">
+            <div class="board-row px-3 py-2">
+              <div class="tiny-label muted">Step 2 / Flight Date</div>
+              <div class="led-soft text-sm sm:text-base mt-1">旅行やイベントの出発日（使いたい日）を選択</div>
+            </div>
+
+            <div class="mt-2 border border-slate-700/70 bg-slate-950/30 p-3 sm:p-4">
+              <label for="departureDate" class="block tiny-label muted mb-2">Departure Date</label>
+              <input id="departureDate" class="field text-sm sm:text-base" type="date" />
+              <p class="mt-2 text-xs sm:text-sm text-slate-300 safe-wrap">
+                本日から1か月以内で選択できます。接客中のスマホ・iPadでも押しやすいサイズで設計しています。
+              </p>
+
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button id="setSoonBtn" type="button" class="board-button !min-h-[52px] !py-3 !text-center">
+                  <span class="led-soft text-xs sm:text-sm">+7日</span>
+                </button>
+                <button id="setLaterBtn" type="button" class="board-button !min-h-[52px] !py-3 !text-center">
+                  <span class="led-soft text-xs sm:text-sm">+14日</span>
+                </button>
+              </div>
+
+              <div id="formError" class="mt-3 text-xs sm:text-sm hidden" role="alert" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Board -->
+      <section class="px-3 pb-3 sm:px-5 sm:pb-5">
+        <div class="overflow-hidden border border-slate-700/70 bg-slate-950/25">
+          <div class="grid grid-cols-12 border-b border-slate-700/70 bg-slate-950/45 text-[10px] sm:text-xs">
+            <div class="col-span-3 px-2 py-2 muted tiny-label sm:px-3">ITEM</div>
+            <div class="col-span-4 px-2 py-2 muted tiny-label sm:px-3">STATUS</div>
+            <div class="col-span-5 px-2 py-2 muted tiny-label sm:px-3">DETAIL</div>
+          </div>
+
+          <div class="grid grid-cols-12 board-row text-xs sm:text-sm">
+            <div class="col-span-3 border-r border-slate-700/60 px-2 py-3 sm:px-3 led-soft">LENS</div>
+            <div id="rowLensStatus" class="col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 text-slate-200 safe-wrap">未選択</div>
+            <div id="rowLensDetail" class="col-span-5 px-2 py-3 sm:px-3 text-slate-300 safe-wrap">レンズ種別を選んでください</div>
+          </div>
+
+          <div class="grid grid-cols-12 board-row text-xs sm:text-sm">
+            <div class="col-span-3 border-r border-slate-700/60 px-2 py-3 sm:px-3 led-soft">DEPART</div>
+            <div id="rowDepartStatus" class="col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 text-slate-200 safe-wrap">未選択</div>
+            <div id="rowDepartDetail" class="col-span-5 px-2 py-3 sm:px-3 text-slate-300 safe-wrap">使いたい日を入力してください</div>
+          </div>
+
+          <div class="grid grid-cols-12 board-row text-xs sm:text-sm">
+            <div class="col-span-3 border-r border-slate-700/60 px-2 py-3 sm:px-3 led-soft">ETA</div>
+            <div id="rowEtaStatus" class="col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 text-slate-200 safe-wrap">待機中</div>
+            <div id="rowEtaDetail" class="col-span-5 px-2 py-3 sm:px-3 text-slate-300 safe-wrap">完成予定日はここに表示されます</div>
+          </div>
+
+          <div class="grid grid-cols-12 board-row text-xs sm:text-sm">
+            <div class="col-span-3 border-r border-slate-700/60 px-2 py-3 sm:px-3 led-soft">JUDGE</div>
+            <div id="rowJudgeStatus" class="col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 safe-wrap">入力待ち</div>
+            <div id="rowJudgeDetail" class="col-span-5 px-2 py-3 sm:px-3 text-slate-300 safe-wrap">納期逆算シミュレーション結果が表示されます</div>
+          </div>
+        </div>
+
+        <!-- Result Zone -->
+        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+          <div class="min-w-0 border border-slate-700/70 bg-slate-950/25">
+            <div class="board-row px-3 py-2">
+              <div class="tiny-label muted">Deadline Simulation</div>
+              <div class="led-soft text-sm sm:text-base mt-1">納期逆算シミュレーション</div>
+            </div>
+
+            <div class="p-3 sm:p-4">
+              <div id="heroStatus" class="led text-lg sm:text-2xl font-bold tracking-widest safe-wrap">
+                READY FOR INPUT
+              </div>
+              <div id="heroSub" class="mt-2 text-sm sm:text-base text-slate-300 safe-wrap">
+                レンズ種別と出発日を選ぶと、完成予定日と間に合うかどうかを即時判定します。
+              </div>
+
+              <div class="mt-4 grid grid-cols-1 gap-2 text-xs sm:text-sm">
+                <div class="flex items-start justify-between gap-3 border-t border-slate-700/60 py-2">
+                  <span class="muted">本日</span>
+                  <span id="todayInfo" class="led-soft text-right safe-wrap">--</span>
+                </div>
+                <div class="flex items-start justify-between gap-3 border-t border-slate-700/60 py-2">
+                  <span class="muted">必要日</span>
+                  <span id="departInfo" class="led-soft text-right safe-wrap">--</span>
+                </div>
+                <div class="flex items-start justify-between gap-3 border-t border-slate-700/60 py-2">
+                  <span class="muted">完成予定日</span>
+                  <span id="etaInfo" class="led-soft text-right safe-wrap">--</span>
+                </div>
+                <div class="flex items-start justify-between gap-3 border-t border-b border-slate-700/60 py-2">
+                  <span class="muted">判定</span>
+                  <span id="judgeInfo" class="text-right safe-wrap">--</span>
+                </div>
+              </div>
+
+              <div id="altProposal" class="mt-4 hidden border-t border-b border-slate-700/60 py-3">
+                <div class="tiny-label muted">Alternative Plan</div>
+                <div class="mt-2 text-sm sm:text-base text-slate-200 safe-wrap" id="altProposalText"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="min-w-0 border border-slate-700/70 bg-slate-950/25">
+            <div class="board-row px-3 py-2">
+              <div class="tiny-label muted">Closing Script</div>
+              <div class="led-soft text-sm sm:text-base mt-1">プロのクロージングトーク</div>
+            </div>
+
+            <div class="p-3 sm:p-4">
+              <div class="tiny-label muted">Suggested Talk</div>
+              <div id="closingTalk" class="mt-3 text-sm sm:text-base leading-7 text-slate-100 safe-wrap">
+                「ご予定に合わせて、今日の時点でどのレンズが現実的かを一緒に確認しましょう。即日対応できるものと、工場特注でお日にちをいただくものがあります。」
+              </div>
+
+              <div class="mt-4 border-t border-slate-700/60 pt-3">
+                <div class="tiny-label muted">Staff Support</div>
+                <ul class="mt-2 space-y-2 text-xs sm:text-sm text-slate-300">
+                  <li>・即日商品と特注商品を、感覚ではなく日付で見せて説明できます。</li>
+                  <li>・「今日決める理由」が自然に伝わるため、新人スタッフでも案内しやすくなります。</li>
+                  <li>・間に合わない場合も、その場で代替案へ切り替えられます。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="border-t border-slate-700/60 px-3 py-3 sm:px-5 sm:py-4">
+        <div class="flex flex-col gap-2 text-[11px] sm:text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div class="muted safe-wrap">
+            ※ 納期は目安です。在庫状況・加工内容・配送事情によって前後する場合があります。
+          </div>
+          <div class="led-soft">
+            <span class="blinker">●</span> BOARD ACTIVE
+          </div>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const lensData = {
+        clear: {
+          name: "普通の透明なメガネ",
+          days: 0,
+          kind: "stock",
+          detail: "在庫があれば即日OK",
+          defaultTalk: "「こちらは在庫が合えば当日お渡しの可能性があります。ご旅行に確実に間に合わせたい場合は、まず即日対応できるかを優先して確認しましょう。」"
+        },
+        color: {
+          name: "度付きカラーサングラス",
+          days: 10,
+          kind: "custom",
+          detail: "工場特注 / 約10日",
+          defaultTalk: "「度付きのカラーレンズは工場特注になるため、GWやご旅行に間に合わせるなら、今日のご注文がかなり重要です。」"
+        },
+        photo: {
+          name: "度付き偏光・調光レンズ",
+          days: 14,
+          kind: "custom",
+          detail: "工場特注 / 約14日",
+          defaultTalk: "「偏光・調光レンズは高機能な分、通常より納期が必要です。ご出発日から逆算すると、今日ここで決めておくのが安全です。」"
+        }
+      };
+
+      const lensButtons = document.querySelectorAll(".lens-btn");
+      const departureDateInput = document.getElementById("departureDate");
+      const todayDisplay = document.getElementById("todayDisplay");
+      const todayInfo = document.getElementById("todayInfo");
+      const departInfo = document.getElementById("departInfo");
+      const etaInfo = document.getElementById("etaInfo");
+      const judgeInfo = document.getElementById("judgeInfo");
+      const heroStatus = document.getElementById("heroStatus");
+      const heroSub = document.getElementById("heroSub");
+      const closingTalk = document.getElementById("closingTalk");
+      const formError = document.getElementById("formError");
+      const altProposal = document.getElementById("altProposal");
+      const altProposalText = document.getElementById("altProposalText");
+
+      const rowLensStatus = document.getElementById("rowLensStatus");
+      const rowLensDetail = document.getElementById("rowLensDetail");
+      const rowDepartStatus = document.getElementById("rowDepartStatus");
+      const rowDepartDetail = document.getElementById("rowDepartDetail");
+      const rowEtaStatus = document.getElementById("rowEtaStatus");
+      const rowEtaDetail = document.getElementById("rowEtaDetail");
+      const rowJudgeStatus = document.getElementById("rowJudgeStatus");
+      const rowJudgeDetail = document.getElementById("rowJudgeDetail");
+
+      const setSoonBtn = document.getElementById("setSoonBtn");
+      const setLaterBtn = document.getElementById("setLaterBtn");
+
+      let selectedLensKey = null;
+
+      const now = new Date();
+      const today = startOfDay(now);
+      const maxDate = addDays(today, 30);
+
+      departureDateInput.min = formatDateInput(today);
+      departureDateInput.max = formatDateInput(maxDate);
+
+      todayDisplay.textContent = formatJPDate(today);
+      todayInfo.textContent = formatJPDate(today);
+
+      setSoonBtn.addEventListener("click", () => {
+        departureDateInput.value = formatDateInput(addDays(today, 7));
+        simulate();
+      });
+
+      setLaterBtn.addEventListener("click", () => {
+        departureDateInput.value = formatDateInput(addDays(today, 14));
+        simulate();
+      });
+
+      lensButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          selectedLensKey = btn.dataset.lens;
+          lensButtons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          simulate();
+        });
+      });
+
+      departureDateInput.addEventListener("input", simulate);
+      departureDateInput.addEventListener("change", simulate);
+
+      function simulate() {
+        clearError();
+        updateLensRow();
+        updateDepartRow();
+
+        const lens = selectedLensKey ? lensData[selectedLensKey] : null;
+        const departDate = parseDateInput(departureDateInput.value);
+
+        if (!lens && !departDate) {
+          resetResult();
+          return;
+        }
+
+        if (!lens) {
+          setError("先にレンズ種別を選択してください。");
+          rowEtaStatus.textContent = "保留";
+          rowEtaDetail.textContent = "レンズの納期が未確定です";
+          rowJudgeStatus.textContent = "入力不足";
+          rowJudgeStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 safe-wrap status-warn";
+          rowJudgeDetail.textContent = "レンズ種別を選ぶと判定できます";
+          return;
+        }
+
+        if (!departDate) {
+          setError("出発日（使いたい日）を選択してください。");
+          heroStatus.textContent = "DATE REQUIRED";
+          heroStatus.className = "led text-lg sm:text-2xl font-bold tracking-widest safe-wrap";
+          heroSub.textContent = "出発日が決まると、間に合うかどうかをその場で判断できます。";
+          closingTalk.textContent = lens.defaultTalk;
+          rowEtaStatus.textContent = lens.days === 0 ? "当日候補" : "計算待ち";
+          rowEtaDetail.textContent = lens.days === 0 ? "在庫確認後に当日お渡し判定" : "出発日が入ると逆算します";
+          rowJudgeStatus.textContent = "入力不足";
+          rowJudgeStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 safe-wrap status-warn";
+          rowJudgeDetail.textContent = "出発日を選んでください";
+          return;
+        }
+
+        if (departDate < today || departDate > maxDate) {
+          setError("出発日は本日から1か月以内で選択してください。");
+          return;
+        }
+
+        departInfo.textContent = formatJPDate(departDate);
+
+        const etaDate = addDays(today, lens.days);
+        etaInfo.textContent = formatJPDate(etaDate);
+
+        const daysUntilDeparture = diffDays(today, departDate);
+        const slack = diffDays(etaDate, departDate); // depart - eta
+        const result = evaluateStatus(lens, departDate, etaDate);
+
+        updateEtaRow(lens, etaDate);
+        updateJudgeRow(result);
+        updateHero(result, lens, departDate, etaDate, daysUntilDeparture);
+        updateTalk(result, lens, departDate, etaDate, daysUntilDeparture, slack);
+        updateAlternative(result, lens);
+      }
+
+      function updateLensRow() {
+        if (!selectedLensKey) {
+          rowLensStatus.textContent = "未選択";
+          rowLensStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 text-slate-200 safe-wrap";
+          rowLensDetail.textContent = "レンズ種別を選んでください";
+          return;
+        }
+        const lens = lensData[selectedLensKey];
+        rowLensStatus.textContent = lens.name;
+        rowLensStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 led-soft safe-wrap";
+        rowLensDetail.textContent = lens.detail;
+      }
+
+      function updateDepartRow() {
+        const departDate = parseDateInput(departureDateInput.value);
+        if (!departDate) {
+          rowDepartStatus.textContent = "未選択";
+          rowDepartStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 text-slate-200 safe-wrap";
+          rowDepartDetail.textContent = "使いたい日を入力してください";
+          departInfo.textContent = "--";
+          return;
+        }
+        rowDepartStatus.textContent = formatJPDate(departDate);
+        rowDepartStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 led-soft safe-wrap";
+        rowDepartDetail.textContent = `本日からあと ${diffDays(today, departDate)} 日`;
+        departInfo.textContent = formatJPDate(departDate);
+      }
+
+      function updateEtaRow(lens, etaDate) {
+        rowEtaStatus.textContent = lens.days === 0 ? "最短当日" : `${lens.days}日目安`;
+        rowEtaStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 safe-wrap " + (lens.days === 0 ? "status-ok" : "led-soft");
+        rowEtaDetail.textContent = lens.days === 0
+          ? "在庫確認ができれば当日お渡しの可能性あり"
+          : `完成予定日 ${formatJPDate(etaDate)}`;
+      }
+
+      function updateJudgeRow(result) {
+        rowJudgeStatus.textContent = result.label;
+        rowJudgeStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 safe-wrap " + result.className;
+        rowJudgeDetail.textContent = result.message;
+      }
+
+      function updateHero(result, lens, departDate, etaDate, daysUntilDeparture) {
+        heroStatus.textContent = result.hero;
+        heroStatus.className = `text-lg sm:text-2xl font-bold tracking-widest safe-wrap ${result.className}`;
+
+        if (lens.days === 0) {
+          heroSub.textContent = `出発日まであと ${daysUntilDeparture} 日。透明レンズは在庫があれば即日対応の可能性があります。まず在庫確認を優先しましょう。`;
+          judgeInfo.textContent = result.label;
+          judgeInfo.className = "text-right safe-wrap " + result.className;
+          return;
+        }
+
+        heroSub.textContent = `本日 ${formatJPDate(today)} に注文した場合、完成予定は ${formatJPDate(etaDate)}。出発日 ${formatJPDate(departDate)} に対して ${result.subMessage}`;
+        judgeInfo.textContent = result.label;
+        judgeInfo.className = "text-right safe-wrap " + result.className;
+      }
+
+      function updateTalk(result, lens, departDate, etaDate, daysUntilDeparture, slack) {
+        if (!selectedLensKey) {
+          closingTalk.textContent = "「ご予定に合わせて、今日の時点でどのレンズが現実的かを一緒に確認しましょう。即日対応できるものと、工場特注でお日にちをいただくものがあります。」";
+          return;
+        }
+
+        if (!departDate) {
+          closingTalk.textContent = lens.defaultTalk;
+          return;
+        }
+
+        if (lens.kind === "stock") {
+          closingTalk.textContent =
+            `「ご出発まであと ${daysUntilDeparture} 日あります。透明レンズは在庫が合えば即日お渡しの可能性が高いので、まずは最短でご用意できる形をご案内します。もしサングラス用途が主目的なら、今回は即日優先の構成で進めるのが安心です。」`;
+          return;
+        }
+
+        if (result.type === "safe") {
+          closingTalk.textContent =
+            `「${lens.name}は工場特注ですが、今日ご注文いただければ完成予定は ${formatJPDate(etaDate)} です。ご出発日 ${formatJPDate(departDate)} まで余裕がありますので、今ここで決めていただくのがいちばん安心です。」`;
+          return;
+        }
+
+        if (result.type === "warn") {
+          closingTalk.textContent =
+            `「${lens.name}は工場特注のため、完成予定は ${formatJPDate(etaDate)} です。ご出発日 ${formatJPDate(departDate)} にかなり近いので、GWに間に合わせるなら今日のご注文がほぼラストチャンスです。あとで検討だと間に合わない可能性が上がります。」`;
+          return;
+        }
+
+        closingTalk.textContent =
+          `「正直にお伝えすると、${lens.name}は本日ご注文でも完成予定が ${formatJPDate(etaDate)} となり、${formatJPDate(departDate)} のご出発には間に合いません。今回は即日対応しやすい透明レンズや店頭在庫フレームで先にご用意し、サングラス仕様は次回分として分けて進めるのが現実的です。」`;
+      }
+
+      function updateAlternative(result, lens) {
+        if (!selectedLensKey || !lens) {
+          altProposal.classList.add("hidden");
+          altProposalText.textContent = "";
+          return;
+        }
+
+        if (result.type !== "danger") {
+          altProposal.classList.add("hidden");
+          altProposalText.textContent = "";
+          return;
+        }
+
+        altProposal.classList.remove("hidden");
+
+        if (lens.kind === "custom") {
+          altProposalText.textContent =
+            "代替案: ①透明レンズで即日対応できる構成を先に提案 ②サングラス用途は店頭在庫サングラスやクリップオンで代替 ③特注レンズは旅行後受け取り前提で別注提案。";
+        } else {
+          altProposalText.textContent =
+            "代替案: 即日対応できる在庫構成を優先し、用途に応じて後日カスタムを追加提案。";
+        }
+      }
+
+      function evaluateStatus(lens, departDate, etaDate) {
+        if (lens.kind === "stock") {
+          return {
+            type: "safe",
+            label: "安全圏",
+            hero: "SAME DAY POSSIBLE",
+            className: "status-ok",
+            message: "在庫があれば即日対応の可能性があります",
+            subMessage: "十分に現実的な選択です。"
+          };
+        }
+
+        const remaining = diffDays(etaDate, departDate); // depart - eta
+        if (remaining >= 3) {
+          return {
+            type: "safe",
+            label: "安全圏",
+            hero: "ON SCHEDULE",
+            className: "status-ok",
+            message: `完成予定が出発日の ${remaining} 日前で安心圏です`,
+            subMessage: `${remaining} 日の余裕があります。`
+          };
+        }
+
+        if (remaining >= 0) {
+          return {
+            type: "warn",
+            label: "ギリギリ・今日注文必須",
+            hero: "LAST CALL TODAY",
+            className: "status-warn",
+            message: remaining === 0
+              ? "完成予定日と出発日が同日です。今日の注文判断が必須です"
+              : `完成予定が出発日の ${remaining} 日前です。かなりタイトです`,
+            subMessage: remaining === 0
+              ? "完成予定日と出発日が同日で、遅延余地がありません。"
+              : `${remaining} 日しか余裕がなく、今日の決断が重要です。`
+          };
+        }
+
+        return {
+          type: "danger",
+          label: "間に合わない",
+          hero: "MISSED DEADLINE",
+          className: "status-danger",
+          message: `完成予定が出発日を ${Math.abs(remaining)} 日過ぎます`,
+          subMessage: `${Math.abs(remaining)} 日遅れる見込みです。`
+        };
+      }
+
+      function resetResult() {
+        heroStatus.textContent = "READY FOR INPUT";
+        heroStatus.className = "led text-lg sm:text-2xl font-bold tracking-widest safe-wrap";
+        heroSub.textContent = "レンズ種別と出発日を選ぶと、完成予定日と間に合うかどうかを即時判定します。";
+        closingTalk.textContent = "「ご予定に合わせて、今日の時点でどのレンズが現実的かを一緒に確認しましょう。即日対応できるものと、工場特注でお日にちをいただくものがあります。」";
+        etaInfo.textContent = "--";
+        judgeInfo.textContent = "--";
+        judgeInfo.className = "text-right safe-wrap";
+        rowEtaStatus.textContent = "待機中";
+        rowEtaStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 text-slate-200 safe-wrap";
+        rowEtaDetail.textContent = "完成予定日はここに表示されます";
+        rowJudgeStatus.textContent = "入力待ち";
+        rowJudgeStatus.className = "col-span-4 border-r border-slate-700/60 px-2 py-3 sm:px-3 safe-wrap";
+        rowJudgeDetail.textContent = "納期逆算シミュレーション結果が表示されます";
+        altProposal.classList.add("hidden");
+      }
+
+      function setError(message) {
+        formError.textContent = message;
+        formError.className = "mt-3 text-xs sm:text-sm status-danger";
+      }
+
+      function clearError() {
+        formError.textContent = "";
+        formError.className = "mt-3 text-xs sm:text-sm hidden";
+      }
+
+      function startOfDay(date) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      }
+
+      function addDays(date, days) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return startOfDay(d);
+      }
+
+      function diffDays(fromDate, toDate) {
+        const ms = startOfDay(toDate) - startOfDay(fromDate);
+        return Math.round(ms / (1000 * 60 * 60 * 24));
+      }
+
+      function formatDateInput(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+
+      function parseDateInput(value) {
+        if (!value) return null;
+        const parts = value.split("-");
+        if (parts.length !== 3) return null;
+        const [y, m, d] = parts.map(Number);
+        const parsed = new Date(y, m - 1, d);
+        if (
+          Number.isNaN(parsed.getTime()) ||
+          parsed.getFullYear() !== y ||
+          parsed.getMonth() !== m - 1 ||
+          parsed.getDate() !== d
+        ) {
+          return null;
+        }
+        return startOfDay(parsed);
+      }
+
+      function formatJPDate(date) {
+        const week = ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
+        return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")} (${week})`;
+      }
+
+      simulate();
+    })();
+  </script>
+</body>
+</html>
