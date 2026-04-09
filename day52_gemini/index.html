@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRO-SPEC GEAR SIMULATOR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neon: {
+                            lime: '#ccff00',
+                            orange: '#ff3f00',
+                            red: '#ff003c',
+                            cyan: '#00f0ff',
+                        },
+                        dark: {
+                            900: '#050505',
+                            800: '#111111',
+                            700: '#1a1a1a',
+                        }
+                    },
+                    fontFamily: {
+                        oswald: ['Oswald', 'sans-serif'],
+                        noto: ['"Noto Sans JP"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 徹底的な直角・直線主義（丸み排除） */
+        * { border-radius: 0 !important; }
+
+        /* スピード感を出すSkew（斜め）デザイン */
+        .skew-box { transform: skewX(-10deg); }
+        .unskew { transform: skewX(10deg); }
+
+        /* -------------------------
+           アニメーション定義
+        ------------------------- */
+        /* 共通設定 */
+        .sim-window { position: relative; overflow: hidden; height: 250px; display: flex; align-items: center; justify-content: center; background-color: #111; }
+        .sim-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 20px 20px; }
+
+        /* [サッカー・バスケ] ノーマル：直撃＆クラッシュ */
+        @keyframes incoming-ball {
+            0% { transform: scale(0); opacity: 0; }
+            45% { transform: scale(4); opacity: 1; }
+            50%, 100% { transform: scale(4); opacity: 0; }
+        }
+        @keyframes crash-flash {
+            0%, 48% { background-color: transparent; }
+            49%, 55% { background-color: rgba(255, 0, 60, 0.7); }
+            56%, 100% { background-color: transparent; }
+        }
+        @keyframes crack-show {
+            0%, 49% { opacity: 0; }
+            50%, 90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .anim-soccer-normal { animation: crash-flash 2s infinite; }
+        .anim-soccer-normal .ball { position: absolute; width: 40px; height: 40px; background-color: #ff3f00; border-radius: 50% !important; animation: incoming-ball 2s infinite cubic-bezier(0.8, 0, 1, 1); }
+        .anim-soccer-normal .crack { position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.8) 10px, rgba(255,255,255,0.8) 12px); animation: crack-show 2s infinite; clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0 100%); }
+
+        /* [サッカー・バスケ] ゴーグル：シールド反発 */
+        @keyframes shield-bounce {
+            0% { transform: scale(0); opacity: 0; }
+            40% { transform: scale(2.5); opacity: 1; }
+            45% { transform: scale(1.5); opacity: 0; }
+            100% { opacity: 0; }
+        }
+        @keyframes shield-activate {
+            0%, 38% { border: 2px solid transparent; box-shadow: none; opacity: 0.5; }
+            40%, 50% { border: 4px solid #00f0ff; box-shadow: inset 0 0 20px #00f0ff, 0 0 20px #00f0ff; opacity: 1; }
+            55%, 100% { border: 2px solid transparent; box-shadow: none; opacity: 0.5; }
+        }
+        .anim-soccer-goggle { position: relative; }
+        .anim-soccer-goggle .ball { position: absolute; width: 40px; height: 40px; background-color: #ff3f00; border-radius: 50% !important; animation: shield-bounce 2s infinite cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .anim-soccer-goggle .shield { position: absolute; width: 80%; height: 80%; border: 4px solid #00f0ff; transform: skewX(-10deg); animation: shield-activate 2s infinite; display: flex; align-items: center; justify-content: center; }
+
+        /* [野球・テニス] ノーマル：激しいブレ・視界不良 */
+        @keyframes severe-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-10px, 5px); }
+            40% { transform: translate(10px, -5px); }
+            60% { transform: translate(-5px, 10px); }
+            80% { transform: translate(5px, -10px); }
+        }
+        .anim-baseball-normal { animation: severe-shake 0.15s infinite; filter: blur(3px); color: #ff003c; }
+
+        /* [野球・テニス] ゴーグル：完全固定ロックオン */
+        @keyframes target-lock {
+            0%, 50% { transform: scale(1.5); opacity: 0; border-color: #666; }
+            60%, 100% { transform: scale(1); opacity: 1; border-color: #ccff00; }
+        }
+        .anim-baseball-goggle .target { width: 100px; height: 100px; border: 4px solid #ccff00; position: relative; animation: target-lock 2s infinite; }
+        .anim-baseball-goggle .target::before, .anim-baseball-goggle .target::after { content: ''; position: absolute; background: #ccff00; }
+        .anim-baseball-goggle .target::before { top: 50%; left: -20px; right: -20px; height: 2px; transform: translateY(-50%); }
+        .anim-baseball-goggle .target::after { left: 50%; top: -20px; bottom: -20px; width: 2px; transform: translateX(-50%); }
+
+        /* [剣道] ノーマル：圧迫と痛み */
+        @keyframes squeeze-left { 0%, 100% { transform: translateX(-50px); } 50% { transform: translateX(0); background: #ff003c; } }
+        @keyframes squeeze-right { 0%, 100% { transform: translateX(50px); } 50% { transform: translateX(0); background: #ff003c; } }
+        @keyframes glass-pain { 0%, 100% { transform: scaleX(1); color: white; } 50% { transform: scaleX(0.6); color: #ff003c; } }
+        .anim-kendo-normal .side-wall-l { position: absolute; left: 0; top: 0; bottom: 0; width: 30%; background: #333; animation: squeeze-left 2s infinite; }
+        .anim-kendo-normal .side-wall-r { position: absolute; right: 0; top: 0; bottom: 0; width: 30%; background: #333; animation: squeeze-right 2s infinite; }
+        .anim-kendo-normal .glasses { font-size: 3rem; font-weight: 900; animation: glass-pain 2s infinite; z-index: 10; }
+        .anim-kendo-normal .pain-text { position: absolute; top: 20%; color: #ff003c; font-size: 2rem; font-weight: 900; opacity: 0; animation: crack-show 2s infinite; z-index: 20; }
+
+        /* [剣道] ゴーグル：干渉ゼロのパーフェクトフィット */
+        .anim-kendo-goggle .side-wall-l { position: absolute; left: 0; top: 0; bottom: 0; width: 25%; background: #333; }
+        .anim-kendo-goggle .side-wall-r { position: absolute; right: 0; top: 0; bottom: 0; width: 25%; background: #333; }
+        .anim-kendo-goggle .glasses { font-size: 2rem; font-weight: 900; color: #ccff00; border: 2px solid #ccff00; padding: 10px 20px; z-index: 10; }
+    </style>
+</head>
+<body class="bg-dark-900 text-white font-noto min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-neon-lime text-dark-900 p-4 md:p-6 skew-box -ml-4 -mr-4 mt-4 md:mx-0 md:mt-0 relative overflow-hidden">
+        <div class="unskew max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center pl-8 md:pl-0">
+            <div>
+                <h1 class="font-oswald text-3xl md:text-5xl font-bold italic tracking-tighter uppercase">Pro-Spec Gear Simulator</h1>
+                <p class="text-xs md:text-sm font-bold tracking-widest mt-1">FOR JUNIOR ATHLETES // MAXIMIZE PERFORMANCE & SAFETY</p>
+            </div>
+            <div class="hidden md:block bg-dark-900 text-neon-lime px-4 py-2 text-xl font-oswald font-bold border-l-4 border-neon-orange">
+                STAFF USE ONLY
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full p-4 md:p-8 mt-4 md:mt-8 flex flex-col gap-8 md:gap-12">
+        
+        <!-- STEP 1: Select Sport -->
+        <section>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-neon-orange text-dark-900 font-oswald font-bold text-2xl px-4 py-1 skew-box"><span class="block unskew">STEP 1</span></div>
+                <h2 class="text-xl md:text-2xl font-black tracking-wider">お子様の競技を選択してください</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6" id="sport-buttons">
+                <!-- Buttons rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Placeholder (No selection) -->
+        <div id="placeholder" class="border-4 border-dark-700 bg-dark-800 p-12 flex flex-col items-center justify-center text-center gap-4 transition-all duration-300">
+            <svg class="w-16 h-16 text-dark-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            <h3 class="font-oswald text-2xl text-gray-500 tracking-widest uppercase">Select Sport to Start Simulation</h3>
+            <p class="text-gray-600 text-sm font-bold">競技を選択すると、危険性と専用ギアの性能が表示されます</p>
+        </div>
+
+        <!-- STEP 2: Simulation Result (Hidden by default) -->
+        <section id="simulation-result" class="hidden flex-col gap-8 md:gap-12">
+            
+            <div class="flex items-center gap-4 mb-2">
+                <div class="bg-neon-lime text-dark-900 font-oswald font-bold text-2xl px-4 py-1 skew-box"><span class="block unskew">STEP 2</span></div>
+                <h2 class="text-xl md:text-2xl font-black tracking-wider">安全性＆パフォーマンス比較</h2>
+            </div>
+
+            <!-- VS Comparison -->
+            <div class="flex flex-col md:flex-row gap-4 md:gap-2 relative">
+                <!-- VS Badge (Desktop: Center, Mobile: Middle) -->
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-white text-dark-900 font-oswald font-black text-3xl italic px-4 py-2 border-4 border-dark-900 skew-box shadow-[0_0_20px_rgba(255,255,255,0.5)]">
+                    <span class="block unskew">VS</span>
+                </div>
+
+                <!-- Normal Glasses -->
+                <div class="flex-1 border-2 border-neon-red bg-dark-800 flex flex-col">
+                    <div class="bg-neon-red text-white p-3 font-black text-center text-lg md:text-xl tracking-widest">
+                        一般的なメガネ着用時
+                    </div>
+                    <!-- Animation Container (Injected by JS) -->
+                    <div id="sim-normal-container" class="sim-window anim-soccer-normal"></div>
+                    <div class="p-4 bg-dark-900 border-t border-dark-700">
+                        <p id="risk-text" class="text-neon-red font-bold text-sm md:text-base leading-relaxed text-center">
+                            <!-- Risk injected here -->
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Pro Goggle -->
+                <div class="flex-1 border-2 border-neon-lime bg-dark-800 flex flex-col relative overflow-hidden">
+                    <div class="absolute inset-0 bg-neon-lime opacity-5"></div>
+                    <div class="bg-neon-lime text-dark-900 p-3 font-black text-center text-lg md:text-xl tracking-widest relative z-10">
+                        専用スポーツギア着用時
+                    </div>
+                    <!-- Animation Container (Injected by JS) -->
+                    <div id="sim-goggle-container" class="sim-window anim-soccer-goggle"></div>
+                    <div class="p-4 bg-dark-900 border-t border-dark-700 relative z-10">
+                        <p class="text-neon-lime font-bold text-sm md:text-base leading-relaxed text-center">
+                            圧倒的な安全性とクリアな視界でプレーに集中
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reason Section -->
+            <div class="bg-dark-800 border-l-8 border-neon-cyan p-6 md:p-8">
+                <h3 class="font-oswald text-neon-cyan text-2xl md:text-3xl font-bold tracking-widest mb-4">TECHNOLOGY & BENEFITS</h3>
+                <ul id="reason-list" class="space-y-4">
+                    <!-- Reasons injected here -->
+                </ul>
+            </div>
+
+            <!-- Staff Talk Script -->
+            <div class="mt-4 border-4 border-neon-orange bg-[#1a0a00] p-6 md:p-8 relative skew-box ml-4 mr-4 md:mx-0">
+                <div class="unskew">
+                    <div class="absolute -top-5 left-4 bg-neon-orange text-dark-900 font-black px-4 py-1 text-sm tracking-widest">
+                        STAFF TALK SCRIPT (そのままお読みください)
+                    </div>
+                    <h3 class="text-neon-orange font-bold text-lg md:text-xl mb-4 border-b border-neon-orange/30 pb-2">親御さんの心を動かす提案トーク</h3>
+                    <p id="talk-script" class="text-white text-base md:text-xl leading-loose font-bold tracking-wide">
+                        <!-- Script injected here -->
+                    </p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // Data Definition
+        const sportData = {
+            contact: {
+                id: 'contact',
+                title: "SOCCER / BASKET",
+                jpTitle: "サッカー・バスケ",
+                risk: "激しい接触・至近距離からのボール直撃リスク大",
+                normalHtml: `
+                    <div class="sim-bg-grid"></div>
+                    <div class="ball"></div>
+                    <div class="crack"></div>
+                    <div class="absolute bottom-4 text-neon-red font-black text-2xl tracking-widest bg-dark-900/80 px-2">CRITICAL DANGER</div>
+                `,
+                normalClass: 'anim-soccer-normal',
+                goggleHtml: `
+                    <div class="sim-bg-grid"></div>
+                    <div class="shield">
+                        <span class="text-neon-cyan font-oswald font-bold text-xl italic unskew">SHIELD ACTIVE</span>
+                    </div>
+                    <div class="ball"></div>
+                `,
+                goggleClass: 'anim-soccer-goggle',
+                reasons: [
+                    "【耐衝撃レンズ】通常レンズの10倍の強度を持つポリカーボネートが、ボールの衝撃を完全に吸収。",
+                    "【ラバーパッド】顔の骨格に密着する特殊エラストマーが、万が一の衝突時でも陥没骨折を防ぎます。"
+                ],
+                talk: "「普通のメガネが割れて眼球を傷つける事故が毎年起きています。お子様の眼を一生守るための『防具』として、必ず専用のスポーツギアをご用意ください。」"
+            },
+            ball: {
+                id: 'ball',
+                title: "BASEBALL / TENNIS",
+                jpTitle: "野球・テニス",
+                risk: "飛んでくるボールのブレ・汗でのズレによる致命的なエラー",
+                normalHtml: `
+                    <div class="sim-bg-grid"></div>
+                    <div class="font-oswald text-4xl font-black tracking-widest relative z-10 text-center leading-tight">
+                        VISION<br>BLURRED
+                    </div>
+                `,
+                normalClass: 'anim-baseball-normal',
+                goggleHtml: `
+                    <div class="sim-bg-grid"></div>
+                    <div class="target"></div>
+                    <div class="absolute bottom-4 text-neon-lime font-black text-xl tracking-widest bg-dark-900/80 px-2">PERFECT LOCK-ON</div>
+                `,
+                goggleClass: 'anim-baseball-goggle',
+                reasons: [
+                    "【アジャスタブルバンド】激しくダッシュしても1ミリもズレない、人間工学に基づいたヘッドバンド設計。",
+                    "【広角カーブ設計】フレームが視界を遮らず、フライや球の軌道を最後まで正確に捉えることが可能。"
+                ],
+                talk: "「汗でメガネがズレると、一瞬の判断が遅れてエラーに繋がります。ズレないギアを使えば、プレーに完全に集中できてレギュラーにグッと近づきますよ！」"
+            },
+            kendo: {
+                id: 'kendo',
+                title: "KENDO",
+                jpTitle: "剣道",
+                risk: "お面を被る際の圧迫、ツルの変形による耳の激痛",
+                normalHtml: `
+                    <div class="sim-bg-grid"></div>
+                    <div class="side-wall-l"></div>
+                    <div class="side-wall-r"></div>
+                    <div class="glasses">［ O-O ］</div>
+                    <div class="pain-text">PAIN!</div>
+                `,
+                normalClass: 'anim-kendo-normal',
+                goggleHtml: `
+                    <div class="sim-bg-grid"></div>
+                    <div class="side-wall-l border-r-2 border-neon-lime"></div>
+                    <div class="side-wall-r border-l-2 border-neon-lime"></div>
+                    <div class="glasses">PERFECT FIT</div>
+                `,
+                goggleClass: 'anim-kendo-goggle',
+                reasons: [
+                    "【超薄型・フラット設計】面の中に干渉しないため、着脱時の引っ掛かりやツルの変形が一切ありません。",
+                    "【耳掛けレス構造】耳に掛けないバンドタイプを採用。面を打たれた際の耳への激痛をゼロにします。"
+                ],
+                talk: "「普通のメガネだと、面を打たれるたびに耳に激痛が走ります。痛みを我慢しながらでは稽古に身が入りません。専用設計なら痛みゼロで剣道に打ち込めます。」"
+            }
+        };
+
+        // DOM Elements
+        const buttonContainer = document.getElementById('sport-buttons');
+        const placeholder = document.getElementById('placeholder');
+        const simResult = document.getElementById('simulation-result');
+        const simNormalContainer = document.getElementById('sim-normal-container');
+        const simGoggleContainer = document.getElementById('sim-goggle-container');
+        const riskText = document.getElementById('risk-text');
+        const reasonList = document.getElementById('reason-list');
+        const talkScript = document.getElementById('talk-script');
+
+        let currentActiveButton = null;
+
+        // Initialize Buttons
+        function init() {
+            Object.values(sportData).forEach(sport => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-dark-800 border-2 border-dark-700 p-4 md:p-6 skew-box group hover:bg-dark-700 hover:border-white transition-all duration-300 relative overflow-hidden text-left focus:outline-none';
+                btn.innerHTML = `
+                    <div class="unskew relative z-10">
+                        <div class="font-oswald text-gray-500 font-bold text-sm tracking-widest mb-1 group-hover:text-white transition-colors">${sport.title}</div>
+                        <div class="font-black text-xl md:text-2xl text-white">${sport.jpTitle}</div>
+                    </div>
+                    <div class="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 ease-out z-0 opacity-10"></div>
+                `;
+                btn.onclick = () => selectSport(sport, btn);
+                buttonContainer.appendChild(btn);
+            });
+        }
+
+        // Handle Selection
+        function selectSport(sport, btnElement) {
+            // UI Update: Button state
+            if (currentActiveButton) {
+                currentActiveButton.classList.remove('border-neon-lime', 'bg-dark-700');
+                currentActiveButton.classList.add('border-dark-700', 'bg-dark-800');
+                currentActiveButton.querySelector('.font-oswald').classList.remove('text-neon-lime');
+                currentActiveButton.querySelector('.font-oswald').classList.add('text-gray-500');
+            }
+            btnElement.classList.remove('border-dark-700', 'bg-dark-800');
+            btnElement.classList.add('border-neon-lime', 'bg-dark-700');
+            btnElement.querySelector('.font-oswald').classList.remove('text-gray-500');
+            btnElement.querySelector('.font-oswald').classList.add('text-neon-lime');
+            currentActiveButton = btnElement;
+
+            // UI Update: Hide placeholder, show results with simple animation
+            placeholder.classList.add('hidden');
+            simResult.classList.remove('hidden');
+            simResult.style.opacity = '0';
+            setTimeout(() => { simResult.style.opacity = '1'; simResult.style.transition = 'opacity 0.4s ease-in'; }, 50);
+
+            // Inject Content
+            // 1. Simulation Animations
+            simNormalContainer.className = `sim-window ${sport.normalClass}`;
+            simNormalContainer.innerHTML = sport.normalHtml;
+            
+            simGoggleContainer.className = `sim-window ${sport.goggleClass}`;
+            simGoggleContainer.innerHTML = sport.goggleHtml;
+
+            // 2. Texts
+            riskText.innerHTML = `⚠️ 危険: ${sport.risk}`;
+            
+            reasonList.innerHTML = sport.reasons.map(reason => `
+                <li class="flex items-start gap-3">
+                    <span class="text-neon-cyan font-black mt-1">✓</span>
+                    <span class="text-gray-200 font-bold leading-relaxed">${reason}</span>
+                </li>
+            `).join('');
+
+            // Highlight specific words in talk script for staff
+            const formattedTalk = sport.talk
+                .replace(/防具/g, '<span class="text-neon-orange border-b-2 border-neon-orange">防具</span>')
+                .replace(/レギュラー/g, '<span class="text-neon-orange border-b-2 border-neon-orange">レギュラー</span>')
+                .replace(/痛みゼロ/g, '<span class="text-neon-orange border-b-2 border-neon-orange">痛みゼロ</span>');
+            talkScript.innerHTML = formattedTalk;
+
+            // Scroll to result on mobile gracefully
+            if (window.innerWidth < 768) {
+                setTimeout(() => {
+                    simResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+
+        // Run
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
