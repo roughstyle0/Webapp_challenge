@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LENS SIMULATOR | The Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Serif+JP:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Noto Serif JP', serif;
+            background-color: #FAFAFA;
+            color: #1A1A1A;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .font-eng {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* テンプレUI(角丸・影)を排除したミニマルなボーダーデザイン */
+        .gallery-frame {
+            border: 1px solid #E5E7EB;
+            background-color: #FFFFFF;
+        }
+
+        /* 光学シミュレーション用CSS */
+        .lens-inner {
+            transform-origin: 100px 100px;
+            transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* プログレッシブ・ディクロージャー用アニメーション */
+        .fade-block {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            pointer-events: none;
+        }
+        
+        .fade-block.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* ボタンのホバーエフェクト（PCのみ） */
+        @media (hover: hover) {
+            .power-btn:hover:not(.active) {
+                background-color: #F3F4F6;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-16 px-6 md:px-12 selection:bg-gray-200 selection:text-black">
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl text-center mb-20">
+        <p class="font-eng tracking-[0.3em] text-xs text-gray-400 mb-6 uppercase">Exhibition of True Beauty</p>
+        <h1 class="text-3xl md:text-5xl tracking-[0.1em] font-light mb-8 font-eng">LENS SIMULATOR</h1>
+        <p class="text-sm md:text-base text-gray-500 max-w-2xl mx-auto leading-loose">
+            強度近視が生む「写真の違和感」を可視化する。<br>
+            そして、最高峰の両面非球面レンズが導く「本来の美しさ」を提案するためのギャラリー。
+        </p>
+    </header>
+
+    <!-- 01: Selector -->
+    <section class="w-full max-w-5xl mb-8">
+        <div class="flex items-center gap-4 mb-10">
+            <span class="font-eng text-xl text-gray-400">01</span>
+            <div class="h-px bg-gray-200 flex-grow"></div>
+            <span class="font-eng tracking-[0.2em] text-sm text-gray-400 uppercase">Select Power</span>
+        </div>
+        <p class="text-center text-sm mb-8 text-gray-600">お客様のメガネの度数（近視の強さ）をお選びください。</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <button class="power-btn gallery-frame py-6 px-4 flex flex-col items-center justify-center transition-colors duration-300 group" data-power="-3.00" onclick="selectPower('-3.00')">
+                <span class="font-eng text-2xl mb-2 group-[.active]:text-white">-3.00</span>
+                <span class="text-xs tracking-wider text-gray-500 group-[.active]:text-gray-300">軽度 / 少し気になる</span>
+            </button>
+            <button class="power-btn gallery-frame py-6 px-4 flex flex-col items-center justify-center transition-colors duration-300 group" data-power="-6.00" onclick="selectPower('-6.00')">
+                <span class="font-eng text-2xl mb-2 group-[.active]:text-white">-6.00</span>
+                <span class="text-xs tracking-wider text-gray-500 group-[.active]:text-gray-300">中等度 / 目が小さくなる</span>
+            </button>
+            <button class="power-btn gallery-frame py-6 px-4 flex flex-col items-center justify-center transition-colors duration-300 group" data-power="-10.00" onclick="selectPower('-10.00')">
+                <span class="font-eng text-2xl mb-2 group-[.active]:text-white">-10.00</span>
+                <span class="text-xs tracking-wider text-gray-500 group-[.active]:text-gray-300">強度 / 輪郭がガッツリ凹む</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- 02: Simulator (Hidden Initially) -->
+    <section id="sim-section" class="w-full max-w-5xl fade-block hidden mt-16 mb-8">
+        <div class="flex items-center gap-4 mb-10">
+            <span class="font-eng text-xl text-gray-400">02</span>
+            <div class="h-px bg-gray-200 flex-grow"></div>
+            <span class="font-eng tracking-[0.2em] text-sm text-gray-400 uppercase">Visualize</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+            
+            <!-- Left: Standard Lens -->
+            <div class="flex flex-col">
+                <div class="gallery-frame relative w-full aspect-square flex items-center justify-center p-6 mb-6">
+                    <!-- 背景をわずかにグレーにしてネガティブな印象を演出 -->
+                    <div class="absolute inset-0 bg-[#F3F4F6] opacity-30"></div>
+                    
+                    <svg viewBox="0 0 200 200" class="w-full h-full max-w-[320px] relative z-10">
+                        <defs>
+                            <clipPath id="lens-clip-std">
+                                <circle cx="100" cy="100" r="48" />
+                            </clipPath>
+                        </defs>
+                        
+                        <!-- 背景の本来の顔 (薄く表示してズレを際立たせる) -->
+                        <g stroke="#D1D5DB" stroke-width="1.5" fill="none">
+                            <path d="M 165 10 Q 185 100 150 190" /> <!-- 輪郭 -->
+                            <path d="M 50 60 Q 95 45 130 65" /> <!-- 眉 -->
+                            <path d="M 50 105 Q 95 85 130 105 Q 95 120 50 105" /> <!-- 目 -->
+                            <circle cx="90" cy="103" r="9" fill="#D1D5DB" /> <!-- 瞳 -->
+                        </g>
+
+                        <!-- メガネフレーム -->
+                        <circle cx="100" cy="100" r="48" fill="none" stroke="#9CA3AF" stroke-width="1" />
+                        <line x1="148" y1="100" x2="200" y2="90" stroke="#9CA3AF" stroke-width="1" />
+                        <line x1="0" y1="100" x2="52" y2="100" stroke="#9CA3AF" stroke-width="1" />
+
+                        <!-- レンズ越しの顔 (ここで歪み・縮小を表現) -->
+                        <g clip-path="url(#lens-clip-std)">
+                            <!-- JSでscaleを操作するグループ -->
+                            <g id="lens-inner-std" class="lens-inner">
+                                <!-- 光学的な空間の歪みを示すグリッド -->
+                                <g stroke="#E5E7EB" stroke-width="0.5">
+                                    <line x1="0" y1="20" x2="200" y2="20" /><line x1="0" y1="60" x2="200" y2="60" />
+                                    <line x1="0" y1="100" x2="200" y2="100" /><line x1="0" y1="140" x2="200" y2="140" />
+                                    <line x1="0" y1="180" x2="200" y2="180" />
+                                    <line x1="20" y1="0" x2="20" y2="200" /><line x1="60" y1="0" x2="60" y2="200" />
+                                    <line x1="100" y1="0" x2="100" y2="200" /><line x1="140" y1="0" x2="140" y2="200" />
+                                    <line x1="180" y1="0" x2="180" y2="200" />
+                                </g>
+                                <!-- 実体 -->
+                                <g stroke="#1A1A1A" stroke-width="2" fill="none">
+                                    <path d="M 165 10 Q 185 100 150 190" /> <!-- 輪郭 -->
+                                    <path d="M 50 60 Q 95 45 130 65" /> <!-- 眉 -->
+                                    <path d="M 50 105 Q 95 85 130 105 Q 95 120 50 105" /> <!-- 目 -->
+                                    <circle cx="90" cy="103" r="9" fill="#1A1A1A" /> <!-- 瞳 -->
+                                </g>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-eng tracking-[0.2em] text-sm mb-2">STANDARD LENS</h3>
+                    <p class="text-xs text-gray-500">標準レンズ（球面設計）</p>
+                    <p id="std-effect-text" class="text-xs text-red-800 mt-3 h-4 transition-opacity duration-500"></p>
+                </div>
+            </div>
+
+            <!-- Right: Premium Lens -->
+            <div class="flex flex-col">
+                <div class="gallery-frame relative w-full aspect-square flex items-center justify-center p-6 mb-6">
+                    <svg viewBox="0 0 200 200" class="w-full h-full max-w-[320px] relative z-10">
+                        <defs>
+                            <clipPath id="lens-clip-prm">
+                                <circle cx="100" cy="100" r="48" />
+                            </clipPath>
+                        </defs>
+                        
+                        <g stroke="#D1D5DB" stroke-width="1.5" fill="none">
+                            <path d="M 165 10 Q 185 100 150 190" />
+                            <path d="M 50 60 Q 95 45 130 65" />
+                            <path d="M 50 105 Q 95 85 130 105 Q 95 120 50 105" />
+                            <circle cx="90" cy="103" r="9" fill="#D1D5DB" />
+                        </g>
+
+                        <circle cx="100" cy="100" r="48" fill="none" stroke="#9CA3AF" stroke-width="1" />
+                        <line x1="148" y1="100" x2="200" y2="90" stroke="#9CA3AF" stroke-width="1" />
+                        <line x1="0" y1="100" x2="52" y2="100" stroke="#9CA3AF" stroke-width="1" />
+
+                        <!-- 最高級レンズは常に歪まない (scale: 1.0) -->
+                        <g clip-path="url(#lens-clip-prm)">
+                            <g class="lens-inner" style="transform: scale(1.0);">
+                                <g stroke="#E5E7EB" stroke-width="0.5">
+                                    <line x1="0" y1="20" x2="200" y2="20" /><line x1="0" y1="60" x2="200" y2="60" />
+                                    <line x1="0" y1="100" x2="200" y2="100" /><line x1="0" y1="140" x2="200" y2="140" />
+                                    <line x1="0" y1="180" x2="200" y2="180" />
+                                    <line x1="20" y1="0" x2="20" y2="200" /><line x1="60" y1="0" x2="60" y2="200" />
+                                    <line x1="100" y1="0" x2="100" y2="200" /><line x1="140" y1="0" x2="140" y2="200" />
+                                    <line x1="180" y1="0" x2="180" y2="200" />
+                                </g>
+                                <g stroke="#1A1A1A" stroke-width="2" fill="none">
+                                    <path d="M 165 10 Q 185 100 150 190" />
+                                    <path d="M 50 60 Q 95 45 130 65" />
+                                    <path d="M 50 105 Q 95 85 130 105 Q 95 120 50 105" />
+                                    <circle cx="90" cy="103" r="9" fill="#1A1A1A" />
+                                </g>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <div class="text-center">
+                    <h3 class="font-eng tracking-[0.2em] text-sm mb-2">DOUBLE ASPHERIC LENS</h3>
+                    <p class="text-xs text-gray-500">最高級レンズ（両面非球面設計）</p>
+                    <p class="text-xs text-[#8B7355] mt-3 h-4">自然なフェイスラインを維持</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Button to reveal details -->
+        <div id="reveal-btn-container" class="mt-16 text-center">
+            <button onclick="revealDetails()" class="inline-flex items-center gap-3 text-sm tracking-widest text-gray-500 hover:text-black transition-colors group">
+                <span class="w-8 h-px bg-gray-400 group-hover:bg-black transition-colors"></span>
+                READ PROPOSAL
+                <span class="w-8 h-px bg-gray-400 group-hover:bg-black transition-colors"></span>
+            </button>
+        </div>
+    </section>
+
+    <!-- 03: Proposal (Hidden Initially) -->
+    <section id="detail-section" class="w-full max-w-5xl fade-block hidden mt-8">
+        <div class="flex items-center gap-4 mb-10">
+            <span class="font-eng text-xl text-gray-400">03</span>
+            <div class="h-px bg-gray-200 flex-grow"></div>
+            <span class="font-eng tracking-[0.2em] text-sm text-gray-400 uppercase">Proposal</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+            <!-- 接客トーク -->
+            <div class="gallery-frame p-8 md:p-10 relative">
+                <p class="font-eng tracking-widest text-xs text-gray-400 mb-6 absolute top-8 left-8">STAFF TALK SCRIPT</p>
+                <div class="mt-8 text-sm md:text-base leading-loose text-gray-800" id="talk-text">
+                    <!-- JSで挿入 -->
+                </div>
+            </div>
+            
+            <!-- ロジック -->
+            <div class="gallery-frame p-8 md:p-10 relative bg-[#FAFAFA]">
+                <p class="font-eng tracking-widest text-xs text-gray-400 mb-6 absolute top-8 left-8">LENS LOGIC</p>
+                <div class="mt-8 text-sm md:text-base leading-loose text-gray-600" id="logic-text">
+                    <!-- JSで挿入 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="mt-24 mb-8 text-center">
+        <p class="font-eng text-xs tracking-widest text-gray-400">© 2026 THE GALLERY</p>
+    </footer>
+
+    <script>
+        // 度数ごとのデータ定義（ロジックとテキストの手抜き禁止ルール準拠）
+        const powerData = {
+            '-3.00': {
+                scale: 0.90, // わずかな縮小とズレ
+                effectMsg: "※輪郭にわずかな段差が生じます",
+                talk: "「少しだけ輪郭の段差が気になる度数ですね。ご旅行先でのふとした横顔のショットや、少し離れて撮る全身写真でも、お顔の印象を自然に保つことができますよ。」",
+                logic: "軽度の近視であっても、標準的な球面レンズでは周辺部にわずかな光の屈折（歪み）が生じます。両面非球面設計を採用することで、この歪みをフラットに補正し、自然な視界と見栄えを実現します。"
+            },
+            '-6.00': {
+                scale: 0.72, // 明らかな縮小とズレ
+                effectMsg: "※目が縮小し、輪郭が内側にズレます",
+                talk: "「メガネだと少し目が小さく見えてしまうとお悩みではないですか？せっかくのGW旅行、グループ写真でご自身だけ目が小さく写ってしまうのを防ぐために、こちらのレンズがおすすめです。」",
+                logic: "中等度になるとレンズの厚みとともに「縮小効果」が顕著に現れます。最高峰の両面非球面レンズは、レンズ前面と後面のカーブを一人ひとりの度数に合わせて最適化し、瞳を本来の大きさに近い状態に保ちます。"
+            },
+            '-10.00': {
+                scale: 0.52, // 激しい縮小と凹み
+                effectMsg: "※輪郭が激しく凹み、目が極端に小さくなります",
+                talk: "「『メガネ姿で写真に写りたくない』とのお悩み、よく分かります。この最高級レンズなら、輪郭の強烈な凹みや目の縮小を劇的に改善できます。ご旅行の思い出を、どうか自信を持って残してくださいね。」",
+                logic: "強度近視による強い縮小効果と輪郭のズレ（プリズム効果）を極限まで抑えるため、あらゆる角度からの視線に対して収差（ぼやけ・歪み）を補正する究極の非球面設計が必須となります。"
+            }
+        };
+
+        let isDetailRevealed = false;
+
+        function selectPower(power) {
+            const data = powerData[power];
+            
+            // 1. ボタンのUI更新
+            document.querySelectorAll('.power-btn').forEach(btn => {
+                if(btn.dataset.power === power) {
+                    btn.classList.add('active', 'bg-[#1A1A1A]', 'text-white');
+                    btn.classList.remove('text-gray-500');
+                } else {
+                    btn.classList.remove('active', 'bg-[#1A1A1A]', 'text-white');
+                    btn.classList.add('text-gray-500');
+                }
+            });
+
+            // 2. シミュレーターセクションの表示（プログレッシブ・ディクロージャー）
+            const simSection = document.getElementById('sim-section');
+            if (simSection.classList.contains('hidden')) {
+                simSection.classList.remove('hidden');
+                // DOMの描画を待ってからアニメーションクラスを付与
+                setTimeout(() => {
+                    simSection.classList.add('is-visible');
+                }, 50);
+            }
+
+            // 3. SVGアニメーションの適用 (CSS transformによる縮小・歪み表現)
+            const lensInner = document.getElementById('lens-inner-std');
+            lensInner.style.transform = `scale(${data.scale})`;
+
+            // 4. テキストの更新
+            document.getElementById('std-effect-text').innerText = data.effectMsg;
+            document.getElementById('talk-text').innerText = data.talk;
+            document.getElementById('logic-text').innerText = data.logic;
+
+            // 5. 詳細エリアが開いている場合は、少しフェードさせて内容更新をアピール
+            if (isDetailRevealed) {
+                const detailSection = document.getElementById('detail-section');
+                detailSection.style.opacity = '0.5';
+                setTimeout(() => {
+                    detailSection.style.opacity = '1';
+                }, 300);
+            }
+        }
+
+        function revealDetails() {
+            isDetailRevealed = true;
+            
+            // ボタンを隠す
+            document.getElementById('reveal-btn-container').classList.add('hidden');
+            
+            // 詳細セクションを表示
+            const detailSection = document.getElementById('detail-section');
+            detailSection.classList.remove('hidden');
+            setTimeout(() => {
+                detailSection.classList.add('is-visible');
+            }, 50);
+            
+            // スムーズスクロール
+            setTimeout(() => {
+                detailSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 200);
+        }
+    </script>
+</body>
+</html>
