@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>夜間専用ドライブレンズ シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg-0:#03050a;
+      --bg-1:#07111d;
+      --bg-2:#0a1826;
+      --line:#17314d;
+      --line-2:#204f79;
+      --cyan:#6ae6ff;
+      --cyan-soft:rgba(106,230,255,.18);
+      --blue:#39a9ff;
+      --orange:#ff9b42;
+      --orange-soft:rgba(255,155,66,.18);
+      --red:#ff5b6b;
+      --text:#e9f6ff;
+      --muted:#8ca3b8;
+      --glass:rgba(7,17,29,.62);
+      --glass-strong:rgba(8,14,23,.78);
+      --shadow-cyan:0 0 0 1px rgba(106,230,255,.16), 0 0 30px rgba(57,169,255,.08), inset 0 0 30px rgba(106,230,255,.04);
+      --shadow-orange:0 0 0 1px rgba(255,155,66,.15), 0 0 24px rgba(255,155,66,.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 20% -10%, rgba(57,169,255,.12), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(255,155,66,.08), transparent 24%),
+        linear-gradient(180deg, #03050a 0%, #050913 45%, #02040a 100%);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+      background-size: 100% 5px, 60px 100%;
+      opacity: .12;
+      mix-blend-mode: screen;
+    }
+
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at center, transparent 40%, rgba(0,0,0,.32) 100%);
+      opacity: .9;
+    }
+
+    .hud-shell{
+      position: relative;
+      background: linear-gradient(180deg, rgba(7,17,29,.74), rgba(4,9,16,.88));
+      border: 1px solid rgba(106,230,255,.12);
+      box-shadow: var(--shadow-cyan);
+      overflow: hidden;
+    }
+
+    .hud-shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(115deg, transparent 0%, rgba(106,230,255,.06) 12%, transparent 24%),
+        linear-gradient(180deg, rgba(106,230,255,.04), transparent 20%, transparent 80%, rgba(255,155,66,.04));
+      opacity:.9;
+    }
+
+    .hud-shell::after{
+      content:"";
+      position:absolute;
+      inset:12px;
+      border:1px solid rgba(106,230,255,.08);
+      border-radius: 1.25rem;
+      pointer-events:none;
+    }
+
+    .chip {
+      border: 1px solid rgba(106,230,255,.18);
+      background: linear-gradient(180deg, rgba(10,24,38,.85), rgba(5,10,18,.95));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02), 0 0 18px rgba(57,169,255,.06);
+    }
+
+    .scene-btn{
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+      border: 1px solid rgba(106,230,255,.15);
+      background:
+        linear-gradient(180deg, rgba(11,22,35,.88), rgba(6,12,20,.96));
+      transition: .22s ease;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+
+    .scene-btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(106,230,255,.34);
+      box-shadow: 0 0 0 1px rgba(106,230,255,.12), 0 0 22px rgba(57,169,255,.08);
+    }
+
+    .scene-btn.active{
+      border-color: rgba(106,230,255,.48);
+      background:
+        linear-gradient(180deg, rgba(13,31,49,.96), rgba(7,14,24,.98));
+      box-shadow:
+        0 0 0 1px rgba(106,230,255,.18),
+        0 0 30px rgba(57,169,255,.12),
+        inset 0 0 18px rgba(106,230,255,.08);
+    }
+
+    .scene-btn.active .scene-badge{
+      color: var(--cyan);
+      border-color: rgba(106,230,255,.28);
+      background: rgba(106,230,255,.08);
+    }
+
+    .mode-btn{
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(9,17,27,.9);
+      color: var(--muted);
+      transition: .2s ease;
+    }
+
+    .mode-btn.active-unsafe{
+      color: #fff3f4;
+      border-color: rgba(255,91,107,.38);
+      background: linear-gradient(180deg, rgba(60,10,18,.9), rgba(32,8,12,.96));
+      box-shadow: 0 0 22px rgba(255,91,107,.10), inset 0 0 18px rgba(255,91,107,.06);
+    }
+
+    .mode-btn.active-safe{
+      color: #eefdff;
+      border-color: rgba(106,230,255,.38);
+      background: linear-gradient(180deg, rgba(11,36,56,.9), rgba(6,18,31,.96));
+      box-shadow: 0 0 22px rgba(106,230,255,.12), inset 0 0 18px rgba(106,230,255,.06);
+    }
+
+    .meter{
+      height: 8px;
+      border-radius: 9999px;
+      overflow: hidden;
+      background: rgba(255,255,255,.06);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    .meter > span{
+      display:block;
+      height:100%;
+      width:0%;
+      border-radius:inherit;
+      transition: width .65s cubic-bezier(.22,1,.36,1);
+    }
+
+    .meter-danger > span{
+      background: linear-gradient(90deg, #ff5b6b, #ffb05a);
+      box-shadow: 0 0 18px rgba(255,91,107,.16);
+    }
+
+    .meter-safe > span{
+      background: linear-gradient(90deg, #47b2ff, #6ae6ff);
+      box-shadow: 0 0 18px rgba(106,230,255,.16);
+    }
+
+    .road-stage{
+      position: relative;
+      min-height: 600px;
+      border: 1px solid rgba(106,230,255,.14);
+      background:
+        radial-gradient(circle at 50% 8%, rgba(255,255,255,.02), transparent 18%),
+        linear-gradient(180deg, rgba(8,14,25,.74), rgba(3,5,10,.98));
+      overflow: hidden;
+      box-shadow: var(--shadow-cyan);
+    }
+
+    .road-stage::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(106,230,255,.06), transparent 28%),
+        linear-gradient(180deg, rgba(106,230,255,.04), transparent 28%, transparent 80%, rgba(255,155,66,.04));
+    }
+
+    .horizon-glow{
+      position:absolute;
+      left:50%;
+      top:13%;
+      width:58%;
+      height:22%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(57,169,255,.10), transparent 62%);
+      filter: blur(20px);
+      pointer-events:none;
+    }
+
+    .road{
+      position:absolute;
+      left:50%;
+      bottom:-4%;
+      width:74%;
+      height:62%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, rgba(8,12,18,.2), rgba(6,8,14,.8));
+      clip-path: polygon(41% 0%, 59% 0%, 100% 100%, 0% 100%);
+      border-top: 1px solid rgba(255,255,255,.04);
+      box-shadow: inset 0 30px 40px rgba(255,255,255,.02);
+    }
+
+    .lane{
+      position:absolute;
+      left:50%;
+      bottom:0;
+      width: 4px;
+      height: 100%;
+      transform: translateX(-50%);
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(255,255,255,.0) 0 24px,
+          rgba(236,247,255,.65) 24px 48px,
+          rgba(255,255,255,.0) 48px 92px
+        );
+      filter: blur(.4px);
+      opacity: .88;
+    }
+
+    .road-edge{
+      position:absolute;
+      bottom:0;
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(210,235,255,.62));
+      filter: blur(.6px);
+      opacity: .7;
+    }
+    .road-edge.left{ left:19.5%; transform: skewX(20deg); }
+    .road-edge.right{ right:19.5%; transform: skewX(-20deg); }
+
+    .city{
+      position:absolute;
+      inset:auto 0 34% 0;
+      height:28%;
+      pointer-events:none;
+      opacity:.34;
+      background:
+        linear-gradient(90deg,
+          transparent 0%,
+          rgba(106,230,255,.12) 3%, transparent 4%,
+          transparent 9%,
+          rgba(255,255,255,.10) 10%, transparent 11%,
+          transparent 16%,
+          rgba(255,155,66,.12) 17%, transparent 18%,
+          transparent 26%,
+          rgba(106,230,255,.10) 27%, transparent 28%,
+          transparent 34%,
+          rgba(255,255,255,.08) 35%, transparent 36%,
+          transparent 44%,
+          rgba(57,169,255,.10) 45%, transparent 46%,
+          transparent 55%,
+          rgba(255,155,66,.08) 56%, transparent 57%,
+          transparent 100%);
+      filter: blur(2px);
+    }
+
+    .hud-mark{
+      position:absolute;
+      color: rgba(106,230,255,.52);
+      font-size:.72rem;
+      letter-spacing:.24em;
+      text-transform: uppercase;
+    }
+
+    .car-light{
+      position:absolute;
+      border-radius:9999px;
+      mix-blend-mode: screen;
+      transition: all .55s cubic-bezier(.22,1,.36,1);
+    }
+
+    .car-light.red{
+      background: radial-gradient(circle, rgba(255,120,90,.95) 0%, rgba(255,70,70,.65) 26%, rgba(255,70,70,.06) 68%, transparent 72%);
+      box-shadow: 0 0 14px rgba(255,100,88,.18);
+    }
+
+    .car-light.white{
+      background: radial-gradient(circle, rgba(255,255,255,.98) 0%, rgba(180,225,255,.85) 18%, rgba(160,220,255,.16) 48%, transparent 66%);
+      box-shadow: 0 0 20px rgba(255,255,255,.14), 0 0 30px rgba(120,190,255,.18);
+    }
+
+    .street-light{
+      position:absolute;
+      width:4px;
+      border-radius:9999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,210,150,.42));
+      filter: blur(.3px);
+      opacity:.42;
+    }
+
+    .glare-wrap{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      transition: opacity .55s ease;
+    }
+
+    .glare-source{
+      position:absolute;
+      border-radius:9999px;
+      background: radial-gradient(circle, rgba(255,255,255,.98), rgba(220,240,255,.72) 18%, rgba(180,220,255,.14) 44%, transparent 68%);
+      transform: translate(-50%,-50%);
+      mix-blend-mode: screen;
+      transition: all .55s cubic-bezier(.22,1,.36,1);
+    }
+
+    .starburst{
+      position:absolute;
+      inset:0;
+      background:
+        conic-gradient(from 0deg,
+          transparent 0deg 8deg,
+          rgba(255,255,255,.52) 8deg 9deg,
+          transparent 9deg 20deg,
+          rgba(200,235,255,.42) 20deg 21deg,
+          transparent 21deg 32deg,
+          rgba(255,255,255,.62) 32deg 33deg,
+          transparent 33deg 44deg,
+          rgba(180,220,255,.42) 44deg 45deg,
+          transparent 45deg 56deg,
+          rgba(255,255,255,.56) 56deg 57deg,
+          transparent 57deg 68deg,
+          rgba(210,240,255,.42) 68deg 69deg,
+          transparent 69deg 80deg,
+          rgba(255,255,255,.56) 80deg 81deg,
+          transparent 81deg 92deg,
+          rgba(210,240,255,.38) 92deg 93deg,
+          transparent 93deg 104deg,
+          rgba(255,255,255,.58) 104deg 105deg,
+          transparent 105deg 116deg,
+          rgba(190,225,255,.40) 116deg 117deg,
+          transparent 117deg 128deg,
+          rgba(255,255,255,.54) 128deg 129deg,
+          transparent 129deg 360deg);
+      filter: blur(1.2px);
+      opacity: .9;
+      transition: opacity .55s ease, transform .55s ease;
+    }
+
+    .fog{
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255,255,255,.34), transparent 18%),
+        radial-gradient(circle at 26% 50%, rgba(255,255,255,.12), transparent 22%),
+        radial-gradient(circle at 74% 50%, rgba(255,255,255,.12), transparent 22%),
+        radial-gradient(circle at 50% 62%, rgba(255,255,255,.10), transparent 28%);
+      transition: opacity .55s ease;
+    }
+
+    .rain-reflection{
+      position:absolute;
+      left:50%;
+      bottom:9%;
+      width:76%;
+      height:30%;
+      transform: translateX(-50%);
+      background:
+        linear-gradient(180deg, transparent 0%, rgba(170,215,255,.10) 20%, rgba(255,255,255,.10) 42%, rgba(255,255,255,0) 90%),
+        repeating-linear-gradient(
+          93deg,
+          transparent 0 18px,
+          rgba(255,255,255,.06) 18px 22px,
+          transparent 22px 50px
+        );
+      filter: blur(1.4px);
+      opacity: 0;
+      transition: opacity .55s ease;
+      pointer-events:none;
+    }
+
+    .rain-lines{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      background:
+        repeating-linear-gradient(
+          105deg,
+          rgba(255,255,255,.0) 0 14px,
+          rgba(210,235,255,.08) 14px 16px,
+          rgba(255,255,255,.0) 16px 28px
+        );
+      filter: blur(.4px);
+      transition: opacity .55s ease;
+      pointer-events:none;
+    }
+
+    .fatigue-haze{
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 50% 56%, rgba(255,255,255,.08), transparent 28%),
+        radial-gradient(circle at 24% 46%, rgba(255,255,255,.06), transparent 24%),
+        radial-gradient(circle at 76% 46%, rgba(255,255,255,.06), transparent 24%);
+      opacity:0;
+      transition: opacity .55s ease;
+      pointer-events:none;
+    }
+
+    .glass-overlay{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      transition: all .55s cubic-bezier(.22,1,.36,1);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), transparent 18%, transparent 80%, rgba(255,255,255,.02)),
+        radial-gradient(circle at 50% 10%, rgba(255,255,255,.06), transparent 26%);
+      backdrop-filter: none;
+    }
+
+    .safe-mode .glass-overlay{
+      background:
+        linear-gradient(180deg, rgba(80,165,255,.04), transparent 22%, transparent 78%, rgba(106,230,255,.04)),
+        radial-gradient(circle at 50% 10%, rgba(106,230,255,.08), transparent 26%);
+    }
+
+    .unsafe-mode .glass-overlay{
+      backdrop-filter: blur(2.2px) brightness(1.15);
+    }
+
+    .safe-mode .glass-overlay{
+      backdrop-filter: blur(.4px) brightness(.98) contrast(1.08);
+    }
+
+    .unsafe-mode .lane,
+    .unsafe-mode .road-edge,
+    .unsafe-mode .city{
+      filter: blur(2px);
+      opacity:.42;
+      transition: .55s ease;
+    }
+
+    .safe-mode .lane,
+    .safe-mode .road-edge,
+    .safe-mode .city{
+      filter: blur(.4px);
+      opacity:.92;
+      transition: .55s ease;
+    }
+
+    .safe-mode .rain-reflection{
+      filter: blur(.7px);
+      opacity:.28;
+    }
+
+    .unsafe-mode .rain-reflection{
+      filter: blur(5px);
+      opacity:.68;
+    }
+
+    .scene-led.unsafe-mode .glare-source.main{
+      width: 380px; height: 380px;
+      opacity: 1;
+      filter: blur(2px);
+    }
+
+    .scene-led.safe-mode .glare-source.main{
+      width: 132px; height: 132px;
+      opacity: .48;
+      filter: blur(.4px);
+    }
+
+    .scene-led.unsafe-mode .starburst{
+      opacity: .96;
+      transform: scale(1.22);
+    }
+
+    .scene-led.safe-mode .starburst{
+      opacity: .20;
+      transform: scale(.72);
+    }
+
+    .scene-led.unsafe-mode .fog{ opacity:.72; }
+    .scene-led.safe-mode .fog{ opacity:.12; }
+
+    .scene-rain .rain-lines{ opacity:.44; }
+    .scene-rain.unsafe-mode .glare-source.main{
+      width: 290px; height: 290px; opacity:.78; filter: blur(3px);
+    }
+    .scene-rain.safe-mode .glare-source.main{
+      width: 112px; height: 112px; opacity:.32; filter: blur(.5px);
+    }
+    .scene-rain.unsafe-mode .starburst{ opacity:.58; transform: scale(1.08); }
+    .scene-rain.safe-mode .starburst{ opacity:.10; transform: scale(.75); }
+    .scene-rain.unsafe-mode .fog{ opacity:.46; }
+    .scene-rain.safe-mode .fog{ opacity:.08; }
+
+    .scene-highway .fatigue-haze{ opacity:.42; }
+    .scene-highway.unsafe-mode .glare-source.main{
+      width: 248px; height: 248px; opacity:.72; filter: blur(2px);
+    }
+    .scene-highway.safe-mode .glare-source.main{
+      width: 104px; height: 104px; opacity:.26; filter: blur(.4px);
+    }
+    .scene-highway.unsafe-mode .starburst{ opacity:.34; transform: scale(1.02); }
+    .scene-highway.safe-mode .starburst{ opacity:.06; transform: scale(.70); }
+    .scene-highway.unsafe-mode .fog{ opacity:.34; }
+    .scene-highway.safe-mode .fog{ opacity:.07; }
+
+    .data-block{
+      border: 1px solid rgba(106,230,255,.12);
+      background: linear-gradient(180deg, rgba(8,14,25,.76), rgba(5,9,16,.92));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.015);
+    }
+
+    .story-step{
+      opacity:0;
+      transform: translateY(14px);
+      transition: all .4s ease;
+      border-left: 1px solid rgba(106,230,255,.14);
+      background: linear-gradient(180deg, rgba(8,14,25,.52), rgba(5,9,16,.72));
+    }
+
+    .story-step.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    .danger-tag{
+      color:#ffd7dc;
+      border:1px solid rgba(255,91,107,.24);
+      background: rgba(255,91,107,.10);
+      box-shadow: var(--shadow-orange);
+    }
+
+    .safe-tag{
+      color:#dffdff;
+      border:1px solid rgba(106,230,255,.24);
+      background: rgba(106,230,255,.08);
+    }
+
+    .corner-cut{
+      clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    }
+
+    .pulse{
+      animation: pulseGlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow{
+      0%,100% { opacity: .78; }
+      50% { opacity: 1; }
+    }
+
+    .blink{
+      animation: blinkAlpha 1.4s ease-in-out infinite;
+    }
+
+    @keyframes blinkAlpha{
+      0%,100% { opacity:.55; }
+      50% { opacity:1; }
+    }
+
+    @media (max-width: 1024px){
+      .road-stage{ min-height: 520px; }
+    }
+
+    @media (max-width: 768px){
+      .road-stage{ min-height: 460px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <header class="hud-shell corner-cut rounded-[28px] p-6 md:p-8 lg:p-10 mb-6">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-4xl">
+          <div class="flex items-center gap-3 text-[11px] uppercase tracking-[0.34em] text-cyan-200/70 mb-4">
+            <span class="inline-flex h-2 w-2 rounded-full bg-cyan-300 pulse"></span>
+            Night Drive Vision Assist
+          </div>
+          <h1 class="text-3xl md:text-5xl lg:text-6xl font-light tracking-[0.03em] leading-[1.05] text-slate-100">
+            GWの夜間ドライブを救う。<br class="hidden md:block" />
+            夜間専用ドライブレンズ
+            <span class="text-cyan-300">シミュレーター</span>
+          </h1>
+        </div>
+        <div class="max-w-md">
+          <p class="text-sm md:text-base leading-7 text-slate-300/85">
+            対向車のLED、雨のギラつき、高速道路の滲み。
+            “ただ暗くする”のではなく、“眩しい光だけを抑えて必要な視界は守る”価値を、
+            新人スタッフでも直感的に伝えられる接客用アプリです。
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <!-- Left panel -->
+      <aside class="space-y-6">
+        <section class="hud-shell corner-cut rounded-[24px] p-5 md:p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.32em] text-cyan-200/60 mb-2">Scene Select</p>
+              <h2 class="text-xl font-light text-slate-100">危険なシーンを選ぶ</h2>
+            </div>
+            <div class="chip rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-orange-200/80">
+              Step 1
+            </div>
+          </div>
+
+          <div class="space-y-3" id="sceneButtons">
+            <button class="scene-btn active corner-cut rounded-2xl p-4 w-full" data-scene="led">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm md:text-base text-slate-100">対向車の強烈なLEDハイビーム</div>
+                  <div class="text-xs md:text-sm text-slate-400 mt-1">眩惑で前方が真っ白に近くなる</div>
+                </div>
+                <span class="scene-badge rounded-full border border-cyan-400/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-400">
+                  Glare
+                </span>
+              </div>
+            </button>
+
+            <button class="scene-btn corner-cut rounded-2xl p-4 w-full" data-scene="rain">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm md:text-base text-slate-100">雨の日の夜間</div>
+                  <div class="text-xs md:text-sm text-slate-400 mt-1">路面のギラつき・白線が見えない</div>
+                </div>
+                <span class="scene-badge rounded-full border border-cyan-400/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-400">
+                  Wet
+                </span>
+              </div>
+            </button>
+
+            <button class="scene-btn corner-cut rounded-2xl p-4 w-full" data-scene="highway">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm md:text-base text-slate-100">長時間の高速道路</div>
+                  <div class="text-xs md:text-sm text-slate-400 mt-1">滲むテールランプ・眼精疲労</div>
+                </div>
+                <span class="scene-badge rounded-full border border-cyan-400/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-400">
+                  Fatigue
+                </span>
+              </div>
+            </button>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-cyan-400/10">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-[11px] uppercase tracking-[0.32em] text-cyan-200/60 mb-2">Vision Mode</p>
+                <h3 class="text-lg font-light text-slate-100">比較モード</h3>
+              </div>
+              <div class="chip rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-orange-200/80">
+                Step 2
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button id="unsafeBtn" class="mode-btn active-unsafe corner-cut rounded-xl p-3 text-sm">
+                裸眼・普通のメガネ
+              </button>
+              <button id="safeBtn" class="mode-btn corner-cut rounded-xl p-3 text-sm">
+                夜間専用レンズ
+              </button>
+            </div>
+
+            <p id="modeGuide" class="mt-4 text-sm leading-7 text-slate-300/78">
+              危険な視界を表示中。眩しい光が放射状に爆発し、前方情報が埋もれる状態を再現しています。
+            </p>
+          </div>
+        </section>
+
+        <section class="hud-shell corner-cut rounded-[24px] p-5 md:p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <p class="text-[11px] uppercase tracking-[0.32em] text-cyan-200/60 mb-2">Impact Meter</p>
+              <h2 class="text-xl font-light text-slate-100">体感差メーター</h2>
+            </div>
+          </div>
+
+          <div class="space-y-5">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-slate-300/80">眩惑リスク</span>
+                <span id="dangerValue" class="text-sm text-orange-200">92%</span>
+              </div>
+              <div class="meter meter-danger"><span id="dangerBar"></span></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-slate-300/80">視界の鮮明さ</span>
+                <span id="clarityValue" class="text-sm text-cyan-200">38%</span>
+              </div>
+              <div class="meter meter-safe"><span id="clarityBar"></span></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-slate-300/80">疲労の蓄積</span>
+                <span id="fatigueValue" class="text-sm text-orange-200">84%</span>
+              </div>
+              <div class="meter meter-danger"><span id="fatigueBar"></span></div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 gap-3">
+            <div class="data-block corner-cut rounded-2xl p-4">
+              <div class="text-[11px] uppercase tracking-[0.28em] text-cyan-200/58 mb-2">Hook Copy</div>
+              <p id="hookCopy" class="text-sm leading-7 text-slate-200/90"></p>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Right panel -->
+      <section class="space-y-6">
+        <section class="road-stage corner-cut rounded-[28px] p-4 md:p-5" id="stage">
+          <div class="hud-mark left-5 top-5">Drive View / Front Windshield</div>
+          <div class="hud-mark right-5 top-5 text-orange-200/60">Lens Response Active</div>
+          <div class="hud-mark left-5 bottom-5 blink">Visual Simulation</div>
+
+          <div class="horizon-glow"></div>
+          <div class="city"></div>
+
+          <div class="street-light" style="left:12%; top:24%; height:46%;"></div>
+          <div class="street-light" style="left:22%; top:18%; height:54%;"></div>
+          <div class="street-light" style="left:78%; top:16%; height:56%;"></div>
+          <div class="street-light" style="left:88%; top:22%; height:44%;"></div>
+
+          <div class="road">
+            <div class="lane"></div>
+            <div class="road-edge left"></div>
+            <div class="road-edge right"></div>
+          </div>
+
+          <div class="rain-reflection"></div>
+          <div class="rain-lines"></div>
+          <div class="fatigue-haze"></div>
+
+          <!-- distant cars -->
+          <div class="car-light red" style="left:37%; top:45%; width:16px; height:16px;"></div>
+          <div class="car-light red" style="left:40%; top:44%; width:14px; height:14px;"></div>
+          <div class="car-light red" style="left:62%; top:47%; width:18px; height:18px;"></div>
+          <div class="car-light red" style="left:65%; top:46%; width:15px; height:15px;"></div>
+
+          <div class="car-light white" style="left:25%; top:40%; width:22px; height:22px; opacity:.5;"></div>
+          <div class="car-light white" style="left:73%; top:36%; width:18px; height:18px; opacity:.42;"></div>
+
+          <div class="glare-wrap" id="glareWrap">
+            <div class="glare-source main" id="mainGlare" style="left:50%; top:39%;">
+              <div class="starburst"></div>
+            </div>
+            <div class="fog"></div>
+          </div>
+
+          <div class="glass-overlay"></div>
+
+          <div class="absolute left-4 right-4 bottom-4 md:left-5 md:right-5 md:bottom-5">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div class="data-block corner-cut rounded-xl p-3">
+                <div class="text-[10px] uppercase tracking-[0.25em] text-slate-400 mb-1">Current Scene</div>
+                <div id="sceneLabel" class="text-sm text-slate-100">対向車の強烈なLEDハイビーム</div>
+              </div>
+              <div class="data-block corner-cut rounded-xl p-3">
+                <div class="text-[10px] uppercase tracking-[0.25em] text-slate-400 mb-1">Visible Hazard</div>
+                <div id="hazardLabel" class="text-sm text-orange-200">白飛び / 眩惑 / 一時的な視認低下</div>
+              </div>
+              <div class="data-block corner-cut rounded-xl p-3">
+                <div class="text-[10px] uppercase tracking-[0.25em] text-slate-400 mb-1">Lens Status</div>
+                <div id="lensStatus" class="text-sm text-rose-200">裸眼・普通のメガネ</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="hud-shell corner-cut rounded-[24px] p-5 md:p-6">
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-[.92fr_1.08fr]">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.32em] text-cyan-200/60 mb-2">Sales Navigation</p>
+                  <h2 class="text-2xl font-light text-slate-100">接客トークと仕組み解説</h2>
+                </div>
+                <div class="chip rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-orange-200/80">
+                  Step 3
+                </div>
+              </div>
+              <p class="text-sm leading-7 text-slate-300/78">
+                感情に刺さる危険の共有から入り、
+                「普通のサングラスが危険な理由」
+                「専用レンズがどの光を抑えるのか」
+                「命と家族を守る提案」まで、
+                そのまま新人スタッフのカンペとして使える構成です。
+              </p>
+            </div>
+
+            <div class="space-y-4">
+              <div id="step1" class="story-step corner-cut rounded-2xl p-4 pl-5 show">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="danger-tag rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.22em]">Scene Risk</span>
+                </div>
+                <p id="sceneText" class="text-sm leading-7 text-slate-200/90"></p>
+              </div>
+
+              <div id="step2" class="story-step corner-cut rounded-2xl p-4 pl-5">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="danger-tag rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.22em]">Do Not</span>
+                </div>
+                <p id="dangerText" class="text-sm leading-7 text-slate-200/90"></p>
+              </div>
+
+              <div id="step3" class="story-step corner-cut rounded-2xl p-4 pl-5">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="safe-tag rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.22em]">How It Works</span>
+                </div>
+                <p id="logicText" class="text-sm leading-7 text-slate-200/90"></p>
+              </div>
+
+              <div id="step4" class="story-step corner-cut rounded-2xl p-4 pl-5">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="safe-tag rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.22em]">Sales Talk</span>
+                </div>
+                <p id="talkText" class="text-sm leading-7 text-slate-200/90"></p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const sceneData = {
+        led: {
+          label: "対向車の強烈なLEDハイビーム",
+          hazard: "白飛び / 眩惑 / 一時的な視認低下",
+          unsafe: { danger: 92, clarity: 38, fatigue: 84 },
+          safe:   { danger: 28, clarity: 88, fatigue: 36 },
+          hook: "「夜の運転は“暗い”のが怖いのではなく、“眩しい光で必要な情報が消える”のが本当の怖さなんです。」",
+          modeGuideUnsafe: "危険な視界を表示中。対向車のLEDが爆発的に広がり、前方の白線や距離感が埋もれる状態です。",
+          modeGuideSafe: "夜間専用レンズを表示中。眩しいピーク光だけを抑え、道路情報や周辺の明るさは保ったまま見やすくしています。",
+          texts: {
+            scene: "対向車のハイビームや強いLEDが真正面から入ると、光が放射状ににじみ、ほんの一瞬でも前が見えにくくなります。夜の一瞬の見失いは、そのまま危険距離に直結します。",
+            danger: "ここで普通のサングラスをかけるのは逆に危険です。全体を暗くしてしまうので、眩しさは少し減っても、歩行者・標識・路肩など本当に必要な情報まで一緒に沈んでしまいます。",
+            logic: "夜間専用レンズは、視界全体をベタッと暗くするのではなく、眩しさの原因になりやすいピーク光やギラつき成分を選択的に抑える発想です。だから、ヘッドライトの刺さる感じを和らげつつ、白線や前方情報の視認性は守りやすくなります。",
+            talk: "「夜に暗いレンズをかける提案ではなく、怖さの原因になっている“刺さる光”だけを抑えて、運転に必要な視界は守るレンズなんです。GWの長距離移動ほど、安心感がかなり変わります。」"
+          }
+        },
+        rain: {
+          label: "雨の日の夜間",
+          hazard: "路面反射 / 白線ロスト / 水膜ギラつき",
+          unsafe: { danger: 89, clarity: 31, fatigue: 80 },
+          safe:   { danger: 34, clarity: 82, fatigue: 42 },
+          hook: "「雨の夜は、暗いから危ないのではなく、光が路面で暴れて“白線が消える”のが危険なんです。」",
+          modeGuideUnsafe: "危険な視界を表示中。濡れた路面が対向車や街灯の光を乱反射し、白線や境界が埋もれています。",
+          modeGuideSafe: "夜間専用レンズを表示中。路面のギラつきを抑え、白線と道路の境界を見分けやすい方向へ整えています。",
+          texts: {
+            scene: "雨の夜は路面が巨大な鏡のようになり、ライト・街灯・看板の光が路面いっぱいに広がります。その結果、肝心の白線や道路端が見えづらくなり、車線キープの負担が一気に増えます。",
+            danger: "この場面で普通のサングラスを使うと、路面のギラつきだけでなく、道路そのものの明るさも落としてしまいます。見えにくいものをさらに見えにくくしてしまうので、夜の雨ではおすすめできません。",
+            logic: "専用レンズは、乱反射しやすい眩しさ成分を和らげながら、運転に必要なコントラストを保つ考え方です。つまり“暗くする”のではなく、“暴れる光を整理して白線や奥行きを見やすくする”のが価値です。",
+            talk: "「雨の夜こそ、ただ暗くするレンズは危険です。このレンズは、ギラつきだけを抑えて白線や道路の輪郭を見やすくするので、夜の運転ストレスがかなり変わります。」"
+          }
+        },
+        highway: {
+          label: "長時間の高速道路",
+          hazard: "テールランプの滲み / 集中力低下 / 眼精疲労",
+          unsafe: { danger: 74, clarity: 46, fatigue: 94 },
+          safe:   { danger: 26, clarity: 86, fatigue: 40 },
+          hook: "「高速道路の夜間運転は、見えているようで“光のにじみ”にずっと耐えている状態なんです。」",
+          modeGuideUnsafe: "危険な視界を表示中。テールランプや標識の光がじわっと滲み、視界全体に疲労の膜がかかった状態です。",
+          modeGuideSafe: "夜間専用レンズを表示中。光のにじみを抑え、長時間でも目が追いやすい視界バランスに整えています。",
+          texts: {
+            scene: "高速道路では、前方車両のテールランプや標識の光を長時間見続けることで、じわじわと目の疲れが積み上がります。最初は平気でも、後半ほど集中力の低下として表れやすいシーンです。",
+            danger: "ここで普通のサングラスを使うと、前方全体が暗くなって距離感や周辺認識が取りづらくなります。疲れを減らすつもりが、逆に情報量まで削ってしまうのが問題です。",
+            logic: "夜間専用レンズは、眩しさやにじみの原因になりやすい光を整え、必要な明るさを極端に落とさずに視界のストレスを下げる発想です。だから、高速道路のような長時間運転で“最後まで目が持つ感覚”につながりやすくなります。",
+            talk: "「このレンズの価値は“最初の見やすさ”より、“2時間後・3時間後も運転がつらくなりにくいこと”です。ご本人の負担だけでなく、同乗するご家族の安心にもつながります。」"
+          }
+        }
+      };
+
+      const state = {
+        scene: "led",
+        mode: "unsafe"
+      };
+
+      const els = {
+        stage: document.getElementById("stage"),
+        sceneButtons: Array.from(document.querySelectorAll(".scene-btn")),
+        unsafeBtn: document.getElementById("unsafeBtn"),
+        safeBtn: document.getElementById("safeBtn"),
+        modeGuide: document.getElementById("modeGuide"),
+        dangerValue: document.getElementById("dangerValue"),
+        clarityValue: document.getElementById("clarityValue"),
+        fatigueValue: document.getElementById("fatigueValue"),
+        dangerBar: document.getElementById("dangerBar"),
+        clarityBar: document.getElementById("clarityBar"),
+        fatigueBar: document.getElementById("fatigueBar"),
+        hookCopy: document.getElementById("hookCopy"),
+        sceneLabel: document.getElementById("sceneLabel"),
+        hazardLabel: document.getElementById("hazardLabel"),
+        lensStatus: document.getElementById("lensStatus"),
+        sceneText: document.getElementById("sceneText"),
+        dangerText: document.getElementById("dangerText"),
+        logicText: document.getElementById("logicText"),
+        talkText: document.getElementById("talkText"),
+        steps: [
+          document.getElementById("step1"),
+          document.getElementById("step2"),
+          document.getElementById("step3"),
+          document.getElementById("step4")
+        ],
+        mainGlare: document.getElementById("mainGlare")
+      };
+
+      function safeText(el, text) {
+        if (el) el.textContent = typeof text === "string" ? text : "";
+      }
+
+      function animateSteps() {
+        els.steps.forEach(step => step.classList.remove("show"));
+        setTimeout(() => els.steps[0]?.classList.add("show"), 50);
+        setTimeout(() => els.steps[1]?.classList.add("show"), 180);
+        setTimeout(() => els.steps[2]?.classList.add("show"), 310);
+        setTimeout(() => els.steps[3]?.classList.add("show"), 440);
+      }
+
+      function updateMetrics(scene, mode) {
+        const values = sceneData[scene][mode];
+        safeText(els.dangerValue, `${values.danger}%`);
+        safeText(els.clarityValue, `${values.clarity}%`);
+        safeText(els.fatigueValue, `${values.fatigue}%`);
+
+        els.dangerBar.style.width = `${values.danger}%`;
+        els.clarityBar.style.width = `${values.clarity}%`;
+        els.fatigueBar.style.width = `${values.fatigue}%`;
+      }
+
+      function updateSceneButtons(scene) {
+        els.sceneButtons.forEach(btn => {
+          btn.classList.toggle("active", btn.dataset.scene === scene);
+        });
+      }
+
+      function updateModeButtons(mode) {
+        els.unsafeBtn.className = "mode-btn corner-cut rounded-xl p-3 text-sm";
+        els.safeBtn.className = "mode-btn corner-cut rounded-xl p-3 text-sm";
+
+        if (mode === "unsafe") {
+          els.unsafeBtn.classList.add("active-unsafe");
+        } else {
+          els.safeBtn.classList.add("active-safe");
+        }
+      }
+
+      function updateStage(scene, mode) {
+        els.stage.classList.remove(
+          "scene-led", "scene-rain", "scene-highway",
+          "unsafe-mode", "safe-mode"
+        );
+
+        const sceneClass = scene === "led"
+          ? "scene-led"
+          : scene === "rain"
+          ? "scene-rain"
+          : "scene-highway";
+
+        els.stage.classList.add(sceneClass);
+        els.stage.classList.add(mode === "unsafe" ? "unsafe-mode" : "safe-mode");
+
+        if (scene === "led") {
+          els.mainGlare.style.left = "50%";
+          els.mainGlare.style.top = "39%";
+        } else if (scene === "rain") {
+          els.mainGlare.style.left = "52%";
+          els.mainGlare.style.top = "34%";
+        } else {
+          els.mainGlare.style.left = "51%";
+          els.mainGlare.style.top = "43%";
+        }
+      }
+
+      function render() {
+        const data = sceneData[state.scene];
+        if (!data) return;
+
+        updateSceneButtons(state.scene);
+        updateModeButtons(state.mode);
+        updateStage(state.scene, state.mode);
+        updateMetrics(state.scene, state.mode);
+
+        safeText(els.hookCopy, data.hook);
+        safeText(els.sceneLabel, data.label);
+        safeText(els.hazardLabel, data.hazard);
+        safeText(els.sceneText, data.texts.scene);
+        safeText(els.dangerText, data.texts.danger);
+        safeText(els.logicText, data.texts.logic);
+        safeText(els.talkText, data.texts.talk);
+
+        if (state.mode === "unsafe") {
+          safeText(els.modeGuide, data.modeGuideUnsafe);
+          safeText(els.lensStatus, "裸眼・普通のメガネ");
+          els.lensStatus.className = "text-sm text-rose-200";
+        } else {
+          safeText(els.modeGuide, data.modeGuideSafe);
+          safeText(els.lensStatus, "夜間専用レンズ");
+          els.lensStatus.className = "text-sm text-cyan-200";
+        }
+
+        animateSteps();
+      }
+
+      els.sceneButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          try {
+            const next = btn.dataset.scene;
+            if (!sceneData[next]) return;
+            state.scene = next;
+            render();
+          } catch (e) {
+            console.error("シーン切替エラー:", e);
+          }
+        });
+      });
+
+      els.unsafeBtn.addEventListener("click", () => {
+        try {
+          state.mode = "unsafe";
+          render();
+        } catch (e) {
+          console.error("危険モード切替エラー:", e);
+        }
+      });
+
+      els.safeBtn.addEventListener("click", () => {
+        try {
+          state.mode = "safe";
+          render();
+        } catch (e) {
+          console.error("安全モード切替エラー:", e);
+        }
+      });
+
+      try {
+        render();
+      } catch (e) {
+        console.error("初期化エラー:", e);
+        safeText(els.modeGuide, "表示の初期化に失敗しました。ページを再読み込みしてください。");
+      }
+    })();
+  </script>
+</body>
+</html>
