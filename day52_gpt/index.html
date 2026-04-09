@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スポーツ別・ジュニアスポーツメガネ安全性＆パフォーマンス・シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg:#08090c;
+      --panel:#101319;
+      --panel-2:#171b23;
+      --line:#2a2f3a;
+      --text:#f3f5f7;
+      --muted:#a9b1bc;
+      --neon:#d7ff2f;
+      --neon-2:#ff7a00;
+      --danger:#ff4040;
+      --cyan:#32e6ff;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{
+      margin:0;
+      padding:0;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(215,255,47,.08), transparent 18%),
+        radial-gradient(circle at 90% 18%, rgba(255,122,0,.08), transparent 18%),
+        radial-gradient(circle at 50% 100%, rgba(50,230,255,.06), transparent 22%),
+        linear-gradient(180deg, #050608 0%, #090b0f 48%, #050608 100%);
+      color:var(--text);
+      font-family: Impact, Haettenschweiler, "Arial Black", "Segoe UI", Arial, sans-serif;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background:
+        repeating-linear-gradient(
+          -55deg,
+          rgba(255,255,255,.06) 0 2px,
+          transparent 2px 18px
+        );
+      mix-blend-mode:screen;
+    }
+
+    .app-shell{
+      width:100%;
+      max-width:1280px;
+      margin:0 auto;
+      padding:14px;
+    }
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(140deg, rgba(255,255,255,.02), transparent 38%),
+        linear-gradient(135deg, rgba(215,255,47,.12), transparent 22%),
+        linear-gradient(180deg, rgba(16,19,25,.98), rgba(10,12,16,.98));
+      clip-path: polygon(0 0, 100% 0, 100% 94%, 97% 100%, 0 100%);
+      box-shadow:
+        0 20px 60px rgba(0,0,0,.45),
+        inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    .slash{
+      position:absolute;
+      inset:auto auto 0 0;
+      width:120%;
+      height:12px;
+      background:linear-gradient(90deg, var(--neon), var(--neon-2));
+      transform:skewX(-38deg) translateX(-4%);
+      opacity:.92;
+    }
+
+    .section-frame{
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.01)),
+        linear-gradient(180deg, var(--panel), var(--panel-2));
+      clip-path: polygon(0 0, 100% 0, 100% 96%, 98.6% 100%, 0 100%);
+      box-shadow: 0 18px 40px rgba(0,0,0,.28);
+    }
+
+    .section-frame::before{
+      content:"";
+      position:absolute;
+      top:0;
+      right:-60px;
+      width:180px;
+      height:100%;
+      background:linear-gradient(180deg, rgba(215,255,47,.08), transparent 60%);
+      transform:skewX(-28deg);
+      pointer-events:none;
+    }
+
+    .micro{
+      font-family: Arial, Helvetica, sans-serif;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      font-size:.72rem;
+      font-weight:800;
+    }
+
+    .hero-title{
+      line-height:.95;
+      letter-spacing:.02em;
+      word-break:keep-all;
+    }
+
+    .option-btn{
+      position:relative;
+      width:100%;
+      text-align:left;
+      color:var(--text);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.03), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)),
+        #10141b;
+      border:1px solid rgba(255,255,255,.08);
+      padding:14px;
+      clip-path: polygon(0 0, 100% 0, 100% 88%, 96% 100%, 0 100%);
+      transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+      min-height:100%;
+    }
+
+    .option-btn::before{
+      content:"";
+      position:absolute;
+      inset:0 auto 0 0;
+      width:7px;
+      background:linear-gradient(180deg, var(--neon), var(--neon-2));
+      opacity:.92;
+    }
+
+    .option-btn:hover,
+    .option-btn:focus-visible{
+      transform:translateY(-2px);
+      border-color:rgba(215,255,47,.36);
+      box-shadow:0 14px 32px rgba(0,0,0,.32);
+      outline:none;
+    }
+
+    .option-btn.active{
+      background:
+        linear-gradient(135deg, rgba(215,255,47,.13), transparent 35%),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)),
+        #151b21;
+      border-color:rgba(215,255,47,.56);
+      box-shadow:
+        0 0 0 1px rgba(215,255,47,.16) inset,
+        0 18px 40px rgba(0,0,0,.35);
+    }
+
+    .option-btn.active::after{
+      content:"LOCKED ON";
+      position:absolute;
+      top:10px;
+      right:10px;
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:.64rem;
+      letter-spacing:.16em;
+      font-weight:800;
+      color:#0b0c10;
+      background:var(--neon);
+      padding:4px 7px;
+      transform:skewX(-18deg);
+      box-shadow:0 0 18px rgba(215,255,47,.35);
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-height:32px;
+      padding:6px 10px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:.78rem;
+      font-weight:700;
+      letter-spacing:.04em;
+      color:var(--muted);
+      clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+      max-width:100%;
+      word-break:break-word;
+    }
+
+    .sim-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .versus{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    @media (min-width: 900px){
+      .versus{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    .sim-panel{
+      position:relative;
+      overflow:hidden;
+      min-height:420px;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)),
+        linear-gradient(180deg, #0e1117, #121722);
+      clip-path: polygon(0 0, 100% 0, 100% 95%, 97% 100%, 0 100%);
+      padding:14px;
+    }
+
+    .sim-panel.good{
+      background:
+        linear-gradient(135deg, rgba(50,230,255,.08), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)),
+        linear-gradient(180deg, #0d1318, #131a22);
+    }
+
+    .sim-panel.bad{
+      background:
+        linear-gradient(135deg, rgba(255,64,64,.10), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)),
+        linear-gradient(180deg, #150d10, #17131a);
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:.74rem;
+      font-weight:900;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      transform:skewX(-18deg);
+      max-width:100%;
+    }
+
+    .status-badge span{ transform:skewX(18deg); display:inline-block; }
+
+    .status-danger{
+      color:#fff;
+      background:linear-gradient(90deg, #e53232, #ff6a3a);
+      box-shadow:0 0 18px rgba(255,64,64,.25);
+    }
+
+    .status-safe{
+      color:#071017;
+      background:linear-gradient(90deg, var(--neon), #7bff93);
+      box-shadow:0 0 18px rgba(215,255,47,.22);
+    }
+
+    .arena{
+      position:relative;
+      margin-top:12px;
+      min-height:190px;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)),
+        repeating-linear-gradient(
+          90deg,
+          rgba(255,255,255,.06) 0 1px,
+          transparent 1px 32px
+        ),
+        linear-gradient(180deg, #0c1016, #0a0d12);
+      overflow:hidden;
+    }
+
+    .arena::after{
+      content:"";
+      position:absolute;
+      inset:auto 0 22% 0;
+      height:2px;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
+      opacity:.75;
+    }
+
+    .speed-lines{
+      position:absolute;
+      inset:0;
+      opacity:.55;
+      background:
+        repeating-linear-gradient(
+          -18deg,
+          transparent 0 28px,
+          rgba(255,255,255,.05) 28px 31px,
+          transparent 31px 56px
+        );
+      animation: speedShift 2.8s linear infinite;
+      pointer-events:none;
+    }
+
+    @keyframes speedShift{
+      from{ transform:translateX(0); }
+      to{ transform:translateX(-90px); }
+    }
+
+    .athlete{
+      position:absolute;
+      left:10%;
+      bottom:16%;
+      width:min(34vw, 126px);
+      max-width:126px;
+      min-width:84px;
+      aspect-ratio: 1 / 1.15;
+    }
+
+    .athlete .head{
+      position:absolute;
+      left:50%;
+      top:10%;
+      width:28%;
+      height:24%;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:linear-gradient(180deg, #f0f3f7, #c2cad6);
+      box-shadow:0 0 0 3px rgba(255,255,255,.04);
+    }
+
+    .athlete .body{
+      position:absolute;
+      left:50%;
+      top:31%;
+      width:18%;
+      height:34%;
+      transform:translateX(-50%);
+      background:linear-gradient(180deg, #f4f6f9, #b8c1cb);
+      clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+    }
+
+    .athlete .arm,
+    .athlete .leg{
+      position:absolute;
+      background:linear-gradient(180deg, #e8edf5, #aab4c2);
+      border-radius:999px;
+      transform-origin: top center;
+    }
+
+    .athlete .arm.left{ width:8%; height:28%; left:33%; top:34%; transform:rotate(38deg); }
+    .athlete .arm.right{ width:8%; height:28%; right:33%; top:34%; transform:rotate(-38deg); }
+    .athlete .leg.left{ width:9%; height:31%; left:40%; top:61%; transform:rotate(18deg); }
+    .athlete .leg.right{ width:9%; height:31%; right:40%; top:61%; transform:rotate(-18deg); }
+
+    .eyewear{
+      position:absolute;
+      left:50%;
+      top:18%;
+      width:44%;
+      height:11%;
+      transform:translateX(-50%);
+      border:3px solid #dfe6f1;
+      border-radius:4px;
+      box-shadow:0 0 10px rgba(255,255,255,.18);
+    }
+
+    .eyewear::before,
+    .eyewear::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      width:28%;
+      height:72%;
+      transform:translateY(-50%);
+      border:3px solid inherit;
+      border-radius:4px;
+    }
+
+    .eyewear::before{ left:2%; }
+    .eyewear::after{ right:2%; }
+
+    .eyewear.normal{
+      animation: slip 1.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 8px rgba(255,90,90,.2));
+    }
+
+    @keyframes slip{
+      0%,100%{ transform:translateX(-50%) rotate(0deg); }
+      18%{ transform:translateX(-47%) rotate(7deg); }
+      36%{ transform:translateX(-53%) translateY(4px) rotate(-10deg); }
+      54%{ transform:translateX(-45%) rotate(6deg); }
+      72%{ transform:translateX(-52%) translateY(2px) rotate(-7deg); }
+    }
+
+    .blur-wave{
+      position:absolute;
+      inset:0;
+      backdrop-filter: blur(0px);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+      animation: visionBlur 2.2s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    @keyframes visionBlur{
+      0%,100%{ opacity:0; transform:translateX(-110%); backdrop-filter:blur(0px); }
+      30%{ opacity:.5; backdrop-filter:blur(2px); }
+      50%{ opacity:.75; transform:translateX(10%); backdrop-filter:blur(4px); }
+      80%{ opacity:.15; transform:translateX(120%); backdrop-filter:blur(0px); }
+    }
+
+    .ball{
+      position:absolute;
+      right:-16%;
+      top:30%;
+      width:clamp(22px, 7vw, 38px);
+      height:clamp(22px, 7vw, 38px);
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.9), rgba(255,255,255,.15) 30%, transparent 31%),
+        linear-gradient(180deg, #ffffff, #c8d0dc);
+      box-shadow:0 0 16px rgba(255,255,255,.18);
+      animation: ballFlight 1.9s linear infinite;
+    }
+
+    @keyframes ballFlight{
+      0%{ transform:translateX(0) translateY(0) scale(.75); opacity:.12; }
+      70%{ opacity:1; }
+      100%{ transform:translateX(-340px) translateY(16px) scale(1.1); opacity:1; }
+    }
+
+    .impact{
+      position:absolute;
+      left:45%;
+      top:29%;
+      width:66px;
+      height:66px;
+      transform:translate(-50%, -50%) scale(.2);
+      border-radius:999px;
+      border:2px solid rgba(255,64,64,.92);
+      opacity:0;
+      animation: impactRing 1.9s linear infinite;
+    }
+
+    .impact::before,
+    .impact::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      border:2px solid rgba(255,140,140,.7);
+    }
+
+    .impact::before{ transform:scale(1.35); }
+    .impact::after{ transform:scale(.72); }
+
+    @keyframes impactRing{
+      0%,58%{ opacity:0; transform:translate(-50%, -50%) scale(.2); }
+      70%{ opacity:1; transform:translate(-50%, -50%) scale(.95); }
+      100%{ opacity:0; transform:translate(-50%, -50%) scale(1.8); }
+    }
+
+    .shatter{
+      position:absolute;
+      left:50%;
+      top:24%;
+      width:110px;
+      height:80px;
+      transform:translateX(-50%);
+      opacity:0;
+      animation: shatterFlash 1.9s linear infinite;
+      pointer-events:none;
+    }
+
+    .shatter span{
+      position:absolute;
+      background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.16));
+      box-shadow:0 0 12px rgba(255,255,255,.22);
+      transform-origin:center;
+    }
+
+    @keyframes shatterFlash{
+      0%,66%{ opacity:0; }
+      71%{ opacity:1; }
+      100%{ opacity:0; }
+    }
+
+    .goggle{
+      position:absolute;
+      left:50%;
+      top:18%;
+      width:48%;
+      height:13%;
+      transform:translateX(-50%);
+      border:4px solid var(--neon);
+      border-radius:18px;
+      box-shadow:
+        0 0 16px rgba(215,255,47,.25),
+        inset 0 0 0 2px rgba(255,255,255,.04);
+      animation: holdSteady 1.8s ease-in-out infinite;
+    }
+
+    .goggle::before{
+      content:"";
+      position:absolute;
+      left:-16%;
+      right:-16%;
+      top:36%;
+      height:24%;
+      border-top:4px solid rgba(50,230,255,.75);
+      border-bottom:4px solid rgba(50,230,255,.35);
+      border-radius:999px;
+      opacity:.9;
+    }
+
+    .goggle::after{
+      content:"";
+      position:absolute;
+      inset:16% 8%;
+      border:2px solid rgba(255,255,255,.72);
+      border-radius:12px;
+    }
+
+    @keyframes holdSteady{
+      0%,100%{ transform:translateX(-50%) translateY(0); }
+      50%{ transform:translateX(-50%) translateY(-1px); }
+    }
+
+    .shield{
+      position:absolute;
+      left:50%;
+      top:29%;
+      width:76px;
+      height:76px;
+      transform:translate(-50%, -50%) scale(.4);
+      border-radius:999px;
+      border:2px solid rgba(50,230,255,.98);
+      opacity:0;
+      animation: shieldPulse 1.9s linear infinite;
+      box-shadow:0 0 18px rgba(50,230,255,.22);
+    }
+
+    .shield::before{
+      content:"";
+      position:absolute;
+      inset:9px;
+      border-radius:999px;
+      border:2px solid rgba(215,255,47,.92);
+    }
+
+    @keyframes shieldPulse{
+      0%,58%{ opacity:0; transform:translate(-50%, -50%) scale(.4); }
+      70%{ opacity:1; transform:translate(-50%, -50%) scale(1); }
+      100%{ opacity:0; transform:translate(-50%, -50%) scale(1.65); }
+    }
+
+    .bounce{
+      position:absolute;
+      right:16%;
+      top:26%;
+      width:clamp(22px, 7vw, 38px);
+      height:clamp(22px, 7vw, 38px);
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.96), rgba(255,255,255,.15) 30%, transparent 31%),
+        linear-gradient(180deg, #ffffff, #c8d0dc);
+      box-shadow:0 0 16px rgba(255,255,255,.15);
+      animation: bounceBall 1.9s linear infinite;
+    }
+
+    @keyframes bounceBall{
+      0%{ transform:translateX(150px) translateY(0) scale(.75); opacity:.12; }
+      62%{ opacity:1; }
+      72%{ transform:translateX(0) translateY(14px) scale(1.02); }
+      100%{ transform:translateX(120px) translateY(-26px) scale(.92); opacity:.9; }
+    }
+
+    .sim-list{
+      margin-top:14px;
+      display:grid;
+      gap:10px;
+    }
+
+    .sim-item{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:10px 0;
+      border-top:1px solid rgba(255,255,255,.07);
+      min-width:0;
+    }
+
+    .sim-item:first-child{ border-top:none; padding-top:0; }
+
+    .sim-icon{
+      flex:0 0 auto;
+      width:28px;
+      height:28px;
+      display:grid;
+      place-items:center;
+      font-size:1rem;
+    }
+
+    .diagram{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    @media (min-width: 860px){
+      .diagram{
+        grid-template-columns:1.04fr .96fr;
+      }
+    }
+
+    .goggle-diagram{
+      position:relative;
+      min-height:300px;
+      border:1px solid rgba(255,255,255,.08);
+      background:
+        linear-gradient(135deg, rgba(50,230,255,.07), transparent 30%),
+        linear-gradient(180deg, #0d1218, #111822);
+      overflow:hidden;
+      clip-path: polygon(0 0, 100% 0, 100% 95%, 97% 100%, 0 100%);
+      padding:18px;
+    }
+
+    .goggle-core{
+      position:absolute;
+      left:50%;
+      top:54%;
+      width:min(72vw, 320px);
+      height:min(28vw, 120px);
+      max-width:320px;
+      max-height:120px;
+      transform:translate(-50%, -50%);
+      border:5px solid var(--neon);
+      border-radius:28px;
+      box-shadow:0 0 20px rgba(215,255,47,.18);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+
+    .goggle-core::before{
+      content:"";
+      position:absolute;
+      inset:18% 9%;
+      border:3px solid rgba(255,255,255,.84);
+      border-radius:20px;
+    }
+
+    .goggle-core::after{
+      content:"";
+      position:absolute;
+      left:-20%;
+      right:-20%;
+      top:38%;
+      height:24%;
+      border-top:5px solid rgba(50,230,255,.82);
+      border-bottom:5px solid rgba(50,230,255,.28);
+      border-radius:999px;
+    }
+
+    .callout{
+      position:absolute;
+      max-width:min(44vw, 180px);
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:.8rem;
+      line-height:1.5;
+      font-weight:700;
+      color:#dce4ee;
+      padding:10px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      backdrop-filter:blur(4px);
+      min-width:0;
+    }
+
+    .callout .line{
+      position:absolute;
+      height:2px;
+      background:linear-gradient(90deg, var(--neon), rgba(255,255,255,.65));
+      transform-origin:left center;
+    }
+
+    .c1{ left:10px; top:20px; }
+    .c1 .line{ left:100%; top:58%; width:90px; transform:rotate(12deg); }
+
+    .c2{ right:10px; top:68px; }
+    .c2 .line{ right:100%; top:55%; width:100px; transform:rotate(-16deg); transform-origin:right center; }
+
+    .c3{ left:16px; bottom:16px; }
+    .c3 .line{ left:100%; top:24%; width:94px; transform:rotate(-10deg); }
+
+    @media (max-width: 480px){
+      .c1 .line, .c2 .line, .c3 .line{ width:56px; }
+      .callout{ max-width:142px; font-size:.74rem; }
+    }
+
+    .script-wrap{
+      display:grid;
+      gap:12px;
+    }
+
+    .script-box{
+      border-left:4px solid var(--neon);
+      background:
+        linear-gradient(90deg, rgba(215,255,47,.08), transparent 55%),
+        rgba(255,255,255,.025);
+      padding:14px;
+    }
+
+    .talk{
+      font-size:1rem;
+      line-height:1.8;
+      color:#fbfdff;
+    }
+
+    .info-block{
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.025);
+      padding:12px;
+      clip-path: polygon(0 0, 100% 0, 97% 100%, 0 100%);
+    }
+
+    .accent-line{
+      height:4px;
+      width:100%;
+      background:linear-gradient(90deg, var(--neon), var(--neon-2), transparent);
+    }
+
+    .hidden-panel{ display:none; }
+
+    .fade-up{
+      animation:fadeUp .32s ease;
+    }
+
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(8px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero p-4 sm:p-5 md:p-6">
+      <div class="micro text-lime-300">junior sports eyewear simulator</div>
+      <h1 class="hero-title mt-2 text-[clamp(1.65rem,8vw,4.4rem)] font-black uppercase">
+        スポーツ別・<br class="sm:hidden">
+        ジュニアスポーツメガネ<br>
+        安全性＆パフォーマンス・<span class="text-lime-300">シミュレーター</span>
+      </h1>
+      <p class="mt-4 max-w-4xl font-sans text-sm leading-7 text-slate-300 sm:text-[15px]">
+        新人スタッフでも、親御さんに
+        <span class="font-extrabold text-white">「普通のメガネは危ない」</span>
+        を感覚的に伝え、
+        <span class="font-extrabold text-lime-300">スポーツゴーグルを“高単価商品”ではなく“防具”として提案できる</span>
+        接客サポートアプリです。
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-2">
+        <span class="tag">接触</span>
+        <span class="tag">ボール直撃</span>
+        <span class="tag">ズレによるミス</span>
+        <span class="tag">集中力</span>
+        <span class="tag">眼の保護</span>
+      </div>
+      <div class="slash"></div>
+    </section>
+
+    <section class="section-frame mt-4 p-4 sm:p-5">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div class="micro text-orange-300">step 01</div>
+          <h2 class="mt-1 text-2xl font-black uppercase tracking-wide">スポーツを選ぶ</h2>
+        </div>
+        <p class="font-sans text-sm leading-6 text-slate-400 sm:max-w-xl">
+          お子様が始める部活に近いものを選ぶと、
+          危険シミュレーション・専用設計の図解・親御さん向けトークが瞬時に切り替わります。
+        </p>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        <button class="option-btn" type="button" data-sport="contact" aria-pressed="false">
+          <div class="micro text-lime-300">power play</div>
+          <h3 class="mt-2 text-lg font-black uppercase leading-tight">サッカー・バスケ</h3>
+          <p class="mt-2 font-sans text-sm leading-6 text-slate-300">
+            激しい接触・ボール直撃リスク大。走りながらのズレも危険です。
+          </p>
+        </button>
+
+        <button class="option-btn" type="button" data-sport="ball" aria-pressed="false">
+          <div class="micro text-orange-300">precision play</div>
+          <h3 class="mt-2 text-lg font-black uppercase leading-tight">野球・テニス</h3>
+          <p class="mt-2 font-sans text-sm leading-6 text-slate-300">
+            飛んでくるボールと汗によるズレが、反応ミスやエラーに直結します。
+          </p>
+        </button>
+
+        <button class="option-btn" type="button" data-sport="kendo" aria-pressed="false">
+          <div class="micro text-cyan-300">gear conflict</div>
+          <h3 class="mt-2 text-lg font-black uppercase leading-tight">剣道</h3>
+          <p class="mt-2 font-sans text-sm leading-6 text-slate-300">
+            お面との相性がシビア。普通のメガネは耳が痛い・入らない・ズレる問題が出やすいです。
+          </p>
+        </button>
+      </div>
+
+      <p id="feedback" class="mt-4 min-h-[1.6rem] font-sans text-sm font-semibold text-orange-300" aria-live="polite">
+        まずは部活を1つ選択してください。
+      </p>
+    </section>
+
+    <section id="resultSection" class="hidden-panel mt-4 fade-up">
+      <section class="section-frame p-4 sm:p-5">
+        <div class="sim-header">
+          <div>
+            <div class="micro text-red-300">step 02</div>
+            <h2 id="simTitle" class="mt-1 text-2xl font-black uppercase tracking-wide"></h2>
+          </div>
+          <div class="tag">普通のメガネ vs スポーツゴーグル</div>
+        </div>
+
+        <p id="simLead" class="mt-3 max-w-4xl font-sans text-sm leading-7 text-slate-300 sm:text-[15px]"></p>
+
+        <div class="versus mt-4">
+          <div class="sim-panel bad">
+            <div class="status-badge status-danger"><span>普通のメガネ</span></div>
+            <div class="arena">
+              <div class="speed-lines"></div>
+              <div class="ball"></div>
+              <div class="impact"></div>
+              <div class="shatter" aria-hidden="true">
+                <span style="left:10%; top:38%; width:2px; height:36px; transform:rotate(-38deg);"></span>
+                <span style="left:26%; top:20%; width:2px; height:46px; transform:rotate(12deg);"></span>
+                <span style="left:46%; top:12%; width:2px; height:58px; transform:rotate(46deg);"></span>
+                <span style="left:62%; top:22%; width:2px; height:42px; transform:rotate(-18deg);"></span>
+                <span style="left:78%; top:36%; width:2px; height:32px; transform:rotate(30deg);"></span>
+                <span style="left:18%; top:50%; width:74px; height:2px; transform:rotate(8deg);"></span>
+                <span style="left:24%; top:44%; width:52px; height:2px; transform:rotate(-24deg);"></span>
+              </div>
+              <div class="blur-wave"></div>
+              <div class="athlete">
+                <div class="head"></div>
+                <div class="eyewear normal"></div>
+                <div class="body"></div>
+                <div class="arm left"></div>
+                <div class="arm right"></div>
+                <div class="leg left"></div>
+                <div class="leg right"></div>
+              </div>
+            </div>
+
+            <div class="sim-list" id="badList"></div>
+          </div>
+
+          <div class="sim-panel good">
+            <div class="status-badge status-safe"><span>スポーツゴーグル</span></div>
+            <div class="arena">
+              <div class="speed-lines"></div>
+              <div class="bounce"></div>
+              <div class="shield"></div>
+              <div class="athlete">
+                <div class="head"></div>
+                <div class="goggle"></div>
+                <div class="body"></div>
+                <div class="arm left"></div>
+                <div class="arm right"></div>
+                <div class="leg left"></div>
+                <div class="leg right"></div>
+              </div>
+            </div>
+
+            <div class="sim-list" id="goodList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-frame mt-4 p-4 sm:p-5">
+        <div class="micro text-cyan-300">step 03</div>
+        <h2 class="mt-1 text-2xl font-black uppercase tracking-wide">なぜスポーツ専用が必要か</h2>
+
+        <div class="diagram mt-4">
+          <div class="goggle-diagram">
+            <div class="goggle-core"></div>
+
+            <div class="callout c1">
+              <strong class="block text-lime-300">耐衝撃ラバー</strong>
+              フレーム周囲が衝撃を受け止め、ぶつかった時のダメージを緩和。
+              <div class="line"></div>
+            </div>
+
+            <div class="callout c2">
+              <strong class="block text-cyan-300">ズレにくいバンド設計</strong>
+              汗・ダッシュ・ジャンプでも顔に固定され、視界がブレにくい。
+              <div class="line"></div>
+            </div>
+
+            <div class="callout c3">
+              <strong class="block text-orange-300">競技に集中できる視界</strong>
+              掛け直しの動作が減り、反応速度や判断の安定につながる。
+              <div class="line"></div>
+            </div>
+          </div>
+
+          <div class="grid gap-3">
+            <div class="info-block">
+              <div class="micro text-lime-300">protection</div>
+              <h3 class="mt-1 text-lg font-black uppercase">安全性の差</h3>
+              <p id="safetyReason" class="mt-2 font-sans text-sm leading-7 text-slate-300"></p>
+            </div>
+
+            <div class="info-block">
+              <div class="micro text-orange-300">performance</div>
+              <h3 class="mt-1 text-lg font-black uppercase">パフォーマンスの差</h3>
+              <p id="performanceReason" class="mt-2 font-sans text-sm leading-7 text-slate-300"></p>
+            </div>
+
+            <div class="info-block">
+              <div class="micro text-cyan-300">staff support</div>
+              <h3 class="mt-1 text-lg font-black uppercase">新人スタッフ向け要点</h3>
+              <p id="staffTip" class="mt-2 font-sans text-sm leading-7 text-slate-300"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-frame mt-4 p-4 sm:p-5">
+        <div class="micro text-lime-300">step 04</div>
+        <h2 class="mt-1 text-2xl font-black uppercase tracking-wide">親心を動かす提案トーク</h2>
+
+        <div class="script-wrap mt-4">
+          <div class="script-box">
+            <div class="micro text-orange-300">talk script</div>
+            <blockquote id="talkScript" class="talk mt-2"></blockquote>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-2">
+            <div class="info-block">
+              <div class="micro text-lime-300">closing point</div>
+              <p id="closingPoint" class="mt-2 font-sans text-sm leading-7 text-slate-300"></p>
+            </div>
+            <div class="info-block">
+              <div class="micro text-cyan-300">recommended pitch</div>
+              <p id="recommendedSet" class="mt-2 font-sans text-sm leading-7 text-slate-300"></p>
+            </div>
+          </div>
+          <div class="accent-line"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const sportsData = {
+        contact: {
+          title: "サッカー・バスケ / 接触＆直撃リスク",
+          lead: "相手選手との接触やボール直撃が多く、普通のメガネはズレ・変形・顔への食い込みが起こりやすい競技です。",
+          bad: [
+            { icon: "💥", title: "接触でフレームが顔に当たる", text: "競り合いやリバウンド時にフレームが押され、眼まわりのケガにつながる恐れがあります。" },
+            { icon: "😵", title: "ボール直撃でレンズ破損リスク", text: "前方からの衝撃を受けると、視界喪失だけでなく競技続行が難しくなります。" },
+            { icon: "🌫️", title: "ズレた瞬間に視界がブレる", text: "掛け直しの一瞬が遅れになり、守備やパス判断に悪影響です。" }
+          ],
+          good: [
+            { icon: "🛡️", title: "顔まわりを守る構造", text: "衝撃を受け流しやすく、普通のメガネより安全性を確保しやすい設計です。" },
+            { icon: "🎯", title: "ズレにくく集中が続く", text: "走る・跳ぶ・止まる動作でもホールドされ、視界が安定します。" },
+            { icon: "⚡", title: "プレーの反応が落ちにくい", text: "掛け直しの回数が減るため、競技への没入感を保ちやすくなります。" }
+          ],
+          safetyReason: "接触競技では『見えるか』だけでなく『ぶつかった時に危なくないか』が重要です。普通のメガネは日常用であり、競技中の衝撃や急な横ズレを前提にしていません。",
+          performanceReason: "サッカーやバスケは一瞬の視界ズレが、そのままパスミス・キャッチミス・守備の遅れにつながります。スポーツゴーグルは安定した視界でプレー判断を支えます。",
+          staffTip: "親御さんには『見える道具』ではなく『顔と視界を守る防具』として説明すると、価格より必要性に意識が向きやすくなります。",
+          talk: "普通のメガネのままサッカーやバスケをすると、接触やボールでズレたり当たったりして、お子様の眼の近くに危険が集まってしまいます。スポーツゴーグルは“見えるため”だけではなく、“眼を守る防具”として考えていただくのが一番わかりやすいです。",
+          closing: "『もし顔に当たったら』を想像してもらうと、安全性の重要さが伝わりやすいです。",
+          recommendation: "初めての部活なら、まずはズレにくさと耐衝撃性を優先した定番スポーツゴーグルをご案内するのが鉄板です。"
+        },
+        ball: {
+          title: "野球・テニス / 飛球＆汗ズレリスク",
+          lead: "飛んでくるボールへの反応が必要な競技では、普通のメガネのズレや汗による滑りがプレー精度を下げやすくなります。",
+          bad: [
+            { icon: "⚾", title: "飛んでくるボールへの不安", text: "打球や送球、テニスボールへの備えとして、日常用フレームでは心もとない場面があります。" },
+            { icon: "💦", title: "汗でズレて視界が流れる", text: "ノーズ部分が滑りやすくなり、スイングや捕球の瞬間に焦点がズレます。" },
+            { icon: "❌", title: "エラーや空振りの原因になる", text: "見えていたつもりでも、ズレた視界がタイミングのズレにつながります。" }
+          ],
+          good: [
+            { icon: "🔒", title: "汗でも固定されやすい", text: "バンド設計でフィットしやすく、打つ・追う・捕る動作の中でも安定します。" },
+            { icon: "👀", title: "ボールを追いやすい", text: "視界が安定すると、軌道の追従や距離感の把握がしやすくなります。" },
+            { icon: "📈", title: "ミスを減らし自信につながる", text: "掛け直しや不安が減ることで、部活デビューでもプレーに集中しやすくなります。" }
+          ],
+          safetyReason: "野球やテニスは“飛んでくるもの”を目で追うスポーツです。普通のメガネがズレるだけでも危険ですが、直撃リスクまで考えると専用設計の価値が大きくなります。",
+          performanceReason: "汗によるズレは、ほんの数ミリでも打点・捕球位置・距離感のズレに変わります。安定した視界は技術以前の土台です。",
+          staffTip: "親御さんには『失点やミスの原因を減らす装備』として伝えると、上達支援の話につながりやすいです。",
+          talk: "野球やテニスは、飛んでくるボールを正確に追えるかが大切です。普通のメガネだと汗でズレて、見えているはずのボールが微妙にブレてしまうことがあります。スポーツゴーグルなら視界が安定するので、お子様がプレーに集中しやすくなりますよ。",
+          closing: "『安全性＋上達しやすさ』の両方を伝えると、親御さんが納得しやすくなります。",
+          recommendation: "汗ズレ対策を重視して、ホールド感の高いモデルを中心に提案すると刺さりやすいです。"
+        },
+        kendo: {
+          title: "剣道 / 面との相性＆圧迫リスク",
+          lead: "剣道では面を着けるため、普通のメガネは耳やこめかみに圧がかかりやすく、そもそも快適に入らないケースもあります。",
+          bad: [
+            { icon: "🥵", title: "耳やこめかみが痛くなりやすい", text: "日常用フレームのつるが面の内側で圧迫され、長時間の練習で負担になります。" },
+            { icon: "⚠️", title: "面の中でズレる・当たる", text: "動きや衝撃で位置がズレると、集中が切れやすくなります。" },
+            { icon: "🚫", title: "そもそも普通のメガネでは相性が悪い", text: "面とのクリアランス不足で、装着そのものがストレスになることがあります。" }
+          ],
+          good: [
+            { icon: "🧩", title: "競技装備との相性を考えやすい", text: "普通のメガネより固定しやすく、面の中でも安定した視界を作りやすいです。" },
+            { icon: "🛡️", title: "圧迫やズレの不安を軽減", text: "耳まわりの違和感を抑えやすく、稽古に集中しやすくなります。" },
+            { icon: "🎽", title: "部活継続のストレスを減らす", text: "毎回の痛みや煩わしさが少ないと、練習への前向きさも保ちやすくなります。" }
+          ],
+          safetyReason: "剣道は接触競技というより『装備との相性』が重要です。普通のメガネは面の中で圧迫源になりやすく、快適性と安全性の両面で不利です。",
+          performanceReason: "面の中で視界が落ち着かないと、打突や間合いへの集中が削がれます。痛みやズレのストレスを減らすことは、プレーの質に直結します。",
+          staffTip: "剣道では『危ない』だけでなく『そもそも快適に使えない』ことを具体的に伝えると、親御さんの理解が深まります。",
+          talk: "剣道は普通のメガネだと、面を着けた瞬間に耳や横が痛くなったり、中でズレたりしてしまいやすいんです。スポーツ用はただ丈夫なだけではなく、競技中に集中できる状態を作るための装備としておすすめしています。",
+          closing: "『毎回痛いまま練習するのはかわいそう』という親心に寄り添うと、提案が届きやすいです。",
+          recommendation: "剣道は特に快適性の訴求が有効です。装着時の圧迫感とズレにくさを中心に案内するのが効果的です。"
+        }
+      };
+
+      const els = {
+        buttons: Array.from(document.querySelectorAll("[data-sport]")),
+        feedback: document.getElementById("feedback"),
+        resultSection: document.getElementById("resultSection"),
+        simTitle: document.getElementById("simTitle"),
+        simLead: document.getElementById("simLead"),
+        badList: document.getElementById("badList"),
+        goodList: document.getElementById("goodList"),
+        safetyReason: document.getElementById("safetyReason"),
+        performanceReason: document.getElementById("performanceReason"),
+        staffTip: document.getElementById("staffTip"),
+        talkScript: document.getElementById("talkScript"),
+        closingPoint: document.getElementById("closingPoint"),
+        recommendedSet: document.getElementById("recommendedSet")
+      };
+
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function itemTemplate(item) {
+        return `
+          <div class="sim-item">
+            <div class="sim-icon">${escapeHtml(item.icon)}</div>
+            <div class="min-w-0">
+              <p class="font-sans text-sm font-extrabold leading-6 text-white sm:text-[15px]">${escapeHtml(item.title)}</p>
+              <p class="mt-1 font-sans text-sm leading-6 text-slate-300 sm:text-[15px]">${escapeHtml(item.text)}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      function setActiveButton(key) {
+        els.buttons.forEach((btn) => {
+          const active = btn.dataset.sport === key;
+          btn.classList.toggle("active", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      function renderSport(key) {
+        const data = sportsData[key];
+        if (!data) {
+          els.feedback.textContent = "競技データの読み込みに失敗しました。別のボタンを選択してください。";
+          els.resultSection.classList.add("hidden-panel");
+          return;
+        }
+
+        setActiveButton(key);
+        els.feedback.textContent = "選択した競技に合わせて、安全性と提案トークを表示中です。";
+        els.simTitle.textContent = data.title;
+        els.simLead.textContent = data.lead;
+        els.badList.innerHTML = data.bad.map(itemTemplate).join("");
+        els.goodList.innerHTML = data.good.map(itemTemplate).join("");
+        els.safetyReason.textContent = data.safetyReason;
+        els.performanceReason.textContent = data.performanceReason;
+        els.staffTip.textContent = data.staffTip;
+        els.talkScript.textContent = `「${data.talk}」`;
+        els.closingPoint.textContent = data.closing;
+        els.recommendedSet.textContent = data.recommendation;
+
+        els.resultSection.classList.remove("hidden-panel");
+        els.resultSection.classList.remove("fade-up");
+        void els.resultSection.offsetWidth;
+        els.resultSection.classList.add("fade-up");
+      }
+
+      function handleSelect(event) {
+        try {
+          const key = event.currentTarget?.dataset?.sport;
+          renderSport(key);
+        } catch (error) {
+          console.error(error);
+          els.feedback.textContent = "表示中にエラーが発生しました。もう一度選択してください。";
+          els.resultSection.classList.add("hidden-panel");
+        }
+      }
+
+      els.buttons.forEach((btn) => {
+        btn.addEventListener("click", handleSelect);
+        btn.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleSelect({ currentTarget: btn });
+          }
+        });
+      });
+
+      if (!sportsData || typeof sportsData !== "object") {
+        els.feedback.textContent = "初期データが壊れています。ページを再読み込みしてください。";
+      }
+    })();
+  </script>
+</body>
+</html>
