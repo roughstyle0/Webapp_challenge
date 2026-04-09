@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GW旅行サブメガネ トラベルリスク・ジャッジ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* =========================================
+           Custom CSS for Travel Theme (No Image Dependencies)
+           ========================================= */
+        
+        /* クラフト紙風のノイズ背景（SVGをData URIとして埋め込み） */
+        body {
+            background-color: #eaddcf;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+        }
+
+        /* エアメール風の斜めストライプボーダー */
+        .airmail-wrap {
+            padding: 8px;
+            background: repeating-linear-gradient(
+                45deg,
+                #d32f2f,
+                #d32f2f 12px,
+                #fdfbf7 12px,
+                #fdfbf7 24px,
+                #1976d2 24px,
+                #1976d2 36px,
+                #fdfbf7 36px,
+                #fdfbf7 48px
+            );
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        /* チケット本体の質感 */
+        .ticket-body {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#d5cbb8 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative;
+        }
+
+        /* パスポートスタンプ風装飾 */
+        .stamp-danger {
+            border: 3px solid #c0392b;
+            color: #c0392b;
+            font-weight: 900;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transform: rotate(-15deg);
+            display: inline-block;
+            opacity: 0.7;
+            letter-spacing: 0.1em;
+        }
+        
+        .stamp-approved {
+            border: 3px solid #27ae60;
+            color: #27ae60;
+            font-weight: 900;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transform: rotate(10deg);
+            display: inline-block;
+            opacity: 0.8;
+            letter-spacing: 0.1em;
+        }
+
+        /* 航空券の半券（ミシン目）デザイン */
+        .ticket-stub {
+            background-color: #f4ebd0;
+            position: relative;
+        }
+
+        /* チケットの切り欠き（両端の丸） */
+        .cutout-left, .cutout-right, .cutout-top, .cutout-bottom {
+            position: absolute;
+            background-color: #eaddcf; /* 背景色と同じにして穴を開けたように見せる */
+            border-radius: 50%;
+            z-index: 10;
+            /* ノイズも適用して背景と完全に同化させる */
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+        }
+
+        /* デスクトップ用切り欠き */
+        @media (min-width: 768px) {
+            .cutout-top { width: 30px; height: 30px; top: -15px; right: 33%; transform: translateX(50%); }
+            .cutout-bottom { width: 30px; height: 30px; bottom: -15px; right: 33%; transform: translateX(50%); }
+            .cutout-left, .cutout-right { display: none; }
+        }
+        /* モバイル用切り欠き */
+        @media (max-width: 767px) {
+            .cutout-left { width: 30px; height: 30px; left: -15px; bottom: 35%; transform: translateY(50%); }
+            .cutout-right { width: 30px; height: 30px; right: -15px; bottom: 35%; transform: translateY(50%); }
+            .cutout-top, .cutout-bottom { display: none; }
+        }
+
+        /* プログレスバーのアニメーション用 */
+        .progress-bar {
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+            width: 0%;
+        }
+
+        /* フェードインアニメーション */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .hide { display: none; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <!-- Header Section -->
+    <header class="w-full max-w-4xl mb-8 text-center mt-4">
+        <h1 class="text-3xl md:text-4xl font-black text-gray-800 tracking-wider mb-2" style="font-family: impact, sans-serif;">
+            FLIGHT TO SAFETY
+        </h1>
+        <p class="text-gray-700 font-bold bg-white/50 inline-block px-4 py-1 rounded-full border border-gray-400">
+            ✈︎ GW旅行 サブメガネ・トラベルリスク判定
+        </p>
+    </header>
+
+    <!-- Step 1: Selection Buttons (タグ風デザイン) -->
+    <main class="w-full max-w-4xl flex flex-col items-center z-10 relative">
+        <div class="mb-6 w-full text-center">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+                <span class="bg-gray-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm">1</span>
+                お客様のご旅行先はどちらですか？
+            </h2>
+            <div class="flex flex-col md:flex-row gap-3 justify-center w-full">
+                
+                <button onclick="judgeRisk('overseas')" class="group relative overflow-hidden bg-[#2c3e50] text-white font-bold py-4 px-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300 w-full md:w-1/3">
+                    <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="text-xs text-blue-200 mb-1 tracking-widest border-b border-blue-400/50 pb-1">DESTINATION A</div>
+                    <div class="text-lg">海外旅行・リゾート</div>
+                    <div class="text-xs text-gray-300 mt-1 font-normal">3泊以上 / 現地調達不可</div>
+                </button>
+
+                <button onclick="judgeRisk('domestic')" class="group relative overflow-hidden bg-[#8e44ad] text-white font-bold py-4 px-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-300 w-full md:w-1/3">
+                    <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="text-xs text-purple-200 mb-1 tracking-widest border-b border-purple-400/50 pb-1">DESTINATION B</div>
+                    <div class="text-lg">国内温泉・観光地</div>
+                    <div class="text-xs text-gray-300 mt-1 font-normal">1〜2泊 / リラックス</div>
+                </button>
+
+                <button onclick="judgeRisk('camp')" class="group relative overflow-hidden bg-[#27ae60] text-white font-bold py-4 px-6 shadow-md transition-all hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-green-300 w-full md:w-1/3">
+                    <div class="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="text-xs text-green-200 mb-1 tracking-widest border-b border-green-400/50 pb-1">DESTINATION C</div>
+                    <div class="text-lg">キャンプ・アウトドア</div>
+                    <div class="text-xs text-gray-300 mt-1 font-normal">アクティブ / 破損リスク大</div>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- 初期状態のプレースホルダー -->
+        <div id="placeholder" class="w-full text-center py-12 opacity-60">
+            <svg class="mx-auto h-16 w-16 text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-gray-700 font-bold">行き先を選択すると、トラベルリスクと最適な備えが表示されます。</p>
+        </div>
+
+        <!-- Step 2: Result Section (航空券風UI) -->
+        <div id="resultArea" class="w-full hide mt-4">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+                <span class="bg-gray-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm">2</span>
+                診断結果とプロの提案
+            </h2>
+
+            <div class="airmail-wrap w-full animate-fade-in">
+                <div class="ticket-body flex flex-col md:flex-row rounded-sm">
+                    
+                    <!-- 切り欠き装飾（CSSのみで実現） -->
+                    <div class="cutout-top"></div>
+                    <div class="cutout-bottom"></div>
+                    <div class="cutout-left"></div>
+                    <div class="cutout-right"></div>
+
+                    <!-- Left: リスク分析エリア (メイン) -->
+                    <div class="p-6 md:p-8 w-full md:w-2/3 border-b-2 md:border-b-0 md:border-r-2 border-dashed border-gray-400 relative">
+                        
+                        <!-- Header of Ticket -->
+                        <div class="flex justify-between items-start border-b-2 border-gray-800 pb-2 mb-6">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 tracking-widest">BOARDING PASS TO</p>
+                                <h3 id="resTitle" class="text-2xl font-black text-gray-800 uppercase tracking-wide"></h3>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-gray-500 tracking-widest">RISK LEVEL</p>
+                                <div class="stamp-danger mt-1 text-sm" id="resRiskBadge"></div>
+                            </div>
+                        </div>
+
+                        <!-- 危険度ゲージ -->
+                        <div class="mb-6">
+                            <div class="flex justify-between items-end mb-1">
+                                <p class="font-bold text-gray-700">メガネ破損による「旅行台無しリスク」</p>
+                                <span id="resRiskPercent" class="text-2xl font-black text-red-600"></span>
+                            </div>
+                            <div class="w-full bg-gray-300 h-4 rounded-full overflow-hidden shadow-inner">
+                                <div id="resRiskBar" class="h-full bg-gradient-to-r from-red-400 to-red-600 progress-bar"></div>
+                            </div>
+                        </div>
+
+                        <!-- 警告：特有のトラブル -->
+                        <div class="bg-white/60 p-4 rounded border border-gray-300 shadow-sm relative">
+                            <div class="absolute -top-3 -left-3 bg-red-600 text-white text-xs font-bold px-2 py-1 transform -rotate-6 shadow">
+                                WARNING!
+                            </div>
+                            <p class="text-sm font-bold text-gray-800 mb-2 mt-1">現地で多発するトラブル例：</p>
+                            <ul id="resTroubles" class="list-disc pl-5 text-gray-700 text-sm space-y-1 font-medium">
+                                <!-- JSで注入 -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Right: 提案＆トークスクリプトエリア (半券) -->
+                    <div class="ticket-stub p-6 md:p-8 w-full md:w-1/3 flex flex-col justify-between relative">
+                        
+                        <!-- 背景の透かし文字 -->
+                        <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none overflow-hidden">
+                            <span class="text-6xl font-black transform -rotate-45">SOLUTION</span>
+                        </div>
+
+                        <div class="relative z-10">
+                            <div class="mb-6">
+                                <p class="text-xs font-bold text-gray-500 tracking-widest border-b border-gray-400 pb-1 mb-3">BEST RECOMMEND</p>
+                                <div class="stamp-approved mb-3 text-xs">最適解</div>
+                                <p id="resRecommend" class="text-gray-800 font-bold text-base leading-tight"></p>
+                            </div>
+
+                            <!-- スタッフ用トークスクリプト -->
+                            <div class="bg-[#2c3e50] text-white p-4 rounded relative mt-auto shadow-md">
+                                <p class="text-[10px] text-blue-300 font-bold tracking-widest mb-2 flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                                    スタッフ用 提案トーク
+                                </p>
+                                <p id="resTalk" class="text-sm font-medium leading-relaxed"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="resetApp()" class="text-gray-500 text-sm font-bold underline hover:text-gray-800 transition-colors">
+                    選び直す
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Data Definition
+        const data = {
+            overseas: {
+                title: "海外・リゾート",
+                riskBadge: "EXTREME",
+                riskPercent: 95,
+                troubles: [
+                    "美しい海で、不意の波にさらわれて紛失",
+                    "時差ボケによる疲労で、うっかり置き忘れ",
+                    "現地で自分に合う度数のメガネは100%手に入りません"
+                ],
+                recommend: "紫外線で色が変わる「調光レンズ」を新調し、今のメガネをお守り（予備）にする",
+                talk: "「もしハワイの青い海でメガネを失くしたら、せっかくの絶景も、ディナーのメニューもずっとぼやけたままになってしまいます。お守り代わりに、今お使いのものを予備として持っていきませんか？今回は紫外線対策も兼ねて、調光レンズが圧倒的にお勧めです！」"
+            },
+            domestic: {
+                title: "国内温泉・観光",
+                riskBadge: "MODERATE",
+                riskPercent: 60,
+                troubles: [
+                    "温泉の熱と成分で、レンズのコーティングが剥がれる",
+                    "お風呂上がりに浴衣の袖に引っ掛けて落下",
+                    "お土産選びの人混みでぶつかりフレームが歪む"
+                ],
+                recommend: "熱に強い専用メガネ、またはお風呂上がり用の安くて軽いリラックスフレーム",
+                talk: "「温泉の熱や成分は、実はメガネレンズの天敵なんです。せっかくのリラックス旅行でメインのメガネを傷めないためにも、お風呂上がりや寝る前にも気軽に使える『スペアメガネ』が1本あると、信じられないくらい快適で安心ですよ。」"
+            },
+            camp: {
+                title: "キャンプ・自然",
+                riskBadge: "HIGH RISK",
+                riskPercent: 85,
+                troubles: [
+                    "暗いテントの中で、うっかり踏んづけて大破",
+                    "アクティビティ中に飛んでいき、傷だらけに",
+                    "焚き火の熱でフレームが変形・溶ける"
+                ],
+                recommend: "壊れにくい樹脂素材（ウルテム等）の弾性フレームをメインにし、今のメガネは移動用にする",
+                talk: "「キャンプでは『暗いテントの中でうっかり踏んでしまう』というトラブルが非常に多いんです！アウトドア中は、万が一落としたり踏んだりしても壊れにくいタフな素材の予備メガネをメインにして、今のメガネは移動・街用にするのが賢い備えです。」"
+            }
+        };
+
+        // DOM Elements
+        const placeholder = document.getElementById('placeholder');
+        const resultArea = document.getElementById('resultArea');
+        const resTitle = document.getElementById('resTitle');
+        const resRiskBadge = document.getElementById('resRiskBadge');
+        const resRiskPercent = document.getElementById('resRiskPercent');
+        const resRiskBar = document.getElementById('resRiskBar');
+        const resTroubles = document.getElementById('resTroubles');
+        const resRecommend = document.getElementById('resRecommend');
+        const resTalk = document.getElementById('resTalk');
+
+        function judgeRisk(type) {
+            try {
+                const targetData = data[type];
+                if (!targetData) throw new Error("Invalid selection");
+
+                // UIの切り替え
+                placeholder.classList.add('hide');
+                resultArea.classList.remove('hide');
+                
+                // アニメーションのリセット（再選択時用）
+                resultArea.classList.remove('animate-fade-in');
+                void resultArea.offsetWidth; // Reflow trigger
+                resultArea.classList.add('animate-fade-in');
+
+                // ゲージ幅を一度0にする
+                resRiskBar.style.width = '0%';
+
+                // データの注入 (XSS対策でtextContentを使用)
+                resTitle.textContent = targetData.title;
+                resRiskBadge.textContent = targetData.riskBadge;
+                resRiskPercent.textContent = targetData.riskPercent + '%';
+                resRecommend.textContent = targetData.recommend;
+                resTalk.textContent = targetData.talk;
+
+                // トラブルリストの生成
+                resTroubles.innerHTML = '';
+                targetData.troubles.forEach(t => {
+                    const li = document.createElement('li');
+                    li.textContent = t;
+                    resTroubles.appendChild(li);
+                });
+
+                // バーのアニメーション発火
+                setTimeout(() => {
+                    resRiskBar.style.width = targetData.riskPercent + '%';
+                    
+                    // 色の動的変更
+                    if(targetData.riskPercent > 80) {
+                        resRiskBar.className = "h-full bg-gradient-to-r from-red-500 to-red-700 progress-bar";
+                    } else if(targetData.riskPercent > 50) {
+                        resRiskBar.className = "h-full bg-gradient-to-r from-orange-400 to-orange-600 progress-bar";
+                    }
+                }, 100);
+
+                // スムーズスクロール
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                console.error("アプリケーションエラー:", error);
+                alert("データの読み込みに失敗しました。もう一度お試しください。");
+            }
+        }
+
+        function resetApp() {
+            resultArea.classList.add('hide');
+            placeholder.classList.remove('hide');
+            resRiskBar.style.width = '0%';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
