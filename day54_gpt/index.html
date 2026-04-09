@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GW旅行の写真映え革命！極薄レンズ・シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg:#f5f5f3;
+      --panel:#fbfbfa;
+      --ink:#181818;
+      --muted:#686868;
+      --line:#dbdbd7;
+      --accent:#111111;
+    }
+
+    html, body {
+      background: linear-gradient(180deg, #f7f7f5 0%, #f0f0ed 100%);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    }
+
+    .grain::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(0,0,0,.05) 0 1px, transparent 1px),
+        radial-gradient(circle at 80% 30%, rgba(0,0,0,.04) 0 1px, transparent 1px),
+        radial-gradient(circle at 40% 80%, rgba(0,0,0,.03) 0 1px, transparent 1px);
+      background-size: 18px 18px, 24px 24px, 20px 20px;
+    }
+
+    .gallery-card{
+      background: rgba(255,255,255,.72);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(24,24,24,.08);
+      box-shadow: 0 10px 30px rgba(0,0,0,.04);
+    }
+
+    .degree-btn{
+      transition: all .25s ease;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.7);
+    }
+
+    .degree-btn:hover{
+      transform: translateY(-1px);
+      border-color:#a9a9a3;
+      background:#fff;
+    }
+
+    .degree-btn.active{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+      box-shadow: 0 14px 28px rgba(17,17,17,.14);
+    }
+
+    .portrait-frame{
+      position: relative;
+      overflow: hidden;
+      border:1px solid rgba(0,0,0,.08);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.82), rgba(241,241,238,.95));
+      min-height: 490px;
+    }
+
+    .lighting{
+      position:absolute;
+      inset:-20%;
+      background:
+        radial-gradient(circle at 50% 16%, rgba(255,255,255,.95), transparent 30%),
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,.03), transparent 45%);
+      pointer-events:none;
+    }
+
+    .face-stage{
+      position:relative;
+      width:100%;
+      height:100%;
+      min-height:490px;
+    }
+
+    .face {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 320px;
+      border: 2px solid rgba(0,0,0,.6);
+      border-radius: 48% 48% 46% 46% / 38% 38% 58% 58%;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255,255,255,.9), rgba(235,235,232,.82) 48%, rgba(220,220,216,.9) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        0 12px 40px rgba(0,0,0,.06);
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .face-line{
+      position:absolute;
+      inset: 12px;
+      border: 1px solid rgba(0,0,0,.16);
+      border-radius: 46% 46% 45% 45% / 36% 36% 59% 59%;
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .eye-group{
+      position:absolute;
+      top: 112px;
+      left: 50%;
+      width: 164px;
+      height: 56px;
+      transform: translateX(-50%);
+    }
+
+    .eye{
+      position:absolute;
+      width: 52px;
+      height: 30px;
+      border: 2px solid rgba(0,0,0,.78);
+      border-radius: 50% / 58%;
+      background:#fafaf8;
+      overflow:hidden;
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+      transform-origin:center;
+    }
+
+    .eye.left{ left:0; }
+    .eye.right{ right:0; }
+
+    .iris{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:12px;
+      height:12px;
+      transform: translate(-50%,-50%);
+      background:#111;
+      border-radius:9999px;
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .brow{
+      position:absolute;
+      width:58px;
+      height:10px;
+      border-top:2px solid rgba(0,0,0,.65);
+      border-radius:9999px;
+      top:-12px;
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .brow.left{ left:-3px; transform: rotate(-6deg); }
+    .brow.right{ right:-3px; transform: rotate(6deg); }
+
+    .nose{
+      position:absolute;
+      left:50%;
+      top:152px;
+      width:16px;
+      height:54px;
+      transform: translateX(-50%);
+      border-left: 2px solid rgba(0,0,0,.35);
+      border-bottom: 2px solid rgba(0,0,0,.35);
+      border-bottom-left-radius: 12px;
+      opacity:.7;
+    }
+
+    .mouth{
+      position:absolute;
+      left:50%;
+      bottom:82px;
+      width:54px;
+      height:18px;
+      transform: translateX(-50%);
+      border-bottom:2px solid rgba(0,0,0,.5);
+      border-radius:0 0 999px 999px;
+      opacity:.8;
+    }
+
+    .glasses{
+      position:absolute;
+      left:50%;
+      top:106px;
+      width:220px;
+      height:74px;
+      transform: translateX(-50%);
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .lens{
+      position:absolute;
+      width:84px;
+      height:58px;
+      border: 2px solid rgba(0,0,0,.86);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.02)),
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), transparent 35%);
+      backdrop-filter: blur(.5px);
+      overflow:hidden;
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .lens.left{ left:16px; }
+    .lens.right{ right:16px; }
+
+    .bridge{
+      position:absolute;
+      left:50%;
+      top:22px;
+      width:24px;
+      height:10px;
+      transform: translateX(-50%);
+      border-top: 2px solid rgba(0,0,0,.86);
+      border-radius:999px;
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+    }
+
+    .temple{
+      position:absolute;
+      top:26px;
+      width:18px;
+      height:2px;
+      background: rgba(0,0,0,.8);
+    }
+
+    .temple.left{ left:0; }
+    .temple.right{ right:0; }
+
+    .lens-distortion{
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.24), transparent 52%),
+        radial-gradient(circle at 20% 50%, rgba(0,0,0,.06), transparent 60%),
+        radial-gradient(circle at 80% 50%, rgba(0,0,0,.06), transparent 60%);
+      transition: all .6s cubic-bezier(.22,1,.36,1);
+      pointer-events:none;
+    }
+
+    .spec-label{
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      font-size:.7rem;
+    }
+
+    .story-step{
+      opacity:0;
+      transform: translateY(14px);
+      transition: all .45s ease;
+      border-left:1px solid rgba(0,0,0,.12);
+    }
+
+    .story-step.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    .meter-bar{
+      position:relative;
+      height:8px;
+      border-radius:9999px;
+      background:#e5e5e1;
+      overflow:hidden;
+    }
+
+    .meter-fill{
+      position:absolute;
+      inset:0 auto 0 0;
+      width:0%;
+      border-radius:9999px;
+      background:#111;
+      transition: width .7s cubic-bezier(.22,1,.36,1);
+    }
+
+    .fade-in{
+      animation: fadeIn .7s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity:0; transform: translateY(12px); }
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1024px){
+      .portrait-frame{ min-height: 430px; }
+      .face-stage{ min-height:430px; }
+      .face{ width:220px; height:290px; }
+      .glasses{ width:198px; }
+      .lens{ width:76px; height:54px; }
+      .eye-group{ width:148px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="relative grain">
+    <div class="mx-auto max-w-7xl px-6 py-8 md:px-10 md:py-12 lg:px-16 lg:py-16">
+      <header class="mb-14 md:mb-20">
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl">
+            <p class="spec-label text-neutral-500 mb-4">PORTRAIT VALUE PROPOSAL / HIGH INDEX LENS EXPERIENCE</p>
+            <h1 class="text-3xl leading-tight md:text-5xl md:leading-tight font-light tracking-[0.02em] text-neutral-900">
+              GW旅行の写真映え革命。<br class="hidden md:block" />
+              目が小さくならない、極薄レンズ体験。
+            </h1>
+          </div>
+          <div class="max-w-md">
+            <p class="text-sm leading-7 text-neutral-600">
+              強度近視のお客様に対し、「見え方」だけでなく「写り方」で価値を伝えるための接客シミュレーター。
+              標準レンズと最高級・両面非球面レンズの違いを、写真スタジオのような静かなUIで比較できます。
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid grid-cols-1 gap-8 xl:grid-cols-[360px_1fr]">
+        <!-- Control Panel -->
+        <section class="gallery-card rounded-[2rem] p-6 md:p-8 h-fit">
+          <div class="mb-8">
+            <p class="spec-label text-neutral-500 mb-3">STEP 1</p>
+            <h2 class="text-2xl font-light tracking-[0.02em] text-neutral-900">
+              度数を選ぶ
+            </h2>
+            <p class="mt-3 text-sm leading-7 text-neutral-600">
+              写真写りにどれほど差が出るかを、近視度数ごとに可視化します。
+            </p>
+          </div>
+
+          <div class="space-y-3" id="degreeButtons">
+            <button
+              type="button"
+              class="degree-btn active w-full rounded-2xl p-4 text-left"
+              data-degree="-3.00"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-base font-medium">-3.00</div>
+                  <div class="mt-1 text-sm text-neutral-500 degree-desc">軽度・少し気になる</div>
+                </div>
+                <div class="text-xs text-neutral-400 pt-1">LIGHT</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="degree-btn w-full rounded-2xl p-4 text-left"
+              data-degree="-6.00"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-base font-medium">-6.00</div>
+                  <div class="mt-1 text-sm text-neutral-500 degree-desc">中等度・目が小さくなる</div>
+                </div>
+                <div class="text-xs text-neutral-400 pt-1">MEDIUM</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="degree-btn w-full rounded-2xl p-4 text-left"
+              data-degree="-10.00"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-base font-medium">-10.00</div>
+                  <div class="mt-1 text-sm text-neutral-500 degree-desc">強度・輪郭がガッツリ凹む</div>
+                </div>
+                <div class="text-xs text-neutral-400 pt-1">STRONG</div>
+              </div>
+            </button>
+          </div>
+
+          <div class="mt-10 border-t border-neutral-200 pt-8">
+            <p class="spec-label text-neutral-500 mb-4">IMPACT ANALYSIS</p>
+
+            <div class="space-y-5">
+              <div>
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-sm text-neutral-600">目の縮小感（標準レンズ）</span>
+                  <span id="eyeImpactValue" class="text-sm text-neutral-900">25%</span>
+                </div>
+                <div class="meter-bar">
+                  <div id="eyeImpactBar" class="meter-fill" style="width:25%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-sm text-neutral-600">フェイスライン歪み（標準レンズ）</span>
+                  <span id="faceImpactValue" class="text-sm text-neutral-900">18%</span>
+                </div>
+                <div class="meter-bar">
+                  <div id="faceImpactBar" class="meter-fill" style="width:18%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-sm text-neutral-600">写真映え維持率（両面非球面）</span>
+                  <span id="premiumValue" class="text-sm text-neutral-900">92%</span>
+                </div>
+                <div class="meter-bar">
+                  <div id="premiumBar" class="meter-fill" style="width:92%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-10 rounded-2xl border border-neutral-200 bg-white/70 p-5">
+            <p class="text-xs tracking-[0.18em] uppercase text-neutral-500">接客の一言フック</p>
+            <p id="hookCopy" class="mt-3 text-sm leading-7 text-neutral-700">
+              「旅行の写真って、後からずっと見返すからこそ、“見え方”だけじゃなく“写り方”も大事なんです。」
+            </p>
+          </div>
+        </section>
+
+        <!-- Visual / Narrative Area -->
+        <section class="space-y-8">
+          <div class="grid grid-cols-1 gap-8 2xl:grid-cols-2">
+            <!-- Standard -->
+            <article class="gallery-card rounded-[2rem] overflow-hidden">
+              <div class="flex items-center justify-between border-b border-neutral-200 px-6 py-5 md:px-8">
+                <div>
+                  <p class="spec-label text-neutral-500 mb-2">COMPARISON A</p>
+                  <h3 class="text-xl font-light">標準レンズ</h3>
+                </div>
+                <p class="text-xs tracking-[0.18em] uppercase text-neutral-400">Conventional</p>
+              </div>
+              <div class="portrait-frame">
+                <div class="lighting"></div>
+                <div class="face-stage">
+                  <div id="standardFace" class="face">
+                    <div id="standardFaceLine" class="face-line"></div>
+                    <div id="standardEyeGroup" class="eye-group">
+                      <div id="standardEyeLeft" class="eye left">
+                        <div class="brow left"></div>
+                        <div class="iris"></div>
+                      </div>
+                      <div id="standardEyeRight" class="eye right">
+                        <div class="brow right"></div>
+                        <div class="iris"></div>
+                      </div>
+                    </div>
+                    <div id="standardNose" class="nose"></div>
+                    <div class="mouth"></div>
+                    <div id="standardGlasses" class="glasses">
+                      <div class="temple left"></div>
+                      <div class="temple right"></div>
+                      <div id="standardLensLeft" class="lens left">
+                        <div id="standardDistortLeft" class="lens-distortion"></div>
+                      </div>
+                      <div class="bridge"></div>
+                      <div id="standardLensRight" class="lens right">
+                        <div id="standardDistortRight" class="lens-distortion"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="border-t border-neutral-200 px-6 py-5 md:px-8">
+                <p id="standardCaption" class="text-sm leading-7 text-neutral-600">
+                  軽度近視でも、写真では目が少し小さく見えやすく、フレーム周辺の印象にわずかな違和感が出ます。
+                </p>
+              </div>
+            </article>
+
+            <!-- Premium -->
+            <article class="gallery-card rounded-[2rem] overflow-hidden">
+              <div class="flex items-center justify-between border-b border-neutral-200 px-6 py-5 md:px-8">
+                <div>
+                  <p class="spec-label text-neutral-500 mb-2">COMPARISON B</p>
+                  <h3 class="text-xl font-light">最高級・両面非球面レンズ</h3>
+                </div>
+                <p class="text-xs tracking-[0.18em] uppercase text-neutral-400">Premium Double Aspheric</p>
+              </div>
+              <div class="portrait-frame">
+                <div class="lighting"></div>
+                <div class="face-stage">
+                  <div id="premiumFace" class="face">
+                    <div id="premiumFaceLine" class="face-line"></div>
+                    <div id="premiumEyeGroup" class="eye-group">
+                      <div id="premiumEyeLeft" class="eye left">
+                        <div class="brow left"></div>
+                        <div class="iris"></div>
+                      </div>
+                      <div id="premiumEyeRight" class="eye right">
+                        <div class="brow right"></div>
+                        <div class="iris"></div>
+                      </div>
+                    </div>
+                    <div class="nose"></div>
+                    <div class="mouth"></div>
+                    <div id="premiumGlasses" class="glasses">
+                      <div class="temple left"></div>
+                      <div class="temple right"></div>
+                      <div class="lens left">
+                        <div class="lens-distortion opacity-30"></div>
+                      </div>
+                      <div class="bridge"></div>
+                      <div class="lens right">
+                        <div class="lens-distortion opacity-30"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="border-t border-neutral-200 px-6 py-5 md:px-8">
+                <p id="premiumCaption" class="text-sm leading-7 text-neutral-600">
+                  両面非球面で厚みと歪みを抑え、自然な目元と輪郭感をキープ。写真でも印象が崩れにくくなります。
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <!-- Narrative -->
+          <section class="gallery-card rounded-[2rem] p-6 md:p-8">
+            <div class="grid grid-cols-1 gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <p class="spec-label text-neutral-500 mb-3">STEP 2</p>
+                <h2 class="text-2xl font-light tracking-[0.02em] text-neutral-900">
+                  接客トークとロジック
+                </h2>
+                <p class="mt-3 text-sm leading-7 text-neutral-600">
+                  「なぜ高単価でも価値があるのか」を、感情面と理屈の両方から順番に伝えられる構成です。
+                </p>
+              </div>
+
+              <div class="space-y-4">
+                <div id="step1" class="story-step rounded-2xl bg-white/70 p-5 pl-6 show">
+                  <p class="text-xs tracking-[0.18em] uppercase text-neutral-500">Scene</p>
+                  <p id="sceneText" class="mt-2 text-sm leading-7 text-neutral-700"></p>
+                </div>
+
+                <div id="step2" class="story-step rounded-2xl bg-white/70 p-5 pl-6">
+                  <p class="text-xs tracking-[0.18em] uppercase text-neutral-500">Sales Talk</p>
+                  <p id="talkText" class="mt-2 text-sm leading-7 text-neutral-700"></p>
+                </div>
+
+                <div id="step3" class="story-step rounded-2xl bg-white/70 p-5 pl-6">
+                  <p class="text-xs tracking-[0.18em] uppercase text-neutral-500">Why It Works</p>
+                  <p id="logicText" class="mt-2 text-sm leading-7 text-neutral-700"></p>
+                </div>
+
+                <div id="step4" class="story-step rounded-2xl bg-white/70 p-5 pl-6">
+                  <p class="text-xs tracking-[0.18em] uppercase text-neutral-500">Closing Phrase</p>
+                  <p id="closeText" class="mt-2 text-sm leading-7 text-neutral-700"></p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Footer Note -->
+          <section class="px-1 pb-6">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-sm text-neutral-500">
+              <p>“見える”だけではなく、“写る”まで提案する。高単価レンズに感情価値を与えるための一画面設計。</p>
+              <p>Minimal Portrait Gallery Interface</p>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const appData = {
+        "-3.00": {
+          eyeScale: 0.86,
+          eyeWidth: 46,
+          eyeHeight: 27,
+          eyeGapShift: 1,
+          faceLineScaleX: 0.97,
+          faceLineTranslate: 2,
+          lensInsetScale: 0.96,
+          lensDistortOpacity: 0.34,
+          noseShift: 2,
+          blur: 0.15,
+          metrics: {
+            eyeImpact: 25,
+            faceImpact: 18,
+            premiumKeep: 92
+          },
+          hook: "「旅行の写真って、後からずっと見返すからこそ、“見え方”だけじゃなく“写り方”も大事なんです。」",
+          standardCaption: "軽度近視でも、写真では目が少し小さく見えやすく、フレーム周辺の印象にわずかな違和感が出ます。",
+          premiumCaption: "両面非球面なら、薄さと自然な見た目のバランスが取りやすく、軽い度数でも“きれいに写る”価値を伝えやすくなります。",
+          story: {
+            scene: "GWのカフェ巡りや街歩き。何枚も写真を撮る日ほど、あとで見返した時の“目元の印象差”が気になりやすくなります。",
+            talk: "「度数がそこまで強くなくても、写真だと目元のサイズ感って意外と出るんです。せっかくの旅行写真だから、自然に写る方を選ぶ方が増えています。」",
+            logic: "標準設計ではレンズ周辺に厚みや見た目の収差が出やすく、目が少し縮んで見えます。両面非球面は表裏のカーブを最適化し、薄さと像の自然さを両立しやすいのが特長です。",
+            close: "「見え方はもちろん、写真に残る印象まできれいにしたいなら、このレンズが一番満足感につながりやすいです。」"
+          }
+        },
+        "-6.00": {
+          eyeScale: 0.68,
+          eyeWidth: 40,
+          eyeHeight: 23,
+          eyeGapShift: 5,
+          faceLineScaleX: 0.92,
+          faceLineTranslate: 6,
+          lensInsetScale: 0.91,
+          lensDistortOpacity: 0.48,
+          noseShift: 5,
+          blur: 0.35,
+          metrics: {
+            eyeImpact: 52,
+            faceImpact: 44,
+            premiumKeep: 95
+          },
+          hook: "「グループ写真で、自分だけ目元の印象が弱く見える。その差はレンズ設計でかなり変わります。」",
+          standardCaption: "中等度近視では、目の縮小感がはっきり出やすく、フェイスラインもレンズ内側へ引き込まれた印象になりがちです。",
+          premiumCaption: "両面非球面は目元の縮小感や輪郭の違和感を抑え、集合写真でも自然な表情のまま写りやすくなります。",
+          story: {
+            scene: "友人との集合写真で、自分だけ目元が弱く見えてしまう。中等度近視のお客様が一番“写真映えの差”を実感しやすいゾーンです。",
+            talk: "「この度数になると、見え方だけでなく、写真で目が小さく見えることを気にされる方が増えます。薄くて歪みの少ない設計にすると、印象差がかなりやわらぎます。」",
+            logic: "近視用レンズは度数が強くなるほど、周辺部の厚みや像の縮小が目立ちやすくなります。両面非球面は両面から設計を追い込むことで、レンズ越しの縮小感や輪郭の引き込みを低減しやすい構造です。",
+            close: "「旅行先で“撮られたくない”を減らすなら、見た目まで整うレンズを選ぶ価値は大きいです。」"
+          }
+        },
+        "-10.00": {
+          eyeScale: 0.48,
+          eyeWidth: 32,
+          eyeHeight: 18,
+          eyeGapShift: 10,
+          faceLineScaleX: 0.84,
+          faceLineTranslate: 12,
+          lensInsetScale: 0.84,
+          lensDistortOpacity: 0.65,
+          noseShift: 9,
+          blur: 0.55,
+          metrics: {
+            eyeImpact: 78,
+            faceImpact: 72,
+            premiumKeep: 97
+          },
+          hook: "「強度近視の方ほど、“ちゃんと見える”以上に“自然に写れる”ことが自信につながります。」",
+          standardCaption: "強度近視では、目がぐっと小さく見え、輪郭線も内側へ凹んだように感じやすく、写真での違和感が強く出ます。",
+          premiumCaption: "最高級・両面非球面なら、強い度数でも見た目の悲劇を最小限に。目元の存在感と輪郭の自然さを守りやすくなります。",
+          story: {
+            scene: "旅行の記念写真で『私だけ別人っぽい…』と感じてしまう。強度近視のお客様にとって、これは機能ではなく自己肯定感の問題です。",
+            talk: "「このクラスの度数だと、普通のレンズでは目元や輪郭の変化が写真にはっきり出やすいです。だからこそ、最高級設計にする意味がすごく大きいんです。」",
+            logic: "強い近視ではレンズのマイナスパワーが大きく、標準設計だと像の縮小や輪郭のズレが強調されやすくなります。両面非球面は厚み・重さ・見た目の歪みを多面的に抑えやすく、強度数ほど恩恵を伝えやすい設計です。",
+            close: "「これは“贅沢品”というより、写真に写る自分を好きでいられるための投資です。」"
+          }
+        }
+      };
+
+      const els = {
+        buttons: [...document.querySelectorAll(".degree-btn")],
+        eyeImpactValue: document.getElementById("eyeImpactValue"),
+        faceImpactValue: document.getElementById("faceImpactValue"),
+        premiumValue: document.getElementById("premiumValue"),
+        eyeImpactBar: document.getElementById("eyeImpactBar"),
+        faceImpactBar: document.getElementById("faceImpactBar"),
+        premiumBar: document.getElementById("premiumBar"),
+        hookCopy: document.getElementById("hookCopy"),
+        standardCaption: document.getElementById("standardCaption"),
+        premiumCaption: document.getElementById("premiumCaption"),
+        sceneText: document.getElementById("sceneText"),
+        talkText: document.getElementById("talkText"),
+        logicText: document.getElementById("logicText"),
+        closeText: document.getElementById("closeText"),
+        step1: document.getElementById("step1"),
+        step2: document.getElementById("step2"),
+        step3: document.getElementById("step3"),
+        step4: document.getElementById("step4"),
+        standardEyeLeft: document.getElementById("standardEyeLeft"),
+        standardEyeRight: document.getElementById("standardEyeRight"),
+        standardFaceLine: document.getElementById("standardFaceLine"),
+        standardDistortLeft: document.getElementById("standardDistortLeft"),
+        standardDistortRight: document.getElementById("standardDistortRight"),
+        standardNose: document.getElementById("standardNose"),
+        premiumEyeLeft: document.getElementById("premiumEyeLeft"),
+        premiumEyeRight: document.getElementById("premiumEyeRight"),
+        premiumFaceLine: document.getElementById("premiumFaceLine")
+      };
+
+      function resetStepAnimations() {
+        [els.step1, els.step2, els.step3, els.step4].forEach(step => {
+          step.classList.remove("show");
+        });
+
+        setTimeout(() => els.step1.classList.add("show"), 80);
+        setTimeout(() => els.step2.classList.add("show"), 240);
+        setTimeout(() => els.step3.classList.add("show"), 400);
+        setTimeout(() => els.step4.classList.add("show"), 560);
+      }
+
+      function setTextSafe(el, text) {
+        if (!el) return;
+        el.textContent = typeof text === "string" ? text : "";
+      }
+
+      function applyDegree(rawDegree) {
+        const degree = appData[rawDegree] ? rawDegree : "-3.00";
+        const data = appData[degree];
+
+        // Active button state
+        els.buttons.forEach(btn => {
+          btn.classList.toggle("active", btn.dataset.degree === degree);
+        });
+
+        // Metrics
+        els.eyeImpactValue.textContent = `${data.metrics.eyeImpact}%`;
+        els.faceImpactValue.textContent = `${data.metrics.faceImpact}%`;
+        els.premiumValue.textContent = `${data.metrics.premiumKeep}%`;
+
+        els.eyeImpactBar.style.width = `${data.metrics.eyeImpact}%`;
+        els.faceImpactBar.style.width = `${data.metrics.faceImpact}%`;
+        els.premiumBar.style.width = `${data.metrics.premiumKeep}%`;
+
+        // Hook and captions
+        setTextSafe(els.hookCopy, data.hook);
+        setTextSafe(els.standardCaption, data.standardCaption);
+        setTextSafe(els.premiumCaption, data.premiumCaption);
+
+        // Story
+        setTextSafe(els.sceneText, data.story.scene);
+        setTextSafe(els.talkText, data.story.talk);
+        setTextSafe(els.logicText, data.story.logic);
+        setTextSafe(els.closeText, data.story.close);
+        resetStepAnimations();
+
+        // Standard lens simulation
+        const leftOffset = -data.eyeGapShift;
+        const rightOffset = data.eyeGapShift;
+
+        [els.standardEyeLeft, els.standardEyeRight].forEach((eye, index) => {
+          if (!eye) return;
+          eye.style.width = `${data.eyeWidth}px`;
+          eye.style.height = `${data.eyeHeight}px`;
+          eye.style.transform = `translateX(${index === 0 ? leftOffset : rightOffset}px) scale(${data.eyeScale})`;
+          eye.style.filter = `blur(${data.blur}px)`;
+        });
+
+        els.standardFaceLine.style.transform = `translateX(${data.faceLineTranslate}px) scaleX(${data.faceLineScaleX})`;
+        els.standardDistortLeft.style.opacity = data.lensDistortOpacity;
+        els.standardDistortRight.style.opacity = data.lensDistortOpacity;
+        els.standardDistortLeft.style.transform = `scaleX(${data.lensInsetScale})`;
+        els.standardDistortRight.style.transform = `scaleX(${data.lensInsetScale})`;
+        els.standardNose.style.transform = `translateX(calc(-50% + ${data.noseShift}px))`;
+
+        // Premium lens stays almost natural
+        els.premiumEyeLeft.style.width = "52px";
+        els.premiumEyeLeft.style.height = "30px";
+        els.premiumEyeLeft.style.transform = "translateX(0px) scale(1)";
+        els.premiumEyeLeft.style.filter = "blur(0px)";
+
+        els.premiumEyeRight.style.width = "52px";
+        els.premiumEyeRight.style.height = "30px";
+        els.premiumEyeRight.style.transform = "translateX(0px) scale(1)";
+        els.premiumEyeRight.style.filter = "blur(0px)";
+
+        els.premiumFaceLine.style.transform = "translateX(0px) scaleX(1)";
+      }
+
+      els.buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          try {
+            applyDegree(btn.dataset.degree);
+          } catch (error) {
+            console.error("シミュレーションの更新に失敗しました:", error);
+            applyDegree("-3.00");
+          }
+        });
+      });
+
+      // Initial render with fallback
+      try {
+        applyDegree("-3.00");
+      } catch (error) {
+        console.error("初期表示に失敗しました:", error);
+      }
+    })();
+  </script>
+</body>
+</html>
