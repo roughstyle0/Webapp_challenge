@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GW旅行サブメガネ トラベルリスク・ジャッジ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --paper:#efe2c5;
+      --paper-deep:#e2cfaa;
+      --ink:#2f2418;
+      --accent:#bf5b2c;
+      --accent-2:#1f6d72;
+      --danger:#9f2d24;
+      --olive:#66724a;
+      --stamp:#b53a2f;
+      --air-red:#d75445;
+      --air-blue:#3d74c5;
+      --ticket:#f6ead1;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,.14), transparent 25%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,.1), transparent 22%),
+        radial-gradient(circle at 50% 80%, rgba(0,0,0,.035), transparent 30%),
+        linear-gradient(135deg, rgba(61,116,197,.08) 0 2.5%, transparent 2.5% 5%, rgba(215,84,69,.08) 5% 7.5%, transparent 7.5% 10%),
+        linear-gradient(180deg, var(--paper), var(--paper-deep));
+      background-size: auto, auto, auto, 36px 36px, auto;
+      min-height: 100vh;
+    }
+
+    .paper-noise::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:
+        radial-gradient(rgba(0,0,0,.45) .6px, transparent .8px);
+      background-size: 10px 10px;
+      mix-blend-mode:multiply;
+    }
+
+    .passport-shell{
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)),
+        linear-gradient(180deg, #ead8b4, #e9d5ad 50%, #dec69a);
+      border: 2px solid rgba(78,58,33,.28);
+      box-shadow:
+        0 18px 50px rgba(79,56,23,.16),
+        inset 0 1px 0 rgba(255,255,255,.4);
+    }
+
+    .airmail-strip{
+      background:
+        repeating-linear-gradient(
+          45deg,
+          var(--air-red) 0 10px,
+          #fff7ec 10px 20px,
+          var(--air-blue) 20px 30px,
+          #fff7ec 30px 40px
+        );
+    }
+
+    .stamp{
+      transform: rotate(-8deg);
+      border: 3px double rgba(181,58,47,.75);
+      color: var(--stamp);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-weight: 800;
+      background: rgba(181,58,47,.05);
+      box-shadow: inset 0 0 0 1px rgba(181,58,47,.18);
+    }
+
+    .stamp-secondary{
+      transform: rotate(7deg);
+      border: 3px double rgba(31,109,114,.65);
+      color: var(--accent-2);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-weight: 800;
+      background: rgba(31,109,114,.05);
+      box-shadow: inset 0 0 0 1px rgba(31,109,114,.16);
+    }
+
+    .ticket{
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0)),
+        var(--ticket);
+      border: 2px dashed rgba(66,50,28,.35);
+    }
+
+    .ticket::before,
+    .ticket::after{
+      content:"";
+      position:absolute;
+      width:20px;
+      height:20px;
+      background: linear-gradient(180deg, var(--paper), var(--paper-deep));
+      border-radius:999px;
+      top:50%;
+      transform: translateY(-50%);
+      z-index:2;
+    }
+
+    .ticket::before{ left:-10px; }
+    .ticket::after{ right:-10px; }
+
+    .boarding-grid{
+      background-image:
+        linear-gradient(rgba(58,44,25,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(58,44,25,.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .route-dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(191,91,44,.15);
+      flex: 0 0 auto;
+    }
+
+    .route-line{
+      flex:1;
+      height:2px;
+      background:
+        repeating-linear-gradient(90deg, rgba(47,36,24,.65) 0 10px, transparent 10px 16px);
+    }
+
+    .travel-option{
+      position: relative;
+      min-height: 100%;
+      border: 2px solid rgba(65,48,23,.18);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.02)),
+        rgba(245,232,204,.72);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .travel-option:hover,
+    .travel-option:focus-visible{
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(66,46,19,.12);
+      border-color: rgba(65,48,23,.35);
+      outline: none;
+    }
+
+    .travel-option.active{
+      background:
+        linear-gradient(180deg, rgba(191,91,44,.18), rgba(191,91,44,.06)),
+        rgba(252,241,218,.92);
+      border-color: rgba(159,45,36,.48);
+      box-shadow: 0 14px 30px rgba(120,52,21,.16);
+    }
+
+    .travel-option.active::after{
+      content:"SELECTED";
+      position:absolute;
+      top:10px;
+      right:10px;
+      font-size: 10px;
+      line-height: 1;
+      padding: 6px 8px;
+      border: 2px double rgba(159,45,36,.5);
+      color: var(--danger);
+      background: rgba(255,255,255,.28);
+      transform: rotate(8deg);
+      letter-spacing:.16em;
+      font-weight: 800;
+    }
+
+    .gauge-wrap{
+      position: relative;
+      width: min(72vw, 240px);
+      aspect-ratio: 1 / 1;
+      margin-inline: auto;
+    }
+
+    .gauge-ring{
+      width:100%;
+      height:100%;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      background:
+        radial-gradient(circle at center, #f8edd4 0 52%, transparent 52.5%),
+        conic-gradient(
+          var(--danger) 0deg,
+          #d77a2a 110deg,
+          #d9b548 190deg,
+          #b8bf58 260deg,
+          #6a8f4e 320deg,
+          #6a8f4e 360deg
+        );
+      box-shadow: inset 0 0 0 12px rgba(255,255,255,.28), 0 10px 25px rgba(68,48,24,.14);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gauge-ring::before{
+      content:"";
+      position:absolute;
+      inset:12%;
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.55), transparent 30%),
+        linear-gradient(180deg, #f6eacb, #eed9ab);
+      box-shadow: inset 0 0 0 2px rgba(76,55,29,.12);
+    }
+
+    .gauge-cover{
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      background: conic-gradient(from -90deg, rgba(239,226,197,.94) 0deg, rgba(239,226,197,.94) var(--cover-deg), transparent var(--cover-deg), transparent 360deg);
+      transition: background .6s ease;
+      mix-blend-mode: normal;
+    }
+
+    .gauge-center{
+      position:absolute;
+      inset:24%;
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,.5), transparent 28%),
+        linear-gradient(180deg, #f8efd9, #edd9af);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      text-align:center;
+      border: 2px solid rgba(70,51,27,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+      padding: 10px;
+    }
+
+    .badge-chip{
+      border:1px solid rgba(65,48,23,.22);
+      background: rgba(255,248,232,.45);
+    }
+
+    .warning-row{
+      border-bottom: 1px dashed rgba(65,48,23,.18);
+    }
+
+    .warning-row:last-child{
+      border-bottom: none;
+    }
+
+    .script-box{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0)),
+        rgba(247,236,207,.7);
+      border-left: 5px solid rgba(159,45,36,.75);
+    }
+
+    .micro-label{
+      font-size: .72rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-weight: 800;
+      opacity: .78;
+    }
+
+    .soft-divider{
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(54,40,22,.3), transparent);
+    }
+
+    .fade-in{
+      animation: fadeUp .35s ease;
+    }
+
+    @keyframes fadeUp{
+      from{ opacity:0; transform: translateY(10px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+  </style>
+</head>
+<body>
+  <main class="min-h-screen px-3 py-4 sm:px-4 sm:py-5">
+    <section class="passport-shell paper-noise relative mx-auto w-full max-w-6xl rounded-[28px] p-3 sm:p-4 md:p-5">
+      <div class="airmail-strip h-3 rounded-full"></div>
+
+      <header class="pt-4 pb-3 sm:pt-5 sm:pb-4">
+        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div class="min-w-0">
+            <div class="micro-label text-[var(--accent-2)]">Optical Travel Support Tool</div>
+            <h1 class="mt-1 text-[clamp(1.4rem,4.4vw,2.6rem)] font-extrabold leading-tight tracking-tight">
+              GW旅行サブメガネ<br class="sm:hidden" />
+              トラベルリスク・ジャッジ
+            </h1>
+            <p class="mt-2 max-w-3xl text-sm leading-6 sm:text-[15px]">
+              新人スタッフでも、お客様の旅行スタイルに合わせて
+              <span class="font-bold text-[var(--danger)]">「壊れたらどれだけ困るか」</span>
+              を直感的に伝え、自然に2本目提案へつなげられる接客補助アプリです。
+            </p>
+          </div>
+
+          <div class="flex shrink-0 items-start gap-2 self-start">
+            <div class="stamp rounded-md px-3 py-2 text-[10px] sm:text-xs">GW ISSUE</div>
+            <div class="stamp-secondary rounded-md px-3 py-2 text-[10px] sm:text-xs">TRAVEL SAFE</div>
+          </div>
+        </div>
+
+        <div class="mt-4 ticket rounded-[22px] p-3 sm:p-4">
+          <div class="boarding-grid rounded-[16px] p-3 sm:p-4">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-bold tracking-[0.18em] text-[var(--accent-2)] sm:text-sm">
+              <span>TRAVEL PLAN INPUT</span>
+              <span class="opacity-35">•</span>
+              <span>Mobile-first</span>
+              <span class="opacity-35">•</span>
+              <span>接客用クイック診断</span>
+            </div>
+
+            <div class="mt-3 flex items-center gap-2">
+              <span class="route-dot"></span>
+              <span class="text-xs font-bold tracking-[0.14em] sm:text-sm">出発前のひとこと提案</span>
+              <span class="route-line"></span>
+              <span class="route-dot"></span>
+            </div>
+
+            <p class="mt-3 text-sm leading-6 sm:text-[15px]">
+              お客様の予定に近いボタンを選ぶだけで、
+              <span class="font-bold">旅行台無しリスク・予備メガネ提案・接客トーク</span>
+              をすぐ表示します。
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <section aria-labelledby="planHeading" class="pb-3">
+        <div class="flex items-center gap-2">
+          <div class="h-2 w-2 rounded-full bg-[var(--accent)]"></div>
+          <h2 id="planHeading" class="text-lg font-extrabold tracking-tight sm:text-xl">旅行先・期間を選択</h2>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <button
+            type="button"
+            class="travel-option rounded-[22px] p-4 text-left"
+            data-plan="overseas"
+            aria-pressed="false"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="micro-label text-[var(--danger)]">Plan A</div>
+                <h3 class="mt-1 text-base font-extrabold leading-6">海外旅行・リゾート</h3>
+              </div>
+              <div class="stamp rounded-md px-2 py-1 text-[9px]">HIGH RISK</div>
+            </div>
+            <p class="mt-2 text-sm leading-6">
+              3泊以上・現地調達が難しい旅程向け。紛失時のダメージが最も大きい想定です。
+            </p>
+          </button>
+
+          <button
+            type="button"
+            class="travel-option rounded-[22px] p-4 text-left"
+            data-plan="domestic"
+            aria-pressed="false"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="micro-label text-[var(--olive)]">Plan B</div>
+                <h3 class="mt-1 text-base font-extrabold leading-6">国内の温泉・観光地</h3>
+              </div>
+              <div class="stamp-secondary rounded-md px-2 py-1 text-[9px]">STEADY</div>
+            </div>
+            <p class="mt-2 text-sm leading-6">
+              1〜2泊・リラックスメイン。油断しやすい分、置き忘れや入浴時の事故に注意です。
+            </p>
+          </button>
+
+          <button
+            type="button"
+            class="travel-option rounded-[22px] p-4 text-left"
+            data-plan="outdoor"
+            aria-pressed="false"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="micro-label text-[var(--accent)]">Plan C</div>
+                <h3 class="mt-1 text-base font-extrabold leading-6">キャンプ・アウトドア</h3>
+              </div>
+              <div class="stamp rounded-md px-2 py-1 text-[9px]">IMPACT</div>
+            </div>
+            <p class="mt-2 text-sm leading-6">
+              アクティブ行動が多く、踏む・落とす・ひねるなど破損リスクが高いシーン向け。
+            </p>
+          </button>
+        </div>
+
+        <p id="feedback" class="mt-3 min-h-[1.5rem] text-sm font-semibold text-[var(--danger)]" aria-live="polite">
+          まずは旅行プランを1つ選択してください。
+        </p>
+      </section>
+
+      <section id="resultPanel" class="hidden fade-in pb-2" aria-live="polite">
+        <div class="ticket rounded-[26px] p-3 sm:p-4 md:p-5">
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:gap-6">
+            <div class="rounded-[24px] border border-[rgba(65,48,23,.14)] bg-[rgba(255,248,232,.35)] p-4">
+              <div class="micro-label text-[var(--danger)]">旅行台無しリスク</div>
+              <h3 id="resultTitle" class="mt-1 text-xl font-extrabold leading-tight"></h3>
+
+              <div class="mt-4 gauge-wrap" aria-hidden="true">
+                <div class="gauge-ring">
+                  <div id="gaugeCover" class="gauge-cover" style="--cover-deg: 360deg;"></div>
+                  <div class="gauge-center">
+                    <div class="micro-label text-[var(--danger)]">絶望度</div>
+                    <div id="riskPercent" class="mt-1 text-4xl font-black leading-none">0%</div>
+                    <div id="riskLabel" class="mt-2 text-sm font-bold"></div>
+                  </div>
+                </div>
+              </div>
+
+              <p id="riskLead" class="mt-4 text-sm leading-6 sm:text-[15px]"></p>
+
+              <div class="mt-4 flex flex-wrap gap-2" id="quickTags"></div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="rounded-[24px] border border-[rgba(65,48,23,.14)] bg-[rgba(255,248,232,.28)] p-4">
+                <div class="micro-label text-[var(--accent-2)]">旅行先特有のトラブル警告</div>
+                <div id="warnings" class="mt-3 space-y-2"></div>
+              </div>
+
+              <div class="rounded-[24px] border border-[rgba(65,48,23,.14)] bg-[rgba(255,248,232,.28)] p-4">
+                <div class="micro-label text-[var(--olive)]">ベストな予備メガネ提案</div>
+                <div id="recommendation" class="mt-3 space-y-3"></div>
+              </div>
+
+              <div class="script-box rounded-[22px] p-4">
+                <div class="micro-label text-[var(--danger)]">プロの提案トークスクリプト</div>
+                <blockquote id="talkScript" class="mt-3 text-[15px] font-semibold leading-7 sm:text-base"></blockquote>
+                <div class="soft-divider my-4"></div>
+                <p id="closer" class="text-sm leading-6 sm:text-[15px]"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="pt-4">
+        <div class="airmail-strip h-3 rounded-full opacity-90"></div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const planData = {
+        overseas: {
+          title: "海外旅行・リゾート",
+          risk: 96,
+          label: "超危険",
+          lead: "長期滞在かつ現地調達が難しいため、メガネが壊れる・失くすと旅行満足度が一気に下がるプランです。",
+          tags: ["3泊以上", "現地調達困難", "景色がぼやける", "紛失ダメージ大"],
+          warnings: [
+            { icon: "🌊", title: "海で波にさらわれる", text: "ビーチやマリンアクティビティ中に外した瞬間、波に持っていかれるケース。" },
+            { icon: "🧳", title: "移動中の置き忘れ", text: "飛行機・ホテル・レンタカーでケースごと置き忘れると回収が難しいです。" },
+            { icon: "😵‍💫", title: "土地勘がない場所で視界不良", text: "標識・案内・メニューが見えず、旅先のストレスが一気に増えます。" }
+          ],
+          recommendation: [
+            {
+              head: "提案①：安くて頑丈なサブメガネを追加",
+              body: "旅行専用として、軽くて壊れにくいフレームを1本。『なくしたら困る主力機』を守れます。"
+            },
+            {
+              head: "提案②：調光をメイン、今のメガネを予備へ",
+              body: "日差しが強いリゾートでは調光レンズが快適。今使っているメガネを予備に回す構成も自然です。"
+            },
+            {
+              head: "提案③：ケースと保管導線もセット提案",
+              body: "客室・機内・ビーチバッグのどこに入れるかまで話すと、提案の納得感が上がります。"
+            }
+          ],
+          script: "もしハワイや海外リゾートでメガネを無くしたら、せっかくの景色も案内表示もずっとぼやけたままになります。旅行中だけのお守り代わりに、壊れにくい予備を1本持っていきませんか？",
+          closer: "押し売り感を出さず、『旅を楽しむための保険』として伝えると受け入れられやすいです。"
+        },
+        domestic: {
+          title: "国内の温泉・観光地",
+          risk: 68,
+          label: "要注意",
+          lead: "近場でも油断しやすく、外したまま忘れる・くつろぎ中に破損する事故が起きやすいプランです。",
+          tags: ["1〜2泊", "置き忘れ注意", "温泉宿", "リラックス中に事故"],
+          warnings: [
+            { icon: "♨️", title: "温泉・脱衣所で置き忘れる", text: "入浴前後で外し、そのまま棚や洗面台に忘れて出発してしまうケース。" },
+            { icon: "🛏️", title: "旅館でうっかり踏む", text: "布団・畳・ベッド脇に置いたメガネを朝の動作で踏んで曲げやすいです。" },
+            { icon: "🚗", title: "車移動でシート下に落とす", text: "観光地の乗り降りでケースから滑り落ち、レンズ傷やフレーム変形につながります。" }
+          ],
+          recommendation: [
+            {
+              head: "提案①：今のメガネを主役、予備はシンプルに",
+              body: "普段使いの見え方を優先しつつ、旅行中の置き忘れリスクに備えるベーシックなサブメガネがおすすめです。"
+            },
+            {
+              head: "提案②：軽量で掛け外ししやすいモデル",
+              body: "温泉宿や観光地では着脱回数が増えやすいので、ストレスが少ないフレームが向いています。"
+            },
+            {
+              head: "提案③：ケース追加提案で事故予防",
+              body: "柔らかい巾着だけでなく、踏み事故を防ぐハードケース提案も相性が良いです。"
+            }
+          ],
+          script: "近場の旅行でも、温泉やお部屋で外したメガネをそのまま忘れたり、朝にうっかり踏んでしまうことが意外と多いんです。1本予備があるだけで、旅行中の安心感がかなり違いますよ。",
+          closer: "『国内だから大丈夫』という油断に対して、実際に起きやすい場面を具体化して伝えるのがポイントです。"
+        },
+        outdoor: {
+          title: "キャンプ・アウトドア",
+          risk: 89,
+          label: "高危険",
+          lead: "動きが多く、足場も不安定。落下・圧迫・踏みつけなど、物理的な破損が起こりやすいプランです。",
+          tags: ["破損リスク大", "アクティブ", "荷物圧迫", "夜間も不安"],
+          warnings: [
+            { icon: "⛺", title: "テント内で踏んづける", text: "夜間や早朝、床置きしたメガネに気づかず踏んでしまう事故が定番です。" },
+            { icon: "🔥", title: "設営・撤収で落下や圧迫", text: "前かがみや荷物の積み下ろしで外れ、ギアに挟まって曲がることがあります。" },
+            { icon: "🏞️", title: "予備がないと行動不能感が強い", text: "自然環境では足元確認や移動の安全性にも関わるため、壊れた瞬間の不便が大きいです。" }
+          ],
+          recommendation: [
+            {
+              head: "提案①：頑丈さ重視のサブメガネ",
+              body: "細い繊細フレームより、衝撃に強く気兼ねなく使えるモデルが旅行用に向いています。"
+            },
+            {
+              head: "提案②：アクティブ用を主役、今のメガネを予備へ",
+              body: "ズレにくい掛け心地のメガネをメインにして、現在の1本をバックアップに回す組み方が有効です。"
+            },
+            {
+              head: "提案③：収納位置の会話までセット",
+              body: "『寝る前は必ずケースへ』『車内の定位置へ』まで伝えると、接客の説得力が増します。"
+            }
+          ],
+          script: "キャンプはテントの中で踏んだり、荷物に押されて曲がったりと、日常よりメガネ事故が起きやすいです。1本予備があるだけで、翌朝からの行動が止まらずに済みますよ。",
+          closer: "『見えないと危ない場面がある』と安全面まで含めて話すと、お客様がイメージしやすくなります。"
+        }
+      };
+
+      const els = {
+        options: Array.from(document.querySelectorAll(".travel-option")),
+        feedback: document.getElementById("feedback"),
+        resultPanel: document.getElementById("resultPanel"),
+        resultTitle: document.getElementById("resultTitle"),
+        riskPercent: document.getElementById("riskPercent"),
+        riskLabel: document.getElementById("riskLabel"),
+        riskLead: document.getElementById("riskLead"),
+        quickTags: document.getElementById("quickTags"),
+        warnings: document.getElementById("warnings"),
+        recommendation: document.getElementById("recommendation"),
+        talkScript: document.getElementById("talkScript"),
+        closer: document.getElementById("closer"),
+        gaugeCover: document.getElementById("gaugeCover")
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function setActiveButton(planKey) {
+        els.options.forEach((btn) => {
+          const active = btn.dataset.plan === planKey;
+          btn.classList.toggle("active", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      function createWarningItem(item) {
+        return `
+          <div class="warning-row flex gap-3 pb-3">
+            <div class="text-2xl leading-none">${escapeHtml(item.icon)}</div>
+            <div class="min-w-0">
+              <p class="text-sm font-extrabold sm:text-[15px]">${escapeHtml(item.title)}</p>
+              <p class="mt-1 text-sm leading-6 sm:text-[15px]">${escapeHtml(item.text)}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      function createRecommendationItem(item) {
+        return `
+          <div class="rounded-[18px] border border-[rgba(65,48,23,.16)] bg-[rgba(255,248,232,.35)] p-3">
+            <p class="text-sm font-extrabold sm:text-[15px]">${escapeHtml(item.head)}</p>
+            <p class="mt-1 text-sm leading-6 sm:text-[15px]">${escapeHtml(item.body)}</p>
+          </div>
+        `;
+      }
+
+      function renderTags(tags) {
+        els.quickTags.innerHTML = tags
+          .map(
+            (tag) => `
+              <span class="badge-chip inline-flex items-center rounded-full px-3 py-1 text-xs font-bold sm:text-sm">
+                ${escapeHtml(tag)}
+              </span>
+            `
+          )
+          .join("");
+      }
+
+      function updateGauge(risk) {
+        const clamped = Math.max(0, Math.min(100, Number(risk) || 0));
+        const hiddenPart = ((100 - clamped) / 100) * 360;
+        els.gaugeCover.style.setProperty("--cover-deg", `${hiddenPart}deg`);
+        els.riskPercent.textContent = `${clamped}%`;
+      }
+
+      function renderPlan(planKey) {
+        const plan = planData[planKey];
+
+        if (!plan) {
+          els.feedback.textContent = "プランの読み込みに失敗しました。別のボタンを選択してください。";
+          els.resultPanel.classList.add("hidden");
+          return;
+        }
+
+        setActiveButton(planKey);
+        els.feedback.textContent = "選択内容に合わせて、リスク説明と提案トークを表示中です。";
+        els.resultTitle.textContent = plan.title;
+        els.riskLabel.textContent = plan.label;
+        els.riskLead.textContent = plan.lead;
+        els.talkScript.textContent = `「${plan.script}」`;
+        els.closer.textContent = plan.closer;
+
+        updateGauge(plan.risk);
+        renderTags(plan.tags);
+
+        els.warnings.innerHTML = plan.warnings.map(createWarningItem).join("");
+        els.recommendation.innerHTML = plan.recommendation.map(createRecommendationItem).join("");
+
+        els.resultPanel.classList.remove("hidden");
+        els.resultPanel.classList.remove("fade-in");
+        void els.resultPanel.offsetWidth;
+        els.resultPanel.classList.add("fade-in");
+      }
+
+      function handleSelect(event) {
+        const target = event.currentTarget;
+        const planKey = target?.dataset?.plan;
+
+        try {
+          renderPlan(planKey);
+        } catch (error) {
+          console.error(error);
+          els.feedback.textContent = "表示中にエラーが発生しました。もう一度選択してください。";
+          els.resultPanel.classList.add("hidden");
+        }
+      }
+
+      els.options.forEach((btn) => {
+        btn.addEventListener("click", handleSelect);
+        btn.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleSelect({ currentTarget: btn });
+          }
+        });
+      });
+
+      // 初期表示は未選択。接客で比較しやすいよう、必要時だけ表示。
+      // 安全策としてデータ構造の簡易確認。
+      if (!planData || typeof planData !== "object") {
+        els.feedback.textContent = "診断データを読み込めませんでした。ページを再読み込みしてください。";
+      }
+    })();
+  </script>
+</body>
+</html>
