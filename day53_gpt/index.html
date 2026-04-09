@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>母の日ギフト：ルーペ vs オーダーメイド老眼鏡 見え方シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --rose-50:#fff8f8;
+      --rose-100:#fdeff1;
+      --rose-200:#f8dfe6;
+      --rose-300:#efc7d2;
+      --rose-400:#d992a6;
+      --rose-500:#bc6d84;
+      --wine:#7e4456;
+      --ivory:#fffaf1;
+      --gold:#d7b574;
+      --gold-deep:#b78b42;
+      --ink:#4b3440;
+      --muted:#7a6270;
+      --shadow:rgba(111,72,87,.16);
+      --soft-shadow:rgba(155,115,126,.11);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+      color:var(--ink);
+      font-family:
+        "Yu Mincho", "Hiragino Mincho ProN", "HGS明朝E", "Baskerville",
+        "Times New Roman", serif;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(255,255,255,.72), transparent 18%),
+        radial-gradient(circle at 90% 15%, rgba(255,255,255,.45), transparent 16%),
+        radial-gradient(circle at 50% 100%, rgba(215,181,116,.18), transparent 26%),
+        linear-gradient(180deg, #fffdf9 0%, #fff5f6 22%, #fdf0f2 58%, #fbf0e6 100%);
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.2;
+      background-image:
+        radial-gradient(rgba(215,181,116,.45) .55px, transparent .75px);
+      background-size: 14px 14px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.02));
+    }
+
+    .page{
+      width:100%;
+      max-width:1240px;
+      margin:0 auto;
+      padding:14px;
+    }
+
+    .gift-shell{
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(183,139,66,.25);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.5)),
+        linear-gradient(180deg, rgba(253,239,241,.88), rgba(255,250,241,.88));
+      box-shadow:
+        0 18px 50px var(--shadow),
+        inset 0 1px 0 rgba(255,255,255,.78);
+      border-radius:28px;
+    }
+
+    .gift-shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(90deg, transparent 0 7%, rgba(215,181,116,.13) 7% 8.2%, transparent 8.2% 91.8%, rgba(215,181,116,.13) 91.8% 93%, transparent 93% 100%);
+      opacity:.9;
+    }
+
+    .ribbon-top{
+      position:relative;
+      min-height:14px;
+      background:
+        linear-gradient(90deg, #c97f95 0%, #dca7b7 18%, #efd3db 50%, #dca7b7 82%, #c97f95 100%);
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,.55);
+    }
+
+    .ribbon-top::before,
+    .ribbon-top::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      width:56px;
+      height:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.08));
+      border:1px solid rgba(183,139,66,.18);
+      transform:translateY(-50%);
+      border-radius:999px;
+      filter:blur(.2px);
+    }
+
+    .ribbon-top::before{ left:18px; }
+    .ribbon-top::after{ right:18px; }
+
+    .hero{
+      position:relative;
+      padding:18px 14px 14px;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+      align-items:start;
+    }
+
+    @media (min-width: 900px){
+      .hero-grid{
+        grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);
+        gap:18px;
+      }
+    }
+
+    .eyebrow{
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size:.78rem;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color:var(--wine);
+      font-weight:700;
+    }
+
+    .hero-title{
+      line-height:1.12;
+      letter-spacing:.02em;
+      word-break:keep-all;
+    }
+
+    .script{
+      font-family:"Palatino Linotype", "Book Antiqua", Georgia, serif;
+      font-style:italic;
+    }
+
+    .lux-panel{
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.38)),
+        linear-gradient(180deg, rgba(255,250,241,.98), rgba(253,239,241,.92));
+      border:1px solid rgba(183,139,66,.22);
+      border-radius:26px;
+      box-shadow:0 10px 30px var(--soft-shadow);
+    }
+
+    .lux-panel::before{
+      content:"";
+      position:absolute;
+      inset:10px;
+      border:1px solid rgba(215,181,116,.18);
+      border-radius:20px;
+      pointer-events:none;
+    }
+
+    .seal{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:86px;
+      min-height:86px;
+      padding:10px;
+      border-radius:999px;
+      color:var(--wine);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.62), transparent 34%),
+        linear-gradient(180deg, #f7e8be, #e8c989);
+      border:1px solid rgba(183,139,66,.35);
+      box-shadow:
+        0 10px 20px rgba(183,139,66,.18),
+        inset 0 1px 0 rgba(255,255,255,.75);
+      font-size:.76rem;
+      font-weight:800;
+      line-height:1.35;
+      text-align:center;
+    }
+
+    .floral-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.46);
+      border:1px solid rgba(188,109,132,.18);
+      color:var(--muted);
+      font-size:.85rem;
+      font-weight:700;
+      max-width:100%;
+      flex-wrap:wrap;
+    }
+
+    .floral-dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(180deg, var(--gold), var(--gold-deep));
+      box-shadow:0 0 0 4px rgba(215,181,116,.12);
+      flex:0 0 auto;
+    }
+
+    .scene-btn{
+      position:relative;
+      width:100%;
+      text-align:left;
+      padding:16px 16px 16px 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.76), rgba(255,255,255,.42)),
+        linear-gradient(180deg, rgba(255,250,241,.92), rgba(253,239,241,.92));
+      border:1px solid rgba(188,109,132,.18);
+      color:var(--ink);
+      border-radius:24px 24px 30px 24px;
+      box-shadow:0 8px 24px rgba(166,112,128,.09);
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+      min-height:100%;
+    }
+
+    .scene-btn::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:14px;
+      bottom:14px;
+      width:6px;
+      border-radius:999px;
+      background:linear-gradient(180deg, #dca7b7, #d7b574);
+    }
+
+    .scene-btn::after{
+      content:"";
+      position:absolute;
+      right:12px;
+      top:12px;
+      width:42px;
+      height:22px;
+      border-radius:999px;
+      background:linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.18));
+      border:1px solid rgba(215,181,116,.18);
+      opacity:.55;
+    }
+
+    .scene-btn:hover,
+    .scene-btn:focus-visible{
+      transform:translateY(-2px);
+      box-shadow:0 14px 28px rgba(166,112,128,.14);
+      border-color:rgba(188,109,132,.34);
+      outline:none;
+    }
+
+    .scene-btn.active{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.84), rgba(255,255,255,.5)),
+        linear-gradient(180deg, rgba(248,223,230,.98), rgba(255,250,241,.98));
+      border-color:rgba(183,139,66,.42);
+      box-shadow:
+        0 14px 28px rgba(166,112,128,.14),
+        inset 0 0 0 1px rgba(215,181,116,.18);
+    }
+
+    .scene-btn.active .select-chip{
+      background:linear-gradient(180deg, #d7b574, #b78b42);
+      color:#fffdf7;
+    }
+
+    .select-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(188,109,132,.1);
+      color:var(--wine);
+      font-size:.72rem;
+      font-weight:800;
+      letter-spacing:.08em;
+    }
+
+    .section-title{
+      font-size:clamp(1.25rem, 4vw, 2rem);
+      line-height:1.18;
+      color:var(--wine);
+    }
+
+    .result-wrap{
+      display:none;
+    }
+
+    .result-wrap.show{
+      display:block;
+      animation:fadeUp .32s ease;
+    }
+
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(8px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+
+    .compare-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    @media (min-width: 920px){
+      .compare-grid{
+        grid-template-columns:1fr 1fr;
+        gap:16px;
+      }
+    }
+
+    .vision-panel{
+      position:relative;
+      overflow:hidden;
+      border-radius:26px;
+      padding:14px;
+      min-height:420px;
+      border:1px solid rgba(183,139,66,.2);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.4)),
+        linear-gradient(180deg, rgba(255,250,241,.95), rgba(253,239,241,.92));
+      box-shadow:0 10px 28px rgba(166,112,128,.08);
+    }
+
+    .vision-bad{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.42)),
+        linear-gradient(180deg, rgba(255,246,246,.96), rgba(250,229,234,.94));
+    }
+
+    .vision-good{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.74), rgba(255,255,255,.48)),
+        linear-gradient(180deg, rgba(255,250,241,.98), rgba(248,242,230,.96));
+    }
+
+    .label-pill{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:.8rem;
+      font-weight:800;
+      letter-spacing:.08em;
+    }
+
+    .label-bad{
+      background:rgba(188,109,132,.12);
+      color:var(--wine);
+      border:1px solid rgba(188,109,132,.2);
+    }
+
+    .label-good{
+      background:rgba(215,181,116,.16);
+      color:var(--gold-deep);
+      border:1px solid rgba(183,139,66,.22);
+    }
+
+    .viewer{
+      position:relative;
+      margin-top:12px;
+      min-height:210px;
+      border-radius:22px;
+      overflow:hidden;
+      border:1px solid rgba(183,139,66,.18);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.2)),
+        linear-gradient(180deg, #fffef9, #fbf1f2);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+
+    .viewer-bg{
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 15% 18%, rgba(255,255,255,.78), transparent 16%),
+        radial-gradient(circle at 85% 15%, rgba(255,255,255,.38), transparent 16%),
+        linear-gradient(180deg, rgba(215,181,116,.07), rgba(188,109,132,.07));
+      pointer-events:none;
+    }
+
+    .content-stage{
+      position:relative;
+      z-index:2;
+      width:min(100%, 480px);
+      max-width:100%;
+    }
+
+    .phone-shell{
+      width:min(100%, 330px);
+      margin:0 auto;
+      border-radius:28px;
+      padding:10px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.54)),
+        linear-gradient(180deg, #f7dfe7, #f8efe3);
+      border:1px solid rgba(183,139,66,.24);
+      box-shadow:0 10px 22px rgba(155,115,126,.12);
+    }
+
+    .phone-screen{
+      border-radius:20px;
+      overflow:hidden;
+      border:1px solid rgba(188,109,132,.14);
+      background:linear-gradient(180deg, #fffaf8, #fff3f4);
+      padding:12px;
+    }
+
+    .ui-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      min-width:0;
+    }
+
+    .avatar{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      background:linear-gradient(180deg, #f1d3da, #d8a5b5);
+      flex:0 0 auto;
+    }
+
+    .bubble{
+      max-width:78%;
+      padding:8px 10px;
+      border-radius:16px 16px 16px 6px;
+      font-size:.86rem;
+      line-height:1.55;
+      background:rgba(255,255,255,.76);
+      border:1px solid rgba(188,109,132,.14);
+      color:var(--ink);
+      word-break:break-word;
+    }
+
+    .bubble.right{
+      margin-left:auto;
+      border-radius:16px 16px 6px 16px;
+      background:rgba(243,227,191,.42);
+      border-color:rgba(183,139,66,.18);
+    }
+
+    .tiny-bar{
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(188,109,132,.16), rgba(215,181,116,.25));
+    }
+
+    .text-sheet{
+      width:min(100%, 430px);
+      margin:0 auto;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.62)),
+        linear-gradient(180deg, #fffdf8, #fff5f6);
+      border:1px solid rgba(183,139,66,.2);
+      border-radius:16px 16px 24px 16px;
+      padding:14px;
+      box-shadow:0 10px 18px rgba(155,115,126,.1);
+    }
+
+    .line{
+      display:block;
+      height:9px;
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(126,68,86,.24), rgba(126,68,86,.09));
+      margin-top:8px;
+    }
+
+    .line.small{ width:42%; }
+    .line.mid{ width:72%; }
+    .line.long{ width:100%; }
+
+    .pill-text{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(215,181,116,.16);
+      border:1px solid rgba(183,139,66,.18);
+      color:var(--gold-deep);
+      font-size:.78rem;
+      font-weight:700;
+    }
+
+    .craft-stage{
+      width:min(100%, 420px);
+      margin:0 auto;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.58)),
+        linear-gradient(180deg, #fffdf8, #fbf0f2);
+      border:1px solid rgba(183,139,66,.2);
+      border-radius:20px 20px 28px 20px;
+      padding:14px;
+      box-shadow:0 10px 18px rgba(155,115,126,.1);
+    }
+
+    .craft-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      align-items:start;
+    }
+
+    .fabric{
+      min-height:120px;
+      border-radius:16px;
+      background:
+        linear-gradient(135deg, rgba(239,199,210,.7), transparent 34%),
+        repeating-linear-gradient(
+          45deg,
+          rgba(188,109,132,.09) 0 6px,
+          rgba(255,255,255,.0) 6px 12px
+        ),
+        #fff7f8;
+      border:1px solid rgba(188,109,132,.14);
+    }
+
+    .spool{
+      width:48px;
+      height:48px;
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 40% 35%, rgba(255,255,255,.72), transparent 24%),
+        linear-gradient(180deg, #e2bc7f, #be8f4b);
+      border:1px solid rgba(183,139,66,.28);
+    }
+
+    .needle{
+      width:100px;
+      height:2px;
+      background:linear-gradient(90deg, rgba(183,139,66,.2), rgba(183,139,66,.8), rgba(183,139,66,.15));
+      transform:rotate(-16deg);
+      border-radius:999px;
+    }
+
+    .distortion-wrap{
+      position:relative;
+      border-radius:18px;
+      overflow:hidden;
+      isolation:isolate;
+    }
+
+    .distortion-wrap::before{
+      content:"";
+      position:absolute;
+      inset:-6%;
+      z-index:3;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 50% 50%, transparent 0 19%, rgba(255,255,255,0) 19% 24%, rgba(188,109,132,.08) 24% 28%, transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 0 10%, rgba(255,255,255,.38) 10% 12%, transparent 12% 100%);
+      mix-blend-mode:soft-light;
+    }
+
+    .loupe-view{
+      position:relative;
+      overflow:hidden;
+      border-radius:18px;
+    }
+
+    .loupe-view .content-stage{
+      animation: slightWobble 2.2s ease-in-out infinite;
+      transform-origin:center center;
+      filter:saturate(.95);
+    }
+
+    .loupe-view::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:4;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at center,
+          rgba(255,255,255,0) 0 19%,
+          rgba(255,255,255,0) 19% 21%,
+          rgba(126,68,86,.14) 21.2% 26%,
+          rgba(126,68,86,.08) 26% 34%,
+          rgba(126,68,86,.14) 34.2% 100%);
+    }
+
+    .loupe-view .center-magnify{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:3;
+      pointer-events:none;
+    }
+
+    .loupe-view .center-magnify::before{
+      content:"";
+      width:min(44vw, 160px);
+      height:min(44vw, 160px);
+      max-width:160px;
+      max-height:160px;
+      border-radius:999px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.24), transparent 30%),
+        rgba(255,255,255,.04);
+      border:3px solid rgba(126,68,86,.26);
+      box-shadow:
+        0 0 0 999px rgba(126,68,86,.08),
+        inset 0 0 24px rgba(255,255,255,.4);
+      backdrop-filter: blur(.8px);
+    }
+
+    .loupe-view .magnified-content{
+      transform:scale(1.18);
+      filter:none;
+    }
+
+    .loupe-view .outer-distort{
+      position:absolute;
+      inset:-3%;
+      z-index:2;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at center,
+          transparent 0 20%,
+          rgba(255,255,255,0) 20% 28%,
+          rgba(188,109,132,.06) 28% 100%);
+      backdrop-filter: blur(1.4px) saturate(.92);
+      animation: outerWarp 2.6s ease-in-out infinite;
+    }
+
+    @keyframes outerWarp{
+      0%,100%{ transform:scale(1) rotate(0deg); }
+      50%{ transform:scale(1.018) rotate(-.3deg); }
+    }
+
+    @keyframes slightWobble{
+      0%,100%{ transform:scale(1) translateX(0); }
+      30%{ transform:scale(1.01) translateX(1px); }
+      60%{ transform:scale(1.01) translateX(-1px); }
+    }
+
+    .fatigue-meter{
+      margin-top:14px;
+      padding:12px;
+      border-radius:18px;
+      background:rgba(255,255,255,.48);
+      border:1px solid rgba(188,109,132,.15);
+    }
+
+    .meter-track{
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(188,109,132,.12);
+    }
+
+    .meter-fill{
+      height:100%;
+      border-radius:999px;
+      transition:width .35s ease;
+    }
+
+    .meter-bad{
+      background:linear-gradient(90deg, #d993a6, #bc6d84, #9a4c66);
+    }
+
+    .meter-good{
+      background:linear-gradient(90deg, #ead9ac, #d7b574, #b78b42);
+    }
+
+    .point-list{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .point{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:11px 0;
+      border-top:1px solid rgba(188,109,132,.12);
+    }
+
+    .point:first-child{
+      border-top:none;
+      padding-top:0;
+    }
+
+    .point-icon{
+      width:30px;
+      height:30px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+      background:rgba(255,255,255,.56);
+      border:1px solid rgba(215,181,116,.18);
+      box-shadow:0 4px 10px rgba(183,139,66,.08);
+      font-size:1rem;
+    }
+
+    .info-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    @media (min-width: 900px){
+      .info-grid{
+        grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+      }
+    }
+
+    .diagram-box{
+      position:relative;
+      min-height:320px;
+      padding:18px;
+      border-radius:28px;
+      overflow:hidden;
+      border:1px solid rgba(183,139,66,.2);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.44)),
+        linear-gradient(180deg, rgba(255,250,241,.98), rgba(253,239,241,.94));
+      box-shadow:0 10px 28px rgba(166,112,128,.08);
+    }
+
+    .glasses-illustration{
+      position:absolute;
+      left:50%;
+      top:56%;
+      width:min(76vw, 340px);
+      max-width:340px;
+      aspect-ratio: 2.35 / 1;
+      transform:translate(-50%, -50%);
+    }
+
+    .frame-band{
+      position:absolute;
+      inset:28% 2% 26%;
+      border-radius:40px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.12)),
+        linear-gradient(90deg, #d7b574, #b78b42);
+      box-shadow:0 10px 20px rgba(183,139,66,.14);
+    }
+
+    .lens{
+      position:absolute;
+      top:24%;
+      width:36%;
+      height:52%;
+      border-radius:22px;
+      background:
+        radial-gradient(circle at 28% 30%, rgba(255,255,255,.78), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,.82), rgba(250,244,230,.62));
+      border:3px solid rgba(183,139,66,.36);
+      box-shadow:inset 0 0 14px rgba(188,109,132,.08);
+    }
+
+    .lens.left{ left:8%; }
+    .lens.right{ right:8%; }
+
+    .bridge{
+      position:absolute;
+      left:50%;
+      top:42%;
+      width:14%;
+      height:8%;
+      transform:translateX(-50%);
+      border-radius:999px;
+      background:linear-gradient(180deg, #d7b574, #b78b42);
+    }
+
+    .temple{
+      position:absolute;
+      top:42%;
+      width:22%;
+      height:8%;
+      background:linear-gradient(180deg, #d7b574, #b78b42);
+      border-radius:999px;
+    }
+
+    .temple.left{ left:-10%; transform:rotate(16deg); }
+    .temple.right{ right:-10%; transform:rotate(-16deg); }
+
+    .callout{
+      position:absolute;
+      max-width:min(40vw, 180px);
+      padding:10px 12px;
+      border-radius:16px 16px 20px 16px;
+      background:rgba(255,255,255,.68);
+      border:1px solid rgba(183,139,66,.18);
+      font-size:.8rem;
+      line-height:1.6;
+      color:var(--ink);
+      box-shadow:0 8px 18px rgba(166,112,128,.08);
+    }
+
+    .callout strong{
+      color:var(--wine);
+      display:block;
+      margin-bottom:2px;
+    }
+
+    .call-line{
+      position:absolute;
+      height:2px;
+      background:linear-gradient(90deg, rgba(183,139,66,.78), rgba(183,139,66,.18));
+      transform-origin:left center;
+    }
+
+    .c1{ left:12px; top:18px; }
+    .c1 .call-line{ left:100%; top:58%; width:84px; transform:rotate(10deg); }
+
+    .c2{ right:12px; top:82px; }
+    .c2 .call-line{ right:100%; top:48%; width:82px; transform:rotate(-16deg); transform-origin:right center; }
+
+    .c3{ left:18px; bottom:16px; }
+    .c3 .call-line{ left:100%; top:28%; width:96px; transform:rotate(-10deg); }
+
+    @media (max-width: 520px){
+      .callout{ max-width:145px; font-size:.74rem; }
+      .c1 .call-line, .c2 .call-line, .c3 .call-line{ width:52px; }
+    }
+
+    .text-pane{
+      border-radius:24px;
+      padding:16px;
+      border:1px solid rgba(183,139,66,.18);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.42)),
+        linear-gradient(180deg, rgba(255,250,241,.98), rgba(253,239,241,.95));
+      box-shadow:0 10px 26px rgba(166,112,128,.08);
+    }
+
+    .quote-box{
+      position:relative;
+      padding:18px 16px 16px 18px;
+      border-radius:24px 24px 30px 24px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.5)),
+        linear-gradient(180deg, rgba(255,250,241,.98), rgba(248,223,230,.94));
+      border:1px solid rgba(183,139,66,.22);
+      box-shadow:0 12px 26px rgba(166,112,128,.1);
+    }
+
+    .quote-box::before{
+      content:"“";
+      position:absolute;
+      left:12px;
+      top:-6px;
+      font-size:3.5rem;
+      line-height:1;
+      color:rgba(188,109,132,.24);
+      font-family:Georgia, serif;
+    }
+
+    .fine-divider{
+      height:1px;
+      margin:14px 0;
+      background:linear-gradient(90deg, transparent, rgba(183,139,66,.35), transparent);
+    }
+
+    .small-note{
+      font-size:.9rem;
+      line-height:1.75;
+      color:var(--muted);
+    }
+
+    .feedback{
+      min-height:1.6rem;
+      color:var(--wine);
+      font-size:.95rem;
+      font-weight:700;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="gift-shell">
+      <div class="ribbon-top"></div>
+
+      <header class="hero">
+        <div class="hero-grid">
+          <div class="lux-panel p-4 sm:p-5">
+            <div class="eyebrow">Mother’s Day premium vision gift</div>
+            <h1 class="hero-title mt-2 text-[clamp(1.5rem,6vw,3.5rem)] font-semibold">
+              母の日ギフト<br>
+              ルーペ vs オーダーメイド老眼鏡<br>
+              <span class="text-[var(--wine)]">見え方シミュレーター</span>
+            </h1>
+            <p class="mt-3 text-sm leading-7 sm:text-[15px]">
+              「安いルーペで十分かな」と考えているお客様に、
+              <span class="font-bold text-[var(--wine)]">見え方の違い・疲れやすさ・贈り物としての満足度</span>
+              をやさしく伝え、
+              <span class="font-bold text-[var(--gold-deep)]">“お仕立てギフト券付きオーダーメイド老眼鏡”</span>
+              へ自然にご案内する接客サポートアプリです。
+            </p>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span class="floral-badge"><span class="floral-dot"></span> 母の日らしい特別感</span>
+              <span class="floral-badge"><span class="floral-dot"></span> 疲れ目の違いを視覚化</span>
+              <span class="floral-badge"><span class="floral-dot"></span> 提案トーク付き</span>
+            </div>
+          </div>
+
+          <div class="lux-panel p-4 sm:p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="script text-xl text-[var(--wine)]">For Mother, With Comfort</div>
+                <p class="mt-2 text-sm leading-7 text-[var(--muted)]">
+                  ただの“拡大する道具”ではなく、毎日の見え方を整える贈り物へ。
+                </p>
+              </div>
+              <div class="seal">母の日<br>GIFT</div>
+            </div>
+
+            <div class="mt-4 rounded-[22px] border border-[rgba(183,139,66,.18)] bg-[rgba(255,255,255,.42)] p-4">
+              <div class="eyebrow text-[var(--gold-deep)]">Step 1</div>
+              <h2 class="mt-1 section-title font-semibold">お母さんが困っているシーンを選ぶ</h2>
+              <p class="mt-2 text-sm leading-7 text-[var(--muted)]">
+                シーンを選ぶと、ルーペとオーダーメイド老眼鏡の違いを、視界の演出と提案台本つきで表示します。
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="px-4 pb-4 sm:px-5 sm:pb-5">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <button type="button" class="scene-btn" data-scene="smartphone" aria-pressed="false">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="eyebrow text-[var(--gold-deep)]">Scene A</div>
+                <h3 class="mt-1 text-lg font-semibold leading-7">スマホやタブレットでの動画・LINE</h3>
+              </div>
+              <span class="select-chip">人気</span>
+            </div>
+            <p class="mt-2 text-sm leading-7 text-[var(--muted)]">
+              近くを長く見る時間が増えやすく、ルーペでは姿勢も視野も不自然になりがちな場面です。
+            </p>
+          </button>
+
+          <button type="button" class="scene-btn" data-scene="reading" aria-pressed="false">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="eyebrow text-[var(--gold-deep)]">Scene B</div>
+                <h3 class="mt-1 text-lg font-semibold leading-7">新聞や薬の瓶の細かい文字</h3>
+              </div>
+              <span class="select-chip">定番</span>
+            </div>
+            <p class="mt-2 text-sm leading-7 text-[var(--muted)]">
+              中央だけ大きく見えても、周囲がゆがむと読み直しが増え、疲れやすさにつながります。
+            </p>
+          </button>
+
+          <button type="button" class="scene-btn" data-scene="craft" aria-pressed="false">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="eyebrow text-[var(--gold-deep)]">Scene C</div>
+                <h3 class="mt-1 text-lg font-semibold leading-7">裁縫や手芸などの細かな手作業</h3>
+              </div>
+              <span class="select-chip">高相性</span>
+            </div>
+            <p class="mt-2 text-sm leading-7 text-[var(--muted)]">
+              両手を使う作業ほど、片手で持つルーペの不便さと視野の狭さが大きな負担になります。
+            </p>
+          </button>
+        </div>
+
+        <p id="feedback" class="feedback mt-4" aria-live="polite">
+          まずは、お母様が一番困っていそうなシーンを1つ選んでください。
+        </p>
+      </section>
+
+      <section id="resultWrap" class="result-wrap px-4 pb-5 sm:px-5 sm:pb-6">
+        <section class="lux-panel p-4 sm:p-5">
+          <div class="eyebrow text-[var(--gold-deep)]">Step 2</div>
+          <h2 id="sceneTitle" class="section-title mt-1 font-semibold"></h2>
+          <p id="sceneLead" class="mt-3 text-sm leading-7 sm:text-[15px] text-[var(--muted)]"></p>
+
+          <div class="compare-grid mt-4">
+            <div class="vision-panel vision-bad">
+              <div class="label-pill label-bad">既製ルーペ</div>
+
+              <div id="badViewer" class="viewer loupe-view distortion-wrap">
+                <div class="viewer-bg"></div>
+                <div class="outer-distort"></div>
+                <div class="center-magnify"></div>
+                <div id="badSceneStage" class="content-stage"></div>
+              </div>
+
+              <div class="fatigue-meter">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-semibold">疲れ目・負担感</span>
+                  <span id="badFatigueLabel" class="pill-text">高め</span>
+                </div>
+                <div class="meter-track mt-2">
+                  <div id="badMeter" class="meter-fill meter-bad" style="width: 78%;"></div>
+                </div>
+                <p id="badSummary" class="mt-3 text-sm leading-7 text-[var(--muted)]"></p>
+              </div>
+
+              <div id="badPoints" class="point-list"></div>
+            </div>
+
+            <div class="vision-panel vision-good">
+              <div class="label-pill label-good">オーダーメイド老眼鏡</div>
+
+              <div class="viewer">
+                <div class="viewer-bg"></div>
+                <div id="goodSceneStage" class="content-stage"></div>
+              </div>
+
+              <div class="fatigue-meter">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-semibold">快適さ・自然さ</span>
+                  <span id="goodComfortLabel" class="pill-text">かなり高い</span>
+                </div>
+                <div class="meter-track mt-2">
+                  <div id="goodMeter" class="meter-fill meter-good" style="width: 92%;"></div>
+                </div>
+                <p id="goodSummary" class="mt-3 text-sm leading-7 text-[var(--muted)]"></p>
+              </div>
+
+              <div id="goodPoints" class="point-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mt-4 info-grid">
+          <div class="diagram-box">
+            <div class="eyebrow text-[var(--gold-deep)]">Step 3</div>
+            <h2 class="section-title mt-1 font-semibold">なぜオーダーメイドが必要なのか</h2>
+
+            <div class="glasses-illustration" aria-hidden="true">
+              <div class="temple left"></div>
+              <div class="temple right"></div>
+              <div class="frame-band"></div>
+              <div class="lens left"></div>
+              <div class="lens right"></div>
+              <div class="bridge"></div>
+            </div>
+
+            <div class="callout c1">
+              <strong>ぴったりの度数設計</strong>
+              ただ大きくするのではなく、見たい距離に合わせて自然にピントを整えます。
+              <div class="call-line"></div>
+            </div>
+
+            <div class="callout c2">
+              <strong>広くてゆがみにくい視界</strong>
+              周辺だけ不自然に歪みにくく、長く見てもストレスが少ないのが強みです。
+              <div class="call-line"></div>
+            </div>
+
+            <div class="callout c3">
+              <strong>両手が自由で日常使いしやすい</strong>
+              スマホ・読書・手芸など、毎日の「困る」をそのまま快適に変えられます。
+              <div class="call-line"></div>
+            </div>
+          </div>
+
+          <div class="text-pane">
+            <div class="eyebrow text-[var(--gold-deep)]">Professional explanation</div>
+
+            <div class="point-list mt-3">
+              <div class="point">
+                <div class="point-icon">🔍</div>
+                <div>
+                  <p class="font-semibold">ルーペは「拡大」するだけ</p>
+                  <p id="reasonA" class="mt-1 text-sm leading-7 text-[var(--muted)]"></p>
+                </div>
+              </div>
+
+              <div class="point">
+                <div class="point-icon">🧠</div>
+                <div>
+                  <p class="font-semibold">ピントが合わないと疲れやすい</p>
+                  <p id="reasonB" class="mt-1 text-sm leading-7 text-[var(--muted)]"></p>
+                </div>
+              </div>
+
+              <div class="point">
+                <div class="point-icon">🎁</div>
+                <div>
+                  <p class="font-semibold">ギフトとして満足度が高い</p>
+                  <p id="reasonC" class="mt-1 text-sm leading-7 text-[var(--muted)]"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mt-4 quote-box">
+          <div class="eyebrow text-[var(--gold-deep)]">Step 4</div>
+          <h2 class="section-title mt-1 font-semibold">親孝行の背中を押す提案トーク</h2>
+
+          <blockquote id="talkScript" class="mt-3 text-[1rem] leading-8 sm:text-[1.06rem]"></blockquote>
+
+          <div class="fine-divider"></div>
+
+          <p id="closingLine" class="small-note"></p>
+          <p id="giftLine" class="small-note mt-2"></p>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const scenes = {
+        smartphone: {
+          title: "スマホやタブレットでの動画・LINE",
+          lead: "近くを長時間見る場面では、中央だけ大きく見えるルーペよりも、自然な距離で広く見えるオーダーメイド老眼鏡の快適さが伝わりやすいシーンです。",
+          badMeter: 84,
+          goodMeter: 94,
+          badLabel: "かなり疲れやすい",
+          goodLabel: "長く見やすい",
+          badSummary: "ルーペは中央の文字は大きく見えても、視野が狭く、端がぐにゃっと歪んで見えやすいため、動画・LINEの行き来で視線移動が増えます。",
+          goodSummary: "オーダーメイド老眼鏡なら、手元距離に合わせてピントを整えられるため、姿勢も自然で、広い範囲をラクに見やすくなります。",
+          badPoints: [
+            { icon: "📱", title: "LINEの文面を追うたびに視点が定まらない", text: "中央だけ頼る見方になりやすく、読み返しが増えます。" },
+            { icon: "😣", title: "首・肩・目に余計な負担", text: "画面との距離を合わせ続ける必要があり、くつろぎ時間が疲れやすくなります。" },
+            { icon: "🙋", title: "片手がふさがりやすい", text: "ルーペを持つ前提だと、タブレット操作やスマホ入力の動きが不便です." }
+          ],
+          goodPoints: [
+            { icon: "✨", title: "画面全体を自然に見やすい", text: "メッセージ・画像・動画の切り替えもスムーズです。" },
+            { icon: "🛋️", title: "くつろいだ姿勢で使いやすい", text: "無理に顔を近づけず、リラックスして楽しめます。" },
+            { icon: "💐", title: "毎日使う時間そのものが快適な贈り物に", text: "単なる物より、生活の質を上げるギフトとして響きます。" }
+          ],
+          reasonA: "ルーペは画面の一部分を大きく見せるのは得意ですが、スマホ全体を自然に見る道具ではありません。見たい場所を追いかけるたびに視界のストレスが出やすいです。",
+          reasonB: "度数や見たい距離が合っていないと、目だけでなく頭や肩まで疲れやすくなります。オーダーメイドはその方の使い方に合わせて、無理なくピントを合わせられるのが強みです。",
+          reasonC: "“安い道具”よりも、“毎日のLINEや動画時間がラクになる”ほうが満足感は高くなります。後日お母様と一緒に選べるギフト券は、特別感も出しやすいです。",
+          talk: "ルーペは一瞬だけ大きく見せるには便利ですが、スマホやタブレットを長く使うなら、中央だけに頼る見え方になって逆に疲れやすいんです。せっかくの母の日なら、ただのモノではなく、『疲れない快適な時間』をプレゼントしませんか？ 後日お母様とご来店いただけるお仕立てギフト券付きのオーダーメイド老眼鏡が、とても喜ばれますよ。",
+          closing: "『毎日いちばん使うのはスマホ時間ですよね』と日常に結びつけると、価格より価値が伝わりやすくなります。"
+,
+          gift: "おすすめの締め方は、『すぐ使える物より、お母様に本当に合う見え方を贈るギフトのほうが、母の日らしい特別感があります』です。"
+        },
+        reading: {
+          title: "新聞や薬の瓶の細かい文字",
+          lead: "細かい文字ほど、“ただ拡大できるか”より、“長く楽に読めるか”が重要です。ルーペでは中央だけ大きくても、読み進めるたびに疲れが蓄積しやすくなります。",
+          badMeter: 81,
+          goodMeter: 91,
+          badLabel: "負担が大きい",
+          goodLabel: "読みやすく自然",
+          badSummary: "ルーペは一点集中では便利でも、新聞の段組みや薬瓶の小さな文字では視野の狭さがストレスになりやすく、持ち替えや見直しが増えます。",
+          goodSummary: "オーダーメイド老眼鏡は、見たい距離に合わせて自然にピントが合いやすく、文字全体を落ち着いて追いやすいのが利点です。",
+          badPoints: [
+            { icon: "📰", title: "段組みを追うたびに視界が不自然", text: "中央は見えても、周辺の歪みで行を移るたびに疲れやすくなります。" },
+            { icon: "💊", title: "薬の説明を読み返しやすい", text: "大事な細かい文字ほど、安定して見えないと確認回数が増えます。" },
+            { icon: "🤕", title: "長時間で頭痛の原因にも", text: "拡大だけに頼る見方は、目の緊張が続きやすいです." }
+          ],
+          goodPoints: [
+            { icon: "📖", title: "文字を面で見やすい", text: "行送りや段組みも自然に追いやすく、読み進めるストレスが少なくなります。" },
+            { icon: "✅", title: "確認が必要な細字も落ち着いて読める", text: "薬瓶や説明書の読み間違い防止にもつながります。" },
+            { icon: "🌷", title: "実用性が高く、毎日感謝される贈り物", text: "使うたびに『見やすい』と実感しやすいギフトです。" }
+          ],
+          reasonA: "ルーペは文字を大きく見せても、その方に合った焦点距離そのものを整えるわけではありません。読み物が長くなるほど不自然さが出やすくなります。",
+          reasonB: "見えにくい状態で読もうとすると、目が頑張り続けてしまいます。オーダーメイドは見たい距離に対して、無理の少ない見え方を作れるのが大きな違いです。",
+          reasonC: "新聞や薬のラベルの読みやすさは、毎日の安心感に直結します。『実用的なのに特別感がある』のが、お仕立てギフト券の強さです。",
+          talk: "新聞や薬の瓶の細かい文字って、ルーペで一瞬大きく見ることはできても、ずっと楽に読めるわけではないんです。特に大事な説明書きほど、自然に読めることが大切です。母の日なら、拡大するだけの道具ではなく、毎日の安心と読みやすさを贈れるオーダーメイド老眼鏡のほうが、満足度はずっと高いですよ。",
+          closing: "『薬の文字を楽に読める安心感までプレゼントできます』と伝えると、贈る意味が強くなります。",
+          gift: "おすすめの締め方は、『お母様に本当に合う一本を後日一緒に仕立てられるので、失敗しにくいギフトとして人気です』です。"
+        },
+        craft: {
+          title: "裁縫や手芸などの細かな手作業",
+          lead: "手元作業では、視野の広さと両手の自由さが快適さを大きく左右します。ルーペよりも、顔を動かすだけで自然に見えるオーダーメイド老眼鏡の良さが際立つシーンです。",
+          badMeter: 88,
+          goodMeter: 96,
+          badLabel: "かなり不向き",
+          goodLabel: "とても快適",
+          badSummary: "ルーペは中心だけを拡大するため、針先や糸通しのような細かい位置合わせで視野が狭くなり、手元の動きと見え方がズレやすくなります。",
+          goodSummary: "オーダーメイド老眼鏡なら、両手を自由に使いながら、手元全体を自然に見やすくなるため、作業への集中が途切れにくくなります。",
+          badPoints: [
+            { icon: "🪡", title: "針先や糸の位置合わせがしづらい", text: "中央だけ見えても、少し外れるとすぐ見え方が不安定になります。" },
+            { icon: "✋", title: "片手がふさがる・姿勢が固まる", text: "作業道具を持ちながらルーペも使うのは、想像以上にストレスです。" },
+            { icon: "😵", title: "集中したい趣味時間が疲れる", text: "本来楽しい手芸時間が、目と肩の負担で短くなりやすいです." }
+          ],
+          goodPoints: [
+            { icon: "🧵", title: "手元全体を見渡しやすい", text: "針・糸・布の位置関係が自然に見やすくなります。" },
+            { icon: "🙌", title: "両手が自由で作業に集中しやすい", text: "手芸・裁縫との相性が非常に良い贈り物です。" },
+            { icon: "🎀", title: "趣味の時間を豊かにするプレゼント", text: "“見える快適さ”そのものを贈れるため、満足感が高くなります。" }
+          ],
+          reasonA: "ルーペは一点を拡大するだけなので、針仕事のように視線も手も動く作業では使い勝手が落ちやすいです。見たい範囲全体を自然に見るには不向きです。",
+          reasonB: "細かな作業で無理にピントを合わせ続けると、目だけでなく肩や首の緊張も増えやすくなります。オーダーメイドは趣味時間の快適さを大きく変えられます。",
+          reasonC: "趣味の時間がより楽しくなるギフトは、単価以上の満足度につながります。『好きなことを快適に続けられる』という贈り方は、とても喜ばれます。",
+          talk: "裁縫や手芸は、ただ大きく見えればいいわけではなくて、両手が自由で、手元全体が自然に見えることがすごく大事なんです。ルーペだと中心だけに頼る見え方になりやすいので、長く続けるほど疲れてしまいます。母の日には、趣味の時間をもっと快適に楽しめるオーダーメイド老眼鏡を、お仕立てギフト券として贈られる方がとても多いですよ。",
+          closing: "『お母様の好きな時間をラクにする贈り物です』と伝えると、単価ではなく体験価値で響きやすくなります。",
+          gift: "おすすめの締め方は、『その場で度数を決め打ちするより、後日お母様にぴったり合わせて差し上げるギフト券のほうが失敗が少なく、特別感もあります』です。"
+        }
+      };
+
+      const els = {
+        buttons: Array.from(document.querySelectorAll("[data-scene]")),
+        feedback: document.getElementById("feedback"),
+        resultWrap: document.getElementById("resultWrap"),
+        sceneTitle: document.getElementById("sceneTitle"),
+        sceneLead: document.getElementById("sceneLead"),
+        badSceneStage: document.getElementById("badSceneStage"),
+        goodSceneStage: document.getElementById("goodSceneStage"),
+        badMeter: document.getElementById("badMeter"),
+        goodMeter: document.getElementById("goodMeter"),
+        badFatigueLabel: document.getElementById("badFatigueLabel"),
+        goodComfortLabel: document.getElementById("goodComfortLabel"),
+        badSummary: document.getElementById("badSummary"),
+        goodSummary: document.getElementById("goodSummary"),
+        badPoints: document.getElementById("badPoints"),
+        goodPoints: document.getElementById("goodPoints"),
+        reasonA: document.getElementById("reasonA"),
+        reasonB: document.getElementById("reasonB"),
+        reasonC: document.getElementById("reasonC"),
+        talkScript: document.getElementById("talkScript"),
+        closingLine: document.getElementById("closingLine"),
+        giftLine: document.getElementById("giftLine")
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function pointTemplate(item) {
+        return `
+          <div class="point">
+            <div class="point-icon">${escapeHtml(item.icon)}</div>
+            <div class="min-w-0">
+              <p class="font-semibold">${escapeHtml(item.title)}</p>
+              <p class="mt-1 text-sm leading-7 text-[var(--muted)]">${escapeHtml(item.text)}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      function smartphoneTemplate(isMagnified) {
+        return `
+          <div class="phone-shell ${isMagnified ? "magnified-content" : ""}">
+            <div class="phone-screen">
+              <div class="ui-row">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="avatar"></div>
+                  <div class="min-w-0">
+                    <div class="tiny-bar w-24"></div>
+                    <div class="tiny-bar w-16 mt-2"></div>
+                  </div>
+                </div>
+                <span class="pill-text">LINE</span>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <div class="bubble">お母さん、動画の続き見た？ 文字が小さいと疲れるよね。</div>
+                <div class="bubble right">最近はLINEもニュースも長く見ると見づらいのよ。</div>
+                <div class="bubble">母の日、見やすくなるプレゼントも素敵かも。</div>
+              </div>
+
+              <div class="mt-4 rounded-[16px] border border-[rgba(183,139,66,.16)] bg-[rgba(255,255,255,.52)] p-3">
+                <div class="tiny-bar w-full"></div>
+                <div class="tiny-bar w-5/6 mt-2"></div>
+                <div class="tiny-bar w-3/5 mt-2"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function readingTemplate(isMagnified) {
+        return `
+          <div class="text-sheet ${isMagnified ? "magnified-content" : ""}">
+            <div class="flex items-center justify-between gap-3">
+              <span class="pill-text">新聞・薬瓶ラベル</span>
+              <span class="text-sm text-[var(--muted)]">細かな文字</span>
+            </div>
+
+            <span class="line long"></span>
+            <span class="line long"></span>
+            <span class="line mid"></span>
+            <span class="line long"></span>
+            <span class="line long"></span>
+            <span class="line small"></span>
+
+            <div class="mt-4 rounded-[14px] border border-[rgba(183,139,66,.16)] bg-[rgba(255,255,255,.46)] p-3">
+              <div class="text-xs text-[var(--muted)]">服用方法・注意事項</div>
+              <span class="line long"></span>
+              <span class="line mid"></span>
+              <span class="line small"></span>
+            </div>
+          </div>
+        `;
+      }
+
+      function craftTemplate(isMagnified) {
+        return `
+          <div class="craft-stage ${isMagnified ? "magnified-content" : ""}">
+            <div class="flex items-center justify-between gap-3">
+              <span class="pill-text">裁縫・手芸</span>
+              <div class="spool"></div>
+            </div>
+
+            <div class="craft-grid mt-4">
+              <div class="fabric"></div>
+              <div class="flex flex-col items-center justify-center gap-4 rounded-[16px] border border-[rgba(183,139,66,.14)] bg-[rgba(255,255,255,.46)] p-3">
+                <div class="needle"></div>
+                <div class="text-sm text-[var(--muted)]">針先・糸通し・縫い目確認</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderScenePreview(key) {
+        switch (key) {
+          case "smartphone":
+            return {
+              bad: smartphoneTemplate(true),
+              good: smartphoneTemplate(false)
+            };
+          case "reading":
+            return {
+              bad: readingTemplate(true),
+              good: readingTemplate(false)
+            };
+          case "craft":
+            return {
+              bad: craftTemplate(true),
+              good: craftTemplate(false)
+            };
+          default:
+            return { bad: "", good: "" };
+        }
+      }
+
+      function setActiveButton(sceneKey) {
+        els.buttons.forEach((btn) => {
+          const active = btn.dataset.scene === sceneKey;
+          btn.classList.toggle("active", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      function render(sceneKey) {
+        const data = scenes[sceneKey];
+        if (!data) {
+          els.feedback.textContent = "表示データの読み込みに失敗しました。別のシーンを選択してください。";
+          els.resultWrap.classList.remove("show");
+          return;
+        }
+
+        const preview = renderScenePreview(sceneKey);
+
+        setActiveButton(sceneKey);
+        els.feedback.textContent = "選択したシーンに合わせて、見え方比較と提案トークを表示中です。";
+        els.sceneTitle.textContent = data.title;
+        els.sceneLead.textContent = data.lead;
+        els.badSceneStage.innerHTML = preview.bad;
+        els.goodSceneStage.innerHTML = preview.good;
+
+        els.badMeter.style.width = `${Math.max(0, Math.min(100, data.badMeter))}%`;
+        els.goodMeter.style.width = `${Math.max(0, Math.min(100, data.goodMeter))}%`;
+        els.badFatigueLabel.textContent = data.badLabel;
+        els.goodComfortLabel.textContent = data.goodLabel;
+        els.badSummary.textContent = data.badSummary;
+        els.goodSummary.textContent = data.goodSummary;
+        els.badPoints.innerHTML = data.badPoints.map(pointTemplate).join("");
+        els.goodPoints.innerHTML = data.goodPoints.map(pointTemplate).join("");
+        els.reasonA.textContent = data.reasonA;
+        els.reasonB.textContent = data.reasonB;
+        els.reasonC.textContent = data.reasonC;
+        els.talkScript.textContent = `「${data.talk}」`;
+        els.closingLine.textContent = data.closing;
+        els.giftLine.textContent = data.gift;
+
+        els.resultWrap.classList.remove("show");
+        void els.resultWrap.offsetWidth;
+        els.resultWrap.classList.add("show");
+      }
+
+      function handleSelect(event) {
+        try {
+          const sceneKey = event.currentTarget?.dataset?.scene;
+          render(sceneKey);
+        } catch (error) {
+          console.error(error);
+          els.feedback.textContent = "表示中にエラーが発生しました。もう一度お試しください。";
+          els.resultWrap.classList.remove("show");
+        }
+      }
+
+      els.buttons.forEach((btn) => {
+        btn.addEventListener("click", handleSelect);
+        btn.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleSelect({ currentTarget: btn });
+          }
+        });
+      });
+
+      if (!scenes || typeof scenes !== "object") {
+        els.feedback.textContent = "診断データを読み込めませんでした。ページを再読み込みしてください。";
+      }
+    })();
+  </script>
+</body>
+</html>
