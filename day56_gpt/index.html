@@ -291,12 +291,17 @@
     }
 
     .narrative-item{
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    .narrative-item.show{
-      animation: revealUp .7s ease forwards;
-    }
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .55s ease, transform .55s ease, border-color .35s ease, box-shadow .35s ease;
+}
+
+.narrative-item.show{
+  opacity: 1;
+  transform: translateY(0);
+  border-color: rgba(100,244,255,.24);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset, 0 0 24px rgba(100,244,255,.08);
+}
 
     .meter{
       height: 10px;
@@ -888,50 +893,55 @@
       });
     }
 
-    function renderNarrative(scenario) {
-      const tpl = narrativeTemplates[scenario.age.id] || narrativeTemplates.other;
-      const list = document.getElementById("narrativeList");
-      const killer = document.getElementById("killerPhrase");
+    fufunction renderNarrative(scenario) {
+  const tpl = narrativeTemplates[scenario.age.id] || narrativeTemplates.other;
+  const list = document.getElementById("narrativeList");
+  const killer = document.getElementById("killerPhrase");
 
-      const severityTone = scenario.sev.id === "moderate"
-        ? "今すでに進行の印象が見え始めているからこそ、“その場しのぎ”ではなく“これ以上進ませにくい考え方”を一緒に持つ意味があります。"
-        : "まだ軽く見える段階だからこそ、“今のうちに守る”という説明が最も価値を持ちます。悪くなってからではなく、早い選択に意味があります。";
+  const severityTone = scenario.sev.id === "moderate"
+    ? "今すでに進行の印象が見え始めているからこそ、“その場しのぎ”ではなく“これ以上進ませにくい考え方”を一緒に持つ意味があります。"
+    : "まだ軽く見える段階だからこそ、“今のうちに守る”という説明が最も価値を持ちます。悪くなってからではなく、早い選択に意味があります。";
 
-      const items = [
-        {
-          title: "医学的な背景の伝え方",
-          text: tpl.medical
-        },
-        {
-          title: "親御さまの気持ちへの寄り添い",
-          text: tpl.emotional
-        },
-        {
-          title: "新人スタッフ向け カンペ",
-          text: tpl.talk
-        },
-        {
-          title: "今回の状態に合わせた一押し",
-          text: severityTone
-        }
-      ];
-
-      list.innerHTML = items.map((item, idx) => `
-        <article class="narrative-item border border-cyanA/14 rounded-[22px] p-4 bg-slate-950/20" style="animation-delay:${idx * 0.18}s">
-          <div class="text-xs micro-label text-cyanA/75 mb-2">Phase 0${idx + 1}</div>
-          <h4 class="text-base font-bold text-white">${item.title}</h4>
-          <p class="mt-2 text-sm text-slate-200/85 leading-relaxed">${item.text}</p>
-        </article>
-      `).join("");
-
-      killer.textContent = "これはメガネではなく、お子様の将来の眼を守る『健康への投資』です。";
-
-      requestAnimationFrame(() => {
-        document.querySelectorAll(".narrative-item").forEach((el, i) => {
-          setTimeout(() => el.classList.add("show"), 180 * i + 180);
-        });
-      });
+  const items = [
+    {
+      title: "医学的な背景の伝え方",
+      text: tpl.medical
+    },
+    {
+      title: "親御さまの気持ちへの寄り添い",
+      text: tpl.emotional
+    },
+    {
+      title: "新人スタッフ向け カンペ",
+      text: tpl.talk
+    },
+    {
+      title: "今回の状態に合わせた一押し",
+      text: severityTone
     }
+  ];
+
+  list.innerHTML = items.map((item, idx) => `
+    <article class="narrative-item border border-cyanA/14 rounded-[22px] p-4 bg-slate-950/20">
+      <div class="text-xs micro-label text-cyanA/75 mb-2">Phase 0${idx + 1}</div>
+      <h4 class="text-base font-bold text-white">${item.title}</h4>
+      <p class="mt-2 text-sm text-slate-200/85 leading-relaxed">${item.text}</p>
+    </article>
+  `).join("");
+
+  killer.innerHTML = `
+    これはメガネではなく、
+    <span class="text-white">お子様の将来の眼を守る『健康への投資』</span>
+    です。
+  `;
+
+  const cards = list.querySelectorAll(".narrative-item");
+  cards.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.add("show");
+    }, 180 * (i + 1));
+  });
+}
 
     function renderResult() {
       clearError();
