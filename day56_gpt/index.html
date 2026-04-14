@@ -291,17 +291,21 @@
     }
 
     .narrative-item{
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity .55s ease, transform .55s ease, border-color .35s ease, box-shadow .35s ease;
-}
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .55s ease, transform .55s ease, border-color .35s ease, box-shadow .35s ease;
+    }
 
-.narrative-item.show{
-  opacity: 1;
-  transform: translateY(0);
-  border-color: rgba(100,244,255,.24);
-  box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset, 0 0 24px rgba(100,244,255,.08);
-}
+    .narrative-item.show{
+      opacity: 1;
+      transform: translateY(0);
+      border-color: rgba(100,244,255,.24);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset, 0 0 24px rgba(100,244,255,.08);
+    }
+
+    #narrativeList{
+      min-height: 320px;
+    }
 
     .meter{
       height: 10px;
@@ -389,7 +393,6 @@
       </div>
 
       <div class="mt-8 lg:mt-10 grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-6 lg:gap-8">
-        <!-- Input Area -->
         <section class="panel rounded-[26px] p-5 sm:p-6 lg:p-7 border border-cyanA/15 relative overflow-hidden">
           <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyanA/50 to-transparent"></div>
 
@@ -428,13 +431,12 @@
                 未来を予測する
               </button>
               <div class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                押した瞬間に、グラフ・レンズ厚み比較・親御さま向けトークが段階表示されます。
+                押した瞬間に、グラフ・レンズ比較・親御さま向けトークが段階表示されます。
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Summary teaser -->
         <section class="panel rounded-[26px] p-5 sm:p-6 lg:p-7 border border-cyanA/15 relative overflow-hidden">
           <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-cyanA/10 blur-3xl"></div>
           <div class="absolute -left-10 -bottom-10 w-40 h-40 rounded-full bg-emA/10 blur-3xl"></div>
@@ -469,10 +471,8 @@
         </section>
       </div>
 
-      <!-- Results -->
       <section id="resultSection" class="result-hidden mt-8 lg:mt-10">
         <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-6 lg:gap-8">
-          <!-- Visualization -->
           <div class="space-y-6">
             <section class="panel rounded-[26px] p-4 sm:p-5 lg:p-6 border border-cyanA/15">
               <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
@@ -507,33 +507,26 @@
                     </filter>
                   </defs>
 
-                  <!-- axes -->
                   <g opacity="0.8">
                     <line x1="70" y1="28" x2="70" y2="310" stroke="rgba(158,220,255,.45)" stroke-width="1.2"/>
                     <line x1="70" y1="310" x2="715" y2="310" stroke="rgba(158,220,255,.45)" stroke-width="1.2"/>
                   </g>
 
-                  <!-- y labels -->
                   <g id="yLabels" font-size="12" fill="rgba(220,240,255,.7)"></g>
-                  <!-- x labels -->
                   <g id="xLabels" font-size="12" fill="rgba(220,240,255,.7)"></g>
 
-                  <!-- guide zones -->
                   <rect x="70" y="50" width="645" height="80" fill="rgba(255,77,114,.05)"></rect>
                   <rect x="70" y="210" width="645" height="100" fill="rgba(52,245,197,.04)"></rect>
 
-                  <!-- fills -->
                   <path id="dangerArea" class="fill-area" fill="rgba(255,77,114,.15)"></path>
                   <path id="safeArea" class="fill-area" fill="rgba(52,245,197,.12)"></path>
 
-                  <!-- lines -->
                   <path id="dangerPathGlow" class="graph-line" stroke="rgba(255,77,114,.22)" stroke-width="12" filter="url(#softGlow)"></path>
                   <path id="dangerPath" class="graph-line" stroke="#ff5b7a" stroke-width="4"></path>
 
                   <path id="safePathGlow" class="graph-line" stroke="rgba(52,245,197,.22)" stroke-width="12" filter="url(#softGlow)"></path>
                   <path id="safePath" class="graph-line" stroke="#34f5c5" stroke-width="4"></path>
 
-                  <!-- legends -->
                   <g transform="translate(98,42)">
                     <rect x="0" y="-11" width="14" height="14" rx="4" fill="#ff5b7a"></rect>
                     <text x="22" y="0" font-size="12" fill="rgba(255,245,248,.92)">普通のメガネのみ</text>
@@ -601,7 +594,6 @@
             </section>
           </div>
 
-          <!-- Narrative -->
           <div class="space-y-6">
             <section class="panel rounded-[26px] p-5 sm:p-6 border border-cyanA/15">
               <div class="micro-label text-[11px] text-cyanA/75 mb-2">Step 04 / Story Expansion</div>
@@ -769,7 +761,6 @@
       const clampedRisk = Math.min(94, Math.round(baseRisk));
       const clampedSafe = Math.min(82, Math.max(28, Math.round(clampedRisk - controlGain)));
 
-      // y values: lower is safer visually; higher means more progression
       const normalSeries = buildSeries(age, sev, false);
       const controlSeries = buildSeries(age, sev, true);
 
@@ -893,55 +884,55 @@
       });
     }
 
-    fufunction renderNarrative(scenario) {
-  const tpl = narrativeTemplates[scenario.age.id] || narrativeTemplates.other;
-  const list = document.getElementById("narrativeList");
-  const killer = document.getElementById("killerPhrase");
+    function renderNarrative(scenario) {
+      const tpl = narrativeTemplates[scenario.age.id] || narrativeTemplates.other;
+      const list = document.getElementById("narrativeList");
+      const killer = document.getElementById("killerPhrase");
 
-  const severityTone = scenario.sev.id === "moderate"
-    ? "今すでに進行の印象が見え始めているからこそ、“その場しのぎ”ではなく“これ以上進ませにくい考え方”を一緒に持つ意味があります。"
-    : "まだ軽く見える段階だからこそ、“今のうちに守る”という説明が最も価値を持ちます。悪くなってからではなく、早い選択に意味があります。";
+      const severityTone = scenario.sev.id === "moderate"
+        ? "今すでに進行の印象が見え始めているからこそ、“その場しのぎ”ではなく“これ以上進ませにくい考え方”を一緒に持つ意味があります。"
+        : "まだ軽く見える段階だからこそ、“今のうちに守る”という説明が最も価値を持ちます。悪くなってからではなく、早い選択に意味があります。";
 
-  const items = [
-    {
-      title: "医学的な背景の伝え方",
-      text: tpl.medical
-    },
-    {
-      title: "親御さまの気持ちへの寄り添い",
-      text: tpl.emotional
-    },
-    {
-      title: "新人スタッフ向け カンペ",
-      text: tpl.talk
-    },
-    {
-      title: "今回の状態に合わせた一押し",
-      text: severityTone
+      const items = [
+        {
+          title: "医学的な背景の伝え方",
+          text: tpl.medical
+        },
+        {
+          title: "親御さまの気持ちへの寄り添い",
+          text: tpl.emotional
+        },
+        {
+          title: "新人スタッフ向け カンペ",
+          text: tpl.talk
+        },
+        {
+          title: "今回の状態に合わせた一押し",
+          text: severityTone
+        }
+      ];
+
+      list.innerHTML = items.map((item, idx) => `
+        <article class="narrative-item border border-cyanA/14 rounded-[22px] p-4 bg-slate-950/20">
+          <div class="text-xs micro-label text-cyanA/75 mb-2">Phase 0${idx + 1}</div>
+          <h4 class="text-base font-bold text-white">${item.title}</h4>
+          <p class="mt-2 text-sm text-slate-200/85 leading-relaxed">${item.text}</p>
+        </article>
+      `).join("");
+
+      killer.innerHTML = `
+        これはメガネではなく、
+        <span class="text-white">お子様の将来の眼を守る『健康への投資』</span>
+        です。
+      `;
+
+      const cards = list.querySelectorAll(".narrative-item");
+      cards.forEach((el, i) => {
+        setTimeout(() => {
+          el.classList.add("show");
+        }, 180 * (i + 1));
+      });
     }
-  ];
-
-  list.innerHTML = items.map((item, idx) => `
-    <article class="narrative-item border border-cyanA/14 rounded-[22px] p-4 bg-slate-950/20">
-      <div class="text-xs micro-label text-cyanA/75 mb-2">Phase 0${idx + 1}</div>
-      <h4 class="text-base font-bold text-white">${item.title}</h4>
-      <p class="mt-2 text-sm text-slate-200/85 leading-relaxed">${item.text}</p>
-    </article>
-  `).join("");
-
-  killer.innerHTML = `
-    これはメガネではなく、
-    <span class="text-white">お子様の将来の眼を守る『健康への投資』</span>
-    です。
-  `;
-
-  const cards = list.querySelectorAll(".narrative-item");
-  cards.forEach((el, i) => {
-    setTimeout(() => {
-      el.classList.add("show");
-    }, 180 * (i + 1));
-  });
-}
 
     function renderResult() {
       clearError();
@@ -964,7 +955,6 @@
       const dangerArea = document.getElementById("dangerArea");
       const safeArea = document.getElementById("safeArea");
 
-      // Reset animations by replacing class
       [dangerPath, dangerPathGlow, safePath, safePathGlow].forEach(el => {
         el.classList.remove("graph-line");
         void el.offsetWidth;
