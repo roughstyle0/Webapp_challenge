@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>近視進行リスク＆抑制レンズ 未来予測シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg0: "#04111f",
+            bg1: "#0a1d33",
+            bg2: "#0e2f4b",
+            cyanA: "#64f4ff",
+            blueA: "#6fb7ff",
+            emA: "#34f5c5",
+            emB: "#14c7a1",
+            warnA: "#ff4d72",
+            warnB: "#ff7f7f"
+          },
+          boxShadow: {
+            glow: "0 0 0 1px rgba(100,244,255,.18), 0 0 24px rgba(100,244,255,.14), inset 0 0 30px rgba(255,255,255,.02)",
+            emerald: "0 0 0 1px rgba(52,245,197,.18), 0 0 20px rgba(52,245,197,.14)",
+            danger: "0 0 0 1px rgba(255,77,114,.18), 0 0 20px rgba(255,77,114,.18)"
+          },
+          animation: {
+            floaty: "floaty 5s ease-in-out infinite",
+            pulseSoft: "pulseSoft 2.4s ease-in-out infinite",
+            scan: "scan 3s linear infinite",
+            revealUp: "revealUp .7s ease forwards",
+            drift: "drift 14s linear infinite",
+            orbit: "orbit 10s linear infinite"
+          },
+          keyframes: {
+            floaty: {
+              "0%,100%": { transform: "translateY(0px)" },
+              "50%": { transform: "translateY(-8px)" }
+            },
+            pulseSoft: {
+              "0%,100%": { opacity: ".6", transform: "scale(1)" },
+              "50%": { opacity: "1", transform: "scale(1.03)" }
+            },
+            scan: {
+              "0%": { transform: "translateY(-120%)" },
+              "100%": { transform: "translateY(380%)" }
+            },
+            revealUp: {
+              "0%": { opacity: "0", transform: "translateY(16px)" },
+              "100%": { opacity: "1", transform: "translateY(0px)" }
+            },
+            drift: {
+              "0%": { transform: "translateX(-10%)" },
+              "100%": { transform: "translateX(10%)" }
+            },
+            orbit: {
+              "0%": { transform: "rotate(0deg)" },
+              "100%": { transform: "rotate(360deg)" }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root{
+      --grid: rgba(104,194,255,.13);
+      --grid-strong: rgba(104,194,255,.22);
+      --panel: rgba(9,25,44,.65);
+      --line: rgba(105,225,255,.24);
+    }
+
+    body{
+      background:
+        radial-gradient(circle at 15% 15%, rgba(53,184,255,.14), transparent 24%),
+        radial-gradient(circle at 85% 12%, rgba(52,245,197,.10), transparent 22%),
+        radial-gradient(circle at 50% 80%, rgba(111,183,255,.08), transparent 28%),
+        linear-gradient(180deg, #03101e 0%, #08192d 45%, #04111f 100%);
+      color: #e7f7ff;
+      overflow-x: hidden;
+    }
+
+    .panel{
+      background:
+        linear-gradient(180deg, rgba(13,28,48,.78), rgba(6,18,34,.88)),
+        linear-gradient(90deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border: 1px solid rgba(109,210,255,.18);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.02) inset,
+        0 0 30px rgba(3, 197, 255, .08),
+        0 0 80px rgba(0, 0, 0, .25);
+      backdrop-filter: blur(10px);
+    }
+
+    .hud-corners{
+      position: relative;
+      overflow: hidden;
+    }
+    .hud-corners::before,
+    .hud-corners::after{
+      content:"";
+      position:absolute;
+      inset:10px;
+      pointer-events:none;
+      border:1px solid rgba(100,244,255,.08);
+      clip-path: polygon(
+        0 12px, 12px 12px, 12px 0,
+        calc(100% - 12px) 0, calc(100% - 12px) 12px, 100% 12px,
+        100% calc(100% - 12px), calc(100% - 12px) calc(100% - 12px), calc(100% - 12px) 100%,
+        12px 100%, 12px calc(100% - 12px), 0 calc(100% - 12px)
+      );
+    }
+
+    .grid-bg{
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px),
+        linear-gradient(to right, var(--grid-strong) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-strong) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px, 96px 96px, 96px 96px;
+      background-position: center center;
+    }
+
+    .option-btn{
+      position: relative;
+      border: 1px solid rgba(110, 210, 255, .22);
+      background:
+        linear-gradient(180deg, rgba(17,35,58,.72), rgba(8,20,37,.92));
+      transition: .25s ease;
+      overflow: hidden;
+    }
+    .option-btn:hover{
+      transform: translateY(-2px);
+      border-color: rgba(100,244,255,.45);
+      box-shadow: 0 0 0 1px rgba(100,244,255,.18) inset, 0 8px 30px rgba(20,120,180,.18);
+    }
+    .option-btn.selected{
+      border-color: rgba(52,245,197,.65);
+      box-shadow: 0 0 0 1px rgba(52,245,197,.22) inset, 0 0 26px rgba(52,245,197,.18);
+      background:
+        linear-gradient(180deg, rgba(13,46,62,.92), rgba(7,25,34,.96));
+    }
+    .option-btn.selected::after{
+      content:"";
+      position:absolute;
+      inset:auto -10% -40% -10%;
+      height:70%;
+      background: radial-gradient(circle, rgba(52,245,197,.22), transparent 70%);
+      filter: blur(10px);
+    }
+
+    .primary-btn{
+      background:
+        linear-gradient(90deg, rgba(23,164,255,.22), rgba(52,245,197,.24)),
+        linear-gradient(180deg, rgba(8,35,57,.95), rgba(4,18,34,.98));
+      border: 1px solid rgba(121,224,255,.38);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.03) inset,
+        0 0 24px rgba(65,207,255,.18);
+      transition: .25s ease;
+    }
+    .primary-btn:hover{
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.04) inset,
+        0 0 30px rgba(65,207,255,.24);
+    }
+    .primary-btn:disabled{
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .micro-label{
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .scanline{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+    }
+    .scanline::before{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      height:18%;
+      background: linear-gradient(180deg, transparent, rgba(100,244,255,.12), transparent);
+      animation: scan 3.4s linear infinite;
+      filter: blur(8px);
+    }
+
+    .chart-wrap{
+      position: relative;
+      min-height: 340px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(100,244,255,.06), transparent 28%),
+        linear-gradient(180deg, rgba(8,24,44,.82), rgba(4,15,28,.96));
+      border: 1px solid rgba(101,205,255,.18);
+    }
+
+    .graph-line{
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 800;
+      stroke-dashoffset: 800;
+      animation: drawLine 1.8s ease forwards;
+    }
+
+    .fill-area{
+      opacity: 0;
+      animation: fadeIn .9s ease forwards;
+      animation-delay: .5s;
+    }
+
+    .graph-dot{
+      opacity: 0;
+      transform-origin: center;
+      animation: popIn .45s ease forwards;
+    }
+
+    @keyframes drawLine {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .lens-core{
+      position: relative;
+      width: 168px;
+      height: 168px;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 38% 34%, rgba(255,255,255,.38), rgba(142,219,255,.18) 22%, rgba(8,26,53,.38) 54%, rgba(1,10,22,.96) 74%),
+        radial-gradient(circle at 50% 50%, rgba(52,245,197,.12), transparent 60%);
+      border: 1px solid rgba(129,224,255,.26);
+      box-shadow:
+        inset 0 0 40px rgba(255,255,255,.06),
+        0 0 24px rgba(100,244,255,.14);
+    }
+
+    .lens-core.safe{
+      box-shadow:
+        inset 0 0 30px rgba(255,255,255,.06),
+        0 0 32px rgba(52,245,197,.16);
+    }
+
+    .lens-core.risk::before{
+      content:"";
+      position:absolute;
+      inset: 18px;
+      border-radius:999px;
+      border: 7px solid rgba(255,95,126,.72);
+      filter: blur(.5px);
+      animation: pulseSoft 1.6s ease-in-out infinite;
+    }
+
+    .lens-core.risk::after{
+      content:"";
+      position:absolute;
+      inset: 35px;
+      border-radius:999px;
+      border: 10px solid rgba(255,123,123,.48);
+      animation: pulseSoft 2s ease-in-out infinite reverse;
+    }
+
+    .lens-core.safe::before{
+      content:"";
+      position:absolute;
+      inset: 22px;
+      border-radius:999px;
+      border: 4px solid rgba(52,245,197,.55);
+    }
+
+    .orbit-ring{
+      position:absolute;
+      inset:-16px;
+      border-radius:999px;
+      border:1px dashed rgba(100,244,255,.22);
+      animation: orbit 12s linear infinite;
+    }
+
+    .narrative-item{
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    .narrative-item.show{
+      animation: revealUp .7s ease forwards;
+    }
+
+    .meter{
+      height: 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(100,244,255,.12);
+      overflow: hidden;
+      position: relative;
+    }
+    .meter > span{
+      display:block;
+      height:100%;
+      width:0%;
+      transition: width 1.2s cubic-bezier(.22,1,.36,1);
+    }
+
+    .noise{
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .08;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.55) 0 0.5px, transparent .8px),
+        radial-gradient(circle at 80% 40%, rgba(255,255,255,.45) 0 0.5px, transparent .8px),
+        radial-gradient(circle at 30% 80%, rgba(255,255,255,.40) 0 0.5px, transparent .8px);
+      background-size: 180px 180px, 220px 220px, 260px 260px;
+      mix-blend-mode: screen;
+    }
+
+    .result-hidden{
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height .8s ease, opacity .6s ease;
+    }
+    .result-visible{
+      max-height: 4000px;
+      opacity: 1;
+    }
+
+    .tiny-grid{
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 12px 12px;
+    }
+
+    .glow-text{
+      text-shadow: 0 0 18px rgba(100,244,255,.18);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="noise"></div>
+
+  <main class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <section class="panel hud-corners grid-bg rounded-[28px] p-5 sm:p-8 lg:p-10 relative overflow-hidden">
+      <div class="scanline"></div>
+
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div class="max-w-3xl">
+          <div class="micro-label text-cyanA/80 text-[11px] sm:text-xs mb-3">Myopia Future Forecast Interface</div>
+          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight glow-text">
+            子供の将来の眼を守る
+            <span class="block bg-gradient-to-r from-cyanA via-blueA to-emA bg-clip-text text-transparent">
+              近視進行リスク＆抑制レンズ
+            </span>
+            <span class="block text-white/90">未来予測シミュレーター</span>
+          </h1>
+          <p class="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed max-w-2xl">
+            学校の視力検査で気づいた“今”が分かれ道。年齢と現在の度数から、
+            <span class="text-warnA font-semibold">何もしない未来</span>と
+            <span class="text-emA font-semibold">守るための選択をした未来</span>を、
+            親御さまに直感で伝える提案サポート画面です。
+          </p>
+        </div>
+
+        <div class="panel rounded-[22px] px-4 py-3 border border-cyanA/15 tiny-grid min-w-[280px]">
+          <div class="text-[11px] micro-label text-cyanA/70 mb-2">Usage Note</div>
+          <p class="text-xs sm:text-sm text-slate-300/85 leading-relaxed">
+            この画面は接客支援用の
+            <span class="text-white font-semibold">説明シミュレーター</span>です。
+            実際の度数進行や適応は、眼科医・認定眼鏡士・検査結果に基づいてご案内してください。
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-8 lg:mt-10 grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-6 lg:gap-8">
+        <!-- Input Area -->
+        <section class="panel rounded-[26px] p-5 sm:p-6 lg:p-7 border border-cyanA/15 relative overflow-hidden">
+          <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyanA/50 to-transparent"></div>
+
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div class="micro-label text-[11px] text-cyanA/75 mb-2">Step 01 / Input</div>
+              <h2 class="text-xl sm:text-2xl font-bold text-white">まずは今の状態だけ入力</h2>
+              <p class="text-sm text-slate-300/80 mt-1">最初は2項目だけ。情報過多を避け、親御さまの集中を切らしません。</p>
+            </div>
+            <div class="text-xs text-slate-400">
+              必須項目 <span class="text-warnA">*</span>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-6">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <label class="text-sm font-semibold text-slate-100">現在の年齢 <span class="text-warnA">*</span></label>
+                <span id="ageSelectedLabel" class="text-xs text-cyanA/75">未選択</span>
+              </div>
+              <div id="ageOptions" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <label class="text-sm font-semibold text-slate-100">現在の度数 <span class="text-warnA">*</span></label>
+                <span id="severitySelectedLabel" class="text-xs text-cyanA/75">未選択</span>
+              </div>
+              <div id="severityOptions" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+
+            <div id="errorBox" class="hidden border border-warnA/30 bg-warnA/10 text-rose-100 rounded-2xl px-4 py-3 text-sm"></div>
+
+            <div class="pt-1 flex flex-col sm:flex-row gap-3 sm:items-center">
+              <button id="predictBtn" class="primary-btn rounded-2xl px-5 py-4 font-semibold text-white tracking-wide w-full sm:w-auto">
+                未来を予測する
+              </button>
+              <div class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                押した瞬間に、グラフ・レンズ厚み比較・親御さま向けトークが段階表示されます。
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Summary teaser -->
+        <section class="panel rounded-[26px] p-5 sm:p-6 lg:p-7 border border-cyanA/15 relative overflow-hidden">
+          <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-cyanA/10 blur-3xl"></div>
+          <div class="absolute -left-10 -bottom-10 w-40 h-40 rounded-full bg-emA/10 blur-3xl"></div>
+
+          <div class="micro-label text-[11px] text-cyanA/75 mb-2">Consulting Mission</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white">“安いメガネでいい”を、未来視点で覆す</h2>
+
+          <div class="mt-6 space-y-4">
+            <div class="border border-cyanA/12 rounded-[22px] p-4 bg-slate-950/20">
+              <div class="text-xs text-cyanA/80 micro-label mb-2">Visible Difference</div>
+              <p class="text-sm text-slate-200/90 leading-relaxed">
+                普通のメガネは「今の見え方」を整える提案。
+                近視抑制レンズは「これから先の進行ペース」まで視野に入れた提案。
+              </p>
+            </div>
+            <div class="border border-cyanA/12 rounded-[22px] p-4 bg-slate-950/20">
+              <div class="text-xs text-cyanA/80 micro-label mb-2">Staff Support</div>
+              <p class="text-sm text-slate-200/90 leading-relaxed">
+                年齢ごとに響く言葉を自動展開。
+                「なぜ今なのか」を、理屈と親心の両面から説明しやすく設計しています。
+              </p>
+            </div>
+            <div class="border border-cyanA/12 rounded-[22px] p-4 bg-slate-950/20">
+              <div class="text-xs text-cyanA/80 micro-label mb-2">Presentation Tone</div>
+              <p class="text-sm text-slate-200/90 leading-relaxed">
+                眼科の先端電子カルテと未来予測UIを融合。
+                白カード頼みではなく、
+                <span class="text-white font-semibold">信頼感×先進感</span>で高単価提案の説得力を底上げします。
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Results -->
+      <section id="resultSection" class="result-hidden mt-8 lg:mt-10">
+        <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-6 lg:gap-8">
+          <!-- Visualization -->
+          <div class="space-y-6">
+            <section class="panel rounded-[26px] p-4 sm:p-5 lg:p-6 border border-cyanA/15">
+              <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
+                <div>
+                  <div class="micro-label text-[11px] text-cyanA/75 mb-2">Step 02 / Visual Simulation</div>
+                  <h3 class="text-xl sm:text-2xl font-bold text-white">未来予測シミュレーション</h3>
+                  <p id="resultLead" class="text-sm text-slate-300/85 mt-1"></p>
+                </div>
+                <div class="text-xs text-slate-400">
+                  グラフは接客用の視覚化イメージです
+                </div>
+              </div>
+
+              <div class="chart-wrap rounded-[22px] overflow-hidden p-3 sm:p-4 lg:p-5 grid-bg relative">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(100,244,255,.08),transparent_34%)]"></div>
+                <svg id="chartSvg" viewBox="0 0 760 360" class="relative z-10 w-full h-auto" aria-label="近視進行比較グラフ">
+                  <defs>
+                    <linearGradient id="dangerFill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(255,77,114,0.38)" />
+                      <stop offset="100%" stop-color="rgba(255,77,114,0.02)" />
+                    </linearGradient>
+                    <linearGradient id="safeFill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(52,245,197,0.32)" />
+                      <stop offset="100%" stop-color="rgba(52,245,197,0.02)" />
+                    </linearGradient>
+                    <filter id="softGlow">
+                      <feGaussianBlur stdDeviation="4" result="blur"/>
+                      <feMerge>
+                        <feMergeNode in="blur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  <!-- axes -->
+                  <g opacity="0.8">
+                    <line x1="70" y1="28" x2="70" y2="310" stroke="rgba(158,220,255,.45)" stroke-width="1.2"/>
+                    <line x1="70" y1="310" x2="715" y2="310" stroke="rgba(158,220,255,.45)" stroke-width="1.2"/>
+                  </g>
+
+                  <!-- y labels -->
+                  <g id="yLabels" font-size="12" fill="rgba(220,240,255,.7)"></g>
+                  <!-- x labels -->
+                  <g id="xLabels" font-size="12" fill="rgba(220,240,255,.7)"></g>
+
+                  <!-- guide zones -->
+                  <rect x="70" y="50" width="645" height="80" fill="rgba(255,77,114,.05)"></rect>
+                  <rect x="70" y="210" width="645" height="100" fill="rgba(52,245,197,.04)"></rect>
+
+                  <!-- fills -->
+                  <path id="dangerArea" class="fill-area" fill="rgba(255,77,114,.15)"></path>
+                  <path id="safeArea" class="fill-area" fill="rgba(52,245,197,.12)"></path>
+
+                  <!-- lines -->
+                  <path id="dangerPathGlow" class="graph-line" stroke="rgba(255,77,114,.22)" stroke-width="12" filter="url(#softGlow)"></path>
+                  <path id="dangerPath" class="graph-line" stroke="#ff5b7a" stroke-width="4"></path>
+
+                  <path id="safePathGlow" class="graph-line" stroke="rgba(52,245,197,.22)" stroke-width="12" filter="url(#softGlow)"></path>
+                  <path id="safePath" class="graph-line" stroke="#34f5c5" stroke-width="4"></path>
+
+                  <!-- legends -->
+                  <g transform="translate(98,42)">
+                    <rect x="0" y="-11" width="14" height="14" rx="4" fill="#ff5b7a"></rect>
+                    <text x="22" y="0" font-size="12" fill="rgba(255,245,248,.92)">普通のメガネのみ</text>
+                  </g>
+                  <g transform="translate(250,42)">
+                    <rect x="0" y="-11" width="14" height="14" rx="4" fill="#34f5c5"></rect>
+                    <text x="22" y="0" font-size="12" fill="rgba(240,255,250,.92)">近視抑制レンズ使用</text>
+                  </g>
+                </svg>
+              </div>
+            </section>
+
+            <section class="panel rounded-[26px] p-5 sm:p-6 border border-cyanA/15">
+              <div class="micro-label text-[11px] text-cyanA/75 mb-2">Step 03 / Lens Visualization</div>
+              <div class="flex items-end justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 class="text-xl sm:text-2xl font-bold text-white">レンズの未来イメージ比較</h3>
+                  <p class="text-sm text-slate-300/85 mt-1">厚み感の違いを、会話のきっかけに変える演出です。</p>
+                </div>
+              </div>
+
+              <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="border border-warnA/20 rounded-[24px] p-5 bg-[linear-gradient(180deg,rgba(62,11,22,.18),rgba(10,18,33,.2))]">
+                  <div class="text-xs micro-label text-warnA/85 mb-3">Normal Glasses Path</div>
+                  <div class="flex flex-col items-center text-center">
+                    <div class="relative w-[180px] h-[180px] flex items-center justify-center">
+                      <div class="orbit-ring"></div>
+                      <div class="lens-core risk"></div>
+                    </div>
+                    <div class="mt-4 text-lg font-bold text-rose-100">進行しやすい未来像</div>
+                    <p id="normalLensText" class="mt-2 text-sm text-rose-50/80 leading-relaxed"></p>
+                    <div class="w-full mt-4">
+                      <div class="flex items-center justify-between text-xs text-rose-100/85 mb-2">
+                        <span>将来の負荷イメージ</span>
+                        <span id="riskScoreLabel">0%</span>
+                      </div>
+                      <div class="meter rounded-full">
+                        <span id="riskMeter" class="bg-[linear-gradient(90deg,#ff4d72,#ff8a7d)] rounded-full"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="border border-emA/20 rounded-[24px] p-5 bg-[linear-gradient(180deg,rgba(7,54,48,.18),rgba(10,18,33,.2))]">
+                  <div class="text-xs micro-label text-emA/85 mb-3">Myopia Control Path</div>
+                  <div class="flex flex-col items-center text-center">
+                    <div class="relative w-[180px] h-[180px] flex items-center justify-center">
+                      <div class="orbit-ring border-emA/25"></div>
+                      <div class="lens-core safe"></div>
+                    </div>
+                    <div class="mt-4 text-lg font-bold text-emerald-100">守りを意識した未来像</div>
+                    <p id="controlLensText" class="mt-2 text-sm text-emerald-50/80 leading-relaxed"></p>
+                    <div class="w-full mt-4">
+                      <div class="flex items-center justify-between text-xs text-emerald-100/85 mb-2">
+                        <span>進行抑制イメージ</span>
+                        <span id="safeScoreLabel">0%</span>
+                      </div>
+                      <div class="meter rounded-full">
+                        <span id="safeMeter" class="bg-[linear-gradient(90deg,#1fd1a9,#7bfad7)] rounded-full"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Narrative -->
+          <div class="space-y-6">
+            <section class="panel rounded-[26px] p-5 sm:p-6 border border-cyanA/15">
+              <div class="micro-label text-[11px] text-cyanA/75 mb-2">Step 04 / Story Expansion</div>
+              <h3 class="text-xl sm:text-2xl font-bold text-white">今この時期のケアが大切な理由</h3>
+              <p class="text-sm text-slate-300/85 mt-1">年齢に合わせて、医学的な背景と接客トークを段階的に表示します。</p>
+
+              <div id="narrativeList" class="mt-5 space-y-4"></div>
+            </section>
+
+            <section class="panel rounded-[26px] p-5 sm:p-6 border border-cyanA/15 relative overflow-hidden">
+              <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-emA/8 to-transparent"></div>
+              <div class="micro-label text-[11px] text-emA/80 mb-2">Closing Phrase</div>
+              <h3 class="text-lg sm:text-xl font-bold text-white">親御さまへの一言</h3>
+              <p id="killerPhrase" class="mt-4 text-base sm:text-lg leading-relaxed font-semibold text-emerald-100/95"></p>
+              <div class="mt-5 text-xs text-slate-400 leading-relaxed">
+                最後は価格ではなく、
+                <span class="text-white font-semibold">「どんな未来を残したいか」</span>に会話の軸を移します。
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const ageOptionsData = [
+      { id: "lower", label: "小学1〜3年生", short: "低学年", score: 1, yearsLeft: 13 },
+      { id: "upper", label: "小学4〜6年生", short: "高学年", score: 2, yearsLeft: 10 },
+      { id: "junior", label: "中学生", short: "中学生", score: 3, yearsLeft: 7 },
+      { id: "high", label: "高校生", short: "高校生", score: 4, yearsLeft: 4 },
+      { id: "early", label: "未就学〜就学前", short: "就学前", score: 0, yearsLeft: 15 },
+      { id: "other", label: "その他の年齢感", short: "その他", score: 2.5, yearsLeft: 8 }
+    ];
+
+    const severityOptionsData = [
+      {
+        id: "mild",
+        label: "軽度近視",
+        sub: "まだ“様子見”と思われやすい段階",
+        score: 1
+      },
+      {
+        id: "moderate",
+        label: "中等度近視",
+        sub: "進行の実感が出やすく、提案が刺さりやすい段階",
+        score: 2
+      }
+    ];
+
+    const narrativeTemplates = {
+      early: {
+        medical: "幼い時期から見えにくさがある場合、これから成長する期間が長いため、将来まで見据えたケアの説明が特に重要です。",
+        emotional: "『今はまだ小さいから』ではなく、『小さい今だからこそ守れる期間が長い』とお伝えすると、親御さまの受け止め方が変わります。",
+        talk: "今の見え方だけ整えるのではなく、これから成長していく目にどう向き合うかが大切です。早く気づけたこと自体が、大きなチャンスです。"
+      },
+      lower: {
+        medical: "小学校低学年は、学習量やデジタル接触が増える一方で、成長に伴う変化も大きい時期。ここでのケア意識が、その後の進み方の印象を左右しやすくなります。",
+        emotional: "親御さまは『まだ小さいのに』という不安を抱きやすい時期です。だからこそ、“今の負担を減らす”ではなく“将来を守る”という言い方が効果的です。",
+        talk: "この時期は、ただ見えるようにするだけでなく、将来の負担を少しでも抑える視点が大切です。早い段階で守る発想を持つご家庭ほど、後悔の少ない選択につながりやすいです。"
+      },
+      upper: {
+        medical: "小学校高学年は、学習時間や近業負荷が増えやすく、見え方の変化に気づきやすい時期。ここで“進行前提”で備える提案がしやすくなります。",
+        emotional: "『今困っているから作る』だけでなく、『中学以降の負担を軽くするために今から備える』という未来軸の提案が、価格比較から会話を外してくれます。",
+        talk: "この先は勉強量も画面時間も増えやすいので、“今に合わせたメガネ”だけで終わらせるより、“進行しにくい選択肢”を先に知っておくことが大切です。"
+      },
+      junior: {
+        medical: "中学生は学習環境が一気に変わり、見え方の変化に対する実感も強くなりやすい時期。放置ではなく、管理していくという発想が伝わりやすい年代です。",
+        emotional: "部活・勉強・タブレット学習など、親御さまが『この先もっと目を使う』と想像しやすいので、将来の度数差を見せる演出が響きます。",
+        talk: "中学から先は、見えにくくなってから慌てて作り替える回数が増えやすい時期です。だからこそ、今は“追いかけるメガネ”より“守るメガネ”という考え方が大切です。"
+      },
+      high: {
+        medical: "高校生は進行ペースが落ち着くケースもありますが、進行が続いている場合は“今後の快適さ”や“将来の眼への配慮”として価値を伝えやすい時期です。",
+        emotional: "保護者は費用対効果をより冷静に見ます。そこで“何回も作り替える不安”と“長期視点で整える安心”を対比すると納得感が上がります。",
+        talk: "この時期は、今だけの見え方よりも、その先を見据えてどう整えるかがポイントです。必要以上に場当たり的な買い替えを繰り返さないための選択肢としてご紹介しています。"
+      },
+      other: {
+        medical: "成長期の目は変化の個人差が大きいため、現在の状態とこれからの生活環境の両方を見ながら説明することが大切です。",
+        emotional: "はっきりした学年に当てはまらなくても、“未来を見据えた準備かどうか”という軸に変えることで、価格の話だけで終わりにくくなります。",
+        talk: "今日の見え方を合わせるだけでなく、これから先の変化も見越して選べる選択肢があることを、まず知っていただきたいです。"
+      }
+    };
+
+    const appState = {
+      age: null,
+      severity: null
+    };
+
+    const ageOptionsEl = document.getElementById("ageOptions");
+    const severityOptionsEl = document.getElementById("severityOptions");
+    const ageSelectedLabel = document.getElementById("ageSelectedLabel");
+    const severitySelectedLabel = document.getElementById("severitySelectedLabel");
+    const predictBtn = document.getElementById("predictBtn");
+    const resultSection = document.getElementById("resultSection");
+    const errorBox = document.getElementById("errorBox");
+
+    function renderOptions() {
+      ageOptionsEl.innerHTML = ageOptionsData.map(item => `
+        <button
+          type="button"
+          class="option-btn rounded-[20px] p-4 text-left"
+          data-group="age"
+          data-id="${item.id}"
+        >
+          <div class="text-sm sm:text-base font-semibold text-white">${item.label}</div>
+          <div class="mt-1 text-xs text-slate-400">進行期間の長さをイメージ化</div>
+        </button>
+      `).join("");
+
+      severityOptionsEl.innerHTML = severityOptionsData.map(item => `
+        <button
+          type="button"
+          class="option-btn rounded-[20px] p-4 text-left"
+          data-group="severity"
+          data-id="${item.id}"
+        >
+          <div class="text-sm sm:text-base font-semibold text-white">${item.label}</div>
+          <div class="mt-1 text-xs text-slate-400">${item.sub}</div>
+        </button>
+      `).join("");
+    }
+
+    function clearError() {
+      errorBox.classList.add("hidden");
+      errorBox.textContent = "";
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.remove("hidden");
+    }
+
+    function bindOptionEvents() {
+      document.querySelectorAll("[data-group='age']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          clearError();
+          appState.age = btn.dataset.id;
+          document.querySelectorAll("[data-group='age']").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          const found = ageOptionsData.find(x => x.id === appState.age);
+          ageSelectedLabel.textContent = found ? found.label : "未選択";
+        });
+      });
+
+      document.querySelectorAll("[data-group='severity']").forEach(btn => {
+        btn.addEventListener("click", () => {
+          clearError();
+          appState.severity = btn.dataset.id;
+          document.querySelectorAll("[data-group='severity']").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          const found = severityOptionsData.find(x => x.id === appState.severity);
+          severitySelectedLabel.textContent = found ? found.label : "未選択";
+        });
+      });
+    }
+
+    function getScenario() {
+      const age = ageOptionsData.find(x => x.id === appState.age);
+      const sev = severityOptionsData.find(x => x.id === appState.severity);
+      if (!age || !sev) return null;
+
+      const baseRisk = 42 + (age.yearsLeft * 2.2) + (sev.score * 12);
+      const controlGain = 24 + (age.yearsLeft * 1.1) + (sev.score * 6);
+
+      const clampedRisk = Math.min(94, Math.round(baseRisk));
+      const clampedSafe = Math.min(82, Math.max(28, Math.round(clampedRisk - controlGain)));
+
+      // y values: lower is safer visually; higher means more progression
+      const normalSeries = buildSeries(age, sev, false);
+      const controlSeries = buildSeries(age, sev, true);
+
+      return {
+        age,
+        sev,
+        riskScore: clampedRisk,
+        safeScore: clampedSafe,
+        normalSeries,
+        controlSeries
+      };
+    }
+
+    function buildSeries(age, sev, controlled) {
+      const stages = ["現在", "1年後", "3年後", "中学卒業", "成人時"];
+      const ageFactor = age.yearsLeft;
+      const sevFactor = sev.score;
+
+      let values;
+      if (!controlled) {
+        const start = sevFactor === 1 ? 22 : 32;
+        values = [
+          start,
+          start + 8 + ageFactor * 0.4,
+          start + 20 + ageFactor * 0.8 + sevFactor * 3,
+          start + 34 + ageFactor * 1.0 + sevFactor * 6,
+          start + 48 + ageFactor * 1.2 + sevFactor * 8
+        ];
+      } else {
+        const start = sevFactor === 1 ? 20 : 29;
+        values = [
+          start,
+          start + 4 + ageFactor * 0.15,
+          start + 10 + ageFactor * 0.3 + sevFactor * 2,
+          start + 16 + ageFactor * 0.42 + sevFactor * 3,
+          start + 21 + ageFactor * 0.5 + sevFactor * 4
+        ];
+      }
+      return stages.map((label, i) => ({ label, value: Math.min(90, Math.round(values[i])) }));
+    }
+
+    function seriesToPath(series) {
+      const chart = {
+        left: 70,
+        top: 28,
+        right: 715,
+        bottom: 310,
+        width: 645,
+        height: 282
+      };
+
+      const xStep = chart.width / (series.length - 1);
+      const points = series.map((d, i) => {
+        const x = chart.left + (xStep * i);
+        const y = chart.bottom - (d.value / 100) * chart.height;
+        return { ...d, x, y };
+      });
+
+      const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+      const area = `${path} L ${points[points.length - 1].x} ${chart.bottom} L ${points[0].x} ${chart.bottom} Z`;
+      return { points, path, area, chart };
+    }
+
+    function renderAxes(series) {
+      const yLabels = document.getElementById("yLabels");
+      const xLabels = document.getElementById("xLabels");
+
+      yLabels.innerHTML = "";
+      xLabels.innerHTML = "";
+
+      const chart = { left: 70, top: 28, bottom: 310, height: 282, width: 645 };
+      [0, 20, 40, 60, 80, 100].forEach(v => {
+        const y = chart.bottom - (v / 100) * chart.height;
+        yLabels.innerHTML += `
+          <g>
+            <text x="18" y="${y + 4}">${v}</text>
+            <line x1="70" y1="${y}" x2="715" y2="${y}" stroke="rgba(158,220,255,.11)" stroke-width="1" />
+          </g>
+        `;
+      });
+
+      const xStep = chart.width / (series.length - 1);
+      series.forEach((item, i) => {
+        const x = chart.left + xStep * i;
+        xLabels.innerHTML += `
+          <g>
+            <text x="${x - 14}" y="336">${item.label}</text>
+            <line x1="${x}" y1="310" x2="${x}" y2="314" stroke="rgba(158,220,255,.35)" stroke-width="1" />
+          </g>
+        `;
+      });
+    }
+
+    function addDots(svgId, points, color) {
+      const svg = document.getElementById(svgId);
+      svg.querySelectorAll(".dynamic-dot").forEach(el => el.remove());
+
+      points.forEach((p, i) => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "dynamic-dot");
+
+        const outer = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        outer.setAttribute("cx", p.x);
+        outer.setAttribute("cy", p.y);
+        outer.setAttribute("r", 8);
+        outer.setAttribute("fill", color === "danger" ? "rgba(255,91,122,.18)" : "rgba(52,245,197,.18)");
+        outer.setAttribute("class", "graph-dot");
+        outer.style.animationDelay = `${0.45 + i * 0.13}s`;
+
+        const inner = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        inner.setAttribute("cx", p.x);
+        inner.setAttribute("cy", p.y);
+        inner.setAttribute("r", 3.5);
+        inner.setAttribute("fill", color === "danger" ? "#ff5b7a" : "#34f5c5");
+        inner.setAttribute("class", "graph-dot");
+        inner.style.animationDelay = `${0.5 + i * 0.13}s`;
+
+        g.appendChild(outer);
+        g.appendChild(inner);
+        svg.appendChild(g);
+      });
+    }
+
+    function renderNarrative(scenario) {
+      const tpl = narrativeTemplates[scenario.age.id] || narrativeTemplates.other;
+      const list = document.getElementById("narrativeList");
+      const killer = document.getElementById("killerPhrase");
+
+      const severityTone = scenario.sev.id === "moderate"
+        ? "今すでに進行の印象が見え始めているからこそ、“その場しのぎ”ではなく“これ以上進ませにくい考え方”を一緒に持つ意味があります。"
+        : "まだ軽く見える段階だからこそ、“今のうちに守る”という説明が最も価値を持ちます。悪くなってからではなく、早い選択に意味があります。";
+
+      const items = [
+        {
+          title: "医学的な背景の伝え方",
+          text: tpl.medical
+        },
+        {
+          title: "親御さまの気持ちへの寄り添い",
+          text: tpl.emotional
+        },
+        {
+          title: "新人スタッフ向け カンペ",
+          text: tpl.talk
+        },
+        {
+          title: "今回の状態に合わせた一押し",
+          text: severityTone
+        }
+      ];
+
+      list.innerHTML = items.map((item, idx) => `
+        <article class="narrative-item border border-cyanA/14 rounded-[22px] p-4 bg-slate-950/20" style="animation-delay:${idx * 0.18}s">
+          <div class="text-xs micro-label text-cyanA/75 mb-2">Phase 0${idx + 1}</div>
+          <h4 class="text-base font-bold text-white">${item.title}</h4>
+          <p class="mt-2 text-sm text-slate-200/85 leading-relaxed">${item.text}</p>
+        </article>
+      `).join("");
+
+      killer.textContent = "これはメガネではなく、お子様の将来の眼を守る『健康への投資』です。";
+
+      requestAnimationFrame(() => {
+        document.querySelectorAll(".narrative-item").forEach((el, i) => {
+          setTimeout(() => el.classList.add("show"), 180 * i + 180);
+        });
+      });
+    }
+
+    function renderResult() {
+      clearError();
+
+      const scenario = getScenario();
+      if (!scenario) {
+        showError("年齢と現在の度数の両方を選んでから、「未来を予測する」を押してください。");
+        return;
+      }
+
+      const normal = seriesToPath(scenario.normalSeries);
+      const safe = seriesToPath(scenario.controlSeries);
+
+      renderAxes(scenario.normalSeries);
+
+      const dangerPath = document.getElementById("dangerPath");
+      const dangerPathGlow = document.getElementById("dangerPathGlow");
+      const safePath = document.getElementById("safePath");
+      const safePathGlow = document.getElementById("safePathGlow");
+      const dangerArea = document.getElementById("dangerArea");
+      const safeArea = document.getElementById("safeArea");
+
+      // Reset animations by replacing class
+      [dangerPath, dangerPathGlow, safePath, safePathGlow].forEach(el => {
+        el.classList.remove("graph-line");
+        void el.offsetWidth;
+        el.classList.add("graph-line");
+      });
+      [dangerArea, safeArea].forEach(el => {
+        el.classList.remove("fill-area");
+        void el.offsetWidth;
+        el.classList.add("fill-area");
+      });
+
+      dangerPath.setAttribute("d", normal.path);
+      dangerPathGlow.setAttribute("d", normal.path);
+      safePath.setAttribute("d", safe.path);
+      safePathGlow.setAttribute("d", safe.path);
+      dangerArea.setAttribute("d", normal.area);
+      safeArea.setAttribute("d", safe.area);
+
+      addDots("chartSvg", normal.points, "danger");
+      addDots("chartSvg", safe.points, "safe");
+
+      const lead = document.getElementById("resultLead");
+      lead.textContent = `${scenario.age.label} × ${scenario.sev.label} をもとにした比較表示。早めに守る選択ほど、成人までの差を説明しやすくなります。`;
+
+      const normalLensText = document.getElementById("normalLensText");
+      const controlLensText = document.getElementById("controlLensText");
+      normalLensText.textContent =
+        scenario.sev.id === "moderate"
+          ? "今の見え方は整っても、将来の負荷が積み上がる印象を可視化。作り替え前提の会話になりやすい未来です。"
+          : "一見まだ軽く見えても、成長期の長さを考えると“気づいた時には進んでいた”という説明につながる未来像です。";
+
+      controlLensText.textContent =
+        scenario.age.score <= 2
+          ? "早い時期に守る発想を持つほど、薄さ・快適さ・安心感をまとめて伝えやすい未来像です。"
+          : "これから先の生活負荷を見越しつつ、今の見え方と将来への配慮を両立するイメージとして見せられます。";
+
+      const riskMeter = document.getElementById("riskMeter");
+      const safeMeter = document.getElementById("safeMeter");
+      const riskScoreLabel = document.getElementById("riskScoreLabel");
+      const safeScoreLabel = document.getElementById("safeScoreLabel");
+
+      requestAnimationFrame(() => {
+        riskMeter.style.width = scenario.riskScore + "%";
+        safeMeter.style.width = Math.max(18, 100 - scenario.safeScore) + "%";
+      });
+
+      riskScoreLabel.textContent = `${scenario.riskScore}%`;
+      safeScoreLabel.textContent = `${Math.max(18, 100 - scenario.safeScore)}%`;
+
+      renderNarrative(scenario);
+
+      resultSection.classList.remove("result-hidden");
+      resultSection.classList.add("result-visible");
+
+      setTimeout(() => {
+        resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
+
+    predictBtn.addEventListener("click", renderResult);
+
+    renderOptions();
+    bindOptionEvents();
+  </script>
+</body>
+</html>
