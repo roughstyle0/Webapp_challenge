@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ピントフリーズ疑似体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: "#0a0d12",
+            panel: "#10161f",
+            panel2: "#0d131a",
+            line: "rgba(255,255,255,0.08)",
+            amberx: "#f5a524",
+            cyanx: "#39d7ff",
+            textx: "#e9f1f7",
+            mute: "#8da2b3"
+          },
+          boxShadow: {
+            glowAmber: "0 0 0 1px rgba(245,165,36,.18), 0 20px 60px rgba(245,165,36,.12)",
+            glowCyan: "0 0 0 1px rgba(57,215,255,.18), 0 20px 60px rgba(57,215,255,.12)",
+            soft: "0 24px 80px rgba(0,0,0,.35)"
+          },
+          backgroundImage: {
+            heroGrid:
+              "linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px)",
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root{
+      --amber: #f5a524;
+      --cyan: #39d7ff;
+      --bg: #0a0d12;
+      --panel: #10161f;
+      --panel2: #0d131a;
+      --text: #e9f1f7;
+      --muted: #8da2b3;
+      --line: rgba(255,255,255,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(circle at 15% 20%, rgba(245,165,36,.10), transparent 22%),
+        radial-gradient(circle at 85% 18%, rgba(57,215,255,.10), transparent 22%),
+        linear-gradient(180deg, #090c10 0%, #0a0d12 45%, #0d1117 100%);
+      color: var(--text);
+    }
+
+    .glass {
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+    }
+
+    .grid-bg {
+      background-size: 24px 24px;
+    }
+
+    .noise::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(transparent 0%, rgba(255,255,255,.02) 50%, transparent 100%);
+      mix-blend-mode: soft-light;
+      opacity:.45;
+    }
+
+    .scene-btn.active {
+      border-color: rgba(57,215,255,.45);
+      box-shadow: 0 0 0 1px rgba(57,215,255,.18), 0 20px 60px rgba(57,215,255,.10);
+      transform: translateY(-1px);
+    }
+
+    .sim-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 390px;
+    }
+
+    .sim-target {
+      transition:
+        filter var(--duration, 2.6s) cubic-bezier(.2,.75,.2,1),
+        transform .7s ease,
+        opacity .7s ease;
+      filter: blur(var(--blur, 0px));
+    }
+
+    .near-chip,
+    .far-chip {
+      transition: all .45s ease;
+    }
+
+    .phase-near .near-chip,
+    .phase-far .far-chip {
+      transform: translateY(-1px);
+      border-color: rgba(57,215,255,.34);
+      color: #eafcff;
+      box-shadow: inset 0 0 20px rgba(57,215,255,.10);
+    }
+
+    .phase-near .far-layer {
+      opacity: .25;
+      transform: scale(.98);
+    }
+
+    .phase-far .near-layer {
+      opacity: .25;
+      transform: scale(1.02);
+    }
+
+    .talk-step {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .45s ease, transform .45s ease, border-color .45s ease;
+      border-color: rgba(255,255,255,.06);
+    }
+
+    .talk-step.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .meter-fill {
+      transition: width .6s ease;
+    }
+
+    .ring {
+      position: absolute;
+      inset: auto;
+      width: 380px;
+      height: 380px;
+      border-radius: 999px;
+      filter: blur(70px);
+      pointer-events: none;
+      opacity: .18;
+    }
+
+    .simulate-pulse {
+      animation: pulseRing 1.6s ease;
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(.96); opacity: .12; }
+      50% { transform: scale(1.02); opacity: .22; }
+      100% { transform: scale(1); opacity: .16; }
+    }
+
+    .scan-line {
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+    }
+
+    .scan-line::after {
+      content:"";
+      position:absolute;
+      left:-35%;
+      top:0;
+      width:30%;
+      height:100%;
+      background: linear-gradient(90deg, transparent, rgba(57,215,255,.08), transparent);
+      transform: skewX(-18deg);
+      animation: scan 6s linear infinite;
+    }
+
+    @keyframes scan {
+      to { left: 115%; }
+    }
+
+    .status-dot {
+      width:.5rem;
+      height:.5rem;
+      border-radius:999px;
+      display:inline-block;
+    }
+  </style>
+</head>
+<body class="min-h-screen selection:bg-cyan-400/25 selection:text-white">
+  <div class="relative overflow-hidden">
+    <div class="ring bg-amber-400 top-[-120px] left-[-120px]"></div>
+    <div class="ring bg-cyan-400 top-[120px] right-[-140px]"></div>
+
+    <main class="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <section class="glass grid-bg bg-heroGrid bg-[length:24px_24px] shadow-soft noise relative overflow-hidden rounded-[28px] p-6 sm:p-8 lg:p-10">
+        <div class="scan-line"></div>
+        <div class="mb-6 flex flex-wrap items-center gap-3">
+          <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs tracking-[0.22em] text-cyan-200 uppercase">Focus Freeze Simulator</span>
+          <span class="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs text-amber-200">夕方の見えづらさを“その場で”可視化</span>
+        </div>
+
+        <div class="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
+          <div>
+            <h1 class="max-w-3xl text-3xl font-semibold leading-tight sm:text-5xl">
+              その<span class="text-amber-300">「夕方だけ、遠くにピントが戻らない」</span>を、
+              <span class="text-cyan-300">若い世代向けの言葉</span>で体験に変える。
+            </h1>
+            <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              手元を見続けたあと、遠くへ視線を移す瞬間に起きる
+              <span class="text-amber-200">ピント調節筋のフリーズ現象</span>を、
+              「通常の見え方」と「サポートレンズ装用時」で比較表示。
+              新人スタッフでも、その場で説明しやすい接客トークまで段階的に出せます。
+            </p>
+
+            <div class="mt-8 grid gap-3 sm:grid-cols-3">
+              <div class="glass rounded-2xl p-4">
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Step 1</div>
+                <div class="mt-2 text-sm text-slate-200">つらいシーンを選ぶ</div>
+              </div>
+              <div class="glass rounded-2xl p-4">
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Step 2</div>
+                <div class="mt-2 text-sm text-slate-200">ピント復帰速度を比較</div>
+              </div>
+              <div class="glass rounded-2xl p-4">
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Step 3</div>
+                <div class="mt-2 text-sm text-slate-200">論理と比喩で提案トークへ</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass rounded-[24px] p-5 sm:p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Scene Select</div>
+                <h2 class="mt-2 text-lg font-semibold">お客様が最もつらい夕方のシーン</h2>
+              </div>
+              <div class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200">
+                接客デモ向け
+              </div>
+            </div>
+
+            <div class="mt-5 space-y-3" id="sceneButtons">
+              <button data-scene="meeting" class="scene-btn w-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition duration-200 hover:border-cyan-400/25 hover:bg-cyan-400/5">
+                <div class="flex items-start gap-3">
+                  <div class="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(245,165,36,.8)]"></div>
+                  <div>
+                    <div class="font-medium">PC作業後、会議室のモニターが見えない</div>
+                    <div class="mt-1 text-sm leading-6 text-slate-400">近くの画面から遠くの資料へ。夕方に起こりやすい“戻り遅れ”を可視化。</div>
+                  </div>
+                </div>
+              </button>
+
+              <button data-scene="station" class="scene-btn w-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition duration-200 hover:border-cyan-400/25 hover:bg-cyan-400/5">
+                <div class="flex items-start gap-3">
+                  <div class="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(245,165,36,.8)]"></div>
+                  <div>
+                    <div class="font-medium">スマホを見た後、駅の電光掲示板がぼやける</div>
+                    <div class="mt-1 text-sm leading-6 text-slate-400">手元の文字を追い続けた直後に、遠くの高コントラスト文字がにじむ場面。</div>
+                  </div>
+                </div>
+              </button>
+
+              <button data-scene="desk" class="scene-btn w-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition duration-200 hover:border-cyan-400/25 hover:bg-cyan-400/5">
+                <div class="flex items-start gap-3">
+                  <div class="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300 shadow-[0_0_18px_rgba(245,165,36,.8)]"></div>
+                  <div>
+                    <div class="font-medium">長時間のデスクワークで目の奥が重痛い</div>
+                    <div class="mt-1 text-sm leading-6 text-slate-400">ピント調節筋が緊張し続けるときの負荷感と、切り替えの鈍さを説明しやすい構成。</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div id="statusBox" class="mt-5 rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-slate-400">
+              <span class="status-dot mr-2 bg-amber-300"></span>
+              まずはシーンを選択してください。選択後、自動で疑似体験が始まります。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
+        <div class="grid gap-6">
+          <div class="grid gap-6 lg:grid-cols-2">
+            <article class="sim-card glass rounded-[28px] p-5 sm:p-6" id="normalCard">
+              <div class="mb-5 flex items-center justify-between">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Comparison A</div>
+                  <h3 class="mt-2 text-xl font-semibold text-amber-200">通常レンズの見え方</h3>
+                </div>
+                <div class="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs text-amber-200">
+                  ピント復帰が遅い
+                </div>
+              </div>
+
+              <div class="phase-near" id="normalViewport">
+                <div class="mb-4 flex gap-2 text-xs">
+                  <span class="near-chip rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-slate-300">手元に視線</span>
+                  <span class="far-chip rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-slate-300">遠くに視線</span>
+                </div>
+
+                <div class="relative rounded-[24px] border border-white/10 bg-gradient-to-b from-slate-900/90 to-slate-950/70 p-4">
+                  <div class="near-layer transition-all duration-700">
+                    <div class="mb-3 text-[11px] uppercase tracking-[0.22em] text-slate-500">Near Focus</div>
+                    <div id="normalNear" class="sim-target rounded-2xl border border-cyan-400/15 bg-cyan-400/5 p-4 [--duration:0.6s] [--blur:0px]">
+                      <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/75">Desktop / Smartphone</div>
+                      <div id="normalNearTitle" class="mt-2 text-lg font-medium text-slate-100">作業中の手元画面</div>
+                      <div id="normalNearDesc" class="mt-2 text-sm leading-6 text-slate-300">
+                        近くの文字には合っている状態。
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="far-layer mt-4 transition-all duration-700">
+                    <div class="mb-3 text-[11px] uppercase tracking-[0.22em] text-slate-500">Distance Focus</div>
+                    <div id="normalFar" class="sim-target rounded-2xl border border-amber-400/15 bg-amber-400/5 p-4 [--duration:2.8s] [--blur:14px]">
+                      <div class="text-[11px] uppercase tracking-[0.18em] text-amber-200/75">Far Object</div>
+                      <div id="normalFarTitle" class="mt-2 text-lg font-medium text-slate-100">遠くの目標がにじむ</div>
+                      <div id="normalFarDesc" class="mt-2 text-sm leading-6 text-slate-300">
+                        視線を切り替えた直後、ピントが数秒戻らない状態を再現。
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-5">
+                  <div class="mb-2 flex items-center justify-between text-xs text-slate-400">
+                    <span>ピント復帰メーター</span>
+                    <span id="normalMeterLabel">0%</span>
+                  </div>
+                  <div class="h-2 overflow-hidden rounded-full bg-white/5">
+                    <div id="normalMeter" class="meter-fill h-full w-0 rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300"></div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="sim-card glass rounded-[28px] p-5 sm:p-6" id="assistCard">
+              <div class="mb-5 flex items-center justify-between">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Comparison B</div>
+                  <h3 class="mt-2 text-xl font-semibold text-cyan-200">サポートレンズ装用時</h3>
+                </div>
+                <div class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200">
+                  切り替えがスムーズ
+                </div>
+              </div>
+
+              <div class="phase-near" id="assistViewport">
+                <div class="mb-4 flex gap-2 text-xs">
+                  <span class="near-chip rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-slate-300">手元に視線</span>
+                  <span class="far-chip rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-slate-300">遠くに視線</span>
+                </div>
+
+                <div class="relative rounded-[24px] border border-white/10 bg-gradient-to-b from-slate-900/90 to-slate-950/70 p-4">
+                  <div class="near-layer transition-all duration-700">
+                    <div class="mb-3 text-[11px] uppercase tracking-[0.22em] text-slate-500">Near Focus</div>
+                    <div id="assistNear" class="sim-target rounded-2xl border border-cyan-400/15 bg-cyan-400/5 p-4 [--duration:0.25s] [--blur:0px]">
+                      <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/75">Desktop / Smartphone</div>
+                      <div id="assistNearTitle" class="mt-2 text-lg font-medium text-slate-100">作業中の手元画面</div>
+                      <div id="assistNearDesc" class="mt-2 text-sm leading-6 text-slate-300">
+                        手元作業も保ちながら、切り替え負荷を逃がしやすい状態。
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="far-layer mt-4 transition-all duration-700">
+                    <div class="mb-3 text-[11px] uppercase tracking-[0.22em] text-slate-500">Distance Focus</div>
+                    <div id="assistFar" class="sim-target rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4 [--duration:0.45s] [--blur:3px]">
+                      <div class="text-[11px] uppercase tracking-[0.18em] text-cyan-200/75">Far Object</div>
+                      <div id="assistFarTitle" class="mt-2 text-lg font-medium text-slate-100">遠くへ一瞬で戻りやすい</div>
+                      <div id="assistFarDesc" class="mt-2 text-sm leading-6 text-slate-300">
+                        ぼけが残りにくく、会話や移動のテンポを崩しにくい状態を表現。
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-5">
+                  <div class="mb-2 flex items-center justify-between text-xs text-slate-400">
+                    <span>ピント復帰メーター</span>
+                    <span id="assistMeterLabel">0%</span>
+                  </div>
+                  <div class="h-2 overflow-hidden rounded-full bg-white/5">
+                    <div id="assistMeter" class="meter-fill h-full w-0 rounded-full bg-gradient-to-r from-cyan-500/70 to-cyan-300"></div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="glass rounded-[28px] p-5 sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Demo Control</div>
+                <h3 class="mt-2 text-xl font-semibold">接客デモ操作</h3>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button id="simulateBtn" class="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/15 active:scale-[.99]">
+                  ピント切り替えを再生
+                </button>
+                <button id="resetBtn" class="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/[0.05] active:scale-[.99]">
+                  初期状態に戻す
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-4 md:grid-cols-3">
+              <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Current Scene</div>
+                <div id="sceneLabel" class="mt-2 text-sm leading-6 text-slate-200">未選択</div>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Normal Lens</div>
+                <div id="normalSummary" class="mt-2 text-sm leading-6 text-amber-100/90">シーン未選択のため、比較待機中です。</div>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Support Lens</div>
+                <div id="assistSummary" class="mt-2 text-sm leading-6 text-cyan-100/90">シーン未選択のため、比較待機中です。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="glass rounded-[28px] p-5 sm:p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Sales Script</div>
+              <h3 class="mt-2 text-xl font-semibold">新人スタッフ向け 接客カンペ</h3>
+            </div>
+            <div class="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-xs text-amber-200">
+              「老眼」という言葉は使わない
+            </div>
+          </div>
+
+          <p class="mt-4 text-sm leading-7 text-slate-400">
+            シーン選択後、段階的に説明が開きます。お客様の不安を煽るのではなく、
+            <span class="text-slate-200">“筋肉の疲労と切り替え遅延”</span>として自然に伝える構成です。
+          </p>
+
+          <div class="mt-5 space-y-3" id="talkSteps">
+            <div class="talk-step rounded-2xl border bg-white/[0.02] p-4">
+              <div class="text-xs uppercase tracking-[0.22em] text-slate-500">01 / Observation</div>
+              <div id="talk1" class="mt-2 text-sm leading-7 text-slate-200">シーンを選ぶと、ここに最初の共感トークが表示されます。</div>
+            </div>
+            <div class="talk-step rounded-2xl border bg-white/[0.02] p-4">
+              <div class="text-xs uppercase tracking-[0.22em] text-slate-500">02 / Logical Explain</div>
+              <div id="talk2" class="mt-2 text-sm leading-7 text-slate-200">ここに論理的な説明が表示されます。</div>
+            </div>
+            <div class="talk-step rounded-2xl border bg-white/[0.02] p-4">
+              <div class="text-xs uppercase tracking-[0.22em] text-slate-500">03 / Easy Metaphor</div>
+              <div id="talk3" class="mt-2 text-sm leading-7 text-slate-200">ここに比喩を使った伝え方が表示されます。</div>
+            </div>
+            <div class="talk-step rounded-2xl border bg-white/[0.02] p-4">
+              <div class="text-xs uppercase tracking-[0.22em] text-slate-500">04 / Proposal</div>
+              <div id="talk4" class="mt-2 text-sm leading-7 text-slate-200">ここに提案の一言が表示されます。</div>
+            </div>
+          </div>
+
+          <div class="mt-6 rounded-2xl border border-cyan-400/15 bg-cyan-400/5 p-4">
+            <div class="text-xs uppercase tracking-[0.22em] text-cyan-200/80">One Phrase</div>
+            <p id="finalPitch" class="mt-2 text-sm leading-7 text-cyan-50">
+              まずはシーンを選択してください。会話で使える自然な締めの一言がここに出ます。
+            </p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const scenes = {
+      meeting: {
+        label: "PC作業後、会議室のモニターが見えない",
+        nearTitle: "ノートPCの資料に集中",
+        nearDesc: "手元の細かい文字へ長く集中したあと、視線が近く固定されやすい場面です。",
+        farTitle: "会議室モニターの文字がぼやける",
+        farDesc: "急に遠くの文字へ切り替わると、ピント調節筋が固まったように戻り遅れを起こします。",
+        normalSummary: "資料からモニターへ顔を上げた瞬間、遠くの文字が数秒にじんで会話に入り遅れやすい状態。",
+        assistSummary: "遠くへの切り替えが素早く、会議の流れを止めにくい状態。",
+        talk: [
+          "夕方になると、PCのあとに会議室モニターがすぐ読めない方、かなり多いです。",
+          "これは年齢の言葉で片づけるより、近くを見続けて働いたピント調節筋が“筋肉痛っぽく固まる”ことで、遠くへの切り替えが遅れる現象 হিসেবে説明しやすいです。",
+          "サポートレンズは、デジタル世代の目の筋肉にとって“マッサージチェア”のような存在です。頑張りっぱなしの状態を少し逃がして、切り替えを軽くします。",
+          "普段の見え方を大きく変えるためではなく、夕方のつらい切り替えをラクにする道具として試してみませんか？"
+        ],
+        finalPitch: "“手元を頑張って見たあとの、遠くに戻る一拍”を軽くするためのレンズ、とお伝えすると自然です。"
+      },
+      station: {
+        label: "スマホを見た後、駅の電光掲示板がぼやける",
+        nearTitle: "スマホの小さな文字を追う",
+        nearDesc: "通知や経路検索など、近距離へ集中した直後を再現します。",
+        farTitle: "駅の電光掲示板がにじむ",
+        farDesc: "高コントラストな遠方表示でも、切り替え初速が遅いと一瞬で読めません。",
+        normalSummary: "改札やホームで掲示板の情報が拾いにくく、移動のテンポを崩しやすい状態。",
+        assistSummary: "スマホから掲示板への視線移動が滑らかで、移動時のストレスを減らしやすい状態。",
+        talk: [
+          "スマホを見たあと、駅の表示が一瞬読めないというお悩み、20代・30代でもすごく増えています。",
+          "近くを見続ける時間が長いと、ピント調節筋が近距離モードのまま残りやすく、遠くへ戻るまでワンテンポ遅れます。",
+          "このレンズは、頑張り続けた目の筋肉に“少し休む余白”を作るイメージです。ずっとアクセルを踏むのではなく、巡航しやすくする感じです。",
+          "移動中の見え方のテンポを上げたい方には、実感しやすいタイプです。スマホを見る時間が長い方ほど相性を確認しやすいです。"
+        ],
+        finalPitch: "“スマホの後に遠くがにじむ方へ、切り替え速度を整えるレンズです”という切り口が通ります。"
+      },
+      desk: {
+        label: "長時間のデスクワークで目の奥が重痛い",
+        nearTitle: "デスクで近距離作業が続く",
+        nearDesc: "ピント調節筋が長く働き続け、目の奥に重さを感じやすいシーンです。",
+        farTitle: "遠くを見ても抜けが悪い",
+        farDesc: "少し休もうと遠くを見ても、すぐにスッと抜けない状態を再現します。",
+        normalSummary: "近距離作業の緊張が抜けにくく、目の奥の重だるさとピントの切り替え遅延が重なる状態。",
+        assistSummary: "手元作業時の負荷を分散し、休憩時の遠方視への戻りをスムーズにしやすい状態。",
+        talk: [
+          "“目の奥が重い”“夕方になると抜けない”という感覚は、見え方だけでなく筋肉の疲労感として出ていることがあります。",
+          "ピント調節筋は小さいですが、ずっと近くに合わせ続けると固まりやすく、遠くを見てもすぐ緩みきらないことがあります。",
+          "サポートレンズは、目の筋肉にとっての“座りっぱなし対策チェア”みたいなものです。頑張りっぱなしを少し分散してくれます。",
+          "疲労感まで含めてケアしたい方には、夕方のラクさを確認しやすいレンズとしてご案内できます。"
+        ],
+        finalPitch: "“見え方だけでなく、目の奥の重さまでラクになるかを試すレンズです”と伝えると提案しやすいです。"
+      }
+    };
+
+    const els = {
+      sceneButtons: document.querySelectorAll(".scene-btn"),
+      statusBox: document.getElementById("statusBox"),
+      sceneLabel: document.getElementById("sceneLabel"),
+      normalNearTitle: document.getElementById("normalNearTitle"),
+      normalNearDesc: document.getElementById("normalNearDesc"),
+      normalFarTitle: document.getElementById("normalFarTitle"),
+      normalFarDesc: document.getElementById("normalFarDesc"),
+      assistNearTitle: document.getElementById("assistNearTitle"),
+      assistNearDesc: document.getElementById("assistNearDesc"),
+      assistFarTitle: document.getElementById("assistFarTitle"),
+      assistFarDesc: document.getElementById("assistFarDesc"),
+      normalSummary: document.getElementById("normalSummary"),
+      assistSummary: document.getElementById("assistSummary"),
+      normalViewport: document.getElementById("normalViewport"),
+      assistViewport: document.getElementById("assistViewport"),
+      normalFar: document.getElementById("normalFar"),
+      assistFar: document.getElementById("assistFar"),
+      normalMeter: document.getElementById("normalMeter"),
+      assistMeter: document.getElementById("assistMeter"),
+      normalMeterLabel: document.getElementById("normalMeterLabel"),
+      assistMeterLabel: document.getElementById("assistMeterLabel"),
+      talk1: document.getElementById("talk1"),
+      talk2: document.getElementById("talk2"),
+      talk3: document.getElementById("talk3"),
+      talk4: document.getElementById("talk4"),
+      finalPitch: document.getElementById("finalPitch"),
+      talkSteps: [...document.querySelectorAll(".talk-step")],
+      simulateBtn: document.getElementById("simulateBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      normalCard: document.getElementById("normalCard"),
+      assistCard: document.getElementById("assistCard")
+    };
+
+    let currentSceneKey = null;
+    let talkTimers = [];
+    let meterTimers = [];
+    let hasSelected = false;
+
+    function clearTimers() {
+      talkTimers.forEach(clearTimeout);
+      meterTimers.forEach(clearInterval);
+      talkTimers = [];
+      meterTimers = [];
+    }
+
+    function setActiveButton(sceneKey) {
+      els.sceneButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.scene === sceneKey);
+      });
+    }
+
+    function setScene(sceneKey) {
+      const scene = scenes[sceneKey];
+      if (!scene) return;
+
+      currentSceneKey = sceneKey;
+      hasSelected = true;
+      clearTimers();
+      setActiveButton(sceneKey);
+
+      els.sceneLabel.textContent = scene.label;
+      els.normalNearTitle.textContent = scene.nearTitle;
+      els.normalNearDesc.textContent = scene.nearDesc;
+      els.normalFarTitle.textContent = scene.farTitle;
+      els.normalFarDesc.textContent = scene.farDesc;
+      els.assistNearTitle.textContent = scene.nearTitle;
+      els.assistNearDesc.textContent = "手元作業を保ちつつ、遠くへの切り替えに必要な負荷を逃がしやすい状態。";
+      els.assistFarTitle.textContent = scene.farTitle.replace("ぼやける", "戻りやすい").replace("にじむ", "クリアに捉えやすい");
+      els.assistFarDesc.textContent = "切り替え直後のぼけ残りを抑え、視線移動のテンポを保ちやすいイメージです。";
+      els.normalSummary.textContent = scene.normalSummary;
+      els.assistSummary.textContent = scene.assistSummary;
+      els.finalPitch.textContent = scene.finalPitch;
+
+      [els.talk1, els.talk2, els.talk3, els.talk4].forEach((el, i) => el.textContent = scene.talk[i]);
+      els.talkSteps.forEach(step => step.classList.remove("show"));
+
+      resetSimulation(false);
+
+      els.statusBox.innerHTML = '<span class="status-dot mr-2 bg-cyan-300"></span>シーンを読み込みました。通常レンズとサポートレンズの切り替え速度を比較します。';
+      revealTalkSteps();
+      simulate();
+    }
+
+    function revealTalkSteps() {
+      clearTimers();
+      els.talkSteps.forEach(step => step.classList.remove("show"));
+      els.talkSteps.forEach((step, i) => {
+        const t = setTimeout(() => step.classList.add("show"), 240 + i * 360);
+        talkTimers.push(t);
+      });
+    }
+
+    function resetMeters() {
+      els.normalMeter.style.width = "0%";
+      els.assistMeter.style.width = "0%";
+      els.normalMeterLabel.textContent = "0%";
+      els.assistMeterLabel.textContent = "0%";
+    }
+
+    function animateMeter(elBar, elLabel, duration) {
+      let value = 0;
+      const interval = 40;
+      const steps = Math.max(1, Math.round(duration / interval));
+      const delta = 100 / steps;
+
+      const timer = setInterval(() => {
+        value = Math.min(100, value + delta);
+        const shown = Math.round(value);
+        elBar.style.width = shown + "%";
+        elLabel.textContent = shown + "%";
+        if (value >= 100) clearInterval(timer);
+      }, interval);
+
+      meterTimers.push(timer);
+    }
+
+    function resetSimulation(showMessage = true) {
+      clearTimers();
+      resetMeters();
+
+      els.normalViewport.classList.remove("phase-far");
+      els.assistViewport.classList.remove("phase-far");
+      els.normalViewport.classList.add("phase-near");
+      els.assistViewport.classList.add("phase-near");
+
+      els.normalFar.style.setProperty("--blur", "14px");
+      els.assistFar.style.setProperty("--blur", "3px");
+
+      els.normalCard.classList.remove("simulate-pulse");
+      els.assistCard.classList.remove("simulate-pulse");
+
+      els.talkSteps.forEach(step => {
+        if (!currentSceneKey) step.classList.remove("show");
+      });
+
+      if (showMessage) {
+        els.statusBox.innerHTML = hasSelected
+          ? '<span class="status-dot mr-2 bg-amber-300"></span>初期状態に戻しました。もう一度「ピント切り替えを再生」を押してください。'
+          : '<span class="status-dot mr-2 bg-amber-300"></span>まずはシーンを選択してください。';
+      }
+    }
+
+    function simulate() {
+      if (!currentSceneKey) {
+        els.statusBox.innerHTML = '<span class="status-dot mr-2 bg-amber-300"></span>シーンが未選択です。先にシーンを選んでください。';
+        return;
+      }
+
+      clearTimers();
+      resetMeters();
+
+      els.normalViewport.classList.remove("phase-near");
+      els.assistViewport.classList.remove("phase-near");
+      els.normalViewport.classList.add("phase-far");
+      els.assistViewport.classList.add("phase-far");
+
+      els.normalFar.style.setProperty("--blur", "14px");
+      els.assistFar.style.setProperty("--blur", "3px");
+
+      els.normalCard.classList.remove("simulate-pulse");
+      els.assistCard.classList.remove("simulate-pulse");
+      void els.normalCard.offsetWidth;
+      els.normalCard.classList.add("simulate-pulse");
+      els.assistCard.classList.add("simulate-pulse");
+
+      els.statusBox.innerHTML = '<span class="status-dot mr-2 bg-cyan-300"></span>視線を遠くへ切り替え中。通常レンズはぼけが残り、サポートレンズは素早くクリアへ戻ります。';
+
+      animateMeter(els.assistMeter, els.assistMeterLabel, 500);
+      animateMeter(els.normalMeter, els.normalMeterLabel, 2800);
+
+      const t1 = setTimeout(() => {
+        els.assistFar.style.setProperty("--blur", "0px");
+      }, 110);
+
+      const t2 = setTimeout(() => {
+        els.normalFar.style.setProperty("--blur", "0px");
+      }, 650);
+
+      const t3 = setTimeout(() => {
+        els.statusBox.innerHTML = '<span class="status-dot mr-2 bg-cyan-300"></span>比較完了。説明トークを使いながら、お客様に「夕方の切り替え遅延」を自然に提案できます。';
+        revealTalkSteps();
+      }, 2950);
+
+      talkTimers.push(t1, t2, t3);
+    }
+
+    els.sceneButtons.forEach(btn => {
+      btn.addEventListener("click", () => setScene(btn.dataset.scene));
+    });
+
+    els.simulateBtn.addEventListener("click", simulate);
+    els.resetBtn.addEventListener("click", () => resetSimulation(true));
+  </script>
+</body>
+</html>
