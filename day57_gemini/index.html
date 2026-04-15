@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pocus Freeze Simulator | Focus Assist Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* テンプレを脱却する独自の世界観（モダンガジェット・サイバーUI） */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --bg-color: #0a0a0c;
+            --surface-color: #121215;
+            --border-color: #27272a;
+            --text-main: #e4e4e7;
+            --text-sub: #a1a1aa;
+            --amber-warn: #fbbf24;
+            --cyan-clear: #22d3ee;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            /* スマホでの意図しないスクロールやハイライトを防止 */
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); }
+
+        /* ミニマルなボーダーデザイン（影や強い角丸は排除） */
+        .ui-panel {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .ui-button {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .ui-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 2px; height: 100%;
+            background-color: transparent;
+            transition: background-color 0.2s ease;
+        }
+        .ui-button:hover::before, .ui-button.active::before {
+            background-color: var(--cyan-clear);
+        }
+
+        /* ピントフリーズエフェクト用 */
+        .vision-target {
+            transition: filter var(--blur-duration, 0s) cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .blur-heavy { filter: blur(12px); }
+        .blur-none { filter: blur(0px); }
+        
+        /* 状態遷移アニメーション */
+        .fade-in { animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ガジェット風のグリッド背景 */
+        .bg-grid {
+            background-size: 20px 20px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+        
+        /* テキストハイライト */
+        .hl-amber { color: var(--amber-warn); }
+        .hl-cyan { color: var(--cyan-clear); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4 md:p-8 bg-grid">
+
+    <!-- メインコンテナ（モバイルファーストな幅固定） -->
+    <main class="w-full max-w-md w-full flex flex-col gap-6 relative z-10">
+        
+        <!-- ヘッダー -->
+        <header class="w-full pb-4 border-b border-zinc-800 flex justify-between items-end">
+            <div>
+                <h1 class="text-xs tracking-widest text-zinc-500 font-semibold mb-1">FOCUS ASSIST SYSTEM v2.0</h1>
+                <p class="text-lg font-bold tracking-tight">ピントフリーズ・シミュレーター</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span class="text-[10px] text-zinc-500 font-mono">ONLINE</span>
+            </div>
+        </header>
+
+        <!-- STEP 1: シーン選択 (情報過多を防ぐため、初期画面はここだけ) -->
+        <section id="step1-scene-select" class="w-full fade-in">
+            <p class="text-sm text-zinc-400 mb-4 flex items-center gap-2">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                お客様が夕方に「最も辛い」と感じるシーンを選択してください。
+            </p>
+            <div class="flex flex-col gap-3" id="scene-buttons">
+                <!-- JSで動的に生成 -->
+            </div>
+        </section>
+
+        <!-- STEP 2: シミュレーション画面 (選択後に展開) -->
+        <section id="step2-simulation" class="w-full hidden opacity-0 flex flex-col gap-4">
+            
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-mono text-cyan-400 border border-cyan-400/30 px-2 py-1 rounded bg-cyan-400/10" id="current-scene-label">SCENE: SELECTED</h2>
+                <button id="btn-reset" class="text-xs text-zinc-500 hover:text-white underline underline-offset-4 transition-colors">シーン再選択</button>
+            </div>
+
+            <!-- レンズ切り替えタブ -->
+            <div class="flex bg-zinc-900 border border-zinc-800 rounded-sm p-1 gap-1">
+                <button id="tab-normal" class="flex-1 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors rounded-sm bg-zinc-800/50 ui-panel border-amber-500/30 text-amber-500">
+                    標準レンズ（単焦点）
+                </button>
+                <button id="tab-assist" class="flex-1 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors rounded-sm">
+                    サポートレンズ
+                </button>
+            </div>
+
+            <!-- ビューファインダー（シミュレーション領域） -->
+            <div class="ui-panel relative h-64 w-full overflow-hidden flex flex-col">
+                <!-- 状態インジケーター -->
+                <div class="absolute top-0 left-0 w-full p-2 flex justify-between items-center z-20 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                    <span id="lens-status" class="text-[10px] font-mono hl-amber flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        標準レンズ使用中
+                    </span>
+                    <span id="focus-status" class="text-[10px] font-mono text-zinc-400">FOCUS: NEAR</span>
+                </div>
+
+                <!-- ターゲット映像 -->
+                <div id="vision-area" class="flex-1 flex items-center justify-center relative bg-black">
+                    <!-- 背景の抽象的な遠景 -->
+                    <div id="far-target" class="absolute inset-0 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 vision-target blur-heavy">
+                        <!-- JSでSVGアイコンと文字を挿入 -->
+                    </div>
+                    
+                    <!-- 手元のスマホ/PC -->
+                    <div id="near-target" class="absolute bottom-[-20px] w-3/4 max-w-[200px] h-32 bg-zinc-800 border-t-2 border-l-2 border-r-2 border-zinc-600 rounded-t-xl flex flex-col items-center pt-2 transition-transform duration-500 transform translate-y-0 shadow-[0_-10px_40px_rgba(255,255,255,0.1)]">
+                        <div class="w-1/3 h-1 bg-zinc-600 rounded-full mb-2"></div>
+                        <div class="w-[90%] h-4 bg-zinc-700/50 rounded mb-1"></div>
+                        <div class="w-[90%] h-4 bg-zinc-700/50 rounded mb-1"></div>
+                        <div class="w-[60%] h-4 bg-zinc-700/50 rounded"></div>
+                        <div class="absolute inset-0 bg-blue-500/10 rounded-t-xl mix-blend-overlay"></div>
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="absolute bottom-4 left-0 w-full flex justify-center z-20">
+                    <button id="btn-look-far" class="bg-white text-black px-6 py-3 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-transform flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        ふと遠くを見る
+                    </button>
+                </div>
+            </div>
+            <p class="text-[10px] text-zinc-500 text-center">※お客様に画面を見せながら「ふと遠くを見る」ボタンをタップしてください。</p>
+        </section>
+
+        <!-- STEP 3: 解説＆トークスクリプト (シミュレーション体験後に展開) -->
+        <section id="step3-script" class="w-full hidden opacity-0 flex flex-col gap-4 mt-2">
+            
+            <!-- ロジック解説（左ボーダーで引用風・テンプレカード回避） -->
+            <div class="pl-4 border-l-2 border-zinc-700 relative">
+                <span class="absolute -left-1.5 top-0 w-3 h-3 bg-zinc-800 border-2 border-zinc-600 rounded-full"></span>
+                <h3 class="text-xs font-bold text-zinc-300 mb-1">【現象の論理的解説】</h3>
+                <p id="txt-explanation" class="text-sm text-zinc-400 leading-relaxed text-justify">
+                    <!-- JSで挿入 -->
+                </p>
+            </div>
+
+            <!-- スタッフトークスクリプト（シアン色のアクセントで「解決策」を提示） -->
+            <div class="pl-4 border-l-2 border-cyan-500 relative mt-2 bg-gradient-to-r from-cyan-500/5 to-transparent py-2">
+                <span class="absolute -left-1.5 top-2 w-3 h-3 bg-cyan-500 rounded-full shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
+                <h3 class="text-xs font-bold text-cyan-400 mb-1 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    接客トーク（そのままお読みください）
+                </h3>
+                <p id="txt-talk" class="text-sm text-white leading-relaxed font-medium">
+                    <!-- JSで挿入 -->
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. データ定義（ロジックとテキストの手抜き禁止） ---
+        const scenesData = {
+            scene1: {
+                id: 'scene1',
+                title: "PC作業後、会議室のモニターが見えない",
+                targetTitle: "MEETING MONITOR",
+                targetIcon: `<svg class="w-16 h-16 text-zinc-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>`,
+                targetText: "Q3 SALES REPORT",
+                explanation: "長時間近くのモニターを見続けたことで、目のピントを合わせる<span class='text-zinc-200 font-bold'>「毛様体筋」が凝り固まり、遠くを見るために緩める動作が遅れている</span>状態です。いわば目の筋肉痛ですね。",
+                talk: "「PC作業が多いと、ピント調節筋はずっと緊張しっぱなしなんです。このサポートレンズは、PCを見る下半分の度数を少し弱めることで、筋肉の緊張を解いてくれる<span class='hl-cyan'>『目のマッサージチェア』</span>のような役割を果たします。会議でパッとモニターを見る時も、すぐにクリアな視界が広がりますよ。」"
+            },
+            scene2: {
+                id: 'scene2',
+                title: "スマホを見た後、駅の電光掲示板がぼやける",
+                targetTitle: "STATION BOARD",
+                targetIcon: `<svg class="w-16 h-16 text-zinc-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                targetText: "19:45  EXPRESS",
+                explanation: "スマホの強い光と至近距離でのピント合わせが連続し、<span class='text-zinc-200 font-bold'>筋肉が完全にフリーズ（硬直）</span>してしまっています。暗い駅のホーム等では瞳孔が開き、被写界深度が浅くなるためさらにピントが合いづらくなります。",
+                talk: "「通勤中のスマホ、目は限界まで頑張ってフリーズ状態なんです。このレンズには、スマホを見る距離に合わせた<span class='hl-cyan'>『リラックスゾーン』</span>が設計されています。駅でふと顔を上げて掲示板を見る時、筋肉を無理に動かさなくてもスッとピントが合うようサポートしてくれます。」"
+            },
+            scene3: {
+                id: 'scene3',
+                title: "長時間のデスクワークで目の奥が重痛い",
+                targetTitle: "OFFICE CLOCK",
+                targetIcon: `<svg class="w-16 h-16 text-zinc-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`,
+                targetText: "18:00 OVERTIME",
+                explanation: "ピントが合わないだけでなく、重痛さを感じるのは<span class='text-zinc-200 font-bold'>毛様体筋が過労状態（オーバーワーク）</span>に陥っているサインです。無理にピントを合わせようとする脳の疲労も重なり、全身の疲れに直結します。",
+                talk: "「目の奥が重いのは、ピント調節筋が悲鳴を上げている証拠です。このレンズは、手元を見る時の<span class='hl-cyan'>『筋肉の負担を物理的に肩代わり』</span>してくれます。1日中マッサージを受けながら仕事をするような感覚で、夕方の目の重さが劇的に変わりますよ。」"
+            }
+        };
+
+        // --- 2. 状態管理 ---
+        let currentMode = 'normal'; // 'normal' | 'assist'
+        let currentFocus = 'near'; // 'near' | 'far'
+        let selectedSceneData = null;
+
+        // --- 3. DOM要素取得 ---
+        const els = {
+            step1: document.getElementById('step1-scene-select'),
+            step2: document.getElementById('step2-simulation'),
+            step3: document.getElementById('step3-script'),
+            sceneButtons: document.getElementById('scene-buttons'),
+            btnReset: document.getElementById('btn-reset'),
+            tabNormal: document.getElementById('tab-normal'),
+            tabAssist: document.getElementById('tab-assist'),
+            farTarget: document.getElementById('far-target'),
+            nearTarget: document.getElementById('near-target'),
+            btnLookFar: document.getElementById('btn-look-far'),
+            lensStatus: document.getElementById('lens-status'),
+            focusStatus: document.getElementById('focus-status'),
+            currentSceneLabel: document.getElementById('current-scene-label'),
+            txtExplanation: document.getElementById('txt-explanation'),
+            txtTalk: document.getElementById('txt-talk')
+        };
+
+        // --- 4. 初期化・イベントバインディング ---
+        function init() {
+            // シーンボタンの生成
+            Object.values(scenesData).forEach(scene => {
+                const btn = document.createElement('button');
+                btn.className = 'ui-button ui-panel w-full text-left p-4 flex items-start gap-3 hover:bg-zinc-800 transition-colors group';
+                btn.innerHTML = `
+                    <div class="mt-1 w-4 h-4 rounded-sm border border-zinc-600 flex-shrink-0 group-hover:border-cyan-400 group-hover:bg-cyan-400/20 transition-all"></div>
+                    <span class="text-sm font-medium text-zinc-300 group-hover:text-white">${scene.title}</span>
+                `;
+                btn.onclick = () => selectScene(scene.id);
+                els.sceneButtons.appendChild(btn);
+            });
+
+            // イベントリスナー
+            els.btnReset.onclick = resetApp;
+            els.tabNormal.onclick = () => setLensMode('normal');
+            els.tabAssist.onclick = () => setLensMode('assist');
+            els.btnLookFar.onclick = toggleFocus;
+        }
+
+        // --- 5. ロジック関数 ---
+        
+        // シーン選択時（プログレッシブ・ディクロージャー）
+        function selectScene(sceneId) {
+            selectedSceneData = scenesData[sceneId];
+            
+            // 画面切り替え
+            els.step1.classList.add('hidden');
+            els.step2.classList.remove('hidden');
+            // 少し遅延させてフェードイン
+            setTimeout(() => els.step2.classList.add('fade-in', 'opacity-100'), 50);
+
+            // コンテンツ反映
+            els.currentSceneLabel.innerText = `SCENE: ${selectedSceneData.targetTitle}`;
+            els.farTarget.innerHTML = `
+                ${selectedSceneData.targetIcon}
+                <div class="text-xl font-bold tracking-widest text-white">${selectedSceneData.targetText}</div>
+            `;
+            els.txtExplanation.innerHTML = selectedSceneData.explanation;
+            els.txtTalk.innerHTML = selectedSceneData.talk;
+
+            // 状態リセット
+            setLensMode('normal');
+            setFocus('near');
+        }
+
+        function resetApp() {
+            els.step2.classList.remove('fade-in', 'opacity-100');
+            els.step3.classList.remove('fade-in', 'opacity-100');
+            
+            setTimeout(() => {
+                els.step2.classList.add('hidden');
+                els.step3.classList.add('hidden');
+                els.step1.classList.remove('hidden');
+            }, 300);
+            
+            selectedSceneData = null;
+        }
+
+        // レンズ切り替え（UIスタイルの変更のみ）
+        function setLensMode(mode) {
+            currentMode = mode;
+            setFocus('near'); // レンズを変えたら手元に戻す
+
+            if (mode === 'normal') {
+                els.tabNormal.classList.add('ui-panel', 'border-amber-500/30', 'text-amber-500', 'bg-zinc-800/50');
+                els.tabNormal.classList.remove('text-zinc-400');
+                els.tabAssist.classList.remove('ui-panel', 'border-cyan-500/50', 'text-cyan-400', 'bg-zinc-800/50');
+                els.tabAssist.classList.add('text-zinc-400');
+                
+                els.lensStatus.innerHTML = `<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> 標準レンズ（単焦点）`;
+                els.lensStatus.className = 'text-[10px] font-mono hl-amber';
+            } else {
+                els.tabAssist.classList.add('ui-panel', 'border-cyan-500/50', 'text-cyan-400', 'bg-zinc-800/50');
+                els.tabAssist.classList.remove('text-zinc-400');
+                els.tabNormal.classList.remove('ui-panel', 'border-amber-500/30', 'text-amber-500', 'bg-zinc-800/50');
+                els.tabNormal.classList.add('text-zinc-400');
+
+                els.lensStatus.innerHTML = `<svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> サポートレンズ稼働中`;
+                els.lensStatus.className = 'text-[10px] font-mono hl-cyan';
+            }
+        }
+
+        // 視点切り替えとBlur制御のコアロジック
+        function toggleFocus() {
+            if (currentFocus === 'near') {
+                setFocus('far');
+                // 遠くを見た時に、スクリプトエリアを展開（プログレッシブ・ディクロージャー）
+                if (els.step3.classList.contains('hidden')) {
+                    els.step3.classList.remove('hidden');
+                    setTimeout(() => els.step3.classList.add('fade-in', 'opacity-100'), 50);
+                    // スマホで下部が見えるように少しスクロール
+                    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 200);
+                }
+            } else {
+                setFocus('near');
+            }
+        }
+
+        function setFocus(focus) {
+            currentFocus = focus;
+            
+            if (focus === 'near') {
+                els.focusStatus.innerText = 'FOCUS: NEAR (手元)';
+                els.btnLookFar.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> ふと遠くを見る`;
+                
+                // 手元を表示、遠景を隠す（ぼやけた状態で待機）
+                els.nearTarget.style.transform = 'translateY(0)';
+                els.farTarget.style.opacity = '0';
+                
+                // CSS transition をリセットして即座にぼかす
+                els.farTarget.style.setProperty('--blur-duration', '0s');
+                els.farTarget.classList.remove('blur-none');
+                els.farTarget.classList.add('blur-heavy');
+
+            } else {
+                els.focusStatus.innerText = 'FOCUS: FAR (遠景)';
+                els.btnLookFar.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg> 手元に戻す`;
+                
+                // 手元を隠し、遠景を表示
+                els.nearTarget.style.transform = 'translateY(120%)';
+                els.farTarget.style.opacity = '1';
+
+                // レンズに応じたBlurの回復時間を設定（これがシミュレーターのキモ）
+                if (currentMode === 'normal') {
+                    // 普通のレンズ：ピントフリーズ現象（4秒かけてじわじわピントが合う）
+                    els.farTarget.style.setProperty('--blur-duration', '4s');
+                } else {
+                    // サポートレンズ：一瞬でピントが合う（0.2秒）
+                    els.farTarget.style.setProperty('--blur-duration', '0.2s');
+                }
+
+                // 少し遅延を入れてからBlurを解除（ブラウザの描画タイミング合わせ）
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        els.farTarget.classList.remove('blur-heavy');
+                        els.farTarget.classList.add('blur-none');
+                    });
+                });
+            }
+        }
+
+        // アプリ起動
+        init();
+    </script>
+</body>
+</html>
