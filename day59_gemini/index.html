@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LENS TINT NAVIGATOR | Eyewear Lookbook</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Serif+JP:wght@300;400;600&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', '"Noto Serif JP"', 'serif'],
+            sans: ['"Inter"', 'sans-serif'],
+          },
+          colors: {
+            base: '#F6F6F4', // 上質なオフホワイト
+            ink: '#1A1A1A',   // 真っ黒ではない墨色
+            muted: '#8A8A8A',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* -----------------------------------
+       Base & Typography
+    ----------------------------------- */
+    body {
+      background-color: theme('colors.base');
+      color: theme('colors.ink');
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .text-balance {
+      text-wrap: balance;
+    }
+
+    /* スクロールバー非表示（美観優先） */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* -----------------------------------
+       UI Animations & Interactions
+    ----------------------------------- */
+    /* シナリオ選択のホバー/アクティブエフェクト */
+    .scenario-btn {
+      position: relative;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+    .scenario-btn::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 1px;
+      background-color: theme('colors.ink');
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+      opacity: 0;
+    }
+    .scenario-btn:hover, .scenario-btn.active {
+      transform: translateX(24px);
+    }
+    .scenario-btn:hover::before, .scenario-btn.active::before {
+      width: 16px;
+      opacity: 1;
+    }
+    .scenario-btn.active {
+      font-weight: 600;
+    }
+
+    /* タブ切り替えのアクティブエフェクト */
+    .tab-btn {
+      position: relative;
+      transition: color 0.3s ease;
+    }
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background-color: theme('colors.ink');
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-btn.active {
+      color: theme('colors.ink');
+    }
+    .tab-btn.active::after {
+      transform: scaleX(1);
+    }
+
+    /* -----------------------------------
+       Simulation Elements
+    ----------------------------------- */
+    /* レンズのガラス質感（微細なグラデーションとハイライト） */
+    .lens-glass {
+      background-image: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+      backdrop-filter: blur(1px); /* 肌の透け感をリアルに */
+    }
+
+    /* 表示/非表示のアニメーションユーティリティ */
+    .fade-enter {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .fade-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans flex flex-col">
+
+  <!-- ==========================================
+       Header & Hero Section
+  =========================================== -->
+  <header class="w-full pt-16 pb-12 px-6 md:px-12 lg:px-24 border-b border-ink/10">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div>
+        <p class="text-xs tracking-[0.2em] text-muted uppercase mb-3 font-sans">For Staff Use Only</p>
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-serif leading-tight">Lens Tint Navigator<span class="block text-xl md:text-2xl mt-2 text-ink/70 italic">The Art of Shade</span></h1>
+      </div>
+      <p class="text-sm text-ink/60 max-w-xs text-balance font-serif">
+        お客様の着用シーンに合わせ、最適なレンズ濃度をご提案するためのシミュレーター。
+      </p>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       Main Content Area
+  =========================================== -->
+  <main class="flex-grow w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-20 flex flex-col gap-20">
+    
+    <!-- STEP 1: シーン選択（プログレッシブ・ディクロージャー：初期表示） -->
+    <section id="step-scenario" class="w-full">
+      <h2 class="text-xs tracking-[0.2em] text-muted uppercase mb-12 flex items-center gap-4">
+        <span class="w-8 h-[1px] bg-muted"></span>
+        01. Select Scenario
+      </h2>
+      
+      <div class="flex flex-col gap-8 md:gap-10 pl-6 md:pl-12">
+        <!-- 選択肢 1 -->
+        <button class="scenario-btn group text-left w-full md:w-auto block focus:outline-none" data-scenario="high">
+          <span class="block text-2xl md:text-3xl font-serif text-ink group-hover:text-ink/80 transition-colors">Beach & Drive</span>
+          <span class="block text-sm text-muted mt-2 font-serif">真夏のビーチ・炎天下のドライブ</span>
+        </button>
+        <!-- 選択肢 2 -->
+        <button class="scenario-btn group text-left w-full md:w-auto block focus:outline-none" data-scenario="mid">
+          <span class="block text-2xl md:text-3xl font-serif text-ink group-hover:text-ink/80 transition-colors">City Walking & Cafe</span>
+          <span class="block text-sm text-muted mt-2 font-serif">街歩き・カフェ・ショッピング</span>
+        </button>
+        <!-- 選択肢 3 -->
+        <button class="scenario-btn group text-left w-full md:w-auto block focus:outline-none" data-scenario="low">
+          <span class="block text-2xl md:text-3xl font-serif text-ink group-hover:text-ink/80 transition-colors">Mask & Indoor</span>
+          <span class="block text-sm text-muted mt-2 font-serif">マスク着用時・屋内兼用・夜間運転不可ギリギリ</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 2: シミュレーション＆トーク（初期非表示） -->
+    <section id="result-area" class="w-full fade-enter hidden">
+      <h2 class="text-xs tracking-[0.2em] text-muted uppercase mb-12 flex items-center gap-4">
+        <span class="w-8 h-[1px] bg-muted"></span>
+        02. Simulation & Script
+      </h2>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+        
+        <!-- 左カラム：シミュレーター (Visual) -->
+        <div class="lg:col-span-7 flex flex-col gap-6">
+          
+          <!-- タブナビゲーション -->
+          <div class="flex gap-8 border-b border-ink/10 pb-4">
+            <button id="tab-exterior" class="tab-btn active text-xs tracking-widest uppercase font-sans text-muted hover:text-ink focus:outline-none">Exterior View</button>
+            <button id="tab-vision" class="tab-btn text-xs tracking-widest uppercase font-sans text-muted hover:text-ink focus:outline-none">First-Person View</button>
+          </div>
+
+          <!-- シミュレーション画像コンテナ -->
+          <div class="relative w-full aspect-[4/5] sm:aspect-square md:aspect-[4/3] bg-[#E8E8E8] overflow-hidden group">
+            
+            <!-- VIEW 1: 外観 (透け感) -->
+            <div id="view-exterior" class="absolute inset-0 transition-opacity duration-700 opacity-100 z-10">
+              <!-- 人物の顔画像（Unsplash） -->
+              <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Model Portrait" class="w-full h-full object-cover object-center">
+              
+              <!-- CSSで表現するサングラス（顔の目の位置に絶対配置） -->
+              <!-- aspect比と%指定により、画面幅が変わっても顔に対する位置と比率を維持 -->
+              <div class="absolute top-[38%] sm:top-[39%] md:top-[40%] left-1/2 -translate-x-1/2 flex items-center justify-between w-[58%] sm:w-[50%] md:w-[45%]">
+                <!-- 左レンズ -->
+                <div id="lens-left" class="w-[45%] aspect-[10/7] rounded-[40%] border border-white/20 lens-glass transition-colors duration-1000 ease-in-out" style="background-color: rgba(0,0,0,0);"></div>
+                <!-- ブリッジ -->
+                <div class="w-[10%] h-[1px] bg-white/30"></div>
+                <!-- 右レンズ -->
+                <div id="lens-right" class="w-[45%] aspect-[10/7] rounded-[40%] border border-white/20 lens-glass transition-colors duration-1000 ease-in-out" style="background-color: rgba(0,0,0,0);"></div>
+              </div>
+            </div>
+
+            <!-- VIEW 2: 視界 (暗さ) -->
+            <div id="view-vision" class="absolute inset-0 transition-opacity duration-700 opacity-0 z-0">
+              <!-- 風景画像（Unsplash） -->
+              <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Beach View" class="w-full h-full object-cover object-center">
+              
+              <!-- 視界を遮るフィルターレイヤー -->
+              <!-- mix-blend-multiplyでレンズ越しのリアルな暗さを表現 -->
+              <div id="vision-filter" class="absolute inset-0 transition-colors duration-1000 ease-in-out mix-blend-multiply" style="background-color: rgba(0,0,0,0);"></div>
+            </div>
+
+          </div>
+          <p class="text-[10px] text-muted tracking-wide text-right font-sans">※画像はシミュレーションイメージです</p>
+        </div>
+
+        <!-- 右カラム：接客トーク＆ロジック (Text) -->
+        <div class="lg:col-span-5 flex flex-col h-full justify-center">
+          <div class="border-l border-ink/10 pl-6 md:pl-10">
+            
+            <!-- 提案濃度表示 -->
+            <div class="mb-10">
+              <p class="text-xs tracking-[0.2em] text-muted uppercase mb-2 font-sans">Suggested Tint</p>
+              <div class="flex items-baseline gap-2">
+                <span id="tint-percent" class="text-5xl md:text-6xl font-serif">--</span>
+                <span class="text-xl font-serif">%</span>
+              </div>
+            </div>
+
+            <!-- 接客トーク（カンペ） -->
+            <div class="mb-10">
+              <p class="text-xs tracking-[0.2em] text-muted uppercase mb-4 font-sans">Staff Script</p>
+              <h3 id="talk-script" class="text-lg md:text-xl font-serif leading-loose text-ink">
+                <!-- JSで挿入 -->
+              </h3>
+            </div>
+
+            <!-- 提案ロジック -->
+            <div>
+              <p class="text-xs tracking-[0.2em] text-muted uppercase mb-4 font-sans">Logic & Caution</p>
+              <p id="logic-text" class="text-sm text-ink/70 leading-relaxed font-serif text-balance">
+                <!-- JSで挿入 -->
+              </p>
+            </div>
+            
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="w-full border-t border-ink/10 py-8 text-center mt-auto">
+    <p class="text-xs text-muted font-sans tracking-widest">&copy; 2026 EYEWEAR LOOKBOOK.</p>
+  </footer>
+
+  <!-- ==========================================
+       Application Logic
+  =========================================== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      // --- データ定義 ---
+      const scenarioData = {
+        high: {
+          percent: '85',
+          opacity: 0.85, // 外観のレンズ透過率
+          filterOpacity: 0.75, // 視界の暗さ（掛け合わせる黒の透過度）
+          talk: '「こちらの濃度85%は、真夏のビーチや長時間のドライブで圧倒的な快適さをもたらします。目は完全に隠れるため、クールでミステリアスな印象を与えつつ、眩しさを徹底的に防ぎます。運転メインでお考えなら、迷わずこちらですね。」',
+          logic: '圧倒的な遮光性で、強烈な日差しによる眼精疲労を防ぎます。対面からは瞳孔の動きすら読み取れない完全なブラックアウト状態を作ります。トンネル内や夜間の運転は大変危険なため、必ず外すようお伝えください。'
+        },
+        mid: {
+          percent: '50',
+          opacity: 0.50,
+          filterOpacity: 0.40,
+          talk: '「普段使いやショッピングに最適です。目元がほんのり透けて見えるので、カフェに入ってもそのまま違和感なくお過ごしいただけます。お洋服にも合わせやすく、一番こなれ感が出る大人の抜け感カラーですね。」',
+          logic: '適度な遮光性とファッション性を両立。目元がうっすら見え、屋内に入っても威圧感を与えない絶妙なバランスです。天候を問わず使いやすいため、初めてのカラーレンズのお客様に最も売りやすい濃度です。'
+        },
+        low: {
+          percent: '25',
+          opacity: 0.25,
+          filterOpacity: 0.15,
+          talk: '「マスクと合わせてお使いになるなら、この25%が限界の濃さです。これ以上濃いとどうしても威圧感が出てしまいます。伊達メガネのように自然にかけられ、室内でも外す手間がありません。トレンド感も抜群です。」',
+          logic: 'カラーレンズのトレンドを取り入れつつ、表情を隠さない濃度。夜間運転基準（透過率75%以上）を満たさない場合が多いため「夜間運転は控えて」と添えつつ、日中のマスク併用において最もクレームが出にくい安全な選択肢です。'
+        }
+      };
+
+      // --- 要素の取得 ---
+      const scenarioBtns = document.querySelectorAll('.scenario-btn');
+      const resultArea = document.getElementById('result-area');
+      const lensLeft = document.getElementById('lens-left');
+      const lensRight = document.getElementById('lens-right');
+      const visionFilter = document.getElementById('vision-filter');
+      const tintPercent = document.getElementById('tint-percent');
+      const talkScript = document.getElementById('talk-script');
+      const logicText = document.getElementById('logic-text');
+
+      const tabExterior = document.getElementById('tab-exterior');
+      const tabVision = document.getElementById('tab-vision');
+      const viewExterior = document.getElementById('view-exterior');
+      const viewVision = document.getElementById('view-vision');
+
+      // --- イベントリスナー: シナリオ選択 ---
+      scenarioBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const scenarioId = this.getAttribute('data-scenario');
+          const data = scenarioData[scenarioId];
+
+          // UIのアクティブ状態を更新
+          scenarioBtns.forEach(b => b.classList.remove('active', 'text-ink'));
+          scenarioBtns.forEach(b => b.classList.add('text-ink/50'));
+          this.classList.remove('text-ink/50');
+          this.classList.add('active', 'text-ink');
+
+          // データの反映
+          tintPercent.textContent = data.percent;
+          talkScript.innerHTML = data.talk;
+          logicText.innerHTML = data.logic;
+
+          // シミュレーター（CSS）の更新
+          // 外観レンズの濃度
+          const lensColor = `rgba(26, 26, 26, ${data.opacity})`;
+          lensLeft.style.backgroundColor = lensColor;
+          lensRight.style.backgroundColor = lensColor;
+
+          // 視界フィルターの濃度
+          const filterColor = `rgba(0, 0, 0, ${data.filterOpacity})`;
+          visionFilter.style.backgroundColor = filterColor;
+
+          // 結果エリアの表示（プログレッシブ・ディクロージャー）
+          if (resultArea.classList.contains('hidden')) {
+            resultArea.classList.remove('hidden');
+            // 少し遅らせてアニメーションクラスを付与
+            setTimeout(() => {
+              resultArea.classList.add('fade-enter-active');
+              // スムーズスクロール
+              resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+          }
+        });
+      });
+
+      // --- イベントリスナー: タブ切り替え ---
+      const switchTab = (activeTab, inactiveTab, activeView, inactiveView) => {
+        // タブのスタイル更新
+        activeTab.classList.add('active', 'text-ink');
+        activeTab.classList.remove('text-muted');
+        inactiveTab.classList.remove('active', 'text-ink');
+        inactiveTab.classList.add('text-muted');
+
+        // ビューのフェード切り替え (z-indexも操作してクリックイベント等を妨げないように)
+        activeView.style.opacity = '1';
+        activeView.style.zIndex = '10';
+        inactiveView.style.opacity = '0';
+        inactiveView.style.zIndex = '0';
+      };
+
+      tabExterior.addEventListener('click', () => {
+        switchTab(tabExterior, tabVision, viewExterior, viewVision);
+      });
+
+      tabVision.addEventListener('click', () => {
+        switchTab(tabVision, tabExterior, viewVision, viewExterior);
+      });
+
+    });
+  </script>
+</body>
+</html>
