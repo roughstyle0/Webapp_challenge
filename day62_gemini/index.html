@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>POLARIZED LENS SIMULATOR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #09090b; /* zinc-950 */
+      color: #d4d4d8;
+      overflow: hidden; /* 全体のスクロールを禁止し、内部で制御 */
+    }
+
+    .font-display {
+      font-family: 'Teko', sans-serif;
+    }
+
+    /* 背景グリッドパターン */
+    .bg-grid {
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* テンプレ回避: 角丸を捨て、斜めカットのプロギア風デザインを適用 */
+    .btn-cyber {
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+      transition: all 0.2s ease;
+    }
+    
+    .btn-cyber:active {
+      transform: scale(0.98);
+    }
+
+    /* ギラギラ（乱反射）の擬似表現レイヤー */
+    .glare-effect {
+      background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.3) 50%, transparent 80%);
+      mix-blend-mode: overlay;
+    }
+
+    /* 偏光レンズON時のワイプアニメーション制御 */
+    .wipe-layer {
+      clip-path: inset(0 0 0 0); /* top right bottom left */
+      transition: clip-path 1.5s cubic-bezier(0.85, 0, 0.15, 1);
+    }
+    .wipe-layer.is-polarized {
+      clip-path: inset(0 0 0 100%); /* 左から100%削る = 右へワイプして消える */
+    }
+
+    /* オレンジの走査線（レーザー） */
+    .scan-line {
+      position: absolute;
+      top: 0; bottom: 0; width: 2px;
+      background-color: #f97316;
+      box-shadow: 0 0 15px #f97316, 0 0 30px #f97316;
+      left: 0%;
+      transition: left 1.5s cubic-bezier(0.85, 0, 0.15, 1), opacity 0.3s ease;
+      opacity: 0;
+      z-index: 20;
+    }
+    .scan-line.is-active {
+      opacity: 1;
+    }
+    .scan-line.is-polarized {
+      left: 100%;
+    }
+
+    /* 背景画像（偏光後）をより鮮明に見せるフィルター */
+    #bg-img {
+      filter: brightness(1.1) contrast(1.2) saturate(1.3);
+    }
+
+    /* フェードインアニメーション */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; }
+    ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+
+  </style>
+</head>
+<body class="antialiased selection:bg-orange-500 selection:text-white">
+
+  <div id="app" class="relative w-full h-[100dvh] flex flex-col">
+    
+    <!-- =========================================
+         SCREEN 1: 初期シーン選択 (プログレッシブ・ディクロージャー)
+         ========================================= -->
+    <section id="scene-selector" class="absolute inset-0 z-50 bg-zinc-950 bg-grid flex flex-col items-center justify-center p-6 transition-opacity duration-500">
+      <div class="text-center mb-12 animate-fade-in">
+        <h1 class="font-display text-5xl md:text-7xl text-zinc-100 tracking-wider mb-2">POLARIZED<span class="text-orange-500">_</span>LENS</h1>
+        <p class="text-zinc-500 tracking-widest text-sm md:text-base border-t border-zinc-800 pt-4 mt-2">TACTICAL VISION SIMULATOR</p>
+      </div>
+      
+      <div class="w-full max-w-3xl animate-fade-in" style="animation-delay: 0.2s;">
+        <p class="text-teal-500 text-sm mb-6 font-bold tracking-widest flex items-center gap-2">
+          <span class="w-2 h-2 bg-teal-500 inline-block animate-pulse"></span>
+          SELECT DEPLOYMENT ENVIRONMENT
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Drive -->
+          <button class="scene-btn btn-cyber group relative border border-zinc-700 bg-zinc-900 p-6 text-left hover:border-orange-500 hover:bg-zinc-800 focus:outline-none" data-scene="drive">
+            <div class="absolute top-0 left-0 w-1 h-full bg-orange-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-top"></div>
+            <div class="font-display text-3xl text-zinc-300 group-hover:text-white mb-2 tracking-wide">DRIVE</div>
+            <p class="text-xs text-zinc-500 font-bold">ダッシュボードの映り込み</p>
+          </button>
+          <!-- Fishing -->
+          <button class="scene-btn btn-cyber group relative border border-zinc-700 bg-zinc-900 p-6 text-left hover:border-orange-500 hover:bg-zinc-800 focus:outline-none" data-scene="fishing">
+            <div class="absolute top-0 left-0 w-1 h-full bg-orange-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-top"></div>
+            <div class="font-display text-3xl text-zinc-300 group-hover:text-white mb-2 tracking-wide">FISHING</div>
+            <p class="text-xs text-zinc-500 font-bold">水面のギラギラ・反射</p>
+          </button>
+          <!-- Golf -->
+          <button class="scene-btn btn-cyber group relative border border-zinc-700 bg-zinc-900 p-6 text-left hover:border-orange-500 hover:bg-zinc-800 focus:outline-none" data-scene="golf">
+            <div class="absolute top-0 left-0 w-1 h-full bg-orange-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-top"></div>
+            <div class="font-display text-3xl text-zinc-300 group-hover:text-white mb-2 tracking-wide">GOLF</div>
+            <p class="text-xs text-zinc-500 font-bold">芝生の白飛び・起伏</p>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================
+         SCREEN 2: シミュレーター画面
+         ========================================= -->
+    <section id="simulator" class="hidden flex-1 flex flex-col opacity-0 transition-opacity duration-500">
+      
+      <!-- Header -->
+      <header class="h-14 shrink-0 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between px-4">
+        <div class="flex items-center gap-4">
+          <div class="font-display text-xl tracking-widest text-orange-500">SYS.OP</div>
+          <div id="scene-title" class="hidden md:block text-xs font-bold text-zinc-500 tracking-widest border-l border-zinc-800 pl-4">SCENE: ---</div>
+        </div>
+        <button id="btn-back" class="btn-cyber text-xs border border-zinc-700 bg-zinc-900 px-4 py-1.5 hover:border-teal-500 hover:text-teal-400 text-zinc-400 font-bold tracking-wide">ABORT / 戻る</button>
+      </header>
+
+      <!-- Main Content (完璧なモバイルファースト設計) -->
+      <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- Viewport (左側/上部: 映像エリア) -->
+        <div class="relative w-full h-[40vh] md:h-full md:flex-1 shrink-0 bg-black border-b md:border-b-0 md:border-r border-zinc-800">
+          
+          <!-- 背面レイヤー: 偏光レンズON後のクリアな視界 -->
+          <img id="bg-img" class="absolute inset-0 w-full h-full object-cover" src="" alt="Polarized View">
+          <div class="absolute inset-0 bg-black/20"></div> <!-- 偏光レンズ特有の適度な暗さ -->
+
+          <!-- 前面レイヤー: 裸眼 / 通常サングラス (ワイプで消える) -->
+          <div id="wipe-layer" class="wipe-layer absolute inset-0 w-full h-full">
+            <img id="fg-img" class="absolute inset-0 w-full h-full object-cover" src="" alt="Normal View">
+            
+            <!-- 通常サングラス時の暗転 (JSでOpacity制御) -->
+            <div id="normal-tint" class="absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-700"></div>
+            
+            <!-- ギラギラ（乱反射）エフェクト -->
+            <div class="absolute inset-0 glare-effect"></div>
+            
+            <!-- レーザー走査線 -->
+            <div id="scan-line" class="scan-line"></div>
+          </div>
+          
+          <!-- Viewport UI overlay -->
+          <div class="absolute top-4 left-4 flex flex-col gap-1 pointer-events-none">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 bg-red-500 animate-pulse"></span>
+              <span class="font-display text-sm tracking-widest text-white/80 drop-shadow-md">LIVE REC</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Panel (右側/下部: 操作＆テキストエリア) -->
+        <div class="w-full md:w-[400px] flex flex-col bg-zinc-950 shrink-0 h-[60vh] md:h-full">
+          
+          <!-- Mode Selector -->
+          <div class="p-5 border-b border-zinc-800 shrink-0 bg-zinc-900/50">
+            <h2 class="font-display text-lg tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+              LENS FILTER MODE
+            </h2>
+            <div class="flex flex-col gap-2.5">
+              <button id="btn-naked" class="mode-btn btn-cyber border border-zinc-700 bg-zinc-900 p-3 text-left font-bold text-sm tracking-wide text-zinc-400">
+                01. NAKED EYE / 裸眼
+              </button>
+              <button id="btn-normal" class="mode-btn btn-cyber border border-zinc-700 bg-zinc-900 p-3 text-left font-bold text-sm tracking-wide text-zinc-400">
+                02. NORMAL SUNGLASS / 通常レンズ
+              </button>
+              <button id="btn-polarized" class="mode-btn btn-cyber border border-orange-600 bg-orange-500/10 p-3 text-left font-bold text-sm tracking-wide text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.15)] relative overflow-hidden group">
+                <div class="absolute inset-0 bg-orange-500/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"></div>
+                <span class="relative z-10">03. POLARIZED LENS / 偏光レンズ</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- System Output Console (段階的テキスト表示) -->
+          <div class="flex-1 overflow-y-auto p-5 bg-grid relative">
+            <h2 class="font-display text-lg tracking-widest text-zinc-500 mb-4 sticky top-0 bg-zinc-950/90 py-1 z-10">SYSTEM OUTPUT</h2>
+            <div id="output-console" class="space-y-6 pb-8">
+              <!-- JS動的挿入エリア -->
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </section>
+
+  </div>
+
+  <script>
+    // --- データ定義 (ロジックとテキストの手抜き禁止) ---
+    const scenes = {
+      drive: {
+        title: 'DRIVE / フロントガラスの映り込み',
+        // 同じ画像を使い、CSSで違い（魔法）を演出する
+        image: 'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?q=80&w=1600&auto=format&fit=crop',
+        descNormal: '視界全体の光量は低下しましたが、フロントガラスへのダッシュボードの白濁した映り込み（乱反射）は消えていません。これでは白線や対向車が不明瞭で、目に無意識の負担が蓄積します。',
+        descPolarized: '【映り込み除去完了】特殊なブラインド機構が、フロントガラスの乱反射のみを遮断。アスファルトの照り返しも消え、白線と前方の景色が極めてクリアに浮かび上がります。',
+        talkScript: '「お客様、通常のサングラスは『ただ暗くするだけ』なので、あの鬱陶しいフロントガラスの映り込みは消えません。ですがこの偏光レンズを通すと…いかがですか？ まるでガラスが消えたように前が見えますよね。長時間の運転でも目の奥の疲れ方が全く違います。」'
+      },
+      fishing: {
+        title: 'FISHING / 水面のギラつき',
+        image: 'https://images.unsplash.com/photo-1558236173-63300ce4c3c0?q=80&w=1600&auto=format&fit=crop',
+        descNormal: '水面全体の眩しさは軽減されました。しかし、水面の波立つギラつき（乱反射）が残るため、光が壁となり、肝心の水中の地形や魚影は全く見えない状態です。',
+        descPolarized: '【表面反射カット完了】水面を覆っていた白いギラギラが一瞬で消え去りました。水面透過率が劇的に向上し、水中の岩や地形が肉眼のように透き通って見えます。',
+        talkScript: '「釣り場での一番の敵は、この水面のギラつきですよね。普通のサングラスでいくら暗くしても、水中の見えなさは変わりません。この偏光レンズは水面の反射光だけをブラインドのように遮断するので、まるで水が透明になったかのように魚のチェイスが丸見えになります。これが『釣果が変わるレンズ』と呼ばれる理由です。」'
+      },
+      golf: {
+        title: 'GOLF / 芝生の照り返し',
+        image: 'https://images.unsplash.com/photo-1535136149454-e0eb36cb2042?q=80&w=1600&auto=format&fit=crop',
+        descNormal: '強い直射日光は和らぎました。しかし、芝生表面の葉の一枚一枚からの乱反射はカットされないため、全体が白飛びしたままでアンジュレーション（起伏）が読めません。',
+        descPolarized: '【芝生乱反射カット完了】芝の葉が反射していた白い光が消え、芝本来の深い緑が鮮やかに発色。起伏の陰影がクッキリと浮かび上がり、グリーンのラインが明確に読み取れます。',
+        talkScript: '「晴れた日のグリーンって、芝が白く光って傾斜が読みにくいですよね？ この偏光レンズは、その邪魔な反射光だけを取り除いてくれます。芝生本来の色と陰影が浮かび上がるので、ラインが圧倒的に読みやすくなります。まさに『スコアを買う』魔法のレンズです。」'
+      }
+    };
+
+    // --- UI Element References ---
+    const UI = {
+      selectorSec: document.getElementById('scene-selector'),
+      simulatorSec: document.getElementById('simulator'),
+      bgImg: document.getElementById('bg-img'),
+      fgImg: document.getElementById('fg-img'),
+      wipeLayer: document.getElementById('wipe-layer'),
+      scanLine: document.getElementById('scan-line'),
+      normalTint: document.getElementById('normal-tint'),
+      console: document.getElementById('output-console'),
+      sceneTitle: document.getElementById('scene-title'),
+      btnBack: document.getElementById('btn-back'),
+      btnsMode: document.querySelectorAll('.mode-btn')
+    };
+
+    let currentSceneId = null;
+
+    // --- Event Listeners ---
+    document.querySelectorAll('.scene-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const sceneId = e.currentTarget.dataset.scene;
+        startSimulation(sceneId);
+      });
+    });
+
+    UI.btnBack.addEventListener('click', () => {
+      UI.simulatorSec.classList.add('opacity-0');
+      setTimeout(() => {
+        UI.simulatorSec.classList.add('hidden');
+        UI.selectorSec.classList.remove('hidden');
+        // 少し遅延させてフェードイン
+        requestAnimationFrame(() => {
+          UI.selectorSec.classList.remove('opacity-0', 'pointer-events-none');
+        });
+      }, 500);
+    });
+
+    UI.btnsMode.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const mode = e.currentTarget.id.replace('btn-', '');
+        setMode(mode);
+      });
+    });
+
+    // --- Functions ---
+    function startSimulation(sceneId) {
+      currentSceneId = sceneId;
+      const data = scenes[sceneId];
+      
+      // 画像とタイトルのセット
+      UI.bgImg.src = data.image;
+      UI.fgImg.src = data.image; 
+      UI.sceneTitle.textContent = `SCENE: ${data.title}`;
+      
+      // 画面切り替えアニメーション
+      UI.selectorSec.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        UI.selectorSec.classList.add('hidden');
+        UI.simulatorSec.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          UI.simulatorSec.classList.remove('opacity-0');
+          setMode('naked'); // 初期状態は裸眼
+        });
+      }, 500);
+    }
+
+    function setMode(mode) {
+      const data = scenes[currentSceneId];
+      
+      // ボタンのスタイリング更新
+      UI.btnsMode.forEach(b => {
+        b.classList.remove('border-orange-500', 'text-orange-400', 'bg-orange-500/10', 'border-teal-500', 'text-teal-400', 'bg-teal-500/10');
+        b.classList.add('border-zinc-700', 'text-zinc-400', 'bg-zinc-900');
+      });
+      
+      const activeBtn = document.getElementById(`btn-${mode}`);
+      activeBtn.classList.remove('border-zinc-700', 'text-zinc-400', 'bg-zinc-900');
+      
+      // コンソールリセット
+      UI.console.innerHTML = '';
+
+      if (mode === 'naked') {
+        activeBtn.classList.add('border-zinc-400', 'text-white', 'bg-zinc-800');
+        
+        UI.wipeLayer.classList.remove('is-polarized');
+        UI.scanLine.classList.remove('is-polarized', 'is-active');
+        UI.normalTint.classList.remove('opacity-100'); // 暗転解除
+        
+        appendConsole('【SYSTEM READY】', 'シーンを展開しました。レンズモードを選択し、視界の違いを比較してください。');
+      } 
+      else if (mode === 'normal') {
+        activeBtn.classList.add('border-zinc-400', 'text-white', 'bg-zinc-800');
+        
+        UI.wipeLayer.classList.remove('is-polarized');
+        UI.scanLine.classList.remove('is-polarized', 'is-active');
+        UI.normalTint.classList.add('opacity-100'); // 単なる暗転ON
+        
+        appendConsole('【ANALYSIS: NORMAL LENS】', data.descNormal, 'text-zinc-300', 'border-zinc-500');
+      }
+      else if (mode === 'polarized') {
+        activeBtn.classList.add('border-orange-500', 'text-orange-400', 'bg-orange-500/10');
+        
+        // 既に偏光状態ならアニメーション再発火を防ぐ
+        if(UI.wipeLayer.classList.contains('is-polarized')) return;
+
+        // 偏光レンズも暗さはあるため暗転ベースは保持
+        UI.normalTint.classList.add('opacity-100'); 
+        
+        // --- 魔法のワイプアニメーション発動 ---
+        UI.scanLine.classList.add('is-active');
+        // ブラウザの描画サイクルを待ってからクラスを付与
+        requestAnimationFrame(() => {
+          UI.wipeLayer.classList.add('is-polarized');
+          UI.scanLine.classList.add('is-polarized');
+        });
+
+        // テキストの段階的表示 (プログレッシブ・ディクロージャー)
+        appendConsole('【FILTER ACTIVATED】', data.descPolarized, 'text-orange-400', 'border-orange-500');
+        
+        // ワイプ完了直前（1.2秒後）に「接客トークスクリプト」を絶妙なタイミングで表示
+        setTimeout(() => {
+          appendConsole('【RECOMMEND TALK】', data.talkScript, 'text-teal-400', 'border-teal-500', 'bg-teal-950/30 p-3 rounded-none');
+        }, 1200);
+      }
+    }
+
+    function appendConsole(title, text, titleColorClass = 'text-zinc-500', borderColorClass = 'border-zinc-700', extraClasses = '') {
+      const block = document.createElement('div');
+      block.className = `animate-fade-in border-l-2 ${borderColorClass} pl-4 ${extraClasses}`;
+      block.innerHTML = `
+        <div class="font-display text-xl tracking-wider ${titleColorClass} mb-1.5">${title}</div>
+        <div class="text-sm text-zinc-300 leading-relaxed font-bold tracking-wide">${text}</div>
+      `;
+      UI.console.appendChild(block);
+      
+      // スクロールを下へ
+      setTimeout(() => {
+        UI.console.parentElement.scrollTo({
+          top: UI.console.parentElement.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 50);
+    }
+  </script>
+</body>
+</html>
