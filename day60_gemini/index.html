@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>裏面UV防御・美肌シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Serif+JP:wght@300;400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif JP"', '"Cormorant Garamond"', 'serif'],
+                    },
+                    colors: {
+                        rosegold: {
+                            light: '#e8c7c8',
+                            DEFAULT: '#c89f9c',
+                            dark: '#a87775',
+                        },
+                        lavender: {
+                            light: '#f4f0f8',
+                            DEFAULT: '#e0d8ea',
+                        },
+                        charcoal: '#3b3a39',
+                        pearl: '#fcfcfc',
+                    },
+                    backgroundImage: {
+                        'premium-gradient': 'radial-gradient(circle at top right, #fff5f7 0%, #fcfcfc 50%, #f4f0f8 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* デパコス特設サイト風のエレガントな装飾（テンプレの角丸影付きカードを排除） */
+        body {
+            background-color: theme('colors.pearl');
+            color: theme('colors.charcoal');
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .elegant-border {
+            position: relative;
+            border: 1px solid theme('colors.rosegold.light');
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+        }
+        
+        .elegant-border::before {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 1px solid rgba(200, 159, 156, 0.2);
+            pointer-events: none;
+        }
+
+        .btn-elegant {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+        
+        .btn-elegant::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 300%; height: 300%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+        }
+        
+        .btn-elegant:hover::after {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        /* --- シミュレーションアニメーション --- */
+        .sim-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+        }
+
+        /* 後方からの紫外線（共通） */
+        .uv-back-ray {
+            position: absolute;
+            top: 60%; right: -10%;
+            width: 60%; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.8), transparent);
+            transform: rotate(-30deg);
+            transform-origin: left center;
+            animation: shoot-ray 3s infinite linear;
+            opacity: 0;
+        }
+
+        @keyframes shoot-ray {
+            0% { transform: rotate(-30deg) translateX(50px); opacity: 0; }
+            20% { opacity: 1; }
+            40% { transform: rotate(-30deg) translateX(-120px); opacity: 1; }
+            41% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* 普通のレンズ：裏面反射して目元へ（恐怖の赤いレーザー） */
+        .uv-reflect-ray {
+            position: absolute;
+            top: 42%; left: 45%;
+            width: 40%; height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 50, 0.9), transparent);
+            transform: rotate(45deg);
+            transform-origin: left center;
+            opacity: 0;
+            animation: reflect-ray 3s infinite linear;
+            filter: drop-shadow(0 0 4px red);
+        }
+
+        @keyframes reflect-ray {
+            0%, 40% { opacity: 0; transform: rotate(45deg) translateX(0); }
+            41% { opacity: 1; }
+            55% { transform: rotate(45deg) translateX(-60px); opacity: 1; }
+            56%, 100% { opacity: 0; }
+        }
+
+        /* 普通のレンズ：目元のダメージ表現 */
+        .damage-spot {
+            position: absolute;
+            top: 55%; left: 25%;
+            width: 20px; height: 20px;
+            background: radial-gradient(circle, rgba(255,0,0,0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0;
+            animation: damage-pulse 3s infinite;
+        }
+
+        @keyframes damage-pulse {
+            0%, 54% { opacity: 0; transform: scale(0.5); }
+            55% { opacity: 1; transform: scale(1.5); }
+            70% { opacity: 0; transform: scale(2); }
+            100% { opacity: 0; }
+        }
+
+        /* 裏面UVレンズ：吸収エフェクト（美しい波紋） */
+        .uv-absorb-ripple {
+            position: absolute;
+            top: 40%; left: 42%;
+            width: 40px; height: 40px;
+            border: 2px solid theme('colors.lavender.DEFAULT');
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            animation: absorb-ripple 3s infinite ease-out;
+            box-shadow: 0 0 15px theme('colors.lavender.light');
+        }
+
+        @keyframes absorb-ripple {
+            0%, 39% { opacity: 0; transform: translate(-50%, -50%) scale(0.1); }
+            40% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            60% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+            100% { opacity: 0; }
+        }
+
+        /* テキストのフェードインアニメーション */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in-up.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* カスタムスクロールバー（スマホでも美しく） */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: theme('colors.rosegold.light'); }
+    </style>
+</head>
+<body class="bg-premium-gradient min-h-screen flex flex-col font-serif">
+
+    <!-- ヘッダー（デパコス風ロゴ・ナビ） -->
+    <header class="w-full py-6 text-center z-10 border-b border-white/40">
+        <h1 class="text-xs tracking-[0.3em] text-rosegold uppercase font-light">UV Protection & Brightening Care</h1>
+        <div class="mt-2 text-xl md:text-2xl tracking-widest text-charcoal">Lumière Shield</div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center w-full max-w-5xl mx-auto px-4 md:px-8 py-8 relative">
+        
+        <!-- ==========================================
+             STEP 1: 状況選択画面（初期画面）
+             ========================================== -->
+        <section id="step1" class="w-full max-w-2xl flex flex-col items-center justify-center transition-all duration-700 opacity-100 transform translate-y-0">
+            <div class="text-center mb-10 mt-8 md:mt-16">
+                <h2 class="text-2xl md:text-3xl leading-relaxed mb-4 text-charcoal">
+                    そのUV対策、<br class="md:hidden"><span class="text-rosegold">目元</span>は本当に守れていますか？
+                </h2>
+                <p class="text-sm md:text-base text-gray-500 tracking-wider">お客様の普段の紫外線対策をお選びください。</p>
+            </div>
+
+            <div class="w-full flex flex-col gap-5">
+                <button onclick="selectOption('cream')" class="btn-elegant elegant-border group w-full py-6 px-8 text-left transition-colors hover:bg-white/80 focus:outline-none">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg md:text-xl tracking-wide text-charcoal group-hover:text-rosegold-dark transition-colors">日焼け止めクリームのみ</span>
+                        <span class="text-rosegold text-xl font-light">→</span>
+                    </div>
+                </button>
+                <button onclick="selectOption('parasol')" class="btn-elegant elegant-border group w-full py-6 px-8 text-left transition-colors hover:bg-white/80 focus:outline-none">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg md:text-xl tracking-wide text-charcoal group-hover:text-rosegold-dark transition-colors">日傘 ＋ 普通のUVカットメガネ</span>
+                        <span class="text-rosegold text-xl font-light">→</span>
+                    </div>
+                </button>
+                <button onclick="selectOption('hat')" class="btn-elegant elegant-border group w-full py-6 px-8 text-left transition-colors hover:bg-white/80 focus:outline-none">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg md:text-xl tracking-wide text-charcoal group-hover:text-rosegold-dark transition-colors">帽子 ＋ 普通のUVカットメガネ</span>
+                        <span class="text-rosegold text-xl font-light">→</span>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             STEP 2〜4: 結果・シミュレーション・トーク画面
+             ========================================== -->
+        <section id="step2-container" class="w-full hidden opacity-0 transition-all duration-1000 flex-col items-center">
+            
+            <!-- お客様への共感テキスト（動的挿入） -->
+            <div id="dynamic-intro" class="text-center max-w-2xl mb-12 fade-in-up">
+                <!-- JSでコンテンツを注入 -->
+            </div>
+
+            <!-- シミュレーション比較エリア（モバイルは縦、PCは横） -->
+            <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-16 fade-in-up" id="simulation-area">
+                
+                <!-- 左側：普通のレンズ（恐怖の裏面反射） -->
+                <div class="flex flex-col items-center">
+                    <h3 class="text-sm tracking-widest text-gray-500 mb-4 uppercase">Conventional Lens</h3>
+                    <p class="text-lg text-charcoal mb-4">普通のUVカットレンズ</p>
+                    <div class="elegant-border w-full max-w-[300px] p-4 bg-white/40">
+                        <div class="sim-container bg-pearl">
+                            <!-- 横顔SVG -->
+                            <svg class="absolute inset-0 w-full h-full text-gray-200" viewBox="0 0 100 100" fill="currentColor">
+                                <path d="M70,20 C60,20 55,30 55,40 C55,45 58,48 58,52 C58,55 50,60 40,65 C30,70 20,80 20,100 L90,100 L90,20 Z" opacity="0.3"/>
+                                <!-- 目の位置 -->
+                                <circle cx="45" cy="45" r="3" fill="#a0a0a0"/>
+                                <path d="M40,45 Q45,42 50,45" stroke="#a0a0a0" stroke-width="1" fill="none"/>
+                            </svg>
+                            <!-- レンズSVG -->
+                            <svg class="absolute top-[35%] left-[45%] w-[15%] h-[30%] text-blue-200" viewBox="0 0 20 40" fill="currentColor">
+                                <path d="M5,0 C15,10 15,30 5,40 L0,40 C10,30 10,10 0,0 Z" fill="rgba(150, 200, 255, 0.4)" stroke="rgba(100, 150, 255, 0.6)" stroke-width="0.5"/>
+                            </svg>
+                            <!-- アニメーション要素 -->
+                            <div class="uv-back-ray"></div>
+                            <div class="uv-reflect-ray"></div>
+                            <div class="damage-spot"></div>
+                            <p class="absolute bottom-2 left-0 w-full text-center text-[10px] text-red-500 font-bold tracking-wider">裏面からの反射が直撃</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：裏面UVカットレンズ（美肌防御） -->
+                <div class="flex flex-col items-center">
+                    <h3 class="text-sm tracking-widest text-rosegold mb-4 uppercase">Lumière Shield</h3>
+                    <p class="text-lg text-charcoal mb-4">裏面UVカット付きレンズ</p>
+                    <div class="elegant-border w-full max-w-[300px] p-4 bg-white/80 shadow-[0_0_30px_rgba(200,159,156,0.15)] relative">
+                        <!-- 装飾のキラキラ -->
+                        <div class="absolute -top-3 -right-3 text-rosegold text-xl">✨</div>
+                        <div class="sim-container bg-pearl">
+                            <!-- 横顔SVG -->
+                            <svg class="absolute inset-0 w-full h-full text-gray-200" viewBox="0 0 100 100" fill="currentColor">
+                                <path d="M70,20 C60,20 55,30 55,40 C55,45 58,48 58,52 C58,55 50,60 40,65 C30,70 20,80 20,100 L90,100 L90,20 Z" opacity="0.3"/>
+                                <circle cx="45" cy="45" r="3" fill="#a0a0a0"/>
+                                <path d="M40,45 Q45,42 50,45" stroke="#a0a0a0" stroke-width="1" fill="none"/>
+                            </svg>
+                            <!-- レンズSVG (クリアラベンダー) -->
+                            <svg class="absolute top-[35%] left-[45%] w-[15%] h-[30%] text-lavender" viewBox="0 0 20 40" fill="currentColor">
+                                <path d="M5,0 C15,10 15,30 5,40 L0,40 C10,30 10,10 0,0 Z" fill="rgba(224, 216, 234, 0.6)" stroke="rgba(200, 159, 156, 0.8)" stroke-width="1"/>
+                            </svg>
+                            <!-- アニメーション要素 -->
+                            <div class="uv-back-ray"></div>
+                            <div class="uv-absorb-ripple"></div>
+                            <div class="uv-absorb-ripple" style="animation-delay: 0.2s; width: 60px; height: 60px;"></div>
+                            <p class="absolute bottom-2 left-0 w-full text-center text-[10px] text-rosegold-dark tracking-wider">反射を吸収し、目元を死守</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 接客トーク展開エリア（プログレッシブ・ディクロージャー） -->
+            <div class="w-full max-w-2xl flex flex-col items-center pb-20">
+                <!-- トーク1 -->
+                <div id="talk-1" class="hidden fade-in-up w-full text-center mb-8">
+                    <p class="text-base md:text-lg text-charcoal leading-loose border-t border-b border-rosegold-light/50 py-6">
+                        実はお肌のシミ、<span class="text-rosegold-dark font-semibold">「目から入る紫外線」</span>が原因の1つなんです。<br>
+                        目がダメージを受けると、脳が「肌を黒く守れ！」と指令を出してしまいます。
+                    </p>
+                    <button onclick="showTalk(2)" class="mt-6 text-sm text-gray-400 hover:text-rosegold transition-colors tracking-widest uppercase flex items-center justify-center w-full focus:outline-none">
+                        Next <span class="ml-2">↓</span>
+                    </button>
+                </div>
+
+                <!-- トーク2 -->
+                <div id="talk-2" class="hidden fade-in-up w-full text-center mb-8">
+                    <p class="text-base md:text-lg text-charcoal leading-loose">
+                        さらに怖いのが、上の図のような<span class="text-red-500 font-semibold">「レンズ裏面での反射」</span>。<br>
+                        前からの紫外線は防げても、背後からの紫外線がレンズの裏に反射して、<br class="hidden md:inline">
+                        <span class="underline decoration-rosegold-light decoration-2 underline-offset-4">一番シミができやすい「目尻」に集中攻撃</span>しているんです。
+                    </p>
+                    <button onclick="showTalk(3)" class="mt-6 text-sm text-gray-400 hover:text-rosegold transition-colors tracking-widest uppercase flex items-center justify-center w-full focus:outline-none">
+                        Next <span class="ml-2">↓</span>
+                    </button>
+                </div>
+
+                <!-- トーク3（クロージング） -->
+                <div id="talk-3" class="hidden fade-in-up w-full text-center">
+                    <div class="elegant-border bg-white/90 p-8 md:p-10 relative mt-4">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-pearl px-4 text-rosegold text-sm tracking-widest">
+                            THE ULTIMATE CARE
+                        </div>
+                        <h4 class="text-xl md:text-2xl text-rosegold-dark mb-4 mt-2">これは、塗らない日焼け止め。</h4>
+                        <p class="text-base md:text-lg text-charcoal leading-relaxed mb-6">
+                            裏面UVカットレンズなら、この恐ろしい反射を100%近く吸収・無効化します。<br>
+                            高価なアイクリームや美容液に投資する前に、<br class="hidden md:inline">
+                            まずは<span class="font-semibold text-rosegold-dark">「物理的に原因を断つ」</span>美容投資を始めてみませんか？
+                        </p>
+                        <button onclick="resetApp()" class="px-8 py-3 bg-rosegold text-white text-sm tracking-widest hover:bg-rosegold-dark transition-colors focus:outline-none">
+                            最初からやり直す
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // ユーザーの選択に応じたテキストデータ
+        const scenarioData = {
+            'cream': {
+                title: "日焼け止めクリームでのケア、素晴らしいですね。",
+                desc: "ですが、お肌に塗るだけでは防ぎきれない「落とし穴」があるのをご存知ですか？"
+            },
+            'parasol': {
+                title: "日傘とメガネ、完璧な対策に見えますね。",
+                desc: "しかし、アスファルトからの照り返しや、背後からの紫外線は日傘をすり抜け、メガネの「ある部分」を狙っています。"
+            },
+            'hat': {
+                title: "帽子とメガネで上からの光は防げていますね。",
+                desc: "ですが、横や後ろから入り込んだ紫外線が、メガネの「ある部分」で悪さをしているかもしれません。"
+            }
+        };
+
+        const step1 = document.getElementById('step1');
+        const step2Container = document.getElementById('step2-container');
+        const dynamicIntro = document.getElementById('dynamic-intro');
+        
+        // 選択された時の処理
+        function selectOption(type) {
+            const data = scenarioData[type];
+            
+            // 動的コンテンツの生成
+            dynamicIntro.innerHTML = `
+                <h3 class="text-xl md:text-2xl text-rosegold-dark mb-4">${data.title}</h3>
+                <p class="text-base md:text-lg text-charcoal">${data.desc}</p>
+            `;
+
+            // 画面遷移（クロスフェード）
+            step1.classList.remove('opacity-100', 'translate-y-0');
+            step1.classList.add('opacity-0', '-translate-y-10');
+            
+            setTimeout(() => {
+                step1.classList.add('hidden');
+                step2Container.classList.remove('hidden');
+                
+                // 少し遅れてSTEP2をフェードイン
+                setTimeout(() => {
+                    step2Container.classList.remove('opacity-0');
+                    step2Container.classList.add('opacity-100');
+                    
+                    // 要素を順にアクティブにする
+                    document.getElementById('dynamic-intro').classList.add('active');
+                    setTimeout(() => {
+                        document.getElementById('simulation-area').classList.add('active');
+                        // 最初のトークを表示
+                        setTimeout(() => showTalk(1), 800);
+                    }, 600);
+                }, 50);
+            }, 700);
+        }
+
+        // 接客トークの段階的表示
+        function showTalk(stepNumber) {
+            const currentTalk = document.getElementById(`talk-${stepNumber}`);
+            if(currentTalk) {
+                currentTalk.classList.remove('hidden');
+                // DOMの更新を待ってからアニメーションクラスを付与
+                setTimeout(() => {
+                    currentTalk.classList.add('active');
+                    // スムーズスクロールでフォーカスを当てる（モバイル配慮）
+                    currentTalk.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // 前のステップの「Next」ボタンを隠す
+                    if(stepNumber > 1) {
+                        const prevBtn = document.querySelector(`#talk-${stepNumber-1} button`);
+                        if(prevBtn) prevBtn.style.opacity = '0';
+                    }
+                }, 50);
+            }
+        }
+
+        // リセット処理
+        function resetApp() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            step2Container.classList.remove('opacity-100');
+            step2Container.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                step2Container.classList.add('hidden');
+                
+                // 状態の初期化
+                [1, 2, 3].forEach(num => {
+                    const talk = document.getElementById(`talk-${num}`);
+                    talk.classList.add('hidden');
+                    talk.classList.remove('active');
+                    const btn = talk.querySelector('button');
+                    if(btn) btn.style.opacity = '1';
+                });
+                document.getElementById('dynamic-intro').classList.remove('active');
+                document.getElementById('simulation-area').classList.remove('active');
+
+                step1.classList.remove('hidden');
+                setTimeout(() => {
+                    step1.classList.remove('opacity-0', '-translate-y-10');
+                    step1.classList.add('opacity-100', 'translate-y-0');
+                }, 50);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
