@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>初夏のサングラス失敗回避！カラー濃度（透過率）外観＆視界シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sand: {
+              50: '#faf8f4',
+              100: '#f3efe7',
+              200: '#e8dfd1',
+              300: '#d7c7b1',
+              400: '#bfa98c',
+              500: '#a38b6c',
+              600: '#826d53',
+              700: '#655540',
+              800: '#473c2d',
+              900: '#2c241b'
+            },
+            gold: {
+              50: '#fbf8ef',
+              100: '#f6eed3',
+              200: '#eddba1',
+              300: '#e2c46b',
+              400: '#d5ad42',
+              500: '#bf9225',
+              600: '#96711b',
+              700: '#705415',
+              800: '#4a380f',
+              900: '#2e230a'
+            },
+            smoke: {
+              50: '#f6f6f7',
+              100: '#ebedf0',
+              200: '#d8dce2',
+              300: '#b7bec9',
+              400: '#919aa8',
+              500: '#6c7583',
+              600: '#505866',
+              700: '#393f4a',
+              800: '#252a31',
+              900: '#14171b'
+            },
+            olive: {
+              100: '#edf4e6',
+              300: '#bfd59e',
+              500: '#7da25d',
+              700: '#536b3f'
+            }
+          },
+          fontFamily: {
+            display: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+            body: ['"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif']
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: 0, transform: 'translateY(18px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' }
+            },
+            sheen: {
+              '0%': { transform: 'translateX(-120%)' },
+              '100%': { transform: 'translateX(120%)' }
+            }
+          },
+          animation: {
+            fadeUp: 'fadeUp .65s cubic-bezier(.2,.8,.2,1) both',
+            sheen: 'sheen 1.5s ease'
+          },
+          letterSpacing: {
+            luxe: '.24em'
+          },
+          boxShadow: {
+            airy: '0 25px 80px rgba(20, 23, 27, .10)'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg: #f8f6f1;
+      --ink: #171717;
+      --muted: rgba(23, 23, 23, .62);
+      --line: rgba(23, 23, 23, .08);
+      --line-strong: rgba(23, 23, 23, .14);
+      --gold: #bf9225;
+      --warm: #b88d63;
+      --olive: #7da25d;
+      --darkLens: rgba(16,18,20,.86);
+      --midLens: rgba(54,58,65,.52);
+      --lightLens: rgba(88,94,103,.25);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(191,146,37,.12), transparent 22%),
+        radial-gradient(circle at top left, rgba(125,162,93,.08), transparent 25%),
+        linear-gradient(180deg, #fcfbf8 0%, #f6f1e8 48%, #f7f4ee 100%);
+      overflow-x: hidden;
+    }
+
+    .hairline {
+      border-top: 1px solid rgba(255,255,255,.7);
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.28));
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(23,23,23,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23,23,23,.045) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.98), rgba(0,0,0,.18));
+      opacity: .4;
+    }
+
+    .editorial-line {
+      position: relative;
+    }
+    .editorial-line::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(23,23,23,.18), transparent);
+    }
+
+    .scene-button {
+      position: relative;
+      padding: 1.35rem 0 1.55rem;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid transparent;
+      transition: transform .28s ease, border-color .28s ease, color .28s ease;
+      overflow: hidden;
+    }
+
+    .scene-button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.65) 40%, transparent 72%);
+      transform: translateX(-130%);
+      pointer-events: none;
+    }
+
+    .scene-button:hover::before,
+    .scene-button.active::before {
+      animation: sheen 1.2s ease;
+    }
+
+    .scene-button:hover,
+    .scene-button.active {
+      transform: translateX(8px);
+      border-top-color: var(--line-strong);
+      border-bottom-color: var(--line);
+    }
+
+    .scene-button.active .scene-kicker,
+    .scene-button:hover .scene-kicker {
+      color: rgba(23,23,23,.86);
+    }
+
+    .scene-button.active .scene-title {
+      color: #000;
+    }
+
+    .section-hidden {
+      display: none;
+    }
+    .section-hidden.show {
+      display: block;
+      animation: fadeUp .7s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .lookbook-panel {
+      position: relative;
+      min-height: 600px;
+      border-top: 1px solid rgba(255,255,255,.7);
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.18));
+      overflow: hidden;
+    }
+
+    .lookbook-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.28), transparent 20%, transparent 80%, rgba(255,255,255,.16));
+    }
+
+    .portrait-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 70% 22%, rgba(255,241,209,.95), rgba(255,241,209,.45) 18%, transparent 36%),
+        linear-gradient(180deg, #f4ecdf 0%, #e7dbc8 50%, #d5c4ab 100%);
+    }
+
+    .vision-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, #9bc6f1 0%, #cfe7ff 36%, #d9e6d4 36%, #8ab070 58%, #94704f 58%, #8f6849 100%);
+    }
+
+    .sun {
+      position: absolute;
+      right: 10%;
+      top: 10%;
+      width: 96px;
+      height: 96px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,247,196,.95) 0%, rgba(255,228,146,.82) 50%, rgba(255,228,146,0) 72%);
+      filter: blur(.5px);
+      opacity: .95;
+    }
+
+    .mountain {
+      position: absolute;
+      bottom: 30%;
+      left: -4%;
+      width: 46%;
+      height: 22%;
+      background: linear-gradient(180deg, rgba(70,102,83,.55), rgba(70,102,83,.9));
+      clip-path: polygon(0 100%, 25% 45%, 44% 68%, 64% 28%, 100% 100%);
+      opacity: .5;
+    }
+
+    .road {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 42%;
+      background:
+        linear-gradient(180deg, rgba(157,124,92,.28), rgba(129,95,67,.28)),
+        linear-gradient(180deg, #a7835e 0%, #8e694b 100%);
+      clip-path: polygon(0 100%, 100% 100%, 74% 0, 26% 0);
+    }
+
+    .road-line {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 3%;
+      height: 38%;
+      transform: translateX(-50%);
+      background: repeating-linear-gradient(180deg, rgba(255,248,214,.95) 0 18px, transparent 18px 34px);
+      clip-path: polygon(43% 100%, 57% 100%, 100% 0, 0 0);
+      opacity: .86;
+    }
+
+    .city {
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      bottom: 31%;
+      height: 25%;
+      display: flex;
+      align-items: flex-end;
+      gap: 1.2%;
+    }
+
+    .city span {
+      display: block;
+      width: var(--w);
+      height: var(--h);
+      background: linear-gradient(180deg, rgba(255,255,255,.46), rgba(55,67,78,.42));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+
+    .person {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 290px;
+      height: 520px;
+    }
+
+    .torso {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 226px;
+      height: 308px;
+      border-radius: 110px 110px 30px 30px;
+      background: linear-gradient(180deg, #f7f3ec 0%, #e2d7c8 35%, #b1957c 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+    }
+
+    .neck {
+      position: absolute;
+      left: 50%;
+      bottom: 265px;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 72px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #e0c2a6, #d2ae8c);
+    }
+
+    .face {
+      position: absolute;
+      left: 50%;
+      bottom: 300px;
+      transform: translateX(-50%);
+      width: 158px;
+      height: 186px;
+      border-radius: 75px 75px 72px 72px;
+      background: linear-gradient(180deg, #f2d7bc 0%, #e6c4a6 65%, #d5ad87 100%);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.35);
+    }
+
+    .hair {
+      position: absolute;
+      left: 50%;
+      bottom: 364px;
+      transform: translateX(-50%);
+      width: 186px;
+      height: 132px;
+      border-radius: 92px 92px 52px 52px;
+      background: linear-gradient(180deg, #4c372d 0%, #2e201a 100%);
+    }
+
+    .hair::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: -36px;
+      height: 68px;
+      border-radius: 0 0 54px 54px;
+      background: linear-gradient(180deg, rgba(54,35,27,.96), rgba(54,35,27,0));
+    }
+
+    .ear {
+      position: absolute;
+      bottom: 354px;
+      width: 22px;
+      height: 36px;
+      background: #dcb38d;
+      border-radius: 999px;
+    }
+    .ear.left { left: 50px; }
+    .ear.right { right: 50px; }
+
+    .mouth {
+      position: absolute;
+      left: 50%;
+      bottom: 331px;
+      transform: translateX(-50%);
+      width: 38px;
+      height: 10px;
+      border-bottom: 2px solid rgba(116,70,57,.48);
+      border-radius: 0 0 999px 999px;
+    }
+
+    .nose {
+      position: absolute;
+      left: 50%;
+      bottom: 342px;
+      transform: translateX(-50%);
+      width: 15px;
+      height: 30px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(194,136,102,.18), rgba(194,136,102,.42));
+      filter: blur(.2px);
+    }
+
+    .brow {
+      position: absolute;
+      bottom: 386px;
+      width: 42px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(73,45,33,.78);
+    }
+    .brow.left { left: 82px; transform: rotate(-7deg); }
+    .brow.right { right: 82px; transform: rotate(7deg); }
+
+    .eye {
+      position: absolute;
+      bottom: 365px;
+      width: 40px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(59,39,30,.68);
+      opacity: .88;
+      filter: blur(.15px);
+    }
+    .eye.left { left: 82px; }
+    .eye.right { right: 82px; }
+
+    .frame {
+      position: absolute;
+      left: 50%;
+      bottom: 352px;
+      transform: translateX(-50%);
+      width: 176px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .lens {
+      position: relative;
+      width: 76px;
+      height: 52px;
+      border-radius: 22px 22px 18px 18px;
+      border: 3px solid rgba(32,32,32,.92);
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+    }
+
+    .lens::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, rgba(255,255,255,.22), transparent 38%, transparent 62%, rgba(255,255,255,.06));
+      pointer-events: none;
+    }
+
+    .bridge {
+      width: 20px;
+      height: 6px;
+      border-top: 3px solid rgba(32,32,32,.92);
+      margin-top: -4px;
+    }
+
+    .temple {
+      position: absolute;
+      top: 18px;
+      width: 40px;
+      height: 4px;
+      background: rgba(32,32,32,.82);
+    }
+    .temple.left { left: -30px; transform: rotate(10deg); }
+    .temple.right { right: -30px; transform: rotate(-10deg); }
+
+    .lens-dark  { background: var(--darkLens); }
+    .lens-mid   { background: var(--midLens); }
+    .lens-light { background: var(--lightLens); }
+
+    .vision-lens-overlay {
+      position: absolute;
+      inset: 0;
+      transition: background .35s ease, backdrop-filter .35s ease;
+      pointer-events: none;
+    }
+
+    .vision-mask {
+      position: absolute;
+      inset: 0;
+      clip-path: ellipse(46% 40% at 50% 48%);
+      background: rgba(0,0,0,.02);
+      box-shadow:
+        inset 0 0 0 6px rgba(35,35,35,.75),
+        inset 0 0 0 8px rgba(255,255,255,.04);
+      pointer-events: none;
+    }
+
+    .vision-caption {
+      position: absolute;
+      left: 2rem;
+      right: 2rem;
+      bottom: 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    .metric-line {
+      height: 2px;
+      background: linear-gradient(90deg, rgba(23,23,23,.08), rgba(23,23,23,.22));
+      overflow: hidden;
+    }
+
+    .metric-fill {
+      height: 100%;
+      transition: width .45s ease;
+      background: linear-gradient(90deg, rgba(191,146,37,.92), rgba(95,75,44,.92));
+    }
+
+    .tab-btn {
+      border-bottom: 1px solid transparent;
+      color: rgba(23,23,23,.48);
+      transition: color .22s ease, border-color .22s ease;
+    }
+    .tab-btn.active {
+      color: rgba(23,23,23,.92);
+      border-color: rgba(23,23,23,.24);
+    }
+
+    .content-tab {
+      display: none;
+    }
+    .content-tab.show {
+      display: block;
+      animation: fadeUp .45s ease both;
+    }
+
+    .copy-note {
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+    .copy-note.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 1024px) {
+      .lookbook-panel { min-height: 540px; }
+      .person { transform: translateX(-50%) scale(.9); transform-origin: center bottom; }
+    }
+
+    @media (max-width: 768px) {
+      .lookbook-panel { min-height: 470px; }
+      .person { transform: translateX(-50%) scale(.74); }
+      .vision-caption {
+        left: 1.25rem;
+        right: 1.25rem;
+        bottom: 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .person { transform: translateX(-50%) scale(.66); }
+      .lookbook-panel { min-height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="fixed inset-x-0 top-0 z-50 hairline">
+    <div class="mx-auto max-w-7xl px-6 py-4">
+      <div class="flex items-center justify-between gap-6">
+        <div>
+          <p class="text-[11px] tracking-[0.32em] uppercase text-black/45">Sunglass Shade Proposal Tool</p>
+          <h1 class="mt-1 text-sm sm:text-base md:text-lg font-light tracking-[0.08em] text-black/88">
+            初夏のサングラス失敗回避！「カラー濃度（透過率）外観＆視界シミュレーター」
+          </h1>
+        </div>
+        <div class="hidden md:block text-[12px] tracking-[0.18em] uppercase text-black/40">
+          For New Staff
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-24">
+    <section class="relative overflow-hidden">
+      <div class="absolute inset-0 hero-grid pointer-events-none"></div>
+      <div class="mx-auto max-w-7xl px-6 pt-10 pb-14 lg:pb-20">
+        <div class="grid lg:grid-cols-[1.12fr_.88fr] gap-12 items-end">
+          <div>
+            <div class="editorial-line w-28"></div>
+            <p class="mt-5 text-[11px] tracking-luxe uppercase text-black/45">Early Summer / Eyewear Styling Logic</p>
+            <h2 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-extralight tracking-[0.03em] leading-[1.06] text-black/92">
+              濃さで迷う時間を、<br>
+              <span class="text-black/55">即決の一言</span>に変える。
+            </h2>
+            <p class="mt-8 max-w-3xl text-[15px] sm:text-[17px] leading-8 text-black/62 font-light">
+              お客様が迷うのは、似合うかどうかだけではありません。
+              <span class="text-black/82">「どこまで目が透けるのか」</span>と
+              <span class="text-black/82">「実際にどれくらい暗く見えるのか」</span>が結びついていないからです。
+              このツールは、外観と視界を分けて見せることで、濃度提案を感覚ではなく
+              <span class="text-black/82">用途ベースで決め切る</span>ための接客支援アプリです。
+            </p>
+          </div>
+
+          <div class="relative h-[360px] sm:h-[420px]">
+            <div class="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-gold-100/20"></div>
+            <div class="absolute inset-x-8 top-0 bottom-10">
+              <div class="absolute left-0 top-10 text-right">
+                <div class="text-[11px] tracking-luxe uppercase text-black/42">Appearance</div>
+                <div class="mt-2 text-2xl sm:text-3xl font-extralight text-black/84">目元の透け感</div>
+              </div>
+              <div class="absolute right-0 bottom-8 text-right">
+                <div class="text-[11px] tracking-luxe uppercase text-black/42">View</div>
+                <div class="mt-2 text-2xl sm:text-3xl font-extralight text-black/84">景色の暗さ</div>
+              </div>
+              <svg viewBox="0 0 600 360" class="absolute inset-0 h-full w-full">
+                <defs>
+                  <linearGradient id="curveA" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#d9b76d"/>
+                    <stop offset="100%" stop-color="#8b6a3a"/>
+                  </linearGradient>
+                  <linearGradient id="curveB" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#b8c39b"/>
+                    <stop offset="100%" stop-color="#596d43"/>
+                  </linearGradient>
+                </defs>
+                <path d="M95 252 C220 210, 280 130, 330 88 C380 46, 424 36, 502 58" fill="none" stroke="url(#curveA)" stroke-width="2.2" opacity=".82"/>
+                <path d="M110 275 C220 256, 300 212, 368 165 C446 110, 490 110, 540 146" fill="none" stroke="url(#curveB)" stroke-width="2.2" opacity=".58"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-6 pb-10">
+      <div class="grid lg:grid-cols-[.95fr_1.05fr] gap-10 items-start">
+        <div class="lg:pt-3">
+          <div class="editorial-line"></div>
+          <p class="mt-6 text-[11px] tracking-luxe uppercase text-black/45">Step 1 / Progressive Disclosure</p>
+          <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-black/88">
+            まずは、使うメインのシーンを選ぶ
+          </h3>
+          <p class="mt-5 max-w-xl text-[15px] leading-8 text-black/58 font-light">
+            最初はここだけを表示。濃度の知識を先に並べず、
+            お客様の生活シーンから逆算して提案できる流れにしています。
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <button class="scene-button block w-full text-left" data-scene="beach">
+            <div class="scene-kicker text-[11px] tracking-luxe uppercase text-black/42">Scene 01</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="scene-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-black/82">
+                  真夏のビーチ・炎天下のドライブ
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-black/55 font-light">
+                  濃度85% / 透過率15% / 超ダーク
+                </div>
+              </div>
+              <div class="text-[13px] tracking-[0.16em] uppercase text-black/35">85%</div>
+            </div>
+          </button>
+
+          <button class="scene-button block w-full text-left" data-scene="city">
+            <div class="scene-kicker text-[11px] tracking-luxe uppercase text-black/42">Scene 02</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="scene-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-black/82">
+                  街歩き・カフェ・ショッピング
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-black/55 font-light">
+                  濃度50% / 透過率50% / ミディアム
+                </div>
+              </div>
+              <div class="text-[13px] tracking-[0.16em] uppercase text-black/35">50%</div>
+            </div>
+          </button>
+
+          <button class="scene-button block w-full text-left" data-scene="light">
+            <div class="scene-kicker text-[11px] tracking-luxe uppercase text-black/42">Scene 03</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="scene-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-black/82">
+                  マスク着用時・屋内兼用・夜間運転不可ギリギリ
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-black/55 font-light">
+                  濃度25% / 透過率75% / ライト
+                </div>
+              </div>
+              <div class="text-[13px] tracking-[0.16em] uppercase text-black/35">25%</div>
+            </div>
+          </button>
+
+          <div class="pt-6">
+            <button id="resetBtn" class="text-[13px] tracking-[0.16em] uppercase text-black/42 hover:text-black/82 transition">
+              Reset Selection
+            </button>
+            <p id="statusMessage" class="mt-4 text-[14px] leading-7 text-black/50 font-light">
+              シーンを選ぶと、外観・視界・提案トークが段階的に表示されます。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="revealSection" class="section-hidden mx-auto max-w-7xl px-6 pb-24">
+      <div class="editorial-line"></div>
+
+      <div class="mt-10 flex flex-wrap items-center justify-between gap-6">
+        <div>
+          <p class="text-[11px] tracking-luxe uppercase text-black/45">Shade Simulation</p>
+          <h3 class="mt-3 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-black/9  0">
+            外観＆視界シミュレーション
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <button class="tab-btn active text-[13px] tracking-[0.18em] uppercase pb-2" data-tab="appearance">
+            Appearance
+          </button>
+          <button class="tab-btn text-[13px] tracking-[0.18em] uppercase pb-2" data-tab="vision">
+            View
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-10 grid xl:grid-cols-2 gap-10 items-start">
+        <div class="content-tab show" data-content="appearance">
+          <div class="lookbook-panel">
+            <div class="portrait-bg"></div>
+
+            <div class="absolute left-8 top-8 right-8 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[11px] tracking-luxe uppercase text-black/38">How others see you</p>
+                <h4 class="mt-3 text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-black/88">
+                  相手から見た目元の透け感
+                </h4>
+              </div>
+              <div id="appearanceBadge" class="text-right text-[12px] tracking-[0.14em] uppercase text-black/42"></div>
+            </div>
+
+            <div class="person">
+              <div class="torso"></div>
+              <div class="neck"></div>
+              <div class="ear left"></div>
+              <div class="ear right"></div>
+              <div class="hair"></div>
+              <div class="face"></div>
+              <div class="brow left"></div>
+              <div class="brow right"></div>
+              <div class="eye left" id="eyeLeft"></div>
+              <div class="eye right" id="eyeRight"></div>
+              <div class="nose"></div>
+              <div class="mouth"></div>
+
+              <div class="frame">
+                <div class="temple left"></div>
+                <div id="lensLeft" class="lens lens-mid"></div>
+                <div class="bridge"></div>
+                <div id="lensRight" class="lens lens-mid"></div>
+                <div class="temple right"></div>
+              </div>
+            </div>
+
+            <div class="absolute left-8 right-8 bottom-8">
+              <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-black/38">
+                <span>目元の隠れ具合</span>
+                <span id="eyeContactLabel">ほどよく透ける</span>
+              </div>
+              <div class="metric-line mt-4">
+                <div id="appearanceMetric" class="metric-fill" style="width:50%"></div>
+              </div>
+              <p id="appearanceText" class="mt-5 max-w-2xl text-[15px] leading-8 text-black/58 font-light"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-tab show" data-content="vision">
+          <div class="lookbook-panel">
+            <div class="vision-bg">
+              <div class="sun"></div>
+              <div class="mountain"></div>
+              <div class="city" aria-hidden="true">
+                <span style="--w:8%; --h:44%"></span>
+                <span style="--w:5%; --h:24%"></span>
+                <span style="--w:7%; --h:55%"></span>
+                <span style="--w:4%; --h:30%"></span>
+                <span style="--w:9%; --h:70%"></span>
+                <span style="--w:6%; --h:35%"></span>
+                <span style="--w:8%; --h:62%"></span>
+                <span style="--w:5%; --h:48%"></span>
+                <span style="--w:10%; --h:78%"></span>
+                <span style="--w:7%; --h:40%"></span>
+                <span style="--w:8%; --h:52%"></span>
+              </div>
+              <div class="road"></div>
+              <div class="road-line"></div>
+            </div>
+
+            <div class="vision-lens-overlay" id="visionOverlay"></div>
+            <div class="vision-mask"></div>
+
+            <div class="absolute left-8 top-8 right-8 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[11px] tracking-luxe uppercase text-black/38">How you see through it</p>
+                <h4 class="mt-3 text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-black/88">
+                  自分から見た景色の明るさ
+                </h4>
+              </div>
+              <div id="visionBadge" class="text-right text-[12px] tracking-[0.14em] uppercase text-black/42"></div>
+            </div>
+
+            <div class="vision-caption">
+              <div>
+                <div class="text-[13px] uppercase tracking-[0.16em] text-black/38">景色の暗さ</div>
+                <div id="visionLabel" class="mt-3 text-2xl sm:text-3xl font-extralight text-black/88"></div>
+              </div>
+              <div class="max-w-sm">
+                <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-black/38">
+                  <span>遮光感</span>
+                  <span id="visionMetricLabel">バランス型</span>
+                </div>
+                <div class="metric-line mt-4">
+                  <div id="visionMetric" class="metric-fill" style="width:50%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-14 grid xl:grid-cols-[1.02fr_.98fr] gap-12">
+        <section>
+          <div class="editorial-line"></div>
+          <p class="mt-6 text-[11px] tracking-luxe uppercase text-black/45">Why this shade works</p>
+          <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-black/88">
+            状況別ロジック
+          </h3>
+
+          <div class="mt-8 space-y-9">
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Selected Scene</div>
+              <p id="logicScene" class="mt-3 text-2xl font-extralight tracking-[0.02em] text-black/86"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Why it fits</div>
+              <p id="logicFit" class="mt-3 text-[16px] leading-8 text-black/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Why other shades fail</div>
+              <p id="logicFail" class="mt-3 text-[16px] leading-8 text-black/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Decision phrase</div>
+              <p id="decisionPhrase" class="mt-3 text-[24px] sm:text-[30px] leading-[1.5] font-extralight tracking-[0.02em] text-black/90"></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="editorial-line"></div>
+          <div class="mt-6 flex items-end justify-between gap-6">
+            <div>
+              <p class="text-[11px] tracking-luxe uppercase text-black/45">Professional sales talk</p>
+              <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-black/88">
+                迷いを断ち切る接客カンペ
+              </h3>
+            </div>
+            <button id="copyBtn" class="text-[13px] tracking-[0.18em] uppercase text-black/42 hover:text-black/86 transition">
+              Copy Talk
+            </button>
+          </div>
+
+          <div class="mt-8 space-y-9">
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Opening</div>
+              <p id="talkOpening" class="mt-3 text-[16px] leading-8 text-black/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Professional cut-in</div>
+              <p id="talkCutIn" class="mt-3 text-[16px] leading-8 text-black/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Close</div>
+              <p id="talkClose" class="mt-3 text-[16px] leading-8 text-black/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-black/38">Final push</div>
+              <p id="talkFinal" class="mt-3 text-[16px] leading-8 text-black/58 font-light"></p>
+            </div>
+          </div>
+
+          <p id="copyNote" class="copy-note mt-8 text-[14px] leading-7 text-olive-700">
+            接客トークをコピーしました。
+          </p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const DATA = {
+        beach: {
+          label: "真夏のビーチ・炎天下のドライブ",
+          short: "85% / 超ダーク",
+          lensClass: "lens-dark",
+          eyeOpacity: 0.08,
+          appearanceMetric: 90,
+          appearanceLabel: "目がかなり隠れる",
+          appearanceText: "相手から見ると目元はほぼ隠れ、ファッション性も強く出ます。『しっかり遮るサングラス感』を期待するお客様には一番わかりやすい見た目です。",
+          visionOverlay: "linear-gradient(180deg, rgba(18,20,24,.48), rgba(18,20,24,.60))",
+          visionFilter: "brightness(.72) saturate(.92) contrast(1.02)",
+          visionMetric: 88,
+          visionMetricLabel: "かなり暗め",
+          visionLabel: "強い日差しをしっかり抑える",
+          logicFit: "日差しの反射が強いビーチや、炎天下での長時間ドライブでは、まぶしさ対策の優先順位が最上位です。85%クラスは視界がしっかり落ち着くため、光ストレスを減らしやすく、夏の屋外専用として納得感の高い濃さです。",
+          logicFail: "逆に街歩きや屋内兼用で使うには重たく見えやすく、室内に入った瞬間に暗すぎると感じやすい濃度です。『一本で全部済ませたい』人にはオーバースペックになりやすいです。",
+          decisionPhrase: "真夏の強光対策なら、ここは85%が正解です。",
+          talkOpening: "海や車で使う時間が長いなら、まず“おしゃれさ”より“まぶしさに負けないか”で選ぶのが失敗しないです。",
+          talkCutIn: "このシーンなら薄めを選ぶと結局まぶしくて使わなくなるので、最初から85%まで振り切ったほうが満足度が高いです。",
+          talkClose: "運転するならこれ一択です、というくらい日差し対策の安心感が違います。",
+          talkFinal: "屋外メイン用として一本しっかり作るなら、ここは迷わず超ダークで大丈夫です。"
+        },
+        city: {
+          label: "街歩き・カフェ・ショッピング",
+          short: "50% / ミディアム",
+          lensClass: "lens-mid",
+          eyeOpacity: 0.34,
+          appearanceMetric: 55,
+          appearanceLabel: "ほどよく隠れて、ほどよく透ける",
+          appearanceText: "目元は適度に透け、サングラス感と日常使いのバランスが最も取りやすい濃さです。濃すぎて威圧的にならず、薄すぎて物足りない感じにもなりにくい万能ゾーンです。",
+          visionOverlay: "linear-gradient(180deg, rgba(53,58,68,.20), rgba(53,58,68,.34))",
+          visionFilter: "brightness(.87) saturate(.96) contrast(1)",
+          visionMetric: 54,
+          visionMetricLabel: "バランス型",
+          visionLabel: "明るさを残しつつ、まぶしさを整える",
+          logicFit: "街中では日差しと屋内移動が混在するため、濃すぎると店内で不便、薄すぎると外で物足りないというズレが起きます。50%はファッション性と実用性の中間で、初めての一本にも提案しやすい濃度です。",
+          logicFail: "85%だと屋内や日陰で急に重く感じやすく、25%だと夏の日差し対策としては少し頼りなく感じることがあります。どちらにも振り切らないぶん、用途の広さで50%が勝ちます。",
+          decisionPhrase: "一本で一番失敗しにくいのは、50%です。",
+          talkOpening: "街使いメインでしたら、外でちゃんと眩しさを抑えつつ、店内でも違和感が出にくい濃さが理想です。",
+          talkCutIn: "この50%は“サングラスを掛けている感じ”も出しながら、普段使いしやすさも残るので、一番迷いにくい濃さです。",
+          talkClose: "街歩き・カフェ・買い物まで含めるなら、まずはこのミディアム濃度が鉄板です。",
+          talkFinal: "迷ったらここです。見た目も使い勝手も、いちばんバランス良くまとまります。"
+        },
+        light: {
+          label: "マスク着用時・屋内兼用・夜間運転不可ギリギリ",
+          short: "25% / ライト",
+          lensClass: "lens-light",
+          eyeOpacity: 0.72,
+          appearanceMetric: 28,
+          appearanceLabel: "目元がしっかり透ける",
+          appearanceText: "相手から見ると目元の表情が見えやすく、マスクと合わせても重たくなりすぎません。サングラス感を出しすぎたくない人にとって、入りやすい濃度です。",
+          visionOverlay: "linear-gradient(180deg, rgba(88,94,103,.08), rgba(88,94,103,.14))",
+          visionFilter: "brightness(.96) saturate(.98) contrast(1)",
+          visionMetric: 26,
+          visionMetricLabel: "かなり軽め",
+          visionLabel: "暗さは控えめで、日常に溶け込む",
+          logicFit: "マスク着用時や屋内兼用では、顔まわりが重く見えにくいことが重要です。25%は薄く自然で、屋内に入っても違和感が少なく、ライトカラーレンズに慣れていないお客様にも受け入れられやすい濃度です。",
+          logicFail: "ただし、真夏の強い日差し対策としては遮光感が弱く、ビーチや強烈な西日対策では物足りなさが出やすいです。まぶしさを本気で抑えたい用途には不足しがちです。",
+          decisionPhrase: "マスクと合わせるなら、この濃さが限界です。",
+          talkOpening: "マスクと一緒に掛けることが多いなら、濃すぎると顔まわりが一気に重く見えやすいです。",
+          talkCutIn: "屋内にもそのまま入りたい方は、この25%くらいまでにしておくと“掛けっぱなしでいける感”がかなり出ます。",
+          talkClose: "自然に掛けたい、でも伊達っぽくはしたくない。そのバランスならこのライト濃度がちょうどいいです。",
+          talkFinal: "濃さで悩むより、使う場面を優先すると、この25%がいちばん素直にハマります。"
+        }
+      };
+
+      const sceneButtons = document.querySelectorAll('.scene-button');
+      const revealSection = document.getElementById('revealSection');
+      const statusMessage = document.getElementById('statusMessage');
+      const resetBtn = document.getElementById('resetBtn');
+
+      const appearanceBadge = document.getElementById('appearanceBadge');
+      const visionBadge = document.getElementById('visionBadge');
+      const eyeLeft = document.getElementById('eyeLeft');
+      const eyeRight = document.getElementById('eyeRight');
+      const lensLeft = document.getElementById('lensLeft');
+      const lensRight = document.getElementById('lensRight');
+      const appearanceMetric = document.getElementById('appearanceMetric');
+      const appearanceText = document.getElementById('appearanceText');
+      const eyeContactLabel = document.getElementById('eyeContactLabel');
+
+      const visionOverlay = document.getElementById('visionOverlay');
+      const visionMetric = document.getElementById('visionMetric');
+      const visionMetricLabel = document.getElementById('visionMetricLabel');
+      const visionLabel = document.getElementById('visionLabel');
+
+      const logicScene = document.getElementById('logicScene');
+      const logicFit = document.getElementById('logicFit');
+      const logicFail = document.getElementById('logicFail');
+      const decisionPhrase = document.getElementById('decisionPhrase');
+
+      const talkOpening = document.getElementById('talkOpening');
+      const talkCutIn = document.getElementById('talkCutIn');
+      const talkClose = document.getElementById('talkClose');
+      const talkFinal = document.getElementById('talkFinal');
+
+      const copyBtn = document.getElementById('copyBtn');
+      const copyNote = document.getElementById('copyNote');
+
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const contentTabs = document.querySelectorAll('.content-tab');
+
+      let currentScene = null;
+
+      function setActiveTab(tabName) {
+        tabButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+
+        contentTabs.forEach(tab => {
+          tab.classList.toggle('show', tab.dataset.content === tabName);
+        });
+      }
+
+      function applyLensClass(className) {
+        lensLeft.classList.remove('lens-dark', 'lens-mid', 'lens-light');
+        lensRight.classList.remove('lens-dark', 'lens-mid', 'lens-light');
+        lensLeft.classList.add(className);
+        lensRight.classList.add(className);
+      }
+
+      function selectScene(sceneKey) {
+        const data = DATA[sceneKey];
+        if (!data) {
+          statusMessage.textContent = 'データの読み込みに失敗しました。もう一度お試しください。';
+          statusMessage.className = 'mt-4 text-[14px] leading-7 text-red-700';
+          return;
+        }
+
+        currentScene = sceneKey;
+
+        sceneButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.scene === sceneKey);
+        });
+
+        applyLensClass(data.lensClass);
+        eyeLeft.style.opacity = data.eyeOpacity;
+        eyeRight.style.opacity = data.eyeOpacity;
+        appearanceMetric.style.width = `${data.appearanceMetric}%`;
+        appearanceText.textContent = data.appearanceText;
+        eyeContactLabel.textContent = data.appearanceLabel;
+        appearanceBadge.textContent = data.short;
+
+        visionOverlay.style.background = data.visionOverlay;
+        visionOverlay.style.backdropFilter = data.visionFilter;
+        visionOverlay.style.webkitBackdropFilter = data.visionFilter;
+        visionMetric.style.width = `${data.visionMetric}%`;
+        visionMetricLabel.textContent = data.visionMetricLabel;
+        visionLabel.textContent = data.visionLabel;
+        visionBadge.textContent = data.short;
+
+        logicScene.textContent = data.label;
+        logicFit.textContent = data.logicFit;
+        logicFail.textContent = data.logicFail;
+        decisionPhrase.textContent = data.decisionPhrase;
+
+        talkOpening.textContent = data.talkOpening;
+        talkCutIn.textContent = data.talkCutIn;
+        talkClose.textContent = data.talkClose;
+        talkFinal.textContent = data.talkFinal;
+
+        revealSection.classList.add('show');
+        statusMessage.textContent = `${data.label} に合わせたシミュレーションを表示しています。`;
+        statusMessage.className = 'mt-4 text-[14px] leading-7 text-black/70';
+
+        requestAnimationFrame(() => {
+          revealSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      function resetSelection() {
+        currentScene = null;
+        sceneButtons.forEach(btn => btn.classList.remove('active'));
+        revealSection.classList.remove('show');
+        statusMessage.textContent = 'シーンを選ぶと、外観・視界・提案トークが段階的に表示されます。';
+        statusMessage.className = 'mt-4 text-[14px] leading-7 text-black/50 font-light';
+        copyNote.classList.remove('show');
+        setActiveTab('appearance');
+      }
+
+      sceneButtons.forEach(btn => {
+        btn.addEventListener('click', () => selectScene(btn.dataset.scene));
+      });
+
+      resetBtn.addEventListener('click', resetSelection);
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          setActiveTab(btn.dataset.tab);
+        });
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        if (!currentScene || !DATA[currentScene]) {
+          copyNote.textContent = '先にシーンを選択してください。';
+          copyNote.classList.add('show');
+          return;
+        }
+
+        const data = DATA[currentScene];
+        const text = [
+          `【シーン】${data.label}`,
+          `【濃度】${data.short}`,
+          '',
+          '【導入】',
+          data.talkOpening,
+          '',
+          '【プロの切り込み】',
+          data.talkCutIn,
+          '',
+          '【クロージング】',
+          data.talkClose,
+          '',
+          '【背中押し】',
+          data.talkFinal,
+          '',
+          '【決め台詞】',
+          data.decisionPhrase
+        ].join('\n');
+
+        try {
+          await navigator.clipboard.writeText(text);
+          copyNote.textContent = '接客トークをコピーしました。';
+          copyNote.classList.add('show');
+        } catch (error) {
+          copyNote.textContent = 'コピーできませんでした。ブラウザ権限をご確認ください。';
+          copyNote.classList.add('show');
+        }
+      });
+
+      resetSelection();
+    })();
+  </script>
+</body>
+</html>
