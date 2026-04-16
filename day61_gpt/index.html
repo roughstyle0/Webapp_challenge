@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>子供の瞳の一生を守る！紫外線ダメージ（UV）蓄積メーター＆防御シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            skyx: {
+              50: '#f3fbff',
+              100: '#def5ff',
+              200: '#b9ebff',
+              300: '#7fdbff',
+              400: '#44c8ff',
+              500: '#19b2f2',
+              600: '#0a8fc6',
+              700: '#0d709a',
+              800: '#125f80',
+              900: '#144d67'
+            },
+            leafx: {
+              50: '#f2fff5',
+              100: '#dffde6',
+              200: '#baf8ca',
+              300: '#86ef9d',
+              400: '#4ddd72',
+              500: '#24c958',
+              600: '#18a345',
+              700: '#157f39',
+              800: '#166330',
+              900: '#155129'
+            },
+            uvx: {
+              50: '#fff3ff',
+              100: '#ffe1ff',
+              200: '#ffbcff',
+              300: '#ff84f7',
+              400: '#f04be3',
+              500: '#d81cc1',
+              600: '#b1009e',
+              700: '#8b0a7a',
+              800: '#670e5a',
+              900: '#45083d'
+            },
+            magma: {
+              400: '#ff4d77',
+              500: '#ff285c',
+              600: '#db1248'
+            }
+          },
+          boxShadow: {
+            softlab: '0 20px 70px rgba(17, 91, 121, .12)',
+            glowSafe: '0 0 0 1px rgba(36,201,88,.22), 0 18px 60px rgba(36,201,88,.15)',
+            glowDanger: '0 0 0 1px rgba(216,28,193,.22), 0 18px 60px rgba(216,28,193,.20)',
+            glowSky: '0 0 0 1px rgba(25,178,242,.18), 0 18px 60px rgba(25,178,242,.14)',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(16px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            sweep: {
+              '0%': { transform: 'translateX(-130%)' },
+              '100%': { transform: 'translateX(130%)' }
+            },
+            pulseDanger: {
+              '0%,100%': { opacity: '.55', transform: 'scale(1)' },
+              '50%': { opacity: '1', transform: 'scale(1.08)' }
+            },
+            pulseSafe: {
+              '0%,100%': { opacity: '.45', transform: 'scale(1)' },
+              '50%': { opacity: '.9', transform: 'scale(1.05)' }
+            },
+            riseMeter: {
+              '0%': { height: '0%' },
+              '100%': { height: 'var(--meter-height)' }
+            },
+            drift: {
+              '0%,100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' }
+            },
+            scan: {
+              '0%': { backgroundPosition: '-220% 0' },
+              '100%': { backgroundPosition: '220% 0' }
+            }
+          },
+          animation: {
+            fadeUp: 'fadeUp .6s ease-out both',
+            sweep: 'sweep 1.1s ease',
+            pulseDanger: 'pulseDanger 1.4s ease-in-out infinite',
+            pulseSafe: 'pulseSafe 1.8s ease-in-out infinite',
+            riseMeter: 'riseMeter 1s cubic-bezier(.2,.8,.2,1) both',
+            drift: 'drift 4s ease-in-out infinite',
+            scan: 'scan 2.5s linear infinite'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg: #f6fdff;
+      --ink: #12354a;
+      --muted: rgba(18,53,74,.66);
+      --line: rgba(18,95,128,.11);
+      --line-strong: rgba(18,95,128,.18);
+      --sky: #19b2f2;
+      --leaf: #24c958;
+      --uv: #d81cc1;
+      --magma: #ff285c;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(25,178,242,.13), transparent 18%),
+        radial-gradient(circle at 84% 12%, rgba(36,201,88,.12), transparent 19%),
+        radial-gradient(circle at 50% 100%, rgba(216,28,193,.08), transparent 28%),
+        linear-gradient(180deg, #fbfeff 0%, #f1fbff 38%, #eef8fb 100%);
+      overflow-x: hidden;
+    }
+
+    .glass-top {
+      border-top: 1px solid rgba(255,255,255,.88);
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,.45));
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(18,95,128,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18,95,128,.04) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.96), rgba(0,0,0,.16));
+      opacity: .5;
+    }
+
+    .hairline::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(18,95,128,.18), transparent);
+    }
+
+    .glass-panel {
+      position: relative;
+      border-top: 1px solid rgba(255,255,255,.84);
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.56), rgba(241,251,255,.35));
+      backdrop-filter: blur(10px);
+    }
+
+    .age-btn {
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid transparent;
+      transition: transform .25s ease, border-color .25s ease;
+    }
+
+    .age-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,.82) 40%, transparent 68%);
+      transform: translateX(-130%);
+    }
+
+    .age-btn:hover::before,
+    .age-btn.active::before {
+      animation: sweep 1.1s ease;
+    }
+
+    .age-btn:hover,
+    .age-btn.active {
+      transform: translateX(6px);
+      border-top-color: var(--line-strong);
+      border-bottom-color: var(--line);
+    }
+
+    .age-btn.active .age-title {
+      color: rgba(18,53,74,.98);
+    }
+
+    .section-hidden { display: none; }
+    .section-hidden.show {
+      display: block;
+      animation: fadeUp .6s ease-out both;
+    }
+
+    .lab-stage {
+      position: relative;
+      min-height: 560px;
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,.86);
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.90), rgba(255,255,255,.18) 44%, transparent 68%),
+        linear-gradient(180deg, rgba(255,255,255,.52), rgba(236,248,252,.34));
+    }
+
+    .lab-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.14), transparent 24%, transparent 78%, rgba(255,255,255,.10));
+    }
+
+    .science-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 16%, rgba(125,219,255,.30), transparent 18%),
+        radial-gradient(circle at 12% 85%, rgba(77,221,114,.14), transparent 20%),
+        radial-gradient(circle at 88% 82%, rgba(240,75,227,.10), transparent 20%);
+      pointer-events: none;
+    }
+
+    .eye-illustration {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -54%);
+      width: 320px;
+      height: 220px;
+      animation: drift 4.8s ease-in-out infinite;
+    }
+
+    .eye-shell {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.98) 0%, rgba(236,251,255,.95) 54%, rgba(179,232,249,.82) 100%);
+      border-radius: 50% 50% 48% 48% / 56% 56% 44% 44%;
+      box-shadow:
+        inset 0 2px 0 rgba(255,255,255,.95),
+        0 22px 46px rgba(17, 91, 121, .10);
+      clip-path: ellipse(50% 38% at 50% 50%);
+    }
+
+    .iris {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 108px;
+      height: 108px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: radial-gradient(circle, #c8fff0 0%, #58d7a6 32%, #189bd2 72%, #0d5c80 100%);
+      box-shadow: 0 0 0 12px rgba(125,219,255,.14);
+    }
+
+    .pupil {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 34px;
+      height: 34px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: #09141a;
+      box-shadow: 0 0 14px rgba(9,20,26,.22);
+    }
+
+    .glint {
+      position: absolute;
+      left: 45%;
+      top: 42%;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.9);
+      filter: blur(.3px);
+    }
+
+    .uv-ray {
+      position: absolute;
+      width: 124px;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(240,75,227,.08), rgba(216,28,193,1), rgba(255,77,119,.25));
+      filter: drop-shadow(0 0 8px rgba(216,28,193,.55));
+      opacity: .95;
+    }
+
+    .uv-ray.r1 { top: 46px; left: 2px; transform: rotate(18deg); }
+    .uv-ray.r2 { top: 94px; left: -6px; transform: rotate(4deg); }
+    .uv-ray.r3 { top: 144px; left: 2px; transform: rotate(-16deg); }
+
+    .uv-ray.safe {
+      background: linear-gradient(90deg, rgba(77,221,114,.06), rgba(36,201,88,.95), rgba(125,219,255,.22));
+      filter: drop-shadow(0 0 8px rgba(36,201,88,.45));
+    }
+
+    .uv-burst {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      width: 84px;
+      height: 84px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      opacity: 0;
+    }
+
+    .uv-burst.danger {
+      background: radial-gradient(circle, rgba(255,77,119,.5), rgba(216,28,193,.22), rgba(216,28,193,0));
+      box-shadow: 0 0 0 12px rgba(216,28,193,.06);
+    }
+
+    .uv-burst.safe {
+      background: radial-gradient(circle, rgba(77,221,114,.42), rgba(36,201,88,.18), rgba(36,201,88,0));
+      box-shadow: 0 0 0 12px rgba(36,201,88,.05);
+    }
+
+    .uv-burst.show-danger {
+      opacity: 1;
+      animation: pulseDanger 1.4s ease-in-out infinite;
+    }
+
+    .uv-burst.show-safe {
+      opacity: 1;
+      animation: pulseSafe 1.8s ease-in-out infinite;
+    }
+
+    .meter-wrap {
+      position: absolute;
+      left: 50%;
+      bottom: 36px;
+      transform: translateX(-50%);
+      width: min(88%, 560px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .meter-box {
+      position: relative;
+      min-height: 240px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(18,95,128,.10);
+    }
+
+    .meter-track {
+      position: relative;
+      height: 170px;
+      width: 100%;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.40), rgba(228,247,252,.20));
+      border-top: 1px solid rgba(255,255,255,.8);
+      border-bottom: 1px solid rgba(18,95,128,.10);
+    }
+
+    .meter-zones {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg,
+          rgba(36,201,88,.22) 0%,
+          rgba(36,201,88,.18) 36%,
+          rgba(255,208,0,.12) 36%,
+          rgba(255,208,0,.12) 62%,
+          rgba(255,77,119,.12) 62%,
+          rgba(255,77,119,.14) 100%);
+    }
+
+    .meter-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 0%;
+      background-size: 220% 100%;
+      animation: riseMeter 1s cubic-bezier(.2,.8,.2,1) both, scan 2.5s linear infinite;
+    }
+
+    .meter-fill.danger {
+      background-image: linear-gradient(90deg, rgba(216,28,193,.82), rgba(255,77,119,.95), rgba(139,10,122,.92));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 -10px 30px rgba(216,28,193,.28);
+    }
+
+    .meter-fill.safe {
+      background-image: linear-gradient(90deg, rgba(36,201,88,.82), rgba(125,219,255,.95), rgba(22,127,57,.92));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 -10px 30px rgba(36,201,88,.18);
+    }
+
+    .meter-head {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 0 10px rgba(255,255,255,.45);
+    }
+
+    .metric-line {
+      height: 8px;
+      overflow: hidden;
+      background: linear-gradient(90deg, rgba(18,95,128,.06), rgba(18,95,128,.02));
+    }
+
+    .metric-fill {
+      height: 100%;
+      transition: width .5s ease;
+      background: linear-gradient(90deg, rgba(25,178,242,.82), rgba(36,201,88,.88));
+    }
+
+    .tab-btn {
+      border-bottom: 1px solid transparent;
+      color: rgba(18,53,74,.48);
+      transition: color .2s ease, border-color .2s ease;
+    }
+
+    .tab-btn.active {
+      color: rgba(18,53,74,.94);
+      border-color: rgba(18,53,74,.20);
+    }
+
+    .content-tab { display: none; }
+    .content-tab.show {
+      display: block;
+      animation: fadeUp .45s ease both;
+    }
+
+    .copy-note { opacity: 0; transition: opacity .25s ease; }
+    .copy-note.show { opacity: 1; }
+
+    @media (max-width: 1024px) {
+      .lab-stage { min-height: 520px; }
+      .eye-illustration {
+        width: 280px;
+        height: 196px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .lab-stage { min-height: 500px; }
+      .eye-illustration {
+        width: 230px;
+        height: 160px;
+        transform: translate(-50%, -50%);
+      }
+      .meter-wrap {
+        width: calc(100% - 28px);
+        gap: 14px;
+      }
+      .meter-box { min-height: 220px; }
+      .meter-track { height: 150px; }
+    }
+
+    @media (max-width: 480px) {
+      .lab-stage { min-height: 520px; }
+      .meter-wrap {
+        grid-template-columns: 1fr;
+        bottom: 24px;
+      }
+      .meter-box { min-height: 190px; }
+      .meter-track { height: 126px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="fixed inset-x-0 top-0 z-50 glass-top">
+    <div class="mx-auto max-w-7xl px-6 py-4">
+      <div class="flex items-center justify-between gap-6">
+        <div>
+          <p class="text-[11px] tracking-[0.32em] uppercase text-skyx-900/42">Kids UV Protection Proposal Tool</p>
+          <h1 class="mt-1 text-sm sm:text-base md:text-lg font-light tracking-[0.08em] text-skyx-900/90">
+            子供の瞳の一生を守る！「紫外線ダメージ（UV）蓄積メーター＆防御シミュレーター」
+          </h1>
+        </div>
+        <div class="hidden md:block text-[12px] tracking-[0.18em] uppercase text-skyx-900/34">
+          For New Staff
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-24">
+    <section class="relative overflow-hidden">
+      <div class="absolute inset-0 hero-grid pointer-events-none"></div>
+      <div class="mx-auto max-w-7xl px-6 pt-10 pb-16">
+        <div class="grid lg:grid-cols-[1.08fr_.92fr] gap-12 items-end">
+          <div>
+            <div class="hairline w-28"></div>
+            <p class="mt-5 text-[11px] tracking-[0.30em] uppercase text-skyx-900/42">Science Museum Style / Future Eye Care</p>
+            <h2 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-extralight tracking-[0.03em] leading-[1.05] text-skyx-900/92">
+              今の外遊びを、<br>
+              <span class="text-skyx-900/55">未来の目の保護</span>に変える。
+            </h2>
+            <p class="mt-8 max-w-3xl text-[15px] sm:text-[17px] leading-8 text-skyx-900/62 font-light">
+              親御さんが見落としやすいのは、
+              <span class="text-skyx-900/86">子供の瞳は大人より紫外線を奥まで通しやすい</span>という点です。
+              このツールは、年齢別の生活シーンに合わせて、
+              <span class="text-uvx-700 font-medium">20歳までのダメージ蓄積</span>と
+              <span class="text-leafx-700 font-medium">高品質UVカットで守れる未来</span>
+              を直感的に見せるための接客支援アプリです。
+            </p>
+          </div>
+
+          <div class="relative h-[350px] sm:h-[410px]">
+            <div class="absolute inset-0 rounded-full blur-3xl bg-gradient-to-br from-skyx-100/80 via-white to-leafx-100/60 opacity-90"></div>
+            <div class="absolute inset-x-8 top-0 bottom-8">
+              <div class="absolute left-0 top-12 text-skyx-900/78">
+                <div class="text-[11px] tracking-[0.26em] uppercase">No Protection</div>
+                <div class="mt-2 text-2xl sm:text-3xl font-extralight">20歳までに蓄積</div>
+              </div>
+              <div class="absolute right-0 bottom-10 text-right text-skyx-900/78">
+                <div class="text-[11px] tracking-[0.26em] uppercase">High Quality UV Lens</div>
+                <div class="mt-2 text-2xl sm:text-3xl font-extralight">安全圏で守る</div>
+              </div>
+              <svg viewBox="0 0 580 360" class="absolute inset-0 h-full w-full">
+                <defs>
+                  <linearGradient id="lineDanger" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#ff84f7"/>
+                    <stop offset="100%" stop-color="#ff285c"/>
+                  </linearGradient>
+                  <linearGradient id="lineSafe" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#86ef9d"/>
+                    <stop offset="100%" stop-color="#19b2f2"/>
+                  </linearGradient>
+                </defs>
+                <path d="M78 214 C160 172, 210 150, 254 112 C292 80, 324 58, 360 48"
+                      fill="none" stroke="url(#lineDanger)" stroke-width="3" opacity=".82"/>
+                <path d="M284 240 C350 214, 392 188, 432 148 C468 112, 500 98, 542 88"
+                      fill="none" stroke="url(#lineSafe)" stroke-width="3" opacity=".82"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-6 pb-10">
+      <div class="grid lg:grid-cols-[.95fr_1.05fr] gap-10 items-start">
+        <div class="lg:pt-3">
+          <div class="hairline"></div>
+          <p class="mt-6 text-[11px] tracking-[0.30em] uppercase text-skyx-900/42">Step 1 / Progressive Disclosure</p>
+          <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-skyx-900/90">
+            まずは、お子様の現在の年齢を選ぶ
+          </h3>
+          <p class="mt-5 max-w-xl text-[15px] leading-8 text-skyx-900/58 font-light">
+            最初はここだけを見せます。専門用語より先に、
+            お子様の年齢ごとの生活実態から話を始められる構成です。
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <button class="age-btn block w-full text-left py-5" data-age="toddler">
+            <div class="text-[11px] tracking-[0.28em] uppercase text-skyx-900/40">Age 01</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="age-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-skyx-900/82">
+                  幼児（0〜5歳）
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-skyx-900/55 font-light">
+                  瞳が最も紫外線を透しやすい
+                </div>
+              </div>
+              <div class="text-[12px] tracking-[0.16em] uppercase text-skyx-900/34">0–5</div>
+            </div>
+          </button>
+
+          <button class="age-btn block w-full text-left py-5" data-age="elementary">
+            <div class="text-[11px] tracking-[0.28em] uppercase text-skyx-900/40">Age 02</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="age-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-skyx-900/82">
+                  小学生（6〜12歳）
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-skyx-900/55 font-light">
+                  外遊びの時間が最も長い
+                </div>
+              </div>
+              <div class="text-[12px] tracking-[0.16em] uppercase text-skyx-900/34">6–12</div>
+            </div>
+          </button>
+
+          <button class="age-btn block w-full text-left py-5" data-age="junior">
+            <div class="text-[11px] tracking-[0.28em] uppercase text-skyx-900/40">Age 03</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="age-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-skyx-900/82">
+                  中学生（13〜15歳）
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-skyx-900/55 font-light">
+                  部活で紫外線を浴び続ける
+                </div>
+              </div>
+              <div class="text-[12px] tracking-[0.16em] uppercase text-skyx-900/34">13–15</div>
+            </div>
+          </button>
+
+          <div class="pt-6">
+            <button id="resetBtn" class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/42 hover:text-skyx-900/86 transition">
+              Reset Selection
+            </button>
+            <p id="statusMessage" class="mt-4 text-[14px] leading-7 text-skyx-900/50 font-light">
+              年齢を選ぶと、ダメージ蓄積メーターと接客トークが段階的に表示されます。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="revealSection" class="section-hidden mx-auto max-w-7xl px-6 pb-24">
+      <div class="hairline"></div>
+
+      <div class="mt-10 flex flex-wrap items-center justify-between gap-6">
+        <div>
+          <p class="text-[11px] tracking-[0.30em] uppercase text-skyx-900/42">UV accumulation meter simulation</p>
+          <h3 class="mt-3 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-skyx-900/90">
+            20歳までの紫外線ダメージ比較
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <button class="tab-btn active text-[13px] tracking-[0.18em] uppercase pb-2" data-tab="danger">
+            No Protection
+          </button>
+          <button class="tab-btn text-[13px] tracking-[0.18em] uppercase pb-2" data-tab="safe">
+            UV Lens
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-10 grid xl:grid-cols-2 gap-10 items-start">
+        <div class="content-tab show" data-content="danger">
+          <div class="glass-panel lab-stage">
+            <div class="science-bg"></div>
+
+            <div class="absolute left-8 top-8 right-8 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[11px] tracking-[0.28em] uppercase text-skyx-900/40">無対策 / おもちゃのサングラス</p>
+                <h4 class="mt-3 text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-skyx-900/90">
+                  蓄積ゲージが危険水域へ振り切れる
+                </h4>
+              </div>
+              <div id="dangerBadge" class="text-right text-[12px] tracking-[0.14em] uppercase text-skyx-900/42"></div>
+            </div>
+
+            <div class="eye-illustration">
+              <div class="uv-ray r1"></div>
+              <div class="uv-ray r2"></div>
+              <div class="uv-ray r3"></div>
+              <div class="eye-shell"></div>
+              <div class="iris"></div>
+              <div class="pupil"></div>
+              <div class="glint"></div>
+              <div class="uv-burst danger" id="dangerBurst"></div>
+            </div>
+
+            <div class="meter-wrap">
+              <div class="meter-box">
+                <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-skyx-900/42">
+                  <span>20歳までの蓄積量</span>
+                  <span id="dangerLabel">危険水域</span>
+                </div>
+                <div class="meter-track mt-4">
+                  <div class="meter-zones"></div>
+                  <div id="dangerMeter" class="meter-fill danger" style="--meter-height: 90%;"></div>
+                  <div id="dangerHead" class="meter-head" style="bottom: 90%;"></div>
+                </div>
+                <p id="dangerText" class="mt-5 text-[15px] leading-8 text-skyx-900/58 font-light"></p>
+              </div>
+
+              <div class="meter-box">
+                <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-skyx-900/42">
+                  <span>目の通しやすさ</span>
+                  <span id="throughLabel">かなり高い</span>
+                </div>
+                <div class="metric-line mt-4">
+                  <div id="throughMetric" class="metric-fill" style="width:88%; background: linear-gradient(90deg, rgba(216,28,193,.82), rgba(255,77,119,.92));"></div>
+                </div>
+                <p id="throughText" class="mt-5 text-[15px] leading-8 text-skyx-900/58 font-light"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-tab show" data-content="safe">
+          <div class="glass-panel lab-stage">
+            <div class="science-bg"></div>
+
+            <div class="absolute left-8 top-8 right-8 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[11px] tracking-[0.28em] uppercase text-skyx-900/40">高品質UVカットレンズ</p>
+                <h4 class="mt-3 text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-skyx-900/90">
+                  ダメージ蓄積を安全圏でキープ
+                </h4>
+              </div>
+              <div id="safeBadge" class="text-right text-[12px] tracking-[0.14em] uppercase text-skyx-900/42"></div>
+            </div>
+
+            <div class="eye-illustration">
+              <div class="uv-ray safe r1"></div>
+              <div class="uv-ray safe r2"></div>
+              <div class="uv-ray safe r3"></div>
+              <div class="eye-shell"></div>
+              <div class="iris"></div>
+              <div class="pupil"></div>
+              <div class="glint"></div>
+              <div class="uv-burst safe" id="safeBurst"></div>
+            </div>
+
+            <div class="meter-wrap">
+              <div class="meter-box">
+                <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-skyx-900/42">
+                  <span>20歳までの蓄積量</span>
+                  <span id="safeLabel">安全圏</span>
+                </div>
+                <div class="meter-track mt-4">
+                  <div class="meter-zones"></div>
+                  <div id="safeMeter" class="meter-fill safe" style="--meter-height: 24%;"></div>
+                  <div id="safeHead" class="meter-head" style="bottom: 24%;"></div>
+                </div>
+                <p id="safeText" class="mt-5 text-[15px] leading-8 text-skyx-900/58 font-light"></p>
+              </div>
+
+              <div class="meter-box">
+                <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-skyx-900/42">
+                  <span>将来リスク対策</span>
+                  <span id="protectLabel">しっかり守る</span>
+                </div>
+                <div class="metric-line mt-4">
+                  <div id="protectMetric" class="metric-fill" style="width:84%;"></div>
+                </div>
+                <p id="protectText" class="mt-5 text-[15px] leading-8 text-skyx-900/58 font-light"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-14 grid xl:grid-cols-[1.02fr_.98fr] gap-12">
+        <section>
+          <div class="hairline"></div>
+          <p class="mt-6 text-[11px] tracking-[0.30em] uppercase text-skyx-900/42">Eye science logic</p>
+          <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-skyx-900/90">
+            年齢別ロジック
+          </h3>
+
+          <div class="mt-8 space-y-9">
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Selected age</div>
+              <p id="logicAge" class="mt-3 text-2xl font-extralight tracking-[0.02em] text-skyx-900/88"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Scientific point</div>
+              <p id="logicScience" class="mt-3 text-[16px] leading-8 text-skyx-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Why this age is risky</div>
+              <p id="logicRisk" class="mt-3 text-[16px] leading-8 text-skyx-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Decision phrase</div>
+              <p id="decisionPhrase" class="mt-3 text-[24px] sm:text-[30px] leading-[1.5] font-extralight tracking-[0.02em] text-skyx-900/92"></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="hairline"></div>
+          <div class="mt-6 flex items-end justify-between gap-6">
+            <div>
+              <p class="text-[11px] tracking-[0.30em] uppercase text-skyx-900/42">Professional parent-focused sales talk</p>
+              <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-skyx-900/90">
+                親心に響く接客カンペ
+              </h3>
+            </div>
+            <button id="copyBtn" class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/42 hover:text-skyx-900/86 transition">
+              Copy Talk
+            </button>
+          </div>
+
+          <div class="mt-8 space-y-9">
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Opening</div>
+              <p id="talkOpening" class="mt-3 text-[16px] leading-8 text-skyx-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Insight</div>
+              <p id="talkInsight" class="mt-3 text-[16px] leading-8 text-skyx-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Proposal close</div>
+              <p id="talkClose" class="mt-3 text-[16px] leading-8 text-skyx-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-skyx-900/38">Final push</div>
+              <p id="talkFinal" class="mt-3 text-[16px] leading-8 text-skyx-900/58 font-light"></p>
+            </div>
+          </div>
+
+          <p id="copyNote" class="copy-note mt-8 text-[14px] leading-7 text-leafx-700">
+            接客トークをコピーしました。
+          </p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const DATA = {
+        toddler: {
+          label: '幼児（0〜5歳）',
+          short: '0–5 / Most Vulnerable',
+          dangerMeter: 94,
+          safeMeter: 18,
+          throughMetric: 92,
+          protectMetric: 88,
+          dangerLabel: '危険水域',
+          safeLabel: '安全圏',
+          throughLabel: 'かなり高い',
+          protectLabel: 'しっかり守る',
+          dangerText: '幼児期は瞳が最も紫外線を通しやすく、無対策のまま20歳まで過ごすと初期ダメージの積み上がりが非常に大きくなります。スタートが早いほど、将来の差も大きくなります。',
+          throughText: '子供の目は大人の約3倍も紫外線を奥まで通す、という説明は親御さんに非常に響きます。つまり「今は平気そう」に見えても、内部では通してしまいやすい時期です。',
+          safeText: '高品質なキッズ用UVカットレンズを早い段階で使い始めると、最も透しやすい時期のダメージを抑えやすくなります。守る開始時期が早いほど、将来の安心につながります。',
+          protectText: 'この時期のUV対策は見た目の問題ではなく、まだ未完成な瞳を外から守る基礎ケアです。',
+          science: '子供の目は大人に比べて紫外線を奥まで通しやすく、特に幼児期はその傾向が強いと説明すると、親御さんは「今から守る意味」を理解しやすくなります。',
+          risk: '幼児は外遊びの時間そのものよりも、“無防備に浴びてしまう構造”がリスクです。帽子だけでは目そのものまでは守れず、紫外線は瞳から入って蓄積の入口になりやすいです。',
+          phrase: 'これはファッションではなく、将来の眼病リスクからお子様を守る“かける日焼け止め”です。',
+          opening: '小さいお子様ほど、実は目の中まで紫外線を通しやすい時期なんです。',
+          insight: '親御さんは肌の日焼けは気にされますが、目は大人の約3倍も奥まで通しやすいとお伝えすると、一気に必要性が伝わります。',
+          close: '今から高品質UVカットレンズで守っておくことが、将来の白内障などのリスク対策の第一歩になります。',
+          final: 'これはおしゃれ用ではなく、お子様の瞳にかける日焼け止めとして考えていただくのが一番わかりやすいです。'
+        },
+        elementary: {
+          label: '小学生（6〜12歳）',
+          short: '6–12 / Long Outdoor Time',
+          dangerMeter: 88,
+          safeMeter: 24,
+          throughMetric: 80,
+          protectMetric: 84,
+          dangerLabel: '危険水域',
+          safeLabel: '安全圏',
+          throughLabel: '高い',
+          protectLabel: 'かなり有効',
+          dangerText: '小学生は外遊びの時間が最も長く、毎日の少しずつの紫外線が一気に蓄積しやすい時期です。無対策だと20歳までのメーターは危険域に近づきやすくなります。',
+          throughText: '目そのものの透しやすさに加えて、屋外にいる時間の長さが重なることで、蓄積ペースが速くなりやすいのがこの年代です。',
+          safeText: '高品質UVカットレンズを日常使いにすると、外遊びの時間が長い年代でもダメージの増え方を大きく抑えやすくなります。毎日の習慣化が効く年代です。',
+          protectText: 'この時期は“強い紫外線の日だけ”ではなく、普段使いで守ることが将来差になります。',
+          science: '子供の目は大人より紫外線を奥まで通しやすく、その上で小学生は屋外滞在時間が長いので、透しやすさと浴びる量の両方が重なりやすい年代です。',
+          risk: '登下校、休み時間、公園、スポーツなど、親が思う以上に細かい屋外時間が積み重なります。毎日少しずつでも、長期で見ると差が大きくなります。',
+          phrase: '外遊びが多い今だからこそ、将来のための“かける日焼け止め”が必要です。',
+          opening: '小学生は一番外で過ごす時間が長いので、実は目の紫外線対策がかなり大事な時期なんです。',
+          insight: '子供の目は大人より紫外線を奥まで通しやすい上に、外遊びの時間まで長いので、蓄積しやすさが重なってしまいます。',
+          close: '毎日使うメガネだからこそ、高品質UVカットレンズにしておくと将来のリスク対策として非常に意味があります。',
+          final: 'これはファッションではなく、お子様の瞳を毎日守る“かける日焼け止め”としておすすめできます。'
+        },
+        junior: {
+          label: '中学生（13〜15歳）',
+          short: '13–15 / Club Activity UV',
+          dangerMeter: 82,
+          safeMeter: 28,
+          throughMetric: 68,
+          protectMetric: 80,
+          dangerLabel: '高リスク域',
+          safeLabel: '安全圏',
+          throughLabel: 'まだ高い',
+          protectLabel: '安定して守る',
+          dangerText: '中学生は幼児より透しやすさ自体は落ち着いてきても、部活や登下校で強い紫外線を長時間浴び続けやすく、無対策だと蓄積メーターは高リスク域に達しやすいです。',
+          throughText: '年齢が上がっても子供の瞳はまだ大人と同じではなく、屋外活動量が多いぶんダメージの総量は十分大きくなり得ます。',
+          safeText: '部活や屋外活動が多い年代こそ、高品質UVカットレンズで日常的に防御する価値があります。派手なサングラスより、自然に使える品質重視のレンズ提案が刺さります。',
+          protectText: 'この年代は“嫌がらずに続けられること”が大事なので、見た目より毎日使える品質で提案すると通りやすいです。',
+          science: '中学生では透しやすさだけでなく、浴びる総量の管理が重要です。特に屋外部活では、短期間でもかなりの紫外線を浴びるため、毎日防げるレンズが有効です。',
+          risk: 'テニス、サッカー、陸上、野球など、部活で午後まで紫外線を浴び続けるケースは珍しくありません。対策なしだと、蓄積が一気に進みやすい生活です。',
+          phrase: '部活で浴びる紫外線こそ、毎日かけられるUVレンズで守るべきです。',
+          opening: '中学生は見た目の抵抗感が出やすい時期ですが、実は部活で浴びる紫外線量がかなり大きいんです。',
+          insight: '大人よりまだ通しやすい目で、長時間の屋外活動が続くので、将来への蓄積を考えると今の対策がすごく重要になります。',
+          close: 'だからこそ、サングラスっぽすぎない高品質UVカットレンズで、毎日自然に守れる形が理想です。',
+          final: '将来の眼病リスクを減らすための“かける日焼け止め”としてご案内すると、親御さんにも納得していただきやすいです。'
+        }
+      };
+
+      const ageButtons = document.querySelectorAll('.age-btn');
+      const revealSection = document.getElementById('revealSection');
+      const statusMessage = document.getElementById('statusMessage');
+      const resetBtn = document.getElementById('resetBtn');
+
+      const dangerBadge = document.getElementById('dangerBadge');
+      const safeBadge = document.getElementById('safeBadge');
+      const dangerMeter = document.getElementById('dangerMeter');
+      const safeMeter = document.getElementById('safeMeter');
+      const dangerHead = document.getElementById('dangerHead');
+      const safeHead = document.getElementById('safeHead');
+      const dangerLabel = document.getElementById('dangerLabel');
+      const safeLabel = document.getElementById('safeLabel');
+      const dangerText = document.getElementById('dangerText');
+      const throughLabel = document.getElementById('throughLabel');
+      const throughMetric = document.getElementById('throughMetric');
+      const throughText = document.getElementById('throughText');
+      const safeText = document.getElementById('safeText');
+      const protectLabel = document.getElementById('protectLabel');
+      const protectMetric = document.getElementById('protectMetric');
+      const protectText = document.getElementById('protectText');
+      const dangerBurst = document.getElementById('dangerBurst');
+      const safeBurst = document.getElementById('safeBurst');
+
+      const logicAge = document.getElementById('logicAge');
+      const logicScience = document.getElementById('logicScience');
+      const logicRisk = document.getElementById('logicRisk');
+      const decisionPhrase = document.getElementById('decisionPhrase');
+
+      const talkOpening = document.getElementById('talkOpening');
+      const talkInsight = document.getElementById('talkInsight');
+      const talkClose = document.getElementById('talkClose');
+      const talkFinal = document.getElementById('talkFinal');
+
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const contentTabs = document.querySelectorAll('.content-tab');
+      const copyBtn = document.getElementById('copyBtn');
+      const copyNote = document.getElementById('copyNote');
+
+      let currentAge = null;
+
+      function setActiveTab(tabName) {
+        tabButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        contentTabs.forEach(tab => {
+          tab.classList.toggle('show', tab.dataset.content === tabName);
+        });
+      }
+
+      function restartMeterAnimation(el) {
+        const clone = el.cloneNode(true);
+        el.parentNode.replaceChild(clone, el);
+        return clone;
+      }
+
+      function setSimulation(data) {
+        dangerBadge.textContent = data.short;
+        safeBadge.textContent = data.short;
+
+        let newDangerMeter = restartMeterAnimation(dangerMeter);
+        let newSafeMeter = restartMeterAnimation(safeMeter);
+
+        newDangerMeter.style.setProperty('--meter-height', `${data.dangerMeter}%`);
+        newSafeMeter.style.setProperty('--meter-height', `${data.safeMeter}%`);
+
+        dangerHead.style.bottom = `${data.dangerMeter}%`;
+        safeHead.style.bottom = `${data.safeMeter}%`;
+
+        dangerLabel.textContent = data.dangerLabel;
+        safeLabel.textContent = data.safeLabel;
+        dangerText.textContent = data.dangerText;
+
+        throughLabel.textContent = data.throughLabel;
+        throughMetric.style.width = `${data.throughMetric}%`;
+        throughText.textContent = data.throughText;
+
+        safeText.textContent = data.safeText;
+        protectLabel.textContent = data.protectLabel;
+        protectMetric.style.width = `${data.protectMetric}%`;
+        protectText.textContent = data.protectText;
+
+        dangerBurst.classList.remove('show-danger');
+        safeBurst.classList.remove('show-safe');
+        void dangerBurst.offsetWidth;
+        dangerBurst.classList.add('show-danger');
+        safeBurst.classList.add('show-safe');
+
+        window.dangerMeter = newDangerMeter;
+        window.safeMeter = newSafeMeter;
+      }
+
+      function setText(data) {
+        logicAge.textContent = data.label;
+        logicScience.textContent = data.science;
+        logicRisk.textContent = data.risk;
+        decisionPhrase.textContent = data.phrase;
+
+        talkOpening.textContent = data.opening;
+        talkInsight.textContent = data.insight;
+        talkClose.textContent = data.close;
+        talkFinal.textContent = data.final;
+      }
+
+      function selectAge(key) {
+        const data = DATA[key];
+        if (!data) {
+          statusMessage.textContent = 'データの読み込みに失敗しました。もう一度お試しください。';
+          statusMessage.className = 'mt-4 text-[14px] leading-7 text-magma-600';
+          return;
+        }
+
+        currentAge = key;
+        ageButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.age === key);
+        });
+
+        setSimulation(data);
+        setText(data);
+
+        revealSection.classList.add('show');
+        statusMessage.textContent = `${data.label} に合わせたUVダメージ比較を表示しています。`;
+        statusMessage.className = 'mt-4 text-[14px] leading-7 text-skyx-900/72';
+
+        requestAnimationFrame(() => {
+          revealSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      function resetSelection() {
+        currentAge = null;
+        ageButtons.forEach(btn => btn.classList.remove('active'));
+        revealSection.classList.remove('show');
+        statusMessage.textContent = '年齢を選ぶと、ダメージ蓄積メーターと接客トークが段階的に表示されます。';
+        statusMessage.className = 'mt-4 text-[14px] leading-7 text-skyx-900/50 font-light';
+        copyNote.classList.remove('show');
+        setActiveTab('danger');
+      }
+
+      ageButtons.forEach(btn => {
+        btn.addEventListener('click', () => selectAge(btn.dataset.age));
+      });
+
+      resetBtn.addEventListener('click', resetSelection);
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        if (!currentAge || !DATA[currentAge]) {
+          copyNote.textContent = '先にお子様の年齢を選択してください。';
+          copyNote.classList.add('show');
+          return;
+        }
+
+        const d = DATA[currentAge];
+        const text = [
+          `【年齢】${d.label}`,
+          '',
+          '【導入】',
+          d.opening,
+          '',
+          '【気づき】',
+          d.insight,
+          '',
+          '【提案】',
+          d.close,
+          '',
+          '【背中押し】',
+          d.final,
+          '',
+          '【決め台詞】',
+          d.phrase
+        ].join('\n');
+
+        navigator.clipboard.writeText(text).then(() => {
+          copyNote.textContent = '接客トークをコピーしました。';
+          copyNote.classList.add('show');
+        }).catch(() => {
+          copyNote.textContent = 'コピーできませんでした。ブラウザの権限をご確認ください。';
+          copyNote.classList.add('show');
+        });
+      });
+
+      resetSelection();
+    })();
+  </script>
+</body>
+</html>
