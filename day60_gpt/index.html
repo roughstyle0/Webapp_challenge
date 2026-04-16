@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>目元の日焼け・シミを防ぐ！裏面UV（両面UVカット）防御・美肌シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pearl: {
+              50: '#fcfbff',
+              100: '#f7f4fb',
+              200: '#efe9f7',
+              300: '#e3d8f0',
+              400: '#cfbee3',
+              500: '#b89fce',
+              600: '#9a7fb3',
+              700: '#7c6394',
+              800: '#5f4b71',
+              900: '#40334d'
+            },
+            lavender: {
+              50: '#faf8ff',
+              100: '#f2eeff',
+              200: '#e4dbff',
+              300: '#d3c2ff',
+              400: '#bba0ff',
+              500: '#9a74ff',
+              600: '#7f56d9',
+              700: '#6642b1',
+              800: '#4f3587',
+              900: '#38285f'
+            },
+            rosegold: {
+              50: '#fff8f6',
+              100: '#ffefea',
+              200: '#f8ddd3',
+              300: '#efc2b1',
+              400: '#dfa188',
+              500: '#c97f64',
+              600: '#a76249',
+              700: '#844c39',
+              800: '#60372b',
+              900: '#40251e'
+            },
+            danger: {
+              400: '#ff5c82',
+              500: '#ff3c6a',
+              600: '#e11d48'
+            },
+            mint: {
+              300: '#b7ffe8',
+              400: '#7bf4d0',
+              500: '#34d399',
+              600: '#10b981'
+            }
+          },
+          boxShadow: {
+            pearl: '0 25px 80px rgba(122, 93, 157, .10)',
+            glowRose: '0 0 0 1px rgba(201,127,100,.18), 0 18px 60px rgba(201,127,100,.12)',
+            glowLav: '0 0 0 1px rgba(154,116,255,.18), 0 18px 60px rgba(154,116,255,.14)',
+            glowMint: '0 0 0 1px rgba(52,211,153,.20), 0 18px 60px rgba(52,211,153,.14)',
+            glowDanger: '0 0 0 1px rgba(255,60,106,.22), 0 18px 60px rgba(255,60,106,.16)'
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(14px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            sweep: {
+              '0%': { transform: 'translateX(-130%)' },
+              '100%': { transform: 'translateX(130%)' }
+            },
+            laserPulse: {
+              '0%,100%': { opacity: '.35', filter: 'drop-shadow(0 0 6px rgba(255,60,106,.3))' },
+              '50%': { opacity: '1', filter: 'drop-shadow(0 0 16px rgba(255,60,106,.75))' }
+            },
+            absorbGlow: {
+              '0%,100%': { opacity: '.45', transform: 'scale(1)' },
+              '50%': { opacity: '.9', transform: 'scale(1.07)' }
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-220% 0' },
+              '100%': { backgroundPosition: '220% 0' }
+            }
+          },
+          animation: {
+            fadeUp: 'fadeUp .6s ease-out both',
+            sweep: 'sweep 1.2s ease',
+            laserPulse: 'laserPulse 1.3s ease-in-out infinite',
+            absorbGlow: 'absorbGlow 1.8s ease-in-out infinite',
+            shimmer: 'shimmer 2.4s linear infinite'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg: #fbf9fe;
+      --ink: #2d2438;
+      --muted: rgba(45,36,56,.62);
+      --line: rgba(89,71,104,.10);
+      --line-strong: rgba(89,71,104,.18);
+      --rose: #c97f64;
+      --lav: #9a74ff;
+      --laser: #ff3c6a;
+      --mint: #34d399;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background:
+        radial-gradient(circle at 14% 12%, rgba(201,127,100,.11), transparent 18%),
+        radial-gradient(circle at 83% 11%, rgba(154,116,255,.12), transparent 20%),
+        radial-gradient(circle at 50% 100%, rgba(183,255,232,.13), transparent 26%),
+        linear-gradient(180deg, #fffefe 0%, #fbf7ff 38%, #f8f4fb 100%);
+      overflow-x: hidden;
+    }
+
+    .glass-top {
+      border-top: 1px solid rgba(255,255,255,.9);
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.42));
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(89,71,104,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(89,71,104,.04) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.95), rgba(0,0,0,.15));
+      opacity: .45;
+    }
+
+    .hairline::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(89,71,104,.18), transparent);
+    }
+
+    .soft-panel {
+      position: relative;
+      border-top: 1px solid rgba(255,255,255,.8);
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.56), rgba(249,245,253,.32));
+      backdrop-filter: blur(10px);
+    }
+
+    .scene-btn {
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid transparent;
+      transition: transform .25s ease, border-color .25s ease;
+    }
+
+    .scene-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,.78) 40%, transparent 68%);
+      transform: translateX(-130%);
+    }
+
+    .scene-btn:hover::before,
+    .scene-btn.active::before {
+      animation: sweep 1.1s ease;
+    }
+
+    .scene-btn:hover,
+    .scene-btn.active {
+      transform: translateX(6px);
+      border-top-color: var(--line-strong);
+      border-bottom-color: var(--line);
+    }
+
+    .scene-btn.active .scene-title {
+      color: rgba(45,36,56,.98);
+    }
+
+    .section-hidden {
+      display: none;
+    }
+
+    .section-hidden.show {
+      display: block;
+      animation: fadeUp .6s ease-out both;
+    }
+
+    .sim-stage {
+      position: relative;
+      min-height: 560px;
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,.85);
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.82), rgba(255,255,255,.18) 42%, transparent 68%),
+        linear-gradient(180deg, rgba(255,255,255,.50), rgba(244,239,250,.34));
+    }
+
+    .sim-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255,255,255,.18), transparent 24%, transparent 76%, rgba(255,255,255,.12));
+    }
+
+    .beauty-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(255,245,248,.88), transparent 26%),
+        radial-gradient(circle at 20% 90%, rgba(183,255,232,.16), transparent 22%),
+        radial-gradient(circle at 80% 82%, rgba(154,116,255,.12), transparent 24%);
+      pointer-events: none;
+    }
+
+    .head-wrap {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 520px;
+    }
+
+    .shoulder {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 185px;
+      border-radius: 120px 120px 28px 28px;
+      background: linear-gradient(180deg, #fffefe 0%, #eaddd8 32%, #ceb2a1 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+    }
+
+    .neck {
+      position: absolute;
+      left: 50%;
+      bottom: 148px;
+      transform: translateX(-50%);
+      width: 64px;
+      height: 90px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #efd1be, #ddb498);
+    }
+
+    .face {
+      position: absolute;
+      left: 50%;
+      bottom: 206px;
+      transform: translateX(-50%);
+      width: 178px;
+      height: 220px;
+      border-radius: 88px 88px 78px 78px;
+      background: linear-gradient(180deg, #f6dcc8 0%, #ecc8ad 65%, #ddb08d 100%);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.3);
+    }
+
+    .hair {
+      position: absolute;
+      left: 50%;
+      bottom: 318px;
+      transform: translateX(-50%);
+      width: 216px;
+      height: 152px;
+      border-radius: 104px 104px 54px 54px;
+      background: linear-gradient(180deg, #5a4054 0%, #39273b 100%);
+    }
+
+    .hair::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: -42px;
+      height: 74px;
+      border-radius: 0 0 56px 56px;
+      background: linear-gradient(180deg, rgba(57,39,59,.96), rgba(57,39,59,0));
+    }
+
+    .eye-zone {
+      position: absolute;
+      left: 50%;
+      bottom: 290px;
+      transform: translateX(-50%);
+      width: 156px;
+      height: 42px;
+    }
+
+    .eye {
+      position: absolute;
+      top: 10px;
+      width: 44px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(73,48,55,.78);
+      filter: blur(.18px);
+      opacity: .95;
+    }
+
+    .eye.left { left: 20px; }
+    .eye.right { right: 20px; }
+
+    .brow {
+      position: absolute;
+      top: 0;
+      width: 48px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(70,44,52,.8);
+    }
+
+    .brow.left { left: 16px; transform: rotate(-8deg); }
+    .brow.right { right: 16px; transform: rotate(8deg); }
+
+    .nose {
+      position: absolute;
+      left: 50%;
+      bottom: 270px;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(202,145,111,.16), rgba(202,145,111,.40));
+    }
+
+    .mouth {
+      position: absolute;
+      left: 50%;
+      bottom: 245px;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 12px;
+      border-bottom: 2px solid rgba(121,74,79,.42);
+      border-radius: 0 0 999px 999px;
+    }
+
+    .cheek-zone {
+      position: absolute;
+      left: 50%;
+      bottom: 244px;
+      transform: translateX(-50%);
+      width: 216px;
+      height: 98px;
+      pointer-events: none;
+    }
+
+    .spot-zone {
+      position: absolute;
+      top: 14px;
+      width: 68px;
+      height: 62px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,96,128,.0) 0%, rgba(255,96,128,.0) 45%, rgba(255,96,128,.18) 100%);
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+
+    .spot-zone.left { left: 12px; }
+    .spot-zone.right { right: 12px; }
+
+    .frame-wrap {
+      position: absolute;
+      left: 50%;
+      bottom: 270px;
+      transform: translateX(-50%);
+      width: 210px;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .lens {
+      position: relative;
+      width: 92px;
+      height: 60px;
+      border-radius: 25px 25px 20px 20px;
+      border: 3px solid rgba(82,63,92,.92);
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(243,236,248,.08));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+    }
+
+    .lens::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,.42), transparent 34%, transparent 68%, rgba(255,255,255,.08));
+      pointer-events: none;
+    }
+
+    .bridge {
+      width: 22px;
+      height: 6px;
+      border-top: 3px solid rgba(82,63,92,.92);
+      margin-top: -6px;
+    }
+
+    .temple {
+      position: absolute;
+      top: 22px;
+      width: 44px;
+      height: 4px;
+      background: rgba(82,63,92,.82);
+    }
+
+    .temple.left { left: -30px; transform: rotate(10deg); }
+    .temple.right { right: -30px; transform: rotate(-10deg); }
+
+    .uv-front {
+      position: absolute;
+      top: 56px;
+      width: 110px;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(154,116,255,.12), rgba(154,116,255,.65), rgba(154,116,255,.12));
+      filter: blur(1px);
+      opacity: .8;
+    }
+    .uv-front.left { left: 46px; transform: rotate(16deg); }
+    .uv-front.right { right: 46px; transform: rotate(-16deg); }
+
+    .uv-front::after {
+      content: "";
+      position: absolute;
+      inset: -5px 18px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(154,116,255,.5), transparent);
+      animation: shimmer 2.2s linear infinite;
+      background-size: 220% 100%;
+    }
+
+    .laser {
+      position: absolute;
+      width: 86px;
+      height: 4px;
+      border-radius: 999px;
+      transform-origin: left center;
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+
+    .laser.left {
+      left: 114px;
+      top: 112px;
+      transform: rotate(48deg);
+      background: linear-gradient(90deg, rgba(255,60,106,.05), rgba(255,60,106,1), rgba(255,170,192,.35));
+    }
+    .laser.right {
+      right: 114px;
+      top: 112px;
+      transform: rotate(-48deg);
+      background: linear-gradient(90deg, rgba(255,170,192,.35), rgba(255,60,106,1), rgba(255,60,106,.05));
+    }
+
+    .laser.show {
+      opacity: 1;
+      animation: laserPulse 1.25s ease-in-out infinite;
+    }
+
+    .absorb-ring {
+      position: absolute;
+      width: 72px;
+      height: 72px;
+      border-radius: 999px;
+      border: 2px solid rgba(52,211,153,.42);
+      box-shadow: 0 0 0 12px rgba(183,255,232,.10), inset 0 0 16px rgba(123,244,208,.10);
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+
+    .absorb-ring.left { left: 94px; top: 84px; }
+    .absorb-ring.right { right: 94px; top: 84px; }
+    .absorb-ring.show {
+      opacity: 1;
+      animation: absorbGlow 1.8s ease-in-out infinite;
+    }
+
+    .absorb-ring::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 22px;
+      width: 16px;
+      height: 10px;
+      border-left: 3px solid rgba(16,185,129,.92);
+      border-bottom: 3px solid rgba(16,185,129,.92);
+      transform: rotate(-45deg);
+    }
+
+    .metric {
+      height: 8px;
+      overflow: hidden;
+      background: linear-gradient(90deg, rgba(89,71,104,.06), rgba(89,71,104,.02));
+    }
+
+    .metric-fill {
+      height: 100%;
+      transition: width .5s ease;
+      background: linear-gradient(90deg, rgba(201,127,100,.82), rgba(154,116,255,.86));
+    }
+
+    .tab-btn {
+      border-bottom: 1px solid transparent;
+      color: rgba(45,36,56,.46);
+      transition: color .2s ease, border-color .2s ease;
+    }
+
+    .tab-btn.active {
+      color: rgba(45,36,56,.94);
+      border-color: rgba(45,36,56,.20);
+    }
+
+    .content-tab { display: none; }
+    .content-tab.show {
+      display: block;
+      animation: fadeUp .45s ease both;
+    }
+
+    .copy-note { opacity: 0; transition: opacity .25s ease; }
+    .copy-note.show { opacity: 1; }
+
+    @media (max-width: 1024px) {
+      .sim-stage { min-height: 500px; }
+      .head-wrap {
+        transform: translateX(-50%) scale(.92);
+        transform-origin: center bottom;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sim-stage { min-height: 430px; }
+      .head-wrap {
+        transform: translateX(-50%) scale(.76);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .sim-stage { min-height: 390px; }
+      .head-wrap {
+        transform: translateX(-50%) scale(.68);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="fixed inset-x-0 top-0 z-50 glass-top">
+    <div class="mx-auto max-w-7xl px-6 py-4">
+      <div class="flex items-center justify-between gap-6">
+        <div>
+          <p class="text-[11px] tracking-[0.32em] uppercase text-pearl-900/40">Beauty UV Upgrade Tool</p>
+          <h1 class="mt-1 text-sm sm:text-base md:text-lg font-light tracking-[0.08em] text-pearl-900/90">
+            目元の日焼け・シミを防ぐ！「裏面UV（両面UVカット）防御・美肌シミュレーター」
+          </h1>
+        </div>
+        <div class="hidden md:block text-[12px] tracking-[0.18em] uppercase text-pearl-900/35">
+          For New Staff
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-24">
+    <section class="relative overflow-hidden">
+      <div class="absolute inset-0 hero-grid pointer-events-none"></div>
+      <div class="mx-auto max-w-7xl px-6 pt-10 pb-16">
+        <div class="grid lg:grid-cols-[1.08fr_.92fr] gap-12 items-end">
+          <div>
+            <div class="hairline w-28"></div>
+            <p class="mt-5 text-[11px] tracking-[0.3em] uppercase text-pearl-900/42">Luxury UV Skincare Lens Proposal</p>
+            <h2 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-extralight tracking-[0.03em] leading-[1.05] text-pearl-900/92">
+              ただのUV対策を、<br>
+              <span class="text-pearl-900/55">美容投資の提案</span>に変える。
+            </h2>
+            <p class="mt-8 max-w-3xl text-[15px] sm:text-[17px] leading-8 text-pearl-900/62 font-light">
+              お客様が見落としがちなのは、
+              <span class="text-pearl-900/86">前から来る紫外線</span>ではなく、
+              <span class="text-pearl-900/86">レンズの裏面に跳ね返って目と目元へ入る紫外線</span>です。
+              このアプリは、普通のUVカットと裏面UVカットの差を、
+              <span class="text-pearl-900/86">シミができやすいゾーン</span>に絞って直感的に伝えるための接客支援ツールです。
+            </p>
+          </div>
+
+          <div class="relative h-[350px] sm:h-[400px]">
+            <div class="absolute inset-0 rounded-full blur-3xl bg-gradient-to-br from-white via-lavender-100/60 to-rosegold-100/50 opacity-80"></div>
+            <div class="absolute inset-x-8 top-0 bottom-8">
+              <div class="absolute left-0 top-12 text-pearl-900/78">
+                <div class="text-[11px] tracking-[0.26em] uppercase">Normal UV</div>
+                <div class="mt-2 text-2xl sm:text-3xl font-extralight">裏面から刺さる</div>
+              </div>
+              <div class="absolute right-0 bottom-10 text-right text-pearl-900/78">
+                <div class="text-[11px] tracking-[0.26em] uppercase">Backside UV Cut</div>
+                <div class="mt-2 text-2xl sm:text-3xl font-extralight">裏面で止める</div>
+              </div>
+              <svg viewBox="0 0 580 360" class="absolute inset-0 h-full w-full">
+                <defs>
+                  <linearGradient id="lineRose" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#ffc0cf"/>
+                    <stop offset="100%" stop-color="#ff3c6a"/>
+                  </linearGradient>
+                  <linearGradient id="lineMint" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#b7ffe8"/>
+                    <stop offset="100%" stop-color="#10b981"/>
+                  </linearGradient>
+                </defs>
+                <path d="M82 220 C165 180, 210 154, 256 112 C294 78, 324 54, 360 46"
+                      fill="none" stroke="url(#lineRose)" stroke-width="3" opacity=".8"/>
+                <path d="M280 244 C350 214, 390 188, 430 148 C470 108, 500 92, 542 86"
+                      fill="none" stroke="url(#lineMint)" stroke-width="3" opacity=".82"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-6 pb-10">
+      <div class="grid lg:grid-cols-[.95fr_1.05fr] gap-10 items-start">
+        <div class="lg:pt-3">
+          <div class="hairline"></div>
+          <p class="mt-6 text-[11px] tracking-[0.3em] uppercase text-pearl-900/42">Step 1 / Progressive Disclosure</p>
+          <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-pearl-900/90">
+            まずは、普段の紫外線対策を選ぶ
+          </h3>
+          <p class="mt-5 max-w-xl text-[15px] leading-8 text-pearl-900/58 font-light">
+            最初はここだけを見せます。いきなり専門用語を出さず、
+            お客様の今の習慣から「どこに穴があるか」を見せる流れにしています。
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <button class="scene-btn block w-full text-left py-5" data-scene="cream">
+            <div class="text-[11px] tracking-[0.28em] uppercase text-pearl-900/40">Care 01</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="scene-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-pearl-900/82">
+                  日焼け止めクリームのみ
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-pearl-900/55 font-light">
+                  肌表面は守れても、目とレンズ反射は無防備
+                </div>
+              </div>
+              <div class="text-[12px] tracking-[0.16em] uppercase text-pearl-900/34">01</div>
+            </div>
+          </button>
+
+          <button class="scene-btn block w-full text-left py-5" data-scene="parasol">
+            <div class="text-[11px] tracking-[0.28em] uppercase text-pearl-900/40">Care 02</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="scene-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-pearl-900/82">
+                  日傘＋普通のUVカットメガネ
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-pearl-900/55 font-light">
+                  上からは守れるが、照り返しと裏面反射が残る
+                </div>
+              </div>
+              <div class="text-[12px] tracking-[0.16em] uppercase text-pearl-900/34">02</div>
+            </div>
+          </button>
+
+          <button class="scene-btn block w-full text-left py-5" data-scene="hat">
+            <div class="text-[11px] tracking-[0.28em] uppercase text-pearl-900/40">Care 03</div>
+            <div class="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <div class="scene-title text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-pearl-900/82">
+                  帽子＋普通のUVカットメガネ
+                </div>
+                <div class="mt-2 text-[15px] leading-7 text-pearl-900/55 font-light">
+                  直射は減るが、頬まわりへの跳ね返りに弱い
+                </div>
+              </div>
+              <div class="text-[12px] tracking-[0.16em] uppercase text-pearl-900/34">03</div>
+            </div>
+          </button>
+
+          <div class="pt-6">
+            <button id="resetBtn" class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/42 hover:text-pearl-900/86 transition">
+              Reset Selection
+            </button>
+            <p id="statusMessage" class="mt-4 text-[14px] leading-7 text-pearl-900/50 font-light">
+              対策を選ぶと、裏面反射シミュレーションと接客トークが段階的に表示されます。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="revealSection" class="section-hidden mx-auto max-w-7xl px-6 pb-24">
+      <div class="hairline"></div>
+
+      <div class="mt-10 flex flex-wrap items-center justify-between gap-6">
+        <div>
+          <p class="text-[11px] tracking-[0.3em] uppercase text-pearl-900/42">Backside UV Reflection Simulation</p>
+          <h3 class="mt-3 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-pearl-900/90">
+            裏面UV 防御・美肌シミュレーション
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <button class="tab-btn active text-[13px] tracking-[0.18em] uppercase pb-2" data-tab="normal">
+            Normal UV
+          </button>
+          <button class="tab-btn text-[13px] tracking-[0.18em] uppercase pb-2" data-tab="backside">
+            Backside UV Cut
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-10 grid xl:grid-cols-2 gap-10 items-start">
+        <div class="content-tab show" data-content="normal">
+          <div class="soft-panel sim-stage">
+            <div class="beauty-glow"></div>
+
+            <div class="absolute left-8 top-8 right-8 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[11px] tracking-[0.28em] uppercase text-pearl-900/40">Normal UV cut lens</p>
+                <h4 class="mt-3 text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-pearl-900/90">
+                  前は防ぐ、でも裏から刺さる
+                </h4>
+              </div>
+              <div id="normalBadge" class="text-right text-[12px] tracking-[0.14em] uppercase text-pearl-900/42"></div>
+            </div>
+
+            <div class="head-wrap">
+              <div class="uv-front left"></div>
+              <div class="uv-front right"></div>
+
+              <div class="shoulder"></div>
+              <div class="neck"></div>
+              <div class="hair"></div>
+              <div class="face"></div>
+
+              <div class="eye-zone">
+                <div class="brow left"></div>
+                <div class="brow right"></div>
+                <div class="eye left"></div>
+                <div class="eye right"></div>
+              </div>
+
+              <div class="nose"></div>
+              <div class="mouth"></div>
+
+              <div class="cheek-zone">
+                <div class="spot-zone left" id="dangerSpotLeft"></div>
+                <div class="spot-zone right" id="dangerSpotRight"></div>
+              </div>
+
+              <div class="frame-wrap">
+                <div class="temple left"></div>
+                <div class="lens"></div>
+                <div class="bridge"></div>
+                <div class="lens"></div>
+                <div class="temple right"></div>
+              </div>
+
+              <div class="laser left" id="laserLeft"></div>
+              <div class="laser right" id="laserRight"></div>
+            </div>
+
+            <div class="absolute left-8 right-8 bottom-8">
+              <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-pearl-900/40">
+                <span>目元リスク</span>
+                <span id="riskLabel">高い</span>
+              </div>
+              <div class="metric mt-4">
+                <div id="riskMetric" class="metric-fill" style="width:84%"></div>
+              </div>
+              <p id="riskText" class="mt-5 max-w-2xl text-[15px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-tab show" data-content="backside">
+          <div class="soft-panel sim-stage">
+            <div class="beauty-glow"></div>
+
+            <div class="absolute left-8 top-8 right-8 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-[11px] tracking-[0.28em] uppercase text-pearl-900/40">Backside UV cut lens</p>
+                <h4 class="mt-3 text-2xl sm:text-3xl font-extralight tracking-[0.03em] text-pearl-900/90">
+                  裏面で吸収して、目元を守る
+                </h4>
+              </div>
+              <div id="safeBadge" class="text-right text-[12px] tracking-[0.14em] uppercase text-pearl-900/42"></div>
+            </div>
+
+            <div class="head-wrap">
+              <div class="uv-front left"></div>
+              <div class="uv-front right"></div>
+
+              <div class="shoulder"></div>
+              <div class="neck"></div>
+              <div class="hair"></div>
+              <div class="face"></div>
+
+              <div class="eye-zone">
+                <div class="brow left"></div>
+                <div class="brow right"></div>
+                <div class="eye left"></div>
+                <div class="eye right"></div>
+              </div>
+
+              <div class="nose"></div>
+              <div class="mouth"></div>
+
+              <div class="cheek-zone">
+                <div class="spot-zone left opacity-0"></div>
+                <div class="spot-zone right opacity-0"></div>
+              </div>
+
+              <div class="frame-wrap">
+                <div class="temple left"></div>
+                <div class="lens"></div>
+                <div class="bridge"></div>
+                <div class="lens"></div>
+                <div class="temple right"></div>
+              </div>
+
+              <div class="absorb-ring left" id="absorbLeft"></div>
+              <div class="absorb-ring right" id="absorbRight"></div>
+            </div>
+
+            <div class="absolute left-8 right-8 bottom-8">
+              <div class="flex items-center justify-between gap-4 text-[13px] uppercase tracking-[0.16em] text-pearl-900/40">
+                <span>目元保護</span>
+                <span id="safeLabel">高い</span>
+              </div>
+              <div class="metric mt-4">
+                <div id="safeMetric" class="metric-fill" style="width:22%"></div>
+              </div>
+              <p id="safeText" class="mt-5 max-w-2xl text-[15px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-14 grid xl:grid-cols-[1.02fr_.98fr] gap-12">
+        <section>
+          <div class="hairline"></div>
+          <p class="mt-6 text-[11px] tracking-[0.3em] uppercase text-pearl-900/42">Beauty logic</p>
+          <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-pearl-900/90">
+            状況別ロジック
+          </h3>
+
+          <div class="mt-8 space-y-9">
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Selected care</div>
+              <p id="logicCare" class="mt-3 text-2xl font-extralight tracking-[0.02em] text-pearl-900/88"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Beauty common sense</div>
+              <p id="logicBeauty" class="mt-3 text-[16px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Why normal UV is not enough</div>
+              <p id="logicWhy" class="mt-3 text-[16px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Decision phrase</div>
+              <p id="decisionPhrase" class="mt-3 text-[24px] sm:text-[30px] leading-[1.5] font-extralight tracking-[0.02em] text-pearl-900/92"></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="hairline"></div>
+          <div class="mt-6 flex items-end justify-between gap-6">
+            <div>
+              <p class="text-[11px] tracking-[0.3em] uppercase text-pearl-900/42">Professional beauty sales talk</p>
+              <h3 class="mt-4 text-3xl sm:text-4xl font-extralight tracking-[0.03em] text-pearl-900/90">
+                アップグレード接客カンペ
+              </h3>
+            </div>
+            <button id="copyBtn" class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/42 hover:text-pearl-900/86 transition">
+              Copy Talk
+            </button>
+          </div>
+
+          <div class="mt-8 space-y-9">
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Opening</div>
+              <p id="talkOpening" class="mt-3 text-[16px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Beauty insight</div>
+              <p id="talkInsight" class="mt-3 text-[16px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Upgrade close</div>
+              <p id="talkClose" class="mt-3 text-[16px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+
+            <div>
+              <div class="text-[13px] tracking-[0.18em] uppercase text-pearl-900/38">Final push</div>
+              <p id="talkFinal" class="mt-3 text-[16px] leading-8 text-pearl-900/58 font-light"></p>
+            </div>
+          </div>
+
+          <p id="copyNote" class="copy-note mt-8 text-[14px] leading-7 text-mint-600">
+            接客トークをコピーしました。
+          </p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const DATA = {
+        cream: {
+          label: '日焼け止めクリームのみ',
+          short: 'Cream Only',
+          risk: 92,
+          safe: 18,
+          riskLabel: 'かなり高い',
+          safeLabel: 'かなり高い',
+          riskText: '肌表面に塗るケアはできていても、目から入る紫外線や、レンズ裏面反射のような“目元の内側ルート”は守れていません。美容意識が高い方ほど、この抜け道が大きな盲点になります。',
+          safeText: '裏面UVカットを足すことで、塗るケアでは防げない目と目元まわりの反射ルートまでブロックしやすくなります。美容投資としての差が一番出やすい組み合わせです。',
+          beauty: '美容の現場では、目から紫外線が入ると脳が反応し、肌を守ろうとしてメラニン生成が促される、という考え方はよく知られています。つまり、肌だけ塗っていても“目の入口”が無防備だと、美白ケアの効率を落としやすいんです。',
+          why: '普通のUVカットは前面からの紫外線には対応しやすい一方、後方や下方から入り込んだ光がレンズ裏側で反射し、目元のシミができやすいゾーンへ戻る余地があります。クリームだけではここを止められません。',
+          phrase: '高いアイクリームを買うより、先に“塗らない日焼け止め”を足すべきです。',
+          opening: '日焼け止めをしっかり塗っている方ほど、次に差が出るのは“目から入る紫外線”なんです。',
+          insight: '普通のUV対策は前からの紫外線は意識できますが、実はレンズ裏面の照り返しが目元に戻るのが盲点なんです。',
+          close: '美容目的でレンズを選ぶなら、普通のUVで止めずに裏面UVまで入れておくのが正解です。',
+          final: '高いアイクリームを買うよりも、確実に目元を守る“塗らない日焼け止め”としておすすめしやすいです。'
+        },
+        parasol: {
+          label: '日傘＋普通のUVカットメガネ',
+          short: 'Parasol + Normal UV',
+          risk: 74,
+          safe: 20,
+          riskLabel: 'まだ高い',
+          safeLabel: '高い',
+          riskText: '日傘で上からの直射は減らせても、地面や壁からの反射光までは消えません。普通のUVカットメガネでは、その戻り光がレンズ裏面で反射して目元に返る余地が残ります。',
+          safeText: '日傘で上から守り、裏面UVカットで戻り光を止める。この組み合わせにすると、目元ケアの完成度が一段上がります。美白目的の方に説明しやすい提案です。',
+          beauty: '日傘を使っている方は紫外線意識が高いぶん、ケアの完成度を求めています。だからこそ、“上から守る”だけで満足せず、“目に戻る反射”まで見せると納得につながりやすいです。',
+          why: '普通のUVカットメガネは万能に見えますが、裏面反射までは別の話です。日傘の内側でも、下からの照り返しや周囲の反射光が目元へ戻るルートは残ります。',
+          phrase: '日傘を差している方ほど、最後の仕上げは裏面UVです。',
+          opening: '日傘まで使われているなら、紫外線対策の意識はかなり高いですよね。',
+          insight: 'だからこそ、次に見るべきは前からの紫外線ではなく、レンズの裏側から返ってくる照り返しなんです。',
+          close: 'ここを止めて初めて、“ちゃんと守れている感”が出るので、普通のUVから裏面UV付きに上げる価値があります。',
+          final: '日傘を使うレベルの美意識なら、レンズも裏面まで守る仕様にしておくと後悔が少ないです。'
+        },
+        hat: {
+          label: '帽子＋普通のUVカットメガネ',
+          short: 'Hat + Normal UV',
+          risk: 68,
+          safe: 22,
+          riskLabel: 'やや高い',
+          safeLabel: '高い',
+          riskText: '帽子で直射は抑えられますが、頬や地面からの反射は残ります。とくに目の下から入る光は、普通のUVカットレンズの裏面で返りやすく、シミが気になるゾーンへ戻りやすいです。',
+          safeText: '帽子の影に安心しがちな方ほど、裏面UVカットの差が効きます。下からの照り返しまで止めることで、目元保護の抜けを埋めやすくなります。',
+          beauty: '帽子は優秀ですが、影があることと、目元まで完全防御できていることは別です。美容提案では、“隠れているようで守れていない場所”を具体的に見せると刺さりやすいです。',
+          why: '普通のUVカットレンズは、直射には強くても、帽子でできた影の中で起こる裏面反射まではケアしきれません。目の下のくすみやシミを気にする方ほど見逃せないポイントです。',
+          phrase: '帽子で隠すだけでは足りないから、レンズ裏面まで守るんです。',
+          opening: '帽子をかぶっていても、目元のシミ対策としてはまだ完成形ではないんです。',
+          insight: '実は怖いのは、上からの光より、頬や地面から上がってきてレンズ裏面で返る紫外線なんですよ。',
+          close: '目元の美容まで考えるなら、普通のUVで止めずに裏面UV付きへ上げるのが理想です。',
+          final: '見た目の対策から、美容の対策へ。そこを一段上げるのが裏面UVカットです。'
+        }
+      };
+
+      const sceneButtons = document.querySelectorAll('.scene-btn');
+      const revealSection = document.getElementById('revealSection');
+      const statusMessage = document.getElementById('statusMessage');
+      const resetBtn = document.getElementById('resetBtn');
+
+      const normalBadge = document.getElementById('normalBadge');
+      const safeBadge = document.getElementById('safeBadge');
+      const riskMetric = document.getElementById('riskMetric');
+      const safeMetric = document.getElementById('safeMetric');
+      const riskLabel = document.getElementById('riskLabel');
+      const safeLabel = document.getElementById('safeLabel');
+      const riskText = document.getElementById('riskText');
+      const safeText = document.getElementById('safeText');
+
+      const dangerSpotLeft = document.getElementById('dangerSpotLeft');
+      const dangerSpotRight = document.getElementById('dangerSpotRight');
+      const laserLeft = document.getElementById('laserLeft');
+      const laserRight = document.getElementById('laserRight');
+      const absorbLeft = document.getElementById('absorbLeft');
+      const absorbRight = document.getElementById('absorbRight');
+
+      const logicCare = document.getElementById('logicCare');
+      const logicBeauty = document.getElementById('logicBeauty');
+      const logicWhy = document.getElementById('logicWhy');
+      const decisionPhrase = document.getElementById('decisionPhrase');
+
+      const talkOpening = document.getElementById('talkOpening');
+      const talkInsight = document.getElementById('talkInsight');
+      const talkClose = document.getElementById('talkClose');
+      const talkFinal = document.getElementById('talkFinal');
+
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const contentTabs = document.querySelectorAll('.content-tab');
+      const copyBtn = document.getElementById('copyBtn');
+      const copyNote = document.getElementById('copyNote');
+
+      let currentScene = null;
+
+      function setActiveTab(tabName) {
+        tabButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        contentTabs.forEach(tab => {
+          tab.classList.toggle('show', tab.dataset.content === tabName);
+        });
+      }
+
+      function setSimulation(scene) {
+        normalBadge.textContent = scene.short;
+        safeBadge.textContent = scene.short;
+
+        riskMetric.style.width = `${scene.risk}%`;
+        safeMetric.style.width = `${scene.safe}%`;
+        riskLabel.textContent = scene.riskLabel;
+        safeLabel.textContent = scene.safeLabel;
+        riskText.textContent = scene.riskText;
+        safeText.textContent = scene.safeText;
+
+        dangerSpotLeft.style.opacity = '1';
+        dangerSpotRight.style.opacity = '1';
+        laserLeft.classList.add('show');
+        laserRight.classList.add('show');
+        absorbLeft.classList.add('show');
+        absorbRight.classList.add('show');
+      }
+
+      function setText(scene) {
+        logicCare.textContent = scene.label;
+        logicBeauty.textContent = scene.beauty;
+        logicWhy.textContent = scene.why;
+        decisionPhrase.textContent = scene.phrase;
+
+        talkOpening.textContent = scene.opening;
+        talkInsight.textContent = scene.insight;
+        talkClose.textContent = scene.close;
+        talkFinal.textContent = scene.final;
+      }
+
+      function selectScene(key) {
+        const scene = DATA[key];
+        if (!scene) {
+          statusMessage.textContent = 'データの読み込みに失敗しました。もう一度お試しください。';
+          statusMessage.className = 'mt-4 text-[14px] leading-7 text-danger-600';
+          return;
+        }
+
+        currentScene = key;
+        sceneButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.scene === key);
+        });
+
+        setSimulation(scene);
+        setText(scene);
+
+        revealSection.classList.add('show');
+        statusMessage.textContent = `${scene.label} に合わせた裏面UVシミュレーションを表示しています。`;
+        statusMessage.className = 'mt-4 text-[14px] leading-7 text-pearl-900/72';
+
+        requestAnimationFrame(() => {
+          revealSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      function resetSelection() {
+        currentScene = null;
+        sceneButtons.forEach(btn => btn.classList.remove('active'));
+        revealSection.classList.remove('show');
+        statusMessage.textContent = '対策を選ぶと、裏面反射シミュレーションと接客トークが段階的に表示されます。';
+        statusMessage.className = 'mt-4 text-[14px] leading-7 text-pearl-900/50 font-light';
+        copyNote.classList.remove('show');
+        setActiveTab('normal');
+      }
+
+      sceneButtons.forEach(btn => {
+        btn.addEventListener('click', () => selectScene(btn.dataset.scene));
+      });
+
+      resetBtn.addEventListener('click', resetSelection);
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        if (!currentScene || !DATA[currentScene]) {
+          copyNote.textContent = '先に紫外線対策を選択してください。';
+          copyNote.classList.add('show');
+          return;
+        }
+
+        const d = DATA[currentScene];
+        const text = [
+          `【普段の対策】${d.label}`,
+          '',
+          '【導入】',
+          d.opening,
+          '',
+          '【美容インサイト】',
+          d.insight,
+          '',
+          '【アップグレード提案】',
+          d.close,
+          '',
+          '【背中押し】',
+          d.final,
+          '',
+          '【決め台詞】',
+          d.phrase
+        ].join('\n');
+
+        navigator.clipboard.writeText(text).then(() => {
+          copyNote.textContent = '接客トークをコピーしました。';
+          copyNote.classList.add('show');
+        }).catch(() => {
+          copyNote.textContent = 'コピーできませんでした。ブラウザの権限をご確認ください。';
+          copyNote.classList.add('show');
+        });
+      });
+
+      resetSelection();
+    })();
+  </script>
+</body>
+</html>
