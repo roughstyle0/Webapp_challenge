@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ERGONOMIC LENS SIMULATOR - 姿勢＆視界シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#F8F9FA', // 極めて薄いグレー（白に近い）
+                            text: '#0F172A', // 墨黒
+                            accent: '#2DD4BF', // ミントグリーン（正解・安らぎ）
+                            alert: '#EF4444', // レッド（警告・ストレス）
+                            border: '#E2E8F0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスタイル: 脱テンプレと独自の世界観構築 */
+        body {
+            background-color: theme('colors.brand.bg');
+            color: theme('colors.brand.text');
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 視界シミュレーションのブラー用マスク */
+        .vision-mask-old {
+            /* 遠近両用: 下部のみピントが合い、他はボヤける */
+            -webkit-mask-image: radial-gradient(circle at 50% 100%, transparent 15%, black 50%);
+            mask-image: radial-gradient(circle at 50% 100%, transparent 15%, black 50%);
+        }
+        .vision-mask-new {
+            /* 中近両用: 画面全体に広くピントが合う */
+            -webkit-mask-image: radial-gradient(ellipse at 50% 50%, transparent 75%, black 100%);
+            mask-image: radial-gradient(ellipse at 50% 50%, transparent 75%, black 100%);
+        }
+
+        /* 背景のグリッドパターン（インダストリアル感の演出） */
+        .bg-grid {
+            background-image: 
+                linear-gradient(to right, #f1f5f9 1px, transparent 1px),
+                linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* アニメーション用クラス */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SVG描画のアニメーション */
+        .draw-line {
+            stroke-dasharray: 200;
+            stroke-dashoffset: 200;
+            animation: drawLine 1.5s ease-out forwards;
+        }
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+    </style>
+</head>
+<body class="selection:bg-brand-accent selection:text-white">
+
+    <!-- ナビゲーションバー風ヘッダー -->
+    <nav class="border-b border-brand-border py-6 px-6 md:px-12 bg-white">
+        <div class="text-[10px] font-semibold tracking-[0.3em] text-slate-400 uppercase">
+            Ergonomic Lens Simulator
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-12 py-12 md:py-24">
+        
+        <!-- Step 1: プログレッシブ・ディクロージャーに基づく初期表示エリア -->
+        <div id="step-selection" class="max-w-4xl">
+            <h1 class="text-3xl md:text-5xl font-light tracking-tight mb-6 leading-tight">
+                視界が変われば、<br class="md:hidden">姿勢が変わる。
+            </h1>
+            <p class="text-slate-500 mb-12 font-light leading-relaxed md:text-lg">
+                眼精疲労と肩こりの根本原因を特定するため、<br class="hidden md:block">
+                お客様の「現在のデスクワーク環境」を選択してください。
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border border-brand-border bg-white">
+                <!-- 選択ボタン: 角丸を使わず、罫線で区切るインダストリアルデザイン -->
+                <button onclick="selectEnvironment('desktop')" class="group relative p-8 md:p-12 text-left border-b md:border-b-0 md:border-r border-brand-border hover:bg-slate-50 transition-colors duration-300">
+                    <div class="text-xs tracking-widest text-slate-400 mb-4 uppercase group-hover:text-brand-text transition-colors">Environment 01</div>
+                    <div class="text-xl font-medium mb-2">デスクトップPC</div>
+                    <div class="text-sm text-slate-500 font-light">正面のモニターを見据える標準的な環境</div>
+                    <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text group-hover:w-full transition-all duration-500"></div>
+                </button>
+                
+                <button onclick="selectEnvironment('laptop')" class="group relative p-8 md:p-12 text-left border-b md:border-b-0 md:border-r border-brand-border hover:bg-slate-50 transition-colors duration-300">
+                    <div class="text-xs tracking-widest text-slate-400 mb-4 uppercase group-hover:text-brand-text transition-colors">Environment 02</div>
+                    <div class="text-xl font-medium mb-2">ノートPC</div>
+                    <div class="text-sm text-slate-500 font-light">目線が下がり、画面との距離が近い環境</div>
+                    <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text group-hover:w-full transition-all duration-500"></div>
+                </button>
+                
+                <button onclick="selectEnvironment('dual')" class="group relative p-8 md:p-12 text-left hover:bg-slate-50 transition-colors duration-300">
+                    <div class="text-xs tracking-widest text-slate-400 mb-4 uppercase group-hover:text-brand-text transition-colors">Environment 03</div>
+                    <div class="text-xl font-medium mb-2">デュアルモニター</div>
+                    <div class="text-sm text-slate-500 font-light">視線の横移動が極めて多いマルチ画面環境</div>
+                    <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text group-hover:w-full transition-all duration-500"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: 結果表示エリア（初期非表示） -->
+        <div id="step-result" class="hidden mt-20 md:mt-32">
+            <!-- JSで動的にコンテンツが注入されます -->
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. 手抜き禁止：環境ごとの緻密なロジックとカンペデータ ---
+        const environmentData = {
+            desktop: {
+                title: "デスクトップPC環境",
+                subtitle: "モニターが目線と同じ高さにある場合",
+                // ビジュアルデータ (SVGのパスと要素設定)
+                visual: {
+                    old: {
+                        postureLabel: "ストレートネック / アゴ上がり",
+                        spinePath: "M30,85 Q20,55 40,30", // 前傾した脊椎
+                        headCx: 45, headCy: 20,
+                        eyeLine: `<line x1="45" y1="20" x2="75" y2="35" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>`, // 上向きの無理な視線
+                        stress: `<circle cx="35" cy="40" r="8" fill="#EF4444" class="animate-ping opacity-60"/><circle cx="35" cy="40" r="4" fill="#EF4444" />`,
+                        monitors: `<rect x="75" y="25" width="10" height="35" fill="none" stroke="#94A3B8" stroke-width="2" />`
+                    },
+                    new: {
+                        postureLabel: "自然なS字カーブ / 顎引き",
+                        spinePath: "M30,85 Q40,60 30,30", // 自然なS字
+                        headCx: 30, headCy: 20,
+                        eyeLine: `<line x1="30" y1="20" x2="75" y2="40" stroke="#2DD4BF" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>`, // まっすぐな視線
+                        stress: `<circle cx="30" cy="35" r="4" fill="#2DD4BF" class="animate-pulse" />`,
+                        monitors: `<rect x="75" y="25" width="10" height="35" fill="none" stroke="#94A3B8" stroke-width="2" />`
+                    }
+                },
+                logicTitle: "ストレートネックを誘発する視界のミスマッチ",
+                logicText: "デスクトップモニターは通常、目線と同じか少し高い位置にあります。従来の遠近両用レンズは「下部」に近くを見るための度数が入っているため、正面のモニターにピントを合わせようとすると、無意識に顎を突き出す不自然な姿勢を強いられます。これが頸椎への持続的な負荷を生み、慢性的な肩こりの根本原因となります。",
+                scriptText: "「お客様、デスクでモニターを見るとき、無意識に顎が上がっていませんか？遠近両用は手元に特化しているため、正面の画面を見るには首に大きな負担がかかるんです。この『中近両用』なら、顎を引いた自然な姿勢のまま、画面がスッキリ見えますよ。」"
+            },
+            laptop: {
+                title: "ノートPC環境",
+                subtitle: "画面が低く、目線が下がる場合",
+                visual: {
+                    old: {
+                        postureLabel: "極端な覗き込み / 首の酷使",
+                        spinePath: "M30,85 Q40,55 55,40", // 覗き込むような深い前傾
+                        headCx: 60, headCy: 32,
+                        eyeLine: `<line x1="60" y1="32" x2="70" y2="65" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>`,
+                        stress: `<circle cx="45" cy="50" r="8" fill="#EF4444" class="animate-ping opacity-60"/><circle cx="45" cy="50" r="4" fill="#EF4444" />`,
+                        monitors: `<rect x="65" y="60" width="15" height="25" fill="none" stroke="#94A3B8" stroke-width="2" transform="rotate(-15 65 60)" />`
+                    },
+                    new: {
+                        postureLabel: "緩やかな前傾 / 広い視野角",
+                        spinePath: "M30,85 Q35,60 30,40", // 負担のない前傾
+                        headCx: 30, headCy: 30,
+                        eyeLine: `<path d="M30,30 L60,60 L75,70" fill="none" stroke="#2DD4BF" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>`, // 広くカバーする視界
+                        stress: `<circle cx="30" cy="45" r="4" fill="#2DD4BF" class="animate-pulse" />`,
+                        monitors: `<rect x="65" y="60" width="15" height="25" fill="none" stroke="#94A3B8" stroke-width="2" transform="rotate(-15 65 60)" />`
+                    }
+                },
+                logicTitle: "狭い視野が引き起こす首・肩の過緊張",
+                logicText: "ノートPCは目線が下がるため、遠近両用でも画面を見ることは可能です。しかし、遠近両用の中間視野は非常に狭く「鍵穴から覗いている」ような状態です。画面の端から端を見るために、眼球運動だけでなく首を前後左右に振る動きが無意識に増大し、肩甲骨周りの筋肉がガチガチに固まってしまいます。",
+                scriptText: "「ノートPCだと、画面全体を見渡すときに首を動かしていませんか？遠近両用だとピントが合う範囲が狭いので、無意識に首を酷使してしまうんです。中近両用の圧倒的に広い視野なら、目線の移動だけで画面の隅々まで快適に見渡せますよ。」"
+            },
+            dual: {
+                title: "デュアルモニター環境",
+                subtitle: "視線の横移動が連続する場合",
+                visual: {
+                    old: {
+                        postureLabel: "極端な捻転 / 首の筋疲労",
+                        spinePath: "M30,85 Q20,55 40,30",
+                        headCx: 45, headCy: 20,
+                        eyeLine: `
+                            <line x1="45" y1="20" x2="65" y2="40" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>
+                            <line x1="45" y1="20" x2="85" y2="25" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>
+                        `, // 左右にブレる視線
+                        stress: `<circle cx="35" cy="40" r="8" fill="#EF4444" class="animate-ping opacity-60"/><circle cx="35" cy="40" r="4" fill="#EF4444" />`,
+                        monitors: `
+                            <rect x="60" y="30" width="10" height="35" fill="none" stroke="#94A3B8" stroke-width="2" />
+                            <rect x="80" y="20" width="10" height="35" fill="none" stroke="#CBD5E1" stroke-width="1.5" />
+                        `
+                    },
+                    new: {
+                        postureLabel: "体の軸の安定 / 目の移動のみ",
+                        spinePath: "M30,85 Q40,60 30,30",
+                        headCx: 30, headCy: 20,
+                        eyeLine: `
+                            <path d="M30,20 L65,40 M30,20 L85,35" fill="none" stroke="#2DD4BF" stroke-width="1.5" stroke-dasharray="2" class="draw-line"/>
+                        `,
+                        stress: `<circle cx="30" cy="35" r="4" fill="#2DD4BF" class="animate-pulse" />`,
+                        monitors: `
+                            <rect x="60" y="30" width="10" height="35" fill="none" stroke="#94A3B8" stroke-width="2" />
+                            <rect x="80" y="20" width="10" height="35" fill="none" stroke="#CBD5E1" stroke-width="1.5" />
+                        `
+                    }
+                },
+                logicTitle: "広大な作業領域とレンズ設計の完全な不一致",
+                logicText: "横幅が広いデュアルモニター環境において、従来の遠近両用レンズは完全にスペック不足です。狭い中間・近用視野ではサブモニターに全くピントが合わず、ピントを合わせるための極端な首の捻転（回旋運動）が頻発します。この反復動作が、深刻な首の痛みと眼精疲労を引き起こします。",
+                scriptText: "「画面が２つあると、視線の移動が本当に多いですよね。遠近両用は横の視野が狭いので、サブモニターを見るたびに首を大きくねじらないと見えないはずです。中近両用なら横の視野も広いので、体の向きを変えずに２つの画面をラクに行き来できますよ。」"
+            }
+        };
+
+        // --- 2. プログレッシブ・ディクロージャーの実装 ---
+        function selectEnvironment(envKey) {
+            const data = environmentData[envKey];
+            const resultArea = document.getElementById('step-result');
+            
+            // UI更新関数
+            const updateUI = () => {
+                resultArea.innerHTML = `
+                    <div class="mb-12">
+                        <div class="text-xs tracking-[0.2em] text-brand-accent mb-2 uppercase">Simulation Result</div>
+                        <h2 class="text-2xl md:text-4xl font-light mb-2">${data.title}</h2>
+                        <p class="text-slate-500">${data.subtitle}</p>
+                    </div>
+
+                    <!-- 比較エリア (モバイルファースト: スマホで縦、PCで横) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+                        
+                        <!-- NG: 遠近両用 -->
+                        <div class="bg-white border border-brand-border relative group">
+                            <div class="absolute top-0 right-0 p-4 z-10">
+                                <span class="text-[10px] tracking-widest text-brand-alert uppercase border border-brand-alert px-2 py-1 bg-white">Legacy (遠近両用)</span>
+                            </div>
+                            <div class="p-8 border-b border-brand-border">
+                                <h3 class="text-lg font-medium mb-1 text-slate-800">従来の遠近両用レンズ</h3>
+                                <p class="text-sm text-brand-alert">首への負荷：高 / 視野：狭い</p>
+                            </div>
+                            
+                            <!-- 姿勢シミュレーション (SVG) -->
+                            <div class="p-8 border-b border-brand-border bg-grid relative h-64 overflow-hidden flex items-center justify-center">
+                                <div class="absolute top-4 left-4 text-[10px] tracking-widest text-slate-400 uppercase">Posture Analysis</div>
+                                <div class="absolute bottom-4 left-4 text-xs text-brand-alert font-medium">${data.visual.old.postureLabel}</div>
+                                <svg viewBox="0 0 100 100" class="w-full h-full max-w-[200px]">
+                                    <line x1="10" y1="85" x2="90" y2="85" stroke="#E2E8F0" stroke-width="1.5" />
+                                    ${data.visual.old.monitors}
+                                    <path d="${data.visual.old.spinePath}" fill="none" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round" />
+                                    <circle cx="${data.visual.old.headCx}" cy="${data.visual.old.headCy}" r="7" fill="#94A3B8" />
+                                    ${data.visual.old.eyeLine}
+                                    ${data.visual.old.stress}
+                                </svg>
+                            </div>
+
+                            <!-- 視界シミュレーション (CSS Mask & Blur) -->
+                            <div class="p-8 relative h-48 overflow-hidden bg-slate-50">
+                                <div class="absolute top-4 left-4 text-[10px] tracking-widest text-slate-400 uppercase z-10">Vision Field</div>
+                                <!-- ダミーの作業画面 -->
+                                <div class="absolute inset-0 p-8 text-[8px] text-slate-300 font-mono leading-tight select-none opacity-40">
+                                    // System logic processing...<br>
+                                    function analyzeErgonomics(data) {<br>
+                                    &nbsp;&nbsp;const neckStress = calculateStress(data.posture);<br>
+                                    &nbsp;&nbsp;if (neckStress > THRESHOLD) return "Warning";<br>
+                                    &nbsp;&nbsp;return "Optimal";<br>
+                                    }<br>
+                                    // More data lines...
+                                </div>
+                                <!-- ブラーレイヤー（マスクで一部だけクリアにする） -->
+                                <div class="absolute inset-0 backdrop-blur-[8px] bg-white/40 vision-mask-old"></div>
+                            </div>
+                        </div>
+
+                        <!-- OK: 中近両用 -->
+                        <div class="bg-white border border-brand-border relative">
+                            <div class="absolute top-0 right-0 p-4 z-10">
+                                <span class="text-[10px] tracking-widest text-brand-accent uppercase border border-brand-accent px-2 py-1 bg-white">Ergonomic (中近両用)</span>
+                            </div>
+                            <div class="p-8 border-b border-brand-border">
+                                <h3 class="text-lg font-medium mb-1 text-slate-800">室内専用エルゴノミクスレンズ</h3>
+                                <p class="text-sm text-brand-accent">首への負荷：低 / 視野：極めて広い</p>
+                            </div>
+                            
+                            <!-- 姿勢シミュレーション (SVG) -->
+                            <div class="p-8 border-b border-brand-border bg-grid relative h-64 overflow-hidden flex items-center justify-center">
+                                <div class="absolute top-4 left-4 text-[10px] tracking-widest text-slate-400 uppercase">Posture Analysis</div>
+                                <div class="absolute bottom-4 left-4 text-xs text-brand-accent font-medium">${data.visual.new.postureLabel}</div>
+                                <svg viewBox="0 0 100 100" class="w-full h-full max-w-[200px]">
+                                    <line x1="10" y1="85" x2="90" y2="85" stroke="#E2E8F0" stroke-width="1.5" />
+                                    ${data.visual.new.monitors}
+                                    <path d="${data.visual.new.spinePath}" fill="none" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round" />
+                                    <circle cx="${data.visual.new.headCx}" cy="${data.visual.new.headCy}" r="7" fill="#94A3B8" />
+                                    ${data.visual.new.eyeLine}
+                                    ${data.visual.new.stress}
+                                </svg>
+                            </div>
+
+                            <!-- 視界シミュレーション (CSS Mask & Blur) -->
+                            <div class="p-8 relative h-48 overflow-hidden bg-slate-50">
+                                <div class="absolute top-4 left-4 text-[10px] tracking-widest text-slate-400 uppercase z-10">Vision Field</div>
+                                <div class="absolute inset-0 p-8 text-[8px] text-slate-400 font-mono leading-tight select-none opacity-80">
+                                    // System logic processing...<br>
+                                    function analyzeErgonomics(data) {<br>
+                                    &nbsp;&nbsp;const neckStress = calculateStress(data.posture);<br>
+                                    &nbsp;&nbsp;if (neckStress > THRESHOLD) return "Warning";<br>
+                                    &nbsp;&nbsp;return "Optimal";<br>
+                                    }<br>
+                                    // View is fully clear.
+                                </div>
+                                <div class="absolute inset-0 backdrop-blur-[2px] bg-white/10 vision-mask-new"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 人間工学ロジック解説 -->
+                    <div class="max-w-4xl border-t border-brand-border pt-12 mb-16 fade-in-up" style="animation-delay: 0.2s;">
+                        <div class="text-xs tracking-widest text-slate-400 mb-4 uppercase">Ergonomic Logic</div>
+                        <h3 class="text-2xl font-light mb-6 text-brand-text">${data.logicTitle}</h3>
+                        <p class="text-slate-600 leading-relaxed font-light text-lg">${data.logicText}</p>
+                    </div>
+
+                    <!-- 接客カンペ (新人スタッフ向けUI) -->
+                    <div class="bg-brand-text text-white p-8 md:p-12 relative overflow-hidden fade-in-up" style="animation-delay: 0.4s;">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-brand-accent"></div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="text-brand-accent text-xs tracking-[0.2em] uppercase">Staff Script</div>
+                            <div class="h-px bg-slate-700 flex-grow"></div>
+                        </div>
+                        <p class="text-lg md:text-xl font-light leading-relaxed mb-10 text-slate-200">
+                            ${data.scriptText}
+                        </p>
+                        
+                        <!-- キラーフレーズ -->
+                        <div class="border border-brand-accent/30 bg-brand-accent/10 p-6">
+                            <div class="text-xs text-brand-accent mb-2 tracking-wider">CLOSING PHRASE</div>
+                            <p class="text-brand-accent font-medium text-base md:text-lg">
+                                「レンズを『室内専用の人間工学ギア』に変えるだけで、姿勢が自然になり、整体に通う回数が減るかもしれませんよ。」
+                            </p>
+                        </div>
+                    </div>
+                `;
+            };
+
+            // 一度隠して再描画（スムーズな遷移）
+            resultArea.classList.remove('hidden');
+            resultArea.classList.remove('fade-in-up');
+            
+            // リフローを強制してアニメーションを再起動
+            void resultArea.offsetWidth; 
+            
+            updateUI();
+            resultArea.classList.add('fade-in-up');
+            
+            // スクロール処理
+            setTimeout(() => {
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
