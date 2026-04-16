@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>超弾性・形状記憶フレーム 柔軟性シミュレーター</title>
+    <!-- Google Fonts: 科学的な信頼感と読みやすさ -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Noto Sans JP"', 'sans-serif'] },
+                    colors: {
+                        deep: '#050914',
+                        lab: '#0B132B',
+                        panel: '#1C2541',
+                        borderline: '#3A506B',
+                        accent: {
+                            green: '#00E676', // 復元・成功
+                            yellow: '#FFEA00', // 注意
+                            red: '#FF1744'   // 破壊
+                        }
+                    },
+                    boxShadow: {
+                        'neon-green': '0 0 15px rgba(0, 230, 118, 0.4)',
+                        'neon-red': '0 0 15px rgba(255, 23, 68, 0.4)',
+                        'panel-glow': 'inset 0 0 20px rgba(58, 80, 107, 0.2)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* --- ハイテクラボ風のベーススタイル --- */
+        body {
+            background-color: theme('colors.deep');
+            background-image: 
+                radial-gradient(circle at 50% 0%, theme('colors.lab'), theme('colors.deep') 70%),
+                linear-gradient(rgba(58, 80, 107, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(58, 80, 107, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            background-attachment: fixed;
+        }
+
+        /* テンプレ角丸の排除: 切り欠きデザイン風のClip-path */
+        .tech-panel {
+            background: rgba(28, 37, 65, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid theme('colors.borderline');
+            border-left: 4px solid theme('colors.borderline');
+            box-shadow: theme('boxShadow.panel-glow');
+            position: relative;
+        }
+        .tech-panel::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 10px; height: 10px;
+            border-top: 1px solid #fff;
+            border-right: 1px solid #fff;
+            opacity: 0.3;
+        }
+        .tech-panel::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 10px; height: 10px;
+            border-bottom: 1px solid #fff;
+            border-left: 1px solid #fff;
+            opacity: 0.3;
+        }
+
+        .scene-btn {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .scene-btn:hover, .scene-btn.active {
+            border-left-color: theme('colors.accent.green');
+            background: rgba(28, 37, 65, 0.9);
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.1);
+        }
+        .scene-btn.active {
+            border: 1px solid theme('colors.accent.green');
+            border-left: 4px solid theme('colors.accent.green');
+        }
+        .scene-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(0, 230, 118, 0.2), transparent);
+            transform: skewX(-20deg);
+        }
+        .scene-btn:hover::before {
+            animation: shine 1s;
+        }
+
+        /* --- SVG メガネ構造 --- */
+        .glass-svg { width: 100%; height: auto; max-height: 180px; overflow: visible; }
+        .g-frame { fill: none; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; transition: all 0.3s ease; }
+        .g-lens { fill: rgba(255,255,255,0.05); stroke-width: 4; }
+        .g-temple { fill: none; stroke-width: 5; stroke-linecap: round; transform-origin: center; transition: all 0.3s ease; }
+        
+        /* 通常フレームの基本色 */
+        #normal-svg .g-frame, #normal-svg .g-temple { stroke: #9ca3af; }
+        #normal-svg .g-lens { stroke: #6b7280; }
+        
+        /* 超弾性フレームの基本色 */
+        #super-svg .g-frame, #super-svg .g-temple { stroke: theme('colors.accent.green'); }
+        #super-svg .g-lens { stroke: theme('colors.accent.green'); }
+
+        /* --- アニメーションキーフレーム --- */
+        @keyframes shine { 100% { left: 200%; } }
+        
+        /* アニメーション: 1. ベッドで寝落ち (片側圧迫) */
+        /* 普通: グニャッと曲がって戻らない。赤くなる */
+        @keyframes n-sleep {
+            0% { transform: rotate(0) translateY(0); stroke: #9ca3af; }
+            50% { transform: rotate(-15deg) translateY(20px) scaleY(0.8); stroke: theme('colors.accent.red'); }
+            100% { transform: rotate(-12deg) translateY(15px) scaleY(0.85); stroke: theme('colors.accent.red'); }
+        }
+        /* 超弾性: 深く曲がってビヨーンと戻る */
+        @keyframes s-sleep {
+            0% { transform: rotate(0) translateY(0); }
+            30% { transform: rotate(-25deg) translateY(30px) scaleY(0.7); }
+            60% { transform: rotate(10deg) translateY(-5px); }
+            80% { transform: rotate(-5deg); }
+            100% { transform: rotate(0) translateY(0); }
+        }
+
+        /* アニメーション: 2. 子供に引っ張られる (両側テンプル開き) */
+        @keyframes n-child-l { 0%{transform: rotate(0);} 100%{transform: rotate(-45deg) translate(-10px, 10px); stroke: theme('colors.accent.red');} }
+        @keyframes n-child-r { 0%{transform: rotate(0);} 100%{transform: rotate(45deg) translate(10px, 10px); stroke: theme('colors.accent.red');} }
+        @keyframes n-child-f { 0%{transform: scaleX(1);} 100%{transform: scaleX(1.1); stroke: theme('colors.accent.red');} }
+
+        @keyframes s-child-l { 0%{transform:rotate(0);} 40%{transform:rotate(-60deg) translate(-20px, 20px);} 70%{transform:rotate(15deg);} 90%{transform:rotate(-5deg);} 100%{transform:rotate(0);} }
+        @keyframes s-child-r { 0%{transform:rotate(0);} 40%{transform:rotate(60deg) translate(20px, 20px);} 70%{transform:rotate(-15deg);} 90%{transform:rotate(5deg);} 100%{transform:rotate(0);} }
+
+        /* アニメーション: 3. 片手で外す (片側テンプル開き＋ねじれ) */
+        @keyframes n-hand-l { 0%{transform:rotate(0);} 100%{transform:rotate(-50deg) skewY(20deg); stroke: theme('colors.accent.red');} }
+        @keyframes n-hand-f { 0%{transform:skewY(0);} 100%{transform:skewY(5deg); stroke: theme('colors.accent.red');} }
+
+        @keyframes s-hand-l { 0%{transform:rotate(0);} 40%{transform:rotate(-70deg) skewY(30deg);} 70%{transform:rotate(20deg);} 100%{transform:rotate(0);} }
+
+        /* クラスの適用ルール */
+        /* シーン1 */
+        .n-anim-1 .g-layer { animation: n-sleep 1s forwards; transform-origin: center; }
+        .s-anim-1 .g-layer { animation: s-sleep 1.5s cubic-bezier(0.25, -0.5, 0.25, 1.5) forwards; transform-origin: center; }
+        /* シーン2 */
+        .n-anim-2 .l-temple { animation: n-child-l 1s forwards; transform-origin: 30px 50px; }
+        .n-anim-2 .r-temple { animation: n-child-r 1s forwards; transform-origin: 170px 50px; }
+        .n-anim-2 .front-f  { animation: n-child-f 1s forwards; transform-origin: center; }
+        .s-anim-2 .l-temple { animation: s-child-l 1.5s cubic-bezier(0.25, -0.5, 0.25, 1.5) forwards; transform-origin: 30px 50px; }
+        .s-anim-2 .r-temple { animation: s-child-r 1.5s cubic-bezier(0.25, -0.5, 0.25, 1.5) forwards; transform-origin: 170px 50px; }
+        /* シーン3 */
+        .n-anim-3 .l-temple { animation: n-hand-l 1s forwards; transform-origin: 30px 50px; }
+        .n-anim-3 .front-f  { animation: n-hand-f 1s forwards; transform-origin: center; }
+        .s-anim-3 .l-temple { animation: s-hand-l 1.5s cubic-bezier(0.25, -0.5, 0.25, 1.5) forwards; transform-origin: 30px 50px; }
+
+        /* 警告・破壊エフェクト */
+        .crack-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><path d="M20,10 L40,50 L30,60 L60,90 M150,20 L130,50 L140,80" stroke="rgba(255,23,68,0.8)" stroke-width="2" fill="none"/></svg>');
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 10;
+        }
+        .show-crack { animation: flash-crack 0.5s forwards 0.8s; }
+        @keyframes flash-crack { 0% { opacity: 0; background-color: rgba(255,23,68,0); } 50% { opacity: 1; background-color: rgba(255,23,68,0.2); } 100% { opacity: 1; background-color: rgba(255,23,68,0.05); } }
+
+        /* スムーズな表示切り替え */
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.5s ease; }
+    </style>
+</head>
+<body class="text-gray-300 min-h-screen flex flex-col items-center py-8 px-4 sm:px-6">
+
+    <!-- ヘッダーエリア -->
+    <header class="w-full max-w-5xl mb-8 text-center md:text-left flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-4xl font-black tracking-widest text-white uppercase" style="text-shadow: 0 0 10px rgba(255,255,255,0.2);">
+                Flex-Frame <span class="text-accent-green">Simulator</span>
+            </h1>
+            <p class="text-sm md:text-base text-gray-400 mt-2 font-light">超弾性・形状記憶マテリアル 耐久性実証システム</p>
+        </div>
+        <!-- 接客用ステータス表示 -->
+        <div class="tech-panel py-2 px-4 inline-block text-xs font-bold text-accent-green">
+            STATUS: <span id="status-text">待機中 - お客様のヒアリングを実施してください</span>
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl flex flex-col gap-6">
+        
+        <!-- STEP 1: シーン選択 (プログレッシブ・ディクロージャーの入口) -->
+        <section class="tech-panel p-6">
+            <h2 class="text-lg md:text-xl font-bold text-white mb-4 border-b border-borderline pb-2 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-accent-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                ヒアリング：お客様の「ヒヤッとした」経験を選択してください
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="scene-buttons">
+                <!-- JSで動的に生成・制御 -->
+                <button class="scene-btn p-4 text-left group" data-scene="1">
+                    <div class="text-sm text-gray-400 mb-1">SCENE 01</div>
+                    <div class="font-bold text-white group-hover:text-accent-green transition-colors">ベッドで横向きに寝落ち</div>
+                    <div class="text-xs text-gray-500 mt-2">体重がフレームにかかる</div>
+                </button>
+                <button class="scene-btn p-4 text-left group" data-scene="2">
+                    <div class="text-sm text-gray-400 mb-1">SCENE 02</div>
+                    <div class="font-bold text-white group-hover:text-accent-green transition-colors">子供に引っ張られる</div>
+                    <div class="text-xs text-gray-500 mt-2">顔を叩かれる・広げられる</div>
+                </button>
+                <button class="scene-btn p-4 text-left group" data-scene="3">
+                    <div class="text-sm text-gray-400 mb-1">SCENE 03</div>
+                    <div class="font-bold text-white group-hover:text-accent-green transition-colors">片手で乱暴に外す</div>
+                    <div class="text-xs text-gray-500 mt-2">片側のツルだけが外側に開く</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: シミュレーション結果＆トークスクリプト (初期非表示) -->
+        <section id="simulation-area" class="hidden flex-col gap-6">
+            
+            <!-- 比較シミュレーター -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- 左：一般的なフレーム -->
+                <div class="tech-panel p-6 flex flex-col relative overflow-hidden" style="border-left-color: theme('colors.accent.red');">
+                    <div class="absolute top-0 right-0 bg-accent-red text-white text-xs font-bold px-3 py-1">WARNING</div>
+                    <h3 class="text-lg font-bold text-white mb-2">一般的なフレーム</h3>
+                    
+                    <!-- SVG アニメーションエリア -->
+                    <div class="relative w-full h-48 md:h-56 bg-deep/50 rounded flex items-center justify-center my-4 border border-borderline">
+                        <div id="n-crack" class="crack-overlay"></div>
+                        <svg id="normal-svg" class="glass-svg" viewBox="0 0 200 100">
+                            <!-- JSでクラスを付け替えて変形させるレイヤー -->
+                            <g class="g-layer">
+                                <!-- 左テンプル -->
+                                <path class="g-temple l-temple" d="M30,50 L10,20" />
+                                <!-- フロントフレーム -->
+                                <g class="front-f">
+                                    <rect class="g-lens" x="30" y="35" width="50" height="30" rx="10" />
+                                    <rect class="g-lens" x="120" y="35" width="50" height="30" rx="10" />
+                                    <path class="g-frame" d="M80,45 Q100,35 120,45" /> <!-- ブリッジ -->
+                                </g>
+                                <!-- 右テンプル -->
+                                <path class="g-temple r-temple" d="M170,50 L190,20" />
+                            </g>
+                        </svg>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <p id="normal-desc" class="text-sm text-gray-400 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <!-- 右：超弾性フレーム -->
+                <div class="tech-panel p-6 flex flex-col relative overflow-hidden" style="border-left-color: theme('colors.accent.green'); box-shadow: theme('boxShadow.neon-green');">
+                    <div class="absolute top-0 right-0 bg-accent-green text-black text-xs font-bold px-3 py-1">SAFE & RECOVERED</div>
+                    <h3 class="text-lg font-bold text-accent-green mb-2">超弾性・形状記憶フレーム</h3>
+                    
+                    <!-- SVG アニメーションエリア -->
+                    <div class="relative w-full h-48 md:h-56 bg-deep/50 rounded flex items-center justify-center my-4 border border-borderline">
+                        <svg id="super-svg" class="glass-svg" viewBox="0 0 200 100">
+                            <g class="g-layer">
+                                <path class="g-temple l-temple" d="M30,50 L10,20" />
+                                <g class="front-f">
+                                    <rect class="g-lens" x="30" y="35" width="50" height="30" rx="10" />
+                                    <rect class="g-lens" x="120" y="35" width="50" height="30" rx="10" />
+                                    <path class="g-frame" d="M80,45 Q100,35 120,45" />
+                                </g>
+                                <path class="g-temple r-temple" d="M170,50 L190,20" />
+                            </g>
+                        </svg>
+                        <!-- 成功エフェクト -->
+                        <div id="s-effect" class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none">
+                            <div class="w-full h-full border-2 border-accent-green scale-105 blur-sm"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <p id="super-desc" class="text-sm text-gray-300 leading-relaxed font-bold"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- カンペ（接客トークスクリプト）エリア -->
+            <div class="tech-panel p-6 border-l-4" style="border-left-color: theme('colors.accent.yellow');">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="bg-accent-yellow text-black text-xs font-bold px-2 py-1 rounded-sm">STAFF SCRIPT</span>
+                    <h3 class="text-white font-bold">お客様へのご提案トーク</h3>
+                </div>
+                <p id="talk-script" class="text-base md:text-lg text-gray-200 leading-loose tracking-wide"></p>
+            </div>
+
+            <!-- アニメーション再実行ボタン -->
+            <div class="text-center mt-2">
+                <button id="replay-btn" class="text-sm text-gray-500 hover:text-white transition-colors border border-gray-600 hover:border-white px-6 py-2 rounded-full">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    シミュレーションをもう一度見る
+                </button>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // --- データの定義 (ロジック・テキストの手抜き禁止ルールに対応) ---
+        const sceneData = {
+            "1": {
+                title: "ベッドで寝落ち",
+                n_desc: "体重が片側に集中し、フロントからテンプル（ツル）にかけて致命的な歪みが発生します。一度曲がるとフィッティングでも完全には戻りません。",
+                s_desc: "極限の圧力がかかっても素材自体が力を吸収し逃します。顔への圧迫感も軽減されるため、痛くありません。",
+                talk: "「お客様、ベッドでスマホを見ながら寝落ちしてしまうこと、ありませんか？<br><br><span class='text-accent-yellow font-bold'>通常のフレームですと、ご自身の体重で一晩中圧迫され、翌朝にはフレームが歪んで直らなくなってしまいます。</span><br><br>しかし、こちらの超弾性フレームなら、<span class='text-accent-green font-bold text-xl'>体重がかかってもバネのようにしなり、起き上がれば元の形状に100%戻ります。</span>そのまま寝てしまっても顔も痛くならず、もう修理のために何度もお店へ走る手間はゼロになりますよ。」",
+                anim_class: "1" // 1: sleep, 2: child, 3: hand
+            },
+            "2": {
+                title: "子供に引っ張られる",
+                n_desc: "小さなお子様の予期せぬ力で両側に引っ張られると、ヒンジ（蝶番）部分の金属が伸びきり、最悪の場合は折損します。",
+                s_desc: "外側に大きく開いても、バネのようにしなやかに元の位置へバウンスして戻ります。部品の破損リスクが極めて低いです。",
+                talk: "「お子様と一緒にいる時、不意にメガネを叩かれたり、両手で引っ張られたりしてヒヤッとした経験はございませんか？<br><br><span class='text-accent-yellow font-bold'>一般的なフレームは外側に開く力に弱く、一度引っ張られるとネジ部分から壊れてしまいます。</span><br><br>ですが、この超弾性フレームをご覧ください。<span class='text-accent-green font-bold text-xl'>お子様がこれだけ強く外側に広げても、ビヨーンと元の形に戻ります。</span>壊れにくいだけでなく、お子様の怪我も防げるので、子育て中のお客様には特にお勧めです。買い替えのコストも抑えられます。」",
+                anim_class: "2"
+            },
+            "3": {
+                title: "片手で乱暴に外す",
+                n_desc: "片手で外す癖があると、片側のテンプルだけにねじれの負荷が蓄積し、徐々にメガネ全体が傾いてピントが合わなくなります。",
+                s_desc: "ねじれるような複雑な力が加わっても、形状記憶機能により正しいアライメント（骨組み）を瞬時に取り戻します。",
+                talk: "「お仕事中など、忙しい時に無意識に片手でサッとメガネを外していませんか？<br><br><span class='text-accent-yellow font-bold'>実はそれ、メガネの寿命を一番縮める原因なんです。徐々に歪んでいき、見え方まで悪くなってしまいます。</span><br><br>こちらのフレームには、航空宇宙産業でも使われるような形状記憶素材が採用されています。<span class='text-accent-green font-bold text-xl'>どんなに雑に片手で外してねじれても、机に置いた瞬間には正しい形に戻っています。</span>常にベストな見え方を維持できるので、眼精疲労の予防にも繋がりますよ。」",
+                anim_class: "3"
+            }
+        };
+
+        // --- DOM要素の取得 ---
+        const buttons = document.querySelectorAll('.scene-btn');
+        const simArea = document.getElementById('simulation-area');
+        const normalSvg = document.getElementById('normal-svg');
+        const superSvg = document.getElementById('super-svg');
+        const nCrack = document.getElementById('n-crack');
+        const sEffect = document.getElementById('s-effect');
+        const statusText = document.getElementById('status-text');
+        
+        const textElements = {
+            n_desc: document.getElementById('normal-desc'),
+            s_desc: document.getElementById('super-desc'),
+            talk: document.getElementById('talk-script')
+        };
+
+        let currentSceneId = null;
+
+        // --- イベントリスナー設定 ---
+        buttons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const sceneId = this.getAttribute('data-scene');
+                
+                // ボタンのアクティブ状態更新
+                buttons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // プログレッシブ・ディクロージャー（エリアの表示）
+                if (simArea.classList.contains('hidden')) {
+                    simArea.classList.remove('hidden');
+                    simArea.classList.add('flex', 'fade-enter');
+                    // 次のフレームでクラスを追加してアニメーション開始
+                    requestAnimationFrame(() => {
+                        simArea.classList.add('fade-enter-active');
+                    });
+                }
+
+                // スクロール処理（モバイル配慮）
+                setTimeout(() => {
+                    simArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+
+                // シーンの実行
+                runSimulation(sceneId);
+            });
+        });
+
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            if(currentSceneId) runSimulation(currentSceneId);
+        });
+
+        // --- シミュレーション実行ロジック ---
+        function runSimulation(sceneId) {
+            currentSceneId = sceneId;
+            const data = sceneData[sceneId];
+
+            // ステータス更新
+            statusText.textContent = `SIMULATION ACTIVE: ${data.title}`;
+
+            // テキストの更新 (HTMLを含めるため innerHTML を使用)
+            textElements.n_desc.innerHTML = data.n_desc;
+            textElements.s_desc.innerHTML = data.s_desc;
+            textElements.talk.innerHTML = data.talk;
+
+            // アニメーションのリセット
+            resetAnimations();
+
+            // 少し遅延させてからアニメーションクラスを付与 (DOMリフレッシュのため)
+            setTimeout(() => {
+                // 普通のメガネのアニメーション
+                normalSvg.classList.add(`n-anim-${data.anim_class}`);
+                nCrack.classList.add('show-crack'); // 破壊エフェクト
+
+                // 超弾性フレームのアニメーション
+                superSvg.classList.add(`s-anim-${data.anim_class}`);
+                
+                // 成功エフェクトの表示タイミング（アニメーション後半）
+                setTimeout(() => {
+                    sEffect.style.opacity = '1';
+                    setTimeout(() => { sEffect.style.opacity = '0'; }, 500);
+                }, 1000);
+
+            }, 50);
+        }
+
+        function resetAnimations() {
+            // クラスの削除
+            normalSvg.className = 'glass-svg';
+            superSvg.className = 'glass-svg';
+            nCrack.classList.remove('show-crack');
+            sEffect.style.opacity = '0';
+            
+            // 強制リフロー (ブラウザにレンダリングを強制させてアニメーションを再起動可能にする)
+            void normalSvg.offsetWidth;
+            void superSvg.offsetWidth;
+        }
+
+    </script>
+</body>
+</html>
