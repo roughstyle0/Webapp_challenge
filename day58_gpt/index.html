@@ -444,16 +444,20 @@
       animation: slideIn .45s ease-out both;
     }
 
+    /* 修正ポイント:
+       以前は max-height と overflow:hidden で中身が途中で切れていた。
+       ここでは display 制御に変更して、表示時は通常の高さでレイアウトさせる。 */
     .hidden-soft {
+      display: none;
       opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-      transition: all .45s ease;
+      transform: translateY(12px);
     }
 
     .hidden-soft.show {
+      display: block;
       opacity: 1;
-      max-height: 1000px;
+      transform: translateY(0);
+      animation: slideIn .45s ease-out both;
     }
 
     .focus-pill {
@@ -492,6 +496,10 @@
       .screen.dual-left { right: 24%; }
       .screen.dual-right { right: 0; }
       .vision-cone { right: 4%; }
+    }
+
+    @media (max-width: 480px) {
+      .stage { min-height: 330px; }
     }
   </style>
 </head>
@@ -1193,7 +1201,6 @@
         }
       });
 
-      // 初期状態の微調整
       setEnvironment('desktop');
       setTimeout(() => {
         resetView();
