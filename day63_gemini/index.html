@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Flip-up Eyewear Drive Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            sans: ['Noto Sans JP', 'sans-serif'],
+          },
+          colors: {
+            neon: { cyan: '#00f0ff', blue: '#0055ff', orange: '#ff5500' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Absolute Constraints: テンプレ禁止・独自世界観の構築 */
+    body {
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* カーボンテクスチャ背景 */
+    .carbon-bg {
+      background:
+        linear-gradient(27deg, #151515 5px, transparent 5px) 0 5px,
+        linear-gradient(207deg, #151515 5px, transparent 5px) 10px 0px,
+        linear-gradient(27deg, #111 5px, transparent 5px) 0px 10px,
+        linear-gradient(207deg, #111 5px, transparent 5px) 10px 5px,
+        linear-gradient(90deg, #1b1b1b 10px, transparent 10px),
+        linear-gradient(#1d1d1d 25%, #1a1a1a 25%, #1a1a1a 50%, transparent 50%, transparent 75%, #242424 75%, #242424 100%);
+      background-color: #131313;
+      background-size: 20px 20px;
+    }
+
+    /* HUD (ヘッドアップディスプレイ) 風テキスト */
+    .hud-text { text-shadow: 0 0 4px rgba(0, 240, 255, 0.4); }
+    .hud-title { text-shadow: 0 0 8px rgba(0, 240, 255, 0.6); letter-spacing: 0.1em; }
+
+    /* メカニカルスイッチ風ボタン */
+    .btn-mech {
+      background: linear-gradient(180deg, #222 0%, #111 100%);
+      border: 1px solid #444;
+      border-top-color: #666;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-mech::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: all 0.5s;
+    }
+    .btn-mech:hover::before { left: 100%; }
+    .btn-mech:hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .btn-mech:active {
+      transform: translateY(2px);
+      box-shadow: inset 0 3px 6px rgba(0,0,0,0.9);
+    }
+
+    /* 視界シミュレーターのスタイリング */
+    .vision-container {
+      position: relative;
+      background-color: #000;
+      border: 2px solid #333;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 0 15px rgba(0,0,0,0.5);
+    }
+    .vision-bg {
+      position: absolute; inset: 0;
+      transition: filter 0.6s ease, opacity 0.6s ease;
+      background-size: cover;
+      background-position: center;
+    }
+    .scanline {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
+      background-size: 100% 4px;
+      pointer-events: none; z-index: 10;
+    }
+
+    /* シナリオ別 視界CSS */
+    /* 1. 高速道路 */
+    .bg-sunny { background: linear-gradient(to bottom, #7fb9d6 0%, #d4e8f0 50%, #888 50%, #444 100%); }
+    .vision-sunny .vision-bg { filter: brightness(0.6) contrast(1.2); } /* 通常:サングラス越し */
+    .vision-sunny.is-flipped .vision-bg { filter: brightness(1.6) contrast(0.9); } /* 跳ね上げ:眩しい */
+
+    /* 2. トンネル */
+    .bg-tunnel { background: radial-gradient(circle at 50% 55%, #333 0%, #050505 60%); }
+    .vision-tunnel .vision-bg { filter: brightness(0.15); } /* 通常:サングラス越し(危険) */
+    .vision-tunnel.is-flipped .vision-bg { filter: brightness(1.2); } /* 跳ね上げ:クリア */
+
+    /* 3. 西日 */
+    .bg-sunset { background: linear-gradient(to bottom, #ff5e00 0%, #ffaa00 45%, #222 50%, #111 100%); }
+    .vision-sunset .vision-bg { filter: brightness(0.5) contrast(1.3); } /* 通常:軽減 */
+    .vision-sunset.is-flipped .vision-bg { filter: brightness(1.4) sepia(0.6); } /* 跳ね上げ:眩しい */
+
+    /* 跳ね上げアニメーション (3D Transforms) */
+    .perspective-container { perspective: 800px; z-index: 20; }
+    .flip-lens-group {
+      transform-origin: 200px 30px; /* ブリッジ付近を軸に */
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); /* 物理的なバウンス感 */
+      transform-style: preserve-3d;
+    }
+    .is-flipped .flip-lens-group { transform: rotateX(80deg); }
+
+    /* アニメーションユーティリティ */
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    .fade-in-up { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="carbon-bg min-h-screen flex flex-col items-center py-6 px-4 md:py-12">
+
+  <!-- メインコンテナ -->
+  <div class="w-full max-w-md md:max-w-2xl lg:max-w-4xl bg-[#111] rounded-xl border border-gray-700 shadow-[0_0_30px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col relative">
+    
+    <!-- ヘッダー (ダッシュボード風) -->
+    <header class="bg-[#0a0a0a] border-b border-gray-800 p-4 flex justify-between items-center z-10">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 rounded-full bg-neon-cyan animate-pulse"></div>
+        <h1 class="font-orbitron font-bold text-neon-cyan hud-title text-sm md:text-base tracking-wider">FLIP-UP EYEWEAR SIM.</h1>
+      </div>
+      <div class="font-orbitron text-xs text-gray-500" id="sys-time">SYS.ONLINE</div>
+    </header>
+
+    <!-- アプリケーションルート -->
+    <main id="app-root" class="flex-1 p-5 md:p-8 flex flex-col"></main>
+
+  </div>
+
+  <script>
+    // --- データの定義 (ロジックとテキストの手抜き禁止) ---
+    const scenarios = {
+      sunny: {
+        id: 'sunny', bgClass: 'bg-sunny', defaultVis: 'DOWN / SHIELD', flippedVis: 'UP / GLARE',
+        title: '快晴の高速道路', subtitle: 'Glare & Reflection',
+        preTalk: {
+          insight: '強烈な日差しやアスファルトの照り返しで、目が非常に疲れます。',
+          problem: '「眩しさを我慢して運転を続けると、眼精疲労から集中力が低下し、思わぬ事故に繋がります。」'
+        },
+        postTalk: {
+          action: '「基本はこのまま下げた状態で、偏光レンズがしっかり眩しさをカットします。」',
+          benefit: '「料金所や日陰など、一時的に暗い場所に入った時だけ跳ね上げればOKです。着脱の手間がありません。」'
+        }
+      },
+      tunnel: {
+        id: 'tunnel', bgClass: 'bg-tunnel', defaultVis: 'DOWN / DANGER', flippedVis: 'UP / CLEAR',
+        title: '急なトンネルへの進入', subtitle: 'Sudden Darkness',
+        preTalk: {
+          insight: 'トンネルに入った瞬間、サングラスのままだと視界が奪われ非常に危険です。',
+          problem: '「かといって、運転中に両手でメガネを外すのはハンドリングが疎かになり、事故の元になります。」'
+        },
+        postTalk: {
+          action: '「ここでフリップアップです！片手で一瞬にしてレンズを跳ね上げれば、トンネル内の明るさにすぐ適応します。」',
+          benefit: '「暗闇の恐怖から解放される、まさにドライブ専用の最強ギアです。」'
+        }
+      },
+      sunset: {
+        id: 'sunset', bgClass: 'bg-sunset', defaultVis: 'DOWN / SHIELD', flippedVis: 'UP / GLARE',
+        title: '夕暮れの西日', subtitle: 'Direct Sunlight',
+        preTalk: {
+          insight: '夕暮れ時、真正面から来る強烈な西日は、サンバイザーでも防ぎきれません。',
+          problem: '「信号や歩行者が一瞬見えなくなる、魔の時間帯です。非常に高いリスクが伴います。」'
+        },
+        postTalk: {
+          action: '「西日が強い間はレンズを下げて視界を確保。日が沈んだらパカッと跳ね上げるだけです。」',
+          benefit: '「わざわざ夜用メガネに掛け替える手間がなく、そのまま安全に帰路につけます。」'
+        }
+      }
+    };
+
+    let appState = { view: 'menu', scenarioId: null, isFlipped: false, hasFlippedOnce: false };
+
+    // --- SVGメガネの生成 ---
+    const getGlassesSVG = () => `
+      <svg viewBox="0 0 400 150" class="w-4/5 max-w-[320px] drop-shadow-2xl filter drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)]">
+        <defs>
+          <linearGradient id="lensGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#0f2027;stop-opacity:0.95" />
+            <stop offset="50%" style="stop-color:#203a43;stop-opacity:0.85" />
+            <stop offset="100%" style="stop-color:#2c5364;stop-opacity:0.75" />
+          </linearGradient>
+          <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#333;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <!-- ノーズパッド/アンダーフレーム (固定部) -->
+        <path d="M 185 50 L 190 65 L 210 65 L 215 50" fill="none" stroke="#444" stroke-width="3" stroke-linejoin="round"/>
+        <!-- レンズグループ (跳ね上がる部分) -->
+        <g class="flip-lens-group">
+          <!-- 上部ブリッジ/トップリム -->
+          <path d="M 25 45 Q 100 25 200 30 Q 300 25 375 45 L 380 50 Q 300 35 200 40 Q 100 35 20 50 Z" fill="url(#frameGrad)"/>
+          <!-- 左レンズ -->
+          <path d="M 30 50 C 30 110, 90 140, 170 115 C 185 70, 185 50, 175 42 Z" fill="url(#lensGrad)" stroke="#111" stroke-width="2"/>
+          <!-- 右レンズ -->
+          <path d="M 370 50 C 370 110, 310 140, 230 115 C 215 70, 215 50, 225 42 Z" fill="url(#lensGrad)" stroke="#111" stroke-width="2"/>
+          <!-- 反射ハイライト -->
+          <path d="M 50 60 C 70 55, 110 65, 130 85" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="5" stroke-linecap="round"/>
+          <path d="M 250 85 C 270 65, 310 55, 330 60" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="5" stroke-linecap="round"/>
+        </g>
+      </svg>
+    `;
+
+    // --- レンダリングロジック ---
+    function renderMenu() {
+      return `
+        <div class="fade-in flex flex-col h-full justify-center">
+          <div class="text-center mb-8">
+            <h2 class="font-orbitron text-xl text-neon-cyan hud-text mb-2">SELECT SITUATION</h2>
+            <p class="text-sm text-gray-400">お客様の「ドライブ中の悩み」を選択してください</p>
+          </div>
+          <div class="grid grid-cols-1 gap-5">
+            ${Object.values(scenarios).map(s => `
+              <button onclick="selectScenario('${s.id}')" class="btn-mech p-5 rounded-lg flex items-center justify-between group">
+                <div class="flex flex-col items-start">
+                  <span class="font-bold text-lg text-gray-100 group-hover:text-neon-cyan transition-colors">${s.title}</span>
+                  <span class="font-orbitron text-xs text-gray-500 mt-1">${s.subtitle}</span>
+                </div>
+                <svg class="w-6 h-6 text-gray-600 group-hover:text-neon-cyan transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSimulator() {
+      const s = scenarios[appState.scenarioId];
+      return `
+        <div class="fade-in flex flex-col h-full">
+          <!-- ヘッダーナビ -->
+          <div class="flex justify-between items-center mb-4">
+            <button onclick="resetApp()" class="text-gray-400 hover:text-neon-cyan text-sm font-orbitron flex items-center gap-1 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              BACK
+            </button>
+            <div class="text-xs text-gray-500 font-orbitron">MODE: <span class="text-white">${s.id.toUpperCase()}</span></div>
+          </div>
+
+          <!-- 視界シミュレーター (モバイルファースト: アスペクト比維持で絶対崩れない) -->
+          <div class="vision-container w-full aspect-video md:aspect-[21/9] rounded-lg mb-6 vision-${s.id}">
+            <div class="vision-bg ${s.bgClass}"></div>
+            <div class="scanline"></div>
+            <!-- メガネ描画エリア -->
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none perspective-container">
+               ${getGlassesSVG()}
+            </div>
+            <!-- HUDステータス -->
+            <div id="hud-lens-status" class="absolute top-3 left-3 text-[10px] md:text-xs font-orbitron text-neon-orange tracking-widest hud-text">
+              LENS: ${s.defaultVis}
+            </div>
+          </div>
+
+          <!-- アクションボタン -->
+          <div class="flex justify-center mb-6">
+            <button id="flip-btn" onclick="toggleFlip()" class="btn-mech py-4 px-8 rounded-full text-base md:text-lg font-bold w-full md:w-3/4 flex justify-center items-center gap-3">
+              <svg id="flip-btn-icon" class="w-5 h-5 transform transition-transform duration-500 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+              <span id="flip-btn-text" class="tracking-wide">FLIP UP! (跳ね上げ)</span>
+            </button>
+          </div>
+
+          <!-- トークスクリプトエリア (プログレッシブ・ディクロージャー) -->
+          <div class="bg-[#151515] border border-gray-700 p-4 md:p-5 rounded-lg relative flex-1 flex flex-col">
+            <div class="absolute top-0 left-0 w-1 h-full bg-gray-600" id="script-indicator"></div>
+            <div class="text-[10px] md:text-xs text-gray-400 font-orbitron mb-3 flex items-center gap-2">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+              STAFF ASSIST SCRIPT
+            </div>
+            
+            <div class="space-y-4 overflow-y-auto pr-2" style="max-height: 200px;">
+              <!-- 顧客インサイト (最初から表示) -->
+              <div class="text-sm md:text-base leading-relaxed">
+                <p class="text-gray-400 text-xs mb-1">【お客様の心理】</p>
+                <p class="text-gray-300 mb-1">${s.preTalk.insight}</p>
+                <p class="text-neon-orange font-bold">${s.preTalk.problem}</p>
+              </div>
+
+              <!-- 解決策提案 (フリップ後に表示される) -->
+              <div id="talk-post" class="hidden opacity-0 translate-y-2 transition-all duration-500 ease-out mt-4 pt-4 border-t border-gray-800">
+                <p class="text-gray-400 text-xs mb-1">【スタッフ提案 (フリップしながら)】</p>
+                <p class="text-neon-cyan font-bold text-base md:text-lg mb-2">${s.postTalk.action}</p>
+                <p class="text-gray-300 text-sm md:text-base">${s.postTalk.benefit}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 状態制御ロジック ---
+    const render = () => {
+      document.getElementById('app-root').innerHTML = appState.view === 'menu' ? renderMenu() : renderSimulator();
+    };
+
+    window.selectScenario = (id) => {
+      appState = { view: 'simulator', scenarioId: id, isFlipped: false, hasFlippedOnce: false };
+      render();
+    };
+
+    window.resetApp = () => {
+      appState.view = 'menu';
+      render();
+    };
+
+    window.toggleFlip = () => {
+      appState.isFlipped = !appState.isFlipped;
+      const s = scenarios[appState.scenarioId];
+      
+      // DOM操作によるアニメーション連動
+      const container = document.querySelector('.vision-container');
+      const btnText = document.getElementById('flip-btn-text');
+      const btnIcon = document.getElementById('flip-btn-icon');
+      const lensStatus = document.getElementById('hud-lens-status');
+      const talkPost = document.getElementById('talk-post');
+      const indicator = document.getElementById('script-indicator');
+      
+      if (appState.isFlipped) {
+        container.classList.add('is-flipped');
+        btnText.innerText = 'LENS DOWN (戻す)';
+        btnIcon.classList.add('rotate-180');
+        lensStatus.innerText = `LENS: ${s.flippedVis}`;
+        lensStatus.className = 'absolute top-3 left-3 text-[10px] md:text-xs font-orbitron text-neon-cyan tracking-widest hud-text';
+        
+        // プログレッシブ・ディクロージャーの展開
+        if (!appState.hasFlippedOnce) {
+          appState.hasFlippedOnce = true;
+          talkPost.classList.remove('hidden');
+          indicator.classList.replace('bg-gray-600', 'bg-neon-cyan');
+          indicator.classList.add('shadow-[0_0_10px_#00f0ff]');
+          // ブラウザのレンダリング待ち後にクラス付与で滑らかにフェードイン
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              talkPost.classList.remove('opacity-0', 'translate-y-2');
+            });
+          });
+        }
+      } else {
+        container.classList.remove('is-flipped');
+        btnText.innerText = 'FLIP UP! (跳ね上げ)';
+        btnIcon.classList.remove('rotate-180');
+        lensStatus.innerText = `LENS: ${s.defaultVis}`;
+        lensStatus.className = 'absolute top-3 left-3 text-[10px] md:text-xs font-orbitron text-neon-orange tracking-widest hud-text';
+      }
+    };
+
+    // 初期化
+    render();
+  </script>
+</body>
+</html>
