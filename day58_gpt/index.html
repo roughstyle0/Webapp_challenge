@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>姿勢＆視界シミュレーター | 中近両用 vs 遠近両用</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            silver: {
+              50: '#f8fafb',
+              100: '#eef2f4',
+              200: '#d8e1e6',
+              300: '#b8c6cf',
+              400: '#8ea0ac',
+              500: '#667784',
+              600: '#4a5a66',
+              700: '#36434d',
+              800: '#242f37',
+              900: '#141c22'
+            },
+            mint: {
+              50: '#effcf8',
+              100: '#d8f7ee',
+              200: '#b4efd9',
+              300: '#7fe3bf',
+              400: '#45cfa0',
+              500: '#1fb989',
+              600: '#14946d',
+              700: '#10755a'
+            },
+            danger: {
+              50: '#fff3f3',
+              100: '#ffdede',
+              200: '#ffb7b7',
+              300: '#ff8a8a',
+              400: '#ff5f5f',
+              500: '#ef4444',
+              600: '#cf2d2d',
+              700: '#a12222'
+            }
+          },
+          boxShadow: {
+            glowMint: '0 0 0 1px rgba(31,185,137,.22), 0 10px 40px rgba(31,185,137,.12)',
+            glowDanger: '0 0 0 1px rgba(239,68,68,.22), 0 10px 40px rgba(239,68,68,.14)',
+            soft: '0 20px 70px rgba(16, 24, 40, .08)'
+          },
+          keyframes: {
+            pulseWarn: {
+              '0%,100%': { transform: 'scale(1)', opacity: '.75' },
+              '50%': { transform: 'scale(1.18)', opacity: '1' }
+            },
+            floatSoft: {
+              '0%,100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' }
+            },
+            scan: {
+              '0%': { transform: 'translateX(-20%)' },
+              '100%': { transform: 'translateX(120%)' }
+            },
+            slideIn: {
+              '0%': { opacity: '0', transform: 'translateY(12px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            }
+          },
+          animation: {
+            pulseWarn: 'pulseWarn 1.2s ease-in-out infinite',
+            floatSoft: 'floatSoft 4s ease-in-out infinite',
+            scan: 'scan 2.4s linear infinite',
+            slideIn: 'slideIn .45s ease-out both'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root{
+      --bg1:#f8fafb;
+      --bg2:#e7edf1;
+      --ink:#182127;
+      --panel:rgba(255,255,255,.45);
+      --line:rgba(20,28,34,.08);
+      --mint:#1fb989;
+      --danger:#ef4444;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(31,185,137,.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(102,119,132,.10), transparent 24%),
+        linear-gradient(180deg, #ffffff 0%, #f5f8fa 28%, #eef3f6 100%);
+      overflow-x: hidden;
+    }
+
+    .glass-line {
+      position: relative;
+      border-top: 1px solid rgba(255,255,255,.65);
+      border-bottom: 1px solid rgba(20,28,34,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.28));
+      backdrop-filter: blur(10px);
+    }
+
+    .metal-strip {
+      background: linear-gradient(
+        90deg,
+        rgba(255,255,255,.2) 0%,
+        rgba(255,255,255,.8) 20%,
+        rgba(185,198,207,.65) 50%,
+        rgba(255,255,255,.85) 80%,
+        rgba(255,255,255,.25) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.8),
+        inset 0 -1px 0 rgba(20,28,34,.08);
+    }
+
+    .env-btn {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(20,28,34,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(233,239,243,.6));
+      transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    }
+
+    .env-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, transparent 0%, rgba(255,255,255,.8) 25%, transparent 50%);
+      transform: translateX(-130%);
+      transition: transform .8s ease;
+    }
+
+    .env-btn:hover::before,
+    .env-btn.active::before { transform: translateX(130%); }
+
+    .env-btn:hover,
+    .env-btn.active {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px rgba(16,24,40,.10);
+      border-color: rgba(31,185,137,.35);
+    }
+
+    .env-btn.active {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.9), rgba(216,247,238,.7));
+    }
+
+    .stage {
+      position: relative;
+      min-height: 460px;
+      border-top: 1px solid rgba(255,255,255,.85);
+      border-bottom: 1px solid rgba(20,28,34,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.55), rgba(230,236,240,.35));
+      overflow: hidden;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.0) 0%, rgba(255,255,255,.45) 50%, rgba(255,255,255,.0) 100%);
+      opacity: .55;
+      pointer-events: none;
+    }
+
+    .desk {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 8%;
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #dde4e9, #ffffff 45%, #d2dbe1 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.95),
+        0 12px 30px rgba(16,24,40,.08);
+    }
+
+    .screen {
+      position: absolute;
+      right: 10%;
+      bottom: 18%;
+      width: 150px;
+      height: 100px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fefefe, #e9eef2);
+      border: 1px solid rgba(20,28,34,.08);
+      box-shadow: 0 18px 30px rgba(16,24,40,.10);
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: 14%;
+      bottom: 18%;
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(31,185,137,.09), rgba(102,119,132,.06)),
+        repeating-linear-gradient(180deg, rgba(20,28,34,.08), rgba(20,28,34,.08) 2px, transparent 2px, transparent 12px);
+    }
+
+    .screen::after {
+      content: "";
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      width: 56px;
+      height: 20px;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, #d7e0e6, #f8fafb);
+      clip-path: polygon(38% 0, 62% 0, 72% 100%, 28% 100%);
+      opacity: .95;
+    }
+
+    .screen.dual-left { right: 31%; width: 120px; transform: rotate(-4deg); }
+    .screen.dual-right { right: 8%; width: 120px; transform: rotate(4deg); }
+    .screen.laptop {
+      width: 170px;
+      height: 88px;
+      right: 8%;
+      bottom: 19%;
+      transform: perspective(600px) rotateX(14deg);
+    }
+    .screen.laptop::after {
+      width: 180px;
+      height: 14px;
+      bottom: -10px;
+      background: linear-gradient(180deg, #eef2f4, #dbe4ea);
+      clip-path: polygon(5% 0, 95% 0, 100% 100%, 0 100%);
+    }
+
+    .human {
+      position: absolute;
+      left: 12%;
+      bottom: 11%;
+      width: 220px;
+      height: 290px;
+    }
+
+    .head {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      left: 74px;
+      top: 8px;
+      background: linear-gradient(180deg, #f7f9fb, #dce5ea);
+      border: 1px solid rgba(20,28,34,.06);
+      box-shadow: inset 0 4px 8px rgba(255,255,255,.8);
+      transform-origin: 50% 100%;
+      transition: transform .45s ease, left .45s ease, top .45s ease;
+    }
+
+    .torso {
+      position: absolute;
+      left: 82px;
+      top: 64px;
+      width: 26px;
+      height: 110px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #cfd9e0, #eef3f6);
+      transform-origin: top center;
+      transition: transform .45s ease, left .45s ease;
+    }
+
+    .shoulder-line {
+      position: absolute;
+      left: 42px;
+      top: 82px;
+      width: 110px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #dce4ea, #fefefe, #d8e0e6);
+      transform-origin: center;
+      transition: transform .45s ease, top .45s ease;
+    }
+
+    .arm {
+      position: absolute;
+      width: 14px;
+      height: 88px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #d8e0e6, #eef3f6);
+      top: 90px;
+      transition: transform .45s ease, left .45s ease;
+    }
+
+    .arm.left { left: 48px; transform: rotate(32deg); transform-origin: top center; }
+    .arm.right { left: 122px; transform: rotate(-18deg); transform-origin: top center; }
+
+    .chair {
+      position: absolute;
+      left: 12px;
+      bottom: 2px;
+      width: 118px;
+      height: 126px;
+      border-left: 10px solid rgba(102,119,132,.28);
+      border-bottom: 12px solid rgba(102,119,132,.18);
+      border-radius: 22px;
+      opacity: .55;
+    }
+
+    .gaze {
+      position: absolute;
+      left: 132px;
+      top: 28px;
+      height: 2px;
+      transform-origin: left center;
+      transition: width .45s ease, transform .45s ease, top .45s ease;
+      background: linear-gradient(90deg, rgba(20,28,34,.15), rgba(20,28,34,0));
+    }
+
+    .gaze::after {
+      content: "";
+      position: absolute;
+      right: -2px;
+      top: -3px;
+      width: 8px;
+      height: 8px;
+      border-top: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: rotate(45deg);
+      opacity: .8;
+    }
+
+    .vision-cone {
+      position: absolute;
+      right: 11%;
+      top: 18%;
+      height: 120px;
+      clip-path: polygon(0 50%, 100% 0, 100% 100%);
+      transform-origin: left center;
+      transition: width .45s ease, opacity .45s ease, right .45s ease, top .45s ease;
+      backdrop-filter: blur(2px);
+    }
+
+    .stress {
+      position: absolute;
+      left: 102px;
+      top: 62px;
+      width: 48px;
+      height: 48px;
+      pointer-events: none;
+      transition: opacity .35s ease;
+    }
+
+    .stress .ring,
+    .stress .plus {
+      position: absolute;
+      border-radius: 999px;
+    }
+
+    .stress .ring {
+      inset: 10px;
+      border: 2px solid rgba(239,68,68,.7);
+      animation: pulseWarn 1.2s ease-in-out infinite;
+    }
+
+    .stress .plus {
+      left: 17px;
+      top: 17px;
+      width: 14px;
+      height: 14px;
+      background: radial-gradient(circle, rgba(239,68,68,.95) 0 20%, transparent 21%),
+                  linear-gradient(90deg, transparent 42%, rgba(239,68,68,.95) 42% 58%, transparent 58%),
+                  linear-gradient(180deg, transparent 42%, rgba(239,68,68,.95) 42% 58%, transparent 58%);
+      filter: drop-shadow(0 0 6px rgba(239,68,68,.45));
+    }
+
+    .safe {
+      position: absolute;
+      left: 98px;
+      top: 66px;
+      width: 44px;
+      height: 44px;
+      opacity: 0;
+      transition: opacity .35s ease;
+    }
+
+    .safe::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 999px;
+      border: 2px solid rgba(31,185,137,.45);
+      box-shadow: 0 0 0 8px rgba(31,185,137,.07);
+    }
+
+    .safe::after {
+      content: "";
+      position: absolute;
+      left: 13px;
+      top: 14px;
+      width: 14px;
+      height: 8px;
+      border-left: 3px solid rgba(31,185,137,.95);
+      border-bottom: 3px solid rgba(31,185,137,.95);
+      transform: rotate(-45deg);
+    }
+
+    .metric-bar {
+      height: 10px;
+      overflow: hidden;
+      background: linear-gradient(90deg, rgba(20,28,34,.06), rgba(20,28,34,.02));
+    }
+
+    .metric-fill {
+      height: 100%;
+      transition: width .6s ease;
+      position: relative;
+    }
+
+    .metric-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 10%, rgba(255,255,255,.45) 50%, transparent 90%);
+      animation: scan 2.4s linear infinite;
+      opacity: .65;
+    }
+
+    .copy-section {
+      border-top: 1px solid rgba(255,255,255,.8);
+      border-bottom: 1px solid rgba(20,28,34,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.58), rgba(234,240,244,.42));
+    }
+
+    .fade-in {
+      animation: slideIn .45s ease-out both;
+    }
+
+    .hidden-soft {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all .45s ease;
+    }
+
+    .hidden-soft.show {
+      opacity: 1;
+      max-height: 1000px;
+    }
+
+    .focus-pill {
+      border: 1px solid rgba(20,28,34,.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(244,248,250,.56));
+    }
+
+    .mini-label {
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-size: .72rem;
+      color: rgba(54,67,77,.72);
+    }
+
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(20,28,34,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,28,34,.04) 1px, transparent 1px);
+      background-size: 42px 42px;
+      background-position: center center;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.95), rgba(0,0,0,.18));
+    }
+
+    @media (max-width: 1024px) {
+      .stage { min-height: 400px; }
+      .human { transform: scale(.9); transform-origin: left bottom; left: 6%; }
+      .screen, .screen.laptop { right: 4%; }
+      .screen.dual-left { right: 27%; }
+    }
+
+    @media (max-width: 768px) {
+      .stage { min-height: 360px; }
+      .human { transform: scale(.78); left: 0; bottom: 10%; }
+      .screen, .screen.laptop { transform: scale(.9); right: 2%; bottom: 20%; }
+      .screen.dual-left { right: 24%; }
+      .screen.dual-right { right: 0; }
+      .vision-cone { right: 4%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="fixed inset-x-0 top-0 z-50 glass-line">
+    <div class="metal-strip h-[2px]"></div>
+    <div class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+      <div>
+        <p class="mini-label">Ergonomic Lens Proposal Tool</p>
+        <h1 class="text-lg sm:text-xl font-semibold tracking-tight text-silver-900">
+          デスクワークの肩こり・ストレートネック撃退！
+          <span class="text-mint-600">中近両用</span>
+          vs
+          <span class="text-danger-500">遠近両用</span>
+          姿勢＆視界シミュレーター
+        </h1>
+      </div>
+      <div class="hidden md:flex items-center gap-3 text-sm text-silver-600">
+        <span class="focus-pill rounded-full px-4 py-2">新人スタッフ向け提案支援</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="pt-28">
+    <section class="relative">
+      <div class="absolute inset-0 hero-grid pointer-events-none"></div>
+      <div class="mx-auto max-w-7xl px-6 pt-10 pb-12">
+        <div class="grid lg:grid-cols-[1.2fr_.8fr] gap-10 items-end">
+          <div>
+            <p class="mini-label mb-4">High-end office ergonomics aesthetic</p>
+            <h2 class="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.05] text-silver-900">
+              見え方の提案を、
+              <span class="text-silver-500">姿勢改善の提案</span>
+              に変える。
+            </h2>
+            <p class="mt-6 max-w-3xl text-base sm:text-lg leading-8 text-silver-700">
+              40代〜50代のお客様が感じる「首・肩のつらさ」は、
+              目のピントだけでなく、
+              <span class="text-silver-900 font-medium">画面を見るための頭の角度</span>
+              と
+              <span class="text-silver-900 font-medium">視界の使い方</span>
+              に深く関係します。
+              このツールは、遠近両用と中近両用の違いを、
+              <span class="text-mint-700 font-medium">姿勢</span> と
+              <span class="text-mint-700 font-medium">人間工学</span> の観点で直感的に伝えるための接客支援アプリです。
+            </p>
+          </div>
+
+          <div class="relative">
+            <div class="absolute -inset-10 bg-gradient-to-br from-mint-100/50 via-white to-silver-200/40 blur-3xl rounded-full"></div>
+            <div class="relative h-56 sm:h-64">
+              <div class="absolute left-0 top-10 text-danger-500/90">
+                <div class="text-sm font-medium tracking-wide">遠近両用</div>
+                <div class="mt-2 text-3xl font-semibold">アゴが上がる</div>
+              </div>
+              <div class="absolute right-0 bottom-4 text-right text-mint-600">
+                <div class="text-sm font-medium tracking-wide">中近両用</div>
+                <div class="mt-2 text-3xl font-semibold">首が自然に戻る</div>
+              </div>
+              <svg viewBox="0 0 520 240" class="absolute inset-0 w-full h-full">
+                <defs>
+                  <linearGradient id="spineBad" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#ff8a8a"/>
+                    <stop offset="100%" stop-color="#ef4444"/>
+                  </linearGradient>
+                  <linearGradient id="spineGood" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#7fe3bf"/>
+                    <stop offset="100%" stop-color="#1fb989"/>
+                  </linearGradient>
+                </defs>
+                <path d="M90 165 C140 145, 170 135, 208 118 C245 102, 268 82, 292 50"
+                      fill="none" stroke="url(#spineBad)" stroke-width="10" stroke-linecap="round" opacity=".9"/>
+                <path d="M265 165 C305 150, 330 138, 355 116 C380 95, 398 77, 414 58"
+                      fill="none" stroke="url(#spineGood)" stroke-width="10" stroke-linecap="round" opacity=".95"/>
+                <circle cx="295" cy="45" r="19" fill="#f5f8fa" stroke="#dbe4ea"/>
+                <circle cx="422" cy="53" r="19" fill="#f5f8fa" stroke="#dbe4ea"/>
+                <circle cx="282" cy="69" r="6" fill="#ef4444"/>
+                <circle cx="406" cy="73" r="6" fill="#1fb989"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-6 pb-8">
+      <div class="py-6 border-y border-silver-200/70">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <p class="mini-label mb-2">Step 1 / Progressive disclosure</p>
+            <h3 class="text-2xl sm:text-3xl font-semibold tracking-tight text-silver-900">
+              まずは、お客様の普段の環境を選んでください
+            </h3>
+            <p class="mt-2 text-silver-600 leading-7">
+              最初はここだけを見せます。情報を絞ることで、接客の入口で迷わせません。
+            </p>
+          </div>
+          <button id="resetBtn" class="focus-pill w-full lg:w-auto rounded-full px-5 py-3 text-sm font-medium text-silver-700 hover:text-silver-900 transition">
+            選択をリセット
+          </button>
+        </div>
+
+        <div class="mt-8 grid md:grid-cols-3 gap-4">
+          <button class="env-btn rounded-[28px] px-6 py-6 text-left" data-env="desktop">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="mini-label">Environment A</p>
+                <div class="mt-2 text-xl font-semibold text-silver-900">デスクトップPC</div>
+                <p class="mt-3 text-sm leading-7 text-silver-600">
+                  モニター画面が目線の高さにある環境。
+                </p>
+              </div>
+              <div class="shrink-0 text-silver-400">01</div>
+            </div>
+          </button>
+
+          <button class="env-btn rounded-[28px] px-6 py-6 text-left" data-env="laptop">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="mini-label">Environment B</p>
+                <div class="mt-2 text-xl font-semibold text-silver-900">ノートPC</div>
+                <p class="mt-3 text-sm leading-7 text-silver-600">
+                  目線が少し下がり、首が前に出やすい環境。
+                </p>
+              </div>
+              <div class="shrink-0 text-silver-400">02</div>
+            </div>
+          </button>
+
+          <button class="env-btn rounded-[28px] px-6 py-6 text-left" data-env="dual">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="mini-label">Environment C</p>
+                <div class="mt-2 text-xl font-semibold text-silver-900">デュアルモニター</div>
+                <p class="mt-3 text-sm leading-7 text-silver-600">
+                  視線の横移動が多く、視野の広さが重要な環境。
+                </p>
+              </div>
+              <div class="shrink-0 text-silver-400">03</div>
+            </div>
+          </button>
+        </div>
+
+        <p id="statusMessage" class="mt-5 text-sm text-silver-500">
+          環境を選ぶと、姿勢・視界・接客トークが段階的に表示されます。
+        </p>
+      </div>
+    </section>
+
+    <section id="revealSection" class="hidden-soft mx-auto max-w-7xl px-6 pb-20">
+      <div class="grid xl:grid-cols-2 gap-8 items-start">
+        <article class="space-y-5 fade-in">
+          <div class="flex items-center justify-between border-b border-silver-200/70 pb-4">
+            <div>
+              <p class="mini-label">Simulation / 遠近両用</p>
+              <h3 class="text-2xl font-semibold tracking-tight text-silver-900">普通の遠近両用でPCを見ると</h3>
+            </div>
+            <span class="px-4 py-2 rounded-full text-sm font-medium text-danger-700 bg-danger-50 border border-danger-200/70">
+              首に負担
+            </span>
+          </div>
+
+          <div class="stage rounded-[36px] shadow-soft" id="badStage">
+            <div class="chair"></div>
+            <div class="human" data-posture="bad">
+              <div class="head"></div>
+              <div class="torso"></div>
+              <div class="shoulder-line"></div>
+              <div class="arm left"></div>
+              <div class="arm right"></div>
+              <div class="stress">
+                <div class="ring"></div>
+                <div class="plus"></div>
+              </div>
+              <div class="safe"></div>
+              <div class="gaze text-danger-400"></div>
+            </div>
+            <div class="vision-cone bg-danger-400/20 border border-danger-300/40"></div>
+            <div class="desk"></div>
+            <div id="badScreenArea"></div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="copy-section rounded-[26px] px-5 py-5">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-medium text-silver-700">視界の広さ</span>
+                <span id="badVisionLabel" class="text-sm font-semibold text-danger-600">狭い</span>
+              </div>
+              <div class="metric-bar rounded-full mt-3">
+                <div id="badVisionFill" class="metric-fill rounded-full bg-gradient-to-r from-danger-300 to-danger-500" style="width:28%;"></div>
+              </div>
+              <p class="mt-3 text-sm leading-7 text-silver-600">
+                PCを見るための快適ゾーンが狭く、顔の角度で合わせにいきやすい。
+              </p>
+            </div>
+            <div class="copy-section rounded-[26px] px-5 py-5">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-medium text-silver-700">首・肩への負担</span>
+                <span id="badStressLabel" class="text-sm font-semibold text-danger-600">高い</span>
+              </div>
+              <div class="metric-bar rounded-full mt-3">
+                <div id="badStressFill" class="metric-fill rounded-full bg-gradient-to-r from-danger-300 to-danger-500" style="width:82%;"></div>
+              </div>
+              <p class="mt-3 text-sm leading-7 text-silver-600">
+                アゴが上がる・首が反る・肩に力が入る動きが起こりやすい。
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article class="space-y-5 fade-in">
+          <div class="flex items-center justify-between border-b border-silver-200/70 pb-4">
+            <div>
+              <p class="mini-label">Simulation / 中近両用（室内用）</p>
+              <h3 class="text-2xl font-semibold tracking-tight text-silver-900">中近両用でPCを見ると</h3>
+            </div>
+            <span class="px-4 py-2 rounded-full text-sm font-medium text-mint-700 bg-mint-50 border border-mint-200/70">
+              自然な姿勢
+            </span>
+          </div>
+
+          <div class="stage rounded-[36px] shadow-soft" id="goodStage">
+            <div class="chair"></div>
+            <div class="human" data-posture="good">
+              <div class="head"></div>
+              <div class="torso"></div>
+              <div class="shoulder-line"></div>
+              <div class="arm left"></div>
+              <div class="arm right"></div>
+              <div class="stress" style="opacity:0;">
+                <div class="ring"></div>
+                <div class="plus"></div>
+              </div>
+              <div class="safe"></div>
+              <div class="gaze text-mint-500"></div>
+            </div>
+            <div class="vision-cone bg-mint-400/18 border border-mint-300/40"></div>
+            <div class="desk"></div>
+            <div id="goodScreenArea"></div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="copy-section rounded-[26px] px-5 py-5">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-medium text-silver-700">視界の広さ</span>
+                <span id="goodVisionLabel" class="text-sm font-semibold text-mint-700">広い</span>
+              </div>
+              <div class="metric-bar rounded-full mt-3">
+                <div id="goodVisionFill" class="metric-fill rounded-full bg-gradient-to-r from-mint-300 to-mint-600" style="width:78%;"></div>
+              </div>
+              <p class="mt-3 text-sm leading-7 text-silver-600">
+                室内距離に合わせやすく、顔を動かしすぎず自然な目線で見やすい。
+              </p>
+            </div>
+            <div class="copy-section rounded-[26px] px-5 py-5">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-medium text-silver-700">首・肩への負担</span>
+                <span id="goodStressLabel" class="text-sm font-semibold text-mint-700">低い</span>
+              </div>
+              <div class="metric-bar rounded-full mt-3">
+                <div id="goodStressFill" class="metric-fill rounded-full bg-gradient-to-r from-mint-300 to-mint-600" style="width:24%;"></div>
+              </div>
+              <p class="mt-3 text-sm leading-7 text-silver-600">
+                頭の位置を無理に変えず、画面に対して首がまっすぐ保ちやすい。
+              </p>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="mt-12 grid xl:grid-cols-[.95fr_1.05fr] gap-8">
+        <section class="copy-section rounded-[34px] px-6 sm:px-8 py-8 fade-in">
+          <div class="flex items-start justify-between gap-6">
+            <div>
+              <p class="mini-label">Why neck pain happens</p>
+              <h3 class="text-2xl sm:text-3xl font-semibold tracking-tight text-silver-900">
+                人間工学的ロジック
+              </h3>
+            </div>
+            <div id="envBadge" class="focus-pill rounded-full px-4 py-2 text-sm text-silver-700">
+              未選択
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-5">
+            <div class="border-b border-silver-200/70 pb-5">
+              <p class="text-sm text-silver-500">環境別の問題点</p>
+              <p id="ergonomicLogic" class="mt-2 text-base leading-8 text-silver-700"></p>
+            </div>
+            <div class="border-b border-silver-200/70 pb-5">
+              <p class="text-sm text-silver-500">提案の軸</p>
+              <p id="proposalLogic" class="mt-2 text-base leading-8 text-silver-700"></p>
+            </div>
+            <div>
+              <p class="text-sm text-silver-500">キラーフレーズ</p>
+              <p id="killerPhrase" class="mt-2 text-xl leading-9 font-semibold text-silver-900"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="copy-section rounded-[34px] px-6 sm:px-8 py-8 fade-in">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="mini-label">Staff cue sheet</p>
+              <h3 class="text-2xl sm:text-3xl font-semibold tracking-tight text-silver-900">
+                スタッフ用 接客トーク
+              </h3>
+            </div>
+            <button id="copyTalkBtn" class="focus-pill rounded-full px-4 py-2 text-sm font-medium text-silver-700 hover:text-silver-900 transition">
+              トークをコピー
+            </button>
+          </div>
+
+          <div class="mt-6 space-y-4">
+            <div class="border-b border-silver-200/70 pb-4">
+              <p class="text-sm text-silver-500">導入</p>
+              <p id="talkIntro" class="mt-2 text-base leading-8 text-silver-700"></p>
+            </div>
+            <div class="border-b border-silver-200/70 pb-4">
+              <p class="text-sm text-silver-500">気づきの一言</p>
+              <p id="talkInsight" class="mt-2 text-base leading-8 text-silver-700"></p>
+            </div>
+            <div class="border-b border-silver-200/70 pb-4">
+              <p class="text-sm text-silver-500">提案クロージング</p>
+              <p id="talkClose" class="mt-2 text-base leading-8 text-silver-700"></p>
+            </div>
+            <div>
+              <p class="text-sm text-silver-500">やわらかい背中押し</p>
+              <p id="talkSoftClose" class="mt-2 text-base leading-8 text-silver-700"></p>
+            </div>
+          </div>
+
+          <p id="copyResult" class="mt-5 text-sm text-mint-700 opacity-0 transition">
+            接客トークをコピーしました。
+          </p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const DATA = {
+        desktop: {
+          label: "デスクトップPC",
+          screens: {
+            bad: '<div class="screen"></div>',
+            good: '<div class="screen"></div>'
+          },
+          posture: {
+            bad: {
+              head: 'translate(24px, -2px) rotate(-24deg)',
+              torso: 'rotate(6deg)',
+              shoulder: 'rotate(3deg) translateY(3px)',
+              armLeft: 'rotate(28deg)',
+              armRight: 'rotate(-14deg)',
+              gazeWidth: '190px',
+              gazeTop: '24px',
+              gazeTransform: 'rotate(-7deg)',
+              coneWidth: '110px',
+              coneTop: '22%',
+              coneRight: '10%',
+              stressOpacity: 1,
+              safeOpacity: 0
+            },
+            good: {
+              head: 'translate(6px, 2px) rotate(-7deg)',
+              torso: 'rotate(0deg)',
+              shoulder: 'rotate(0deg)',
+              armLeft: 'rotate(30deg)',
+              armRight: 'rotate(-18deg)',
+              gazeWidth: '206px',
+              gazeTop: '28px',
+              gazeTransform: 'rotate(-2deg)',
+              coneWidth: '200px',
+              coneTop: '18%',
+              coneRight: '10%',
+              stressOpacity: 0,
+              safeOpacity: 1
+            }
+          },
+          metric: {
+            badVision: 30,
+            badStress: 76,
+            goodVision: 82,
+            goodStress: 22
+          },
+          text: {
+            ergonomicLogic:
+              'モニターが目線に近い高さでも、普通の遠近両用ではPCを見るための見やすい帯がレンズの下側に寄りやすく、画面にピントを合わせるためにアゴが上がり、首の後ろが反りやすくなります。',
+            proposalLogic:
+              'この環境では「見えるかどうか」だけでなく、「その姿勢で何時間もいられるか」を提案軸にすると刺さります。中近両用は、デスク距離に合わせて自然な頭位を保ちやすい室内専用ギアとして訴求できます。',
+            killerPhrase:
+              'メガネを変えるだけで、整体に通う回数が減るかもしれませんよ。',
+            intro:
+              'デスクトップ環境だと、一見ラクそうに見えても、遠近両用ではPCにピントを合わせるために首だけで角度調整している方が多いんです。',
+            insight:
+              '見え方の問題というより、見ようとする姿勢の問題が首と肩に出ているケースですね。',
+            close:
+              '室内でのPC距離に合わせた中近両用なら、画面を見るたびにアゴを上げにくくなるので、仕事終わりの疲れ方が変わる可能性があります。',
+            softClose:
+              '普段のデスク姿勢に近い条件で見比べると、「ただ見える」より「ラクに見続けられる」違いを実感していただきやすいです。'
+          }
+        },
+        laptop: {
+          label: "ノートPC",
+          screens: {
+            bad: '<div class="screen laptop"></div>',
+            good: '<div class="screen laptop"></div>'
+          },
+          posture: {
+            bad: {
+              head: 'translate(18px, 12px) rotate(-8deg)',
+              torso: 'rotate(13deg)',
+              shoulder: 'rotate(7deg) translateY(8px)',
+              armLeft: 'rotate(40deg)',
+              armRight: 'rotate(-2deg)',
+              gazeWidth: '170px',
+              gazeTop: '40px',
+              gazeTransform: 'rotate(8deg)',
+              coneWidth: '95px',
+              coneTop: '30%',
+              coneRight: '8%',
+              stressOpacity: 1,
+              safeOpacity: 0
+            },
+            good: {
+              head: 'translate(6px, 8px) rotate(2deg)',
+              torso: 'rotate(5deg)',
+              shoulder: 'rotate(2deg) translateY(4px)',
+              armLeft: 'rotate(35deg)',
+              armRight: 'rotate(-8deg)',
+              gazeWidth: '178px',
+              gazeTop: '41px',
+              gazeTransform: 'rotate(10deg)',
+              coneWidth: '175px',
+              coneTop: '27%',
+              coneRight: '6%',
+              stressOpacity: 0,
+              safeOpacity: 1
+            }
+          },
+          metric: {
+            badVision: 36,
+            badStress: 84,
+            goodVision: 75,
+            goodStress: 29
+          },
+          text: {
+            ergonomicLogic:
+              'ノートPCはもともと画面位置が低いため、首が前に出やすい環境です。そこに遠近両用の見やすい帯の狭さが重なると、顔を突き出したり、首だけで微調整したりして、肩上部まで緊張しやすくなります。',
+            proposalLogic:
+              'この環境では「前のめり姿勢の固定化」がポイントです。中近両用は近〜中距離を広く使いやすいため、顔を突き出して探す動きが減り、結果として首・肩のこわばり対策として提案しやすくなります。',
+            killerPhrase:
+              'メガネを変えるだけで、整体に通う回数が減るかもしれませんよ。',
+            intro:
+              'ノートPCの方は、画面が低いぶん、首が前に出るクセがつきやすいんです。',
+            insight:
+              'そこで遠近両用の狭い見やすい部分に合わせようとすると、頭ごと前に出てしまって、首と肩がずっと頑張る状態になります。',
+            close:
+              '中近両用なら、デスク距離を広く拾いやすいので、顔を寄せなくても見やすくなり、姿勢の崩れを抑えやすいです。',
+            softClose:
+              'パソコン作業が長い方ほど、度数だけでなく“どういう姿勢で見ているか”まで含めてレンズを選ぶと満足度が上がりやすいです。'
+          }
+        },
+        dual: {
+          label: "デュアルモニター",
+          screens: {
+            bad: '<div class="screen dual-left"></div><div class="screen dual-right"></div>',
+            good: '<div class="screen dual-left"></div><div class="screen dual-right"></div>'
+          },
+          posture: {
+            bad: {
+              head: 'translate(22px, 4px) rotate(-16deg)',
+              torso: 'rotate(4deg)',
+              shoulder: 'rotate(2deg) translateY(2px)',
+              armLeft: 'rotate(30deg)',
+              armRight: 'rotate(-14deg)',
+              gazeWidth: '210px',
+              gazeTop: '30px',
+              gazeTransform: 'rotate(-12deg)',
+              coneWidth: '88px',
+              coneTop: '19%',
+              coneRight: '23%',
+              stressOpacity: 1,
+              safeOpacity: 0
+            },
+            good: {
+              head: 'translate(6px, 4px) rotate(-4deg)',
+              torso: 'rotate(0deg)',
+              shoulder: 'rotate(0deg)',
+              armLeft: 'rotate(30deg)',
+              armRight: 'rotate(-18deg)',
+              gazeWidth: '220px',
+              gazeTop: '30px',
+              gazeTransform: 'rotate(-4deg)',
+              coneWidth: '230px',
+              coneTop: '17%',
+              coneRight: '8%',
+              stressOpacity: 0,
+              safeOpacity: 1
+            }
+          },
+          metric: {
+            badVision: 24,
+            badStress: 80,
+            goodVision: 88,
+            goodStress: 25
+          },
+          text: {
+            ergonomicLogic:
+              'デュアルモニターでは、上下だけでなく左右にも視線移動が増えます。遠近両用でPC用のクリアゾーンが狭いと、目だけで追えず、顔や首ごと追いかける動きが増え、片側の首筋に負担が偏りやすくなります。',
+            proposalLogic:
+              'この環境では「広い視野の中で、自然に見渡せるか」が大事です。中近両用は室内距離の視界確保に強く、横方向の視線移動が多い人ほど、ラクさの違いを説明しやすいです。',
+            killerPhrase:
+              'メガネを変えるだけで、整体に通う回数が減るかもしれませんよ。',
+            intro:
+              'デュアルモニターの方は、見えているつもりでも、実は首ごと左右に細かく振っているケースが多いです。',
+            insight:
+              '遠近両用だとクリアに見える範囲が狭くて、画面を追うたびに姿勢まで動いてしまうんですね。',
+            close:
+              '中近両用なら室内距離の視野が広く取りやすいので、左右のモニターを見比べる動作もスムーズになりやすいです。',
+            softClose:
+              '首の片側だけつらい、夕方に肩が固まる、という方ほど、“視界の広さ”を体感すると納得されやすいです。'
+          }
+        }
+      };
+
+      const envButtons = document.querySelectorAll('.env-btn');
+      const revealSection = document.getElementById('revealSection');
+      const statusMessage = document.getElementById('statusMessage');
+      const resetBtn = document.getElementById('resetBtn');
+      const copyTalkBtn = document.getElementById('copyTalkBtn');
+      const copyResult = document.getElementById('copyResult');
+
+      const envBadge = document.getElementById('envBadge');
+      const ergonomicLogic = document.getElementById('ergonomicLogic');
+      const proposalLogic = document.getElementById('proposalLogic');
+      const killerPhrase = document.getElementById('killerPhrase');
+
+      const talkIntro = document.getElementById('talkIntro');
+      const talkInsight = document.getElementById('talkInsight');
+      const talkClose = document.getElementById('talkClose');
+      const talkSoftClose = document.getElementById('talkSoftClose');
+
+      const badVisionFill = document.getElementById('badVisionFill');
+      const badStressFill = document.getElementById('badStressFill');
+      const goodVisionFill = document.getElementById('goodVisionFill');
+      const goodStressFill = document.getElementById('goodStressFill');
+
+      const badVisionLabel = document.getElementById('badVisionLabel');
+      const badStressLabel = document.getElementById('badStressLabel');
+      const goodVisionLabel = document.getElementById('goodVisionLabel');
+      const goodStressLabel = document.getElementById('goodStressLabel');
+
+      const badScreenArea = document.getElementById('badScreenArea');
+      const goodScreenArea = document.getElementById('goodScreenArea');
+
+      const humanBad = document.querySelector('#badStage .human');
+      const humanGood = document.querySelector('#goodStage .human');
+      const coneBad = document.querySelector('#badStage .vision-cone');
+      const coneGood = document.querySelector('#goodStage .vision-cone');
+
+      let currentEnv = null;
+
+      function applyPosture(humanEl, coneEl, posture) {
+        if (!humanEl || !coneEl || !posture) return;
+
+        const head = humanEl.querySelector('.head');
+        const torso = humanEl.querySelector('.torso');
+        const shoulder = humanEl.querySelector('.shoulder-line');
+        const armLeft = humanEl.querySelector('.arm.left');
+        const armRight = humanEl.querySelector('.arm.right');
+        const gaze = humanEl.querySelector('.gaze');
+        const stress = humanEl.querySelector('.stress');
+        const safe = humanEl.querySelector('.safe');
+
+        head.style.transform = posture.head;
+        torso.style.transform = posture.torso;
+        shoulder.style.transform = posture.shoulder;
+        armLeft.style.transform = posture.armLeft;
+        armRight.style.transform = posture.armRight;
+        gaze.style.width = posture.gazeWidth;
+        gaze.style.top = posture.gazeTop;
+        gaze.style.transform = posture.gazeTransform;
+        coneEl.style.width = posture.coneWidth;
+        coneEl.style.top = posture.coneTop;
+        coneEl.style.right = posture.coneRight;
+        stress.style.opacity = posture.stressOpacity;
+        safe.style.opacity = posture.safeOpacity;
+      }
+
+      function setMetrics(metric) {
+        badVisionFill.style.width = `${metric.badVision}%`;
+        badStressFill.style.width = `${metric.badStress}%`;
+        goodVisionFill.style.width = `${metric.goodVision}%`;
+        goodStressFill.style.width = `${metric.goodStress}%`;
+
+        badVisionLabel.textContent = metric.badVision < 35 ? 'かなり狭い' : 'やや狭い';
+        badStressLabel.textContent = metric.badStress > 80 ? 'かなり高い' : '高い';
+        goodVisionLabel.textContent = metric.goodVision > 85 ? 'かなり広い' : '広い';
+        goodStressLabel.textContent = metric.goodStress < 25 ? 'かなり低い' : '低い';
+      }
+
+      function setText(text, label) {
+        envBadge.textContent = label;
+        ergonomicLogic.textContent = text.ergonomicLogic;
+        proposalLogic.textContent = text.proposalLogic;
+        killerPhrase.textContent = text.killerPhrase;
+        talkIntro.textContent = text.intro;
+        talkInsight.textContent = text.insight;
+        talkClose.textContent = text.close;
+        talkSoftClose.textContent = text.softClose;
+      }
+
+      function setEnvironment(envKey) {
+        const data = DATA[envKey];
+        if (!data) {
+          statusMessage.textContent = '環境データの読み込みに失敗しました。もう一度選択してください。';
+          statusMessage.className = 'mt-5 text-sm text-danger-600';
+          return;
+        }
+
+        currentEnv = envKey;
+
+        envButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.env === envKey);
+        });
+
+        badScreenArea.innerHTML = data.screens.bad;
+        goodScreenArea.innerHTML = data.screens.good;
+
+        applyPosture(humanBad, coneBad, data.posture.bad);
+        applyPosture(humanGood, coneGood, data.posture.good);
+        setMetrics(data.metric);
+        setText(data.text, data.label);
+
+        revealSection.classList.add('show');
+        statusMessage.textContent = `${data.label} 環境に合わせた比較を表示中です。`;
+        statusMessage.className = 'mt-5 text-sm text-mint-700';
+
+        requestAnimationFrame(() => {
+          revealSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      function resetView() {
+        currentEnv = null;
+        envButtons.forEach(btn => btn.classList.remove('active'));
+        revealSection.classList.remove('show');
+        statusMessage.textContent = '環境を選ぶと、姿勢・視界・接客トークが段階的に表示されます。';
+        statusMessage.className = 'mt-5 text-sm text-silver-500';
+        copyResult.style.opacity = '0';
+      }
+
+      envButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const envKey = btn.dataset.env;
+          setEnvironment(envKey);
+        });
+      });
+
+      resetBtn.addEventListener('click', resetView);
+
+      copyTalkBtn.addEventListener('click', async () => {
+        if (!currentEnv || !DATA[currentEnv]) {
+          copyResult.textContent = '先に環境を選択してください。';
+          copyResult.className = 'mt-5 text-sm text-danger-600 opacity-100 transition';
+          return;
+        }
+
+        const t = DATA[currentEnv].text;
+        const compiled = [
+          `【環境】${DATA[currentEnv].label}`,
+          '',
+          '【導入】',
+          t.intro,
+          '',
+          '【気づきの一言】',
+          t.insight,
+          '',
+          '【提案クロージング】',
+          t.close,
+          '',
+          '【やわらかい背中押し】',
+          t.softClose,
+          '',
+          '【キラーフレーズ】',
+          t.killerPhrase
+        ].join('\n');
+
+        try {
+          await navigator.clipboard.writeText(compiled);
+          copyResult.textContent = '接客トークをコピーしました。';
+          copyResult.className = 'mt-5 text-sm text-mint-700 opacity-100 transition';
+        } catch (err) {
+          copyResult.textContent = 'コピーできませんでした。ブラウザの許可設定をご確認ください。';
+          copyResult.className = 'mt-5 text-sm text-danger-600 opacity-100 transition';
+        }
+      });
+
+      // 初期状態の微調整
+      setEnvironment('desktop');
+      setTimeout(() => {
+        resetView();
+      }, 0);
+    })();
+  </script>
+</body>
+</html>
