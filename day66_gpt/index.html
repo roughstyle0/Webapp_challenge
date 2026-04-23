@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>最強キズ防止コーティング 防御シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg0:#05070b;
+      --bg1:#0b1018;
+      --bg2:#131a24;
+      --metal:#cfd5df;
+      --metal2:#8e98a8;
+      --blue:#60c7ff;
+      --blue2:#9fe8ff;
+      --shield:#4fc4ff;
+      --danger:#f3f5f7;
+      --glass:#dff6ff;
+      --scratch:rgba(255,255,255,.92);
+      --panel:rgba(255,255,255,.06);
+      --panelBorder:rgba(255,255,255,.14);
+      --good:#9fe8ff;
+      --warn:#ffd8a8;
+      --shadow:0 24px 70px rgba(0,0,0,.42);
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{
+      font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;
+      color:#eef5ff;
+      background:
+        radial-gradient(circle at top right, rgba(96,199,255,.15), transparent 28%),
+        radial-gradient(circle at left center, rgba(255,255,255,.05), transparent 24%),
+        linear-gradient(180deg, #07090e 0%, #0c1119 55%, #06080d 100%);
+      transition:background .5s ease;
+    }
+
+    .app-shell{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)),
+        linear-gradient(135deg, rgba(96,199,255,.05), transparent 40%);
+      border:1px solid var(--panelBorder);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
+    .metal-title{
+      background:linear-gradient(180deg, #ffffff 0%, #dbe2ee 35%, #8e98a8 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .sub-glow{
+      text-shadow:0 0 18px rgba(96,199,255,.18);
+    }
+
+    .action-btn,
+    .choice-btn,
+    .mode-btn,
+    .restart-btn{
+      transition:transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+    .action-btn:hover,
+    .choice-btn:hover,
+    .mode-btn:hover,
+    .restart-btn:hover{
+      transform:translateY(-1px);
+    }
+
+    .action-btn.active,
+    .choice-btn.active,
+    .mode-btn.active{
+      border-color:rgba(159,232,255,.65);
+      background:linear-gradient(180deg, rgba(98,126,170,.24), rgba(79,196,255,.12));
+      box-shadow:0 0 0 1px rgba(96,199,255,.18) inset, 0 10px 26px rgba(79,196,255,.12);
+    }
+
+    .hero-badge{
+      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.14);
+    }
+
+    .thin-panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    .lens-shell{
+      background:
+        radial-gradient(circle at top, rgba(159,232,255,.10), transparent 42%),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+    }
+
+    .lens-view{
+      position:relative;
+      width:100%;
+      aspect-ratio: 1 / 1;
+      border-radius:1.75rem;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,.40), transparent 20%),
+        linear-gradient(180deg, rgba(216,240,255,.95), rgba(184,226,255,.88));
+      border:2px solid rgba(210,220,232,.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.55),
+        inset 0 -22px 40px rgba(12,16,24,.12),
+        0 18px 44px rgba(0,0,0,.30);
+      transition:filter .35s ease, transform .35s ease, box-shadow .35s ease;
+    }
+
+    .lens-view.good{
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.58),
+        inset 0 -18px 36px rgba(18,44,72,.12),
+        0 0 0 1px rgba(96,199,255,.16),
+        0 18px 44px rgba(17,23,34,.36),
+        0 0 32px rgba(79,196,255,.10);
+    }
+
+    .clarity-hud{
+      position:absolute;
+      inset:auto 0 0 0;
+      padding:.8rem;
+      background:linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+      display:flex;
+      justify-content:space-between;
+      gap:.75rem;
+      align-items:center;
+      z-index:4;
+    }
+
+    .scratch-layer,
+    .haze-layer,
+    .shield-layer,
+    .spark-layer{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .scratch-layer{z-index:2; opacity:0}
+    .haze-layer{
+      z-index:1;
+      opacity:0;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,.30), rgba(255,255,255,.12) 42%, rgba(255,255,255,.04) 68%, transparent 100%);
+      transition:opacity .3s ease;
+    }
+
+    .lens-view.scratched{
+      filter:saturate(.72) contrast(.9);
+    }
+
+    .lens-view.scratched .scratch-layer{opacity:1}
+    .lens-view.scratched .haze-layer{opacity:1}
+
+    .scratch{
+      position:absolute;
+      height:2px;
+      border-radius:999px;
+      background:linear-gradient(90deg, transparent, var(--scratch), transparent);
+      box-shadow:0 0 8px rgba(255,255,255,.34);
+      transform-origin:left center;
+      animation:scratchIn .65s ease forwards;
+      opacity:0;
+    }
+
+    @keyframes scratchIn{
+      0%{opacity:0; transform:scaleX(.2)}
+      28%{opacity:1}
+      100%{opacity:.95; transform:scaleX(1)}
+    }
+
+    .shield-layer{
+      z-index:3;
+      display:grid;
+      place-items:center;
+      opacity:0;
+    }
+
+    .shield-layer.show{
+      opacity:1;
+      animation:shieldFade 1.2s ease forwards;
+    }
+
+    @keyframes shieldFade{
+      0%{opacity:0}
+      18%{opacity:1}
+      75%{opacity:1}
+      100%{opacity:0}
+    }
+
+    .hex-wrap{
+      width:78%;
+      aspect-ratio:1/1;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:.35rem;
+      transform:scale(.75);
+      animation:shieldPop .72s cubic-bezier(.2,.8,.2,1) forwards;
+    }
+
+    @keyframes shieldPop{
+      0%{transform:scale(.55); filter:brightness(1.4)}
+      60%{transform:scale(1.03)}
+      100%{transform:scale(1)}
+    }
+
+    .hex{
+      aspect-ratio:1/1.06;
+      clip-path:polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+      background:
+        linear-gradient(180deg, rgba(159,232,255,.34), rgba(79,196,255,.14));
+      border:1px solid rgba(159,232,255,.55);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.16),
+        0 0 14px rgba(79,196,255,.15);
+      animation:hexFlash .7s ease forwards;
+    }
+
+    @keyframes hexFlash{
+      0%{opacity:0; transform:scale(.65)}
+      100%{opacity:1; transform:scale(1)}
+    }
+
+    .spark{
+      position:absolute;
+      width:16px;
+      height:2px;
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(255,255,255,0), rgba(159,232,255,.95), rgba(255,255,255,0));
+      animation:sparkFly .9s ease forwards;
+      opacity:0;
+    }
+
+    @keyframes sparkFly{
+      0%{opacity:0; transform:scaleX(.4) translateX(0)}
+      16%{opacity:1}
+      100%{opacity:0; transform:scaleX(1.25) translateX(18px)}
+    }
+
+    .talk-card{
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      opacity:.35;
+      transform:scale(.985);
+      transition:opacity .25s ease, transform .25s ease, border-color .25s ease, background .25s ease;
+    }
+
+    .talk-card.active{
+      opacity:1;
+      transform:scale(1);
+      border-color:rgba(159,232,255,.45);
+      background:
+        linear-gradient(180deg, rgba(96,199,255,.14), rgba(255,255,255,.05)),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+      box-shadow:0 10px 32px rgba(79,196,255,.08);
+    }
+
+    .word-accent{
+      color:#c3efff;
+      font-weight:700;
+    }
+
+    .danger-chip{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .safe-chip{
+      background:rgba(79,196,255,.14);
+      border:1px solid rgba(159,232,255,.25);
+    }
+
+    .meter{
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    .meter-fill{
+      height:100%;
+      width:100%;
+      transition:width .4s ease, background .4s ease;
+      background:linear-gradient(90deg, rgba(255,255,255,.75), rgba(226,234,244,.9));
+    }
+
+    .meter-fill.damage{
+      background:linear-gradient(90deg, rgba(255,255,255,.75), rgba(176,187,199,.8));
+    }
+
+    .meter-fill.protect{
+      background:linear-gradient(90deg, rgba(121,223,255,.82), rgba(76,185,255,.95));
+    }
+
+    .fade-up{
+      animation:fadeUp .45s ease both;
+    }
+
+    @keyframes fadeUp{
+      from{opacity:0; transform:translateY(10px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    .hidden-soft{display:none}
+
+    @media (min-width: 1024px){
+      .lens-view{max-width:420px; margin-inline:auto}
+    }
+  </style>
+</head>
+<body>
+  <main class="min-h-screen px-4 py-5 sm:px-6 sm:py-7">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 sm:gap-5">
+      <section class="app-shell rounded-[2rem] p-4 sm:p-6 lg:p-7">
+        <div class="grid gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap gap-2">
+              <span class="hero-badge rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.24em] text-slate-200">
+                DAMAGE DEFENSE EXPERIENCE
+              </span>
+              <span class="hero-badge rounded-full px-3 py-1 text-xs font-medium text-slate-200/90">
+                新人スタッフ向け提案支援
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <h1 class="metal-title text-3xl font-bold leading-tight sm:text-4xl">
+                カバンに雑に入れても、<br class="hidden sm:block">
+                服で拭いても安心。
+              </h1>
+              <p class="sub-glow text-base font-semibold text-sky-100/95 sm:text-lg">
+                「最強キズ防止コーティング」防御シミュレーター
+              </p>
+              <p class="max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
+                お客様が無意識にやってしまうNG行動を、<span class="font-semibold text-white">“視界が傷む瞬間”</span>として見せ、
+                標準レンズとの差を一目で納得させる体験型アプリです。
+              </p>
+            </div>
+
+            <div class="thin-panel rounded-[1.7rem] p-4 sm:p-5">
+              <div class="flex flex-col gap-3">
+                <div>
+                  <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">STEP 1</p>
+                  <h2 class="mt-1 text-lg font-semibold text-white">まずはNG行動を1つ選ぶ</h2>
+                  <p class="mt-1 text-sm leading-6 text-slate-300">
+                    初期画面は選択肢だけ。新人スタッフが迷わず、「どれなら刺さるか」を会話に合わせて選べます。
+                  </p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                  <button type="button" class="action-btn rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4 text-left" data-action="shirt">
+                    <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">NG ACTION 01</span>
+                    <span class="mt-1 block text-base font-semibold text-white">つい服の裾（Tシャツ）で拭いてしまう</span>
+                    <span class="mt-1 block text-sm leading-6 text-slate-300">見えない砂埃でこすってしまう日常動作</span>
+                  </button>
+
+                  <button type="button" class="action-btn rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4 text-left" data-action="bag">
+                    <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">NG ACTION 02</span>
+                    <span class="mt-1 block text-base font-semibold text-white">カバンやポケットに、鍵や小銭と一緒にポイッと入れる</span>
+                    <span class="mt-1 block text-sm leading-6 text-slate-300">硬い物との接触で細かい傷が蓄積</span>
+                  </button>
+
+                  <button type="button" class="action-btn rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4 text-left" data-action="sand">
+                    <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">NG ACTION 03</span>
+                    <span class="mt-1 block text-base font-semibold text-white">海やキャンプで、砂埃がついたまま拭く</span>
+                    <span class="mt-1 block text-sm leading-6 text-slate-300">粒子が一気にレンズ表面を削る最悪パターン</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="thin-panel rounded-[1.9rem] p-4 sm:p-5">
+            <div class="grid gap-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">PREVIEW</p>
+                  <h2 class="mt-1 text-xl font-semibold text-white">防御コンセプト</h2>
+                </div>
+                <span class="hero-badge rounded-full px-3 py-1 text-xs font-semibold text-sky-100">
+                  CLEAR VISION
+                </span>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
+                  <p class="text-sm font-semibold text-white">標準レンズ</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-300">
+                    日常の何気ない摩擦でも、小傷が積み重なると視界の白濁感につながります。
+                  </p>
+                </div>
+                <div class="rounded-[1.4rem] border border-sky-200/15 bg-sky-400/5 p-4">
+                  <p class="text-sm font-semibold text-white">最強キズ防止コーティング</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-300">
+                    傷の瞬間を“防御”として見せることで、高単価でも価値を体感で伝えられます。
+                  </p>
+                </div>
+              </div>
+
+              <div class="rounded-[1.6rem] border border-white/10 bg-black/20 p-4">
+                <div class="grid gap-3">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-sm font-semibold text-white">おすすめの流れ</span>
+                    <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                      NG行動 → 傷 → 防御
+                    </span>
+                  </div>
+                  <p class="text-sm leading-6 text-slate-300">
+                    先に標準レンズで“うわ、傷つく”を見せてから、防御モードで“だから必要なんです”に繋げると刺さります。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="simSection" class="hidden-soft app-shell rounded-[2rem] p-4 sm:p-6 lg:p-7">
+        <div class="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">STEP 2</p>
+              <h2 class="text-2xl font-bold text-white">レンズ防御シミュレーション</h2>
+              <p class="text-sm leading-7 text-slate-300">
+                同じNG行動でも、標準レンズかコーティング済みかで結果が変わります。下のモードを切り替えて、被害と防御を見せてください。
+              </p>
+            </div>
+
+            <div class="thin-panel rounded-[1.7rem] p-4 sm:p-5">
+              <div class="grid gap-4">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button type="button" id="standardBtn" class="mode-btn active rounded-[1.3rem] border border-white/10 bg-white/5 px-4 py-4 text-left">
+                    <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">MODE</span>
+                    <span class="mt-1 block text-base font-semibold text-white">標準レンズ</span>
+                    <span class="mt-1 block text-sm leading-6 text-slate-300">傷エフェクトで視界悪化を再現</span>
+                  </button>
+
+                  <button type="button" id="coatingBtn" class="mode-btn rounded-[1.3rem] border border-sky-200/15 bg-sky-400/5 px-4 py-4 text-left">
+                    <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">MODE</span>
+                    <span class="mt-1 block text-base font-semibold text-white">最強キズ防止コーティング</span>
+                    <span class="mt-1 block text-sm leading-6 text-slate-300">青いシールドで弾き返す</span>
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div class="rounded-[1.2rem] border border-white/10 bg-white/5 px-4 py-3">
+                    <p class="text-xs font-semibold tracking-[0.18em] text-slate-400">選択中のNG行動</p>
+                    <p id="selectedActionLabel" class="mt-1 text-sm font-semibold leading-6 text-white">まだ選択されていません</p>
+                  </div>
+                  <button type="button" id="simulateBtn" class="restart-btn rounded-[1.2rem] border border-sky-200/20 bg-gradient-to-b from-sky-400/20 to-white/5 px-5 py-4 text-sm font-semibold text-white shadow-lg shadow-sky-500/5">
+                    この条件でシミュレーション
+                  </button>
+                </div>
+
+                <div id="errorBox" class="hidden-soft rounded-[1.2rem] border border-amber-200/20 bg-amber-100/10 px-4 py-3 text-sm leading-6 text-amber-100">
+                  先にNG行動を1つ選んでください。
+                </div>
+              </div>
+            </div>
+
+            <div class="thin-panel rounded-[1.7rem] p-4 sm:p-5">
+              <div class="grid gap-3">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-semibold text-white">視界クリア度</span>
+                  <span id="clarityText" class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                    100%
+                  </span>
+                </div>
+                <div class="meter">
+                  <div id="clarityFill" class="meter-fill damage"></div>
+                </div>
+                <p id="resultSummary" class="text-sm leading-6 text-slate-300">
+                  NG行動を選ぶと、標準レンズとコーティング済みの差を比較できます。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <div class="lens-shell rounded-[1.9rem] p-4 sm:p-5">
+              <div class="grid gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">VISUAL</p>
+                    <h3 class="mt-1 text-lg font-semibold text-white">視界イメージ</h3>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <span id="modeBadge" class="danger-chip rounded-full px-3 py-1 text-xs font-semibold text-slate-100">
+                      標準レンズ
+                    </span>
+                    <span id="statusBadge" class="danger-chip rounded-full px-3 py-1 text-xs font-semibold text-slate-100">
+                      スタンバイ
+                    </span>
+                  </div>
+                </div>
+
+                <div class="lens-view" id="lensView" aria-label="レンズ視界のシミュレーション">
+                  <div class="haze-layer"></div>
+                  <div class="scratch-layer" id="scratchLayer"></div>
+                  <div class="shield-layer" id="shieldLayer"></div>
+                  <div class="spark-layer" id="sparkLayer"></div>
+
+                  <div class="clarity-hud">
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-semibold tracking-[0.18em] text-white/70">CURRENT RESULT</span>
+                      <span id="hudText" class="text-sm font-semibold text-white">NG行動を選んで再生</span>
+                    </div>
+                    <span id="hudChip" class="rounded-full border border-white/15 bg-black/20 px-3 py-1 text-xs font-semibold text-white/90">
+                      100% CLEAR
+                    </span>
+                  </div>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div class="rounded-[1.3rem] border border-white/10 bg-white/5 p-4">
+                    <p class="text-sm font-semibold text-white">標準レンズの見せ場</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-300">
+                      白い擦り傷が走り、視界が白く濁ることで「今までの傷の正体」を可視化します。
+                    </p>
+                  </div>
+                  <div class="rounded-[1.3rem] border border-sky-200/15 bg-sky-400/5 p-4">
+                    <p class="text-sm font-semibold text-white">コーティングの見せ場</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-300">
+                      六角形の青いシールドが瞬時に展開し、傷を弾く“無敵感”で価値を直感的に伝えます。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="thin-panel rounded-[1.7rem] p-4 sm:p-5">
+              <div class="flex flex-col gap-2">
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">STEP 3</p>
+                <h2 class="text-2xl font-bold text-white">接客トークスクリプト（そのまま読めるカンペ）</h2>
+                <p class="text-sm leading-7 text-slate-300">
+                  シミュレーションの進行に合わせて、言うべき一言だけを強調表示します。
+                </p>
+              </div>
+
+              <div class="mt-4 grid gap-3" id="talkList">
+                <div id="talk1" class="talk-card rounded-[1.35rem] p-4">
+                  <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">導入トーク</p>
+                  <p class="mt-2 text-base font-semibold leading-7 text-white">
+                    実はメガネの傷って、ぶつけた時よりも、
+                    <span class="word-accent">何気ない日常動作の積み重ね</span>で増えていくんです。
+                  </p>
+                </div>
+
+                <div id="talk2" class="talk-card rounded-[1.35rem] p-4">
+                  <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">納得トーク</p>
+                  <p class="mt-2 text-base font-semibold leading-7 text-white">
+                    <span class="word-accent">服で拭くのは、目に見えない砂埃という「紙ヤスリ」で削っているのと同じです。</span>
+                  </p>
+                </div>
+
+                <div id="talk3" class="talk-card rounded-[1.35rem] p-4">
+                  <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">価値訴求</p>
+                  <p class="mt-2 text-base font-semibold leading-7 text-white">
+                    このコーティングなら、こういう無意識の摩擦ダメージから
+                    <span class="word-accent">レンズを守りやすくなる</span>んです。
+                  </p>
+                </div>
+
+                <div id="talk4" class="talk-card rounded-[1.35rem] p-4">
+                  <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">クロージング</p>
+                  <p class="mt-2 text-base font-semibold leading-7 text-white">
+                    <span class="word-accent">このコーティングはメガネの寿命を2倍に延ばす、最もコスパの良い自己投資です。</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const state = {
+        action: null,
+        mode: "standard",
+        clarity: 100
+      };
+
+      const ACTIONS = {
+        shirt: {
+          label: "つい服の裾（Tシャツ）で拭いてしまう",
+          damage: 42,
+          summary: "布の繊維に付いた微細な砂埃で、表面に細かい擦り傷が一気に増えます。",
+          talkStage: 2,
+          scratchCount: 18
+        },
+        bag: {
+          label: "カバンやポケットに、鍵や小銭と一緒にポイッと入れる",
+          damage: 58,
+          summary: "硬い物と擦れ合い、広範囲に傷が入って視界の白っぽさが増します。",
+          talkStage: 2,
+          scratchCount: 24
+        },
+        sand: {
+          label: "海やキャンプで、砂埃がついたまま拭く",
+          damage: 72,
+          summary: "粒子が表面を強く引っかき、短時間で深めのダメージを生みやすい状態です。",
+          talkStage: 2,
+          scratchCount: 30
+        }
+      };
+
+      const simSection = document.getElementById("simSection");
+      const actionButtons = [...document.querySelectorAll(".action-btn")];
+      const standardBtn = document.getElementById("standardBtn");
+      const coatingBtn = document.getElementById("coatingBtn");
+      const simulateBtn = document.getElementById("simulateBtn");
+      const errorBox = document.getElementById("errorBox");
+
+      const selectedActionLabel = document.getElementById("selectedActionLabel");
+      const modeBadge = document.getElementById("modeBadge");
+      const statusBadge = document.getElementById("statusBadge");
+      const clarityText = document.getElementById("clarityText");
+      const clarityFill = document.getElementById("clarityFill");
+      const resultSummary = document.getElementById("resultSummary");
+      const lensView = document.getElementById("lensView");
+      const scratchLayer = document.getElementById("scratchLayer");
+      const shieldLayer = document.getElementById("shieldLayer");
+      const sparkLayer = document.getElementById("sparkLayer");
+      const hudText = document.getElementById("hudText");
+      const hudChip = document.getElementById("hudChip");
+
+      const talks = [
+        document.getElementById("talk1"),
+        document.getElementById("talk2"),
+        document.getElementById("talk3"),
+        document.getElementById("talk4")
+      ];
+
+      function showSection() {
+        if (simSection.classList.contains("hidden-soft")) {
+          simSection.classList.remove("hidden-soft");
+          simSection.classList.add("fade-up");
+        }
+      }
+
+      function showError(message) {
+        errorBox.textContent = message || "先にNG行動を1つ選んでください。";
+        errorBox.classList.remove("hidden-soft");
+        setTimeout(() => errorBox.classList.add("hidden-soft"), 2200);
+      }
+
+      function setTalkStage(stage) {
+        talks.forEach((card, index) => {
+          card.classList.toggle("active", index < stage);
+        });
+      }
+
+      function resetVisual() {
+        scratchLayer.innerHTML = "";
+        shieldLayer.innerHTML = "";
+        sparkLayer.innerHTML = "";
+        shieldLayer.classList.remove("show");
+        lensView.classList.remove("scratched", "good");
+      }
+
+      function setMode(mode) {
+        state.mode = mode;
+        const coated = mode === "coating";
+
+        standardBtn.classList.toggle("active", !coated);
+        coatingBtn.classList.toggle("active", coated);
+
+        modeBadge.textContent = coated ? "最強キズ防止コーティング" : "標準レンズ";
+        modeBadge.className = (coated ? "safe-chip" : "danger-chip") + " rounded-full px-3 py-1 text-xs font-semibold text-slate-100";
+
+        statusBadge.textContent = "スタンバイ";
+        hudText.textContent = "NG行動を選んで再生";
+        hudChip.textContent = "100% CLEAR";
+        resultSummary.textContent = "NG行動を選ぶと、標準レンズとコーティング済みの差を比較できます。";
+        setClarity(100, coated);
+        resetVisual();
+        setTalkStage(coated ? 3 : 1);
+      }
+
+      function setAction(actionKey) {
+        const action = ACTIONS[actionKey];
+        if (!action) {
+          showError("操作を認識できませんでした。もう一度選んでください。");
+          return;
+        }
+
+        state.action = actionKey;
+        selectedActionLabel.textContent = action.label;
+
+        actionButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.action === actionKey));
+        showSection();
+
+        resetVisual();
+        statusBadge.textContent = "条件選択済み";
+        hudText.textContent = "シミュレーション準備完了";
+        hudChip.textContent = "READY";
+        resultSummary.textContent = action.summary;
+        setClarity(100, state.mode === "coating");
+        setTalkStage(1);
+      }
+
+      function setClarity(value, coated) {
+        const safe = Math.max(0, Math.min(100, value));
+        state.clarity = safe;
+        clarityText.textContent = safe + "%";
+        clarityFill.style.width = safe + "%";
+        clarityFill.className = "meter-fill " + (coated ? "protect" : "damage");
+      }
+
+      function createScratches(count) {
+        scratchLayer.innerHTML = "";
+        const w = lensView.clientWidth;
+        const h = lensView.clientHeight;
+
+        for (let i = 0; i < count; i++) {
+          const line = document.createElement("span");
+          line.className = "scratch";
+          const top = Math.random() * (h - 20);
+          const left = Math.random() * (w * 0.32);
+          const width = 60 + Math.random() * (w * 0.48);
+          const rotate = -35 + Math.random() * 70;
+          const delay = (Math.random() * 0.25).toFixed(2);
+
+          line.style.top = `${top}px`;
+          line.style.left = `${left}px`;
+          line.style.width = `${width}px`;
+          line.style.transform = `rotate(${rotate}deg) scaleX(.2)`;
+          line.style.animationDelay = `${delay}s`;
+
+          scratchLayer.appendChild(line);
+        }
+      }
+
+      function createShield() {
+        shieldLayer.innerHTML = "";
+        sparkLayer.innerHTML = "";
+
+        const wrap = document.createElement("div");
+        wrap.className = "hex-wrap";
+
+        for (let i = 0; i < 19; i++) {
+          const hex = document.createElement("span");
+          hex.className = "hex";
+          hex.style.animationDelay = `${(i * 0.02).toFixed(2)}s`;
+          wrap.appendChild(hex);
+        }
+
+        shieldLayer.appendChild(wrap);
+        shieldLayer.classList.add("show");
+
+        const w = lensView.clientWidth;
+        const h = lensView.clientHeight;
+        for (let i = 0; i < 12; i++) {
+          const spark = document.createElement("span");
+          spark.className = "spark";
+          spark.style.left = `${20 + Math.random() * (w - 60)}px`;
+          spark.style.top = `${20 + Math.random() * (h - 60)}px`;
+          spark.style.transform = `rotate(${Math.random() * 180}deg)`;
+          spark.style.animationDelay = `${(Math.random() * 0.18).toFixed(2)}s`;
+          sparkLayer.appendChild(spark);
+        }
+      }
+
+      function simulate() {
+        if (!state.action) {
+          showError("先にNG行動を1つ選んでください。");
+          return;
+        }
+
+        resetVisual();
+
+        const action = ACTIONS[state.action];
+        const coated = state.mode === "coating";
+
+        if (!action) {
+          showError("データの読み込みに失敗しました。");
+          return;
+        }
+
+        if (coated) {
+          lensView.classList.add("good");
+          createShield();
+          setClarity(100, true);
+          statusBadge.textContent = "防御成功";
+          hudText.textContent = "シールド展開。視界は完全クリア";
+          hudChip.textContent = "100% CLEAR";
+          resultSummary.textContent = "青い六角形シールドが傷を弾き返し、視界は100%クリアのまま。高単価でも価値が一目で伝わります。";
+          setTalkStage(4);
+        } else {
+          createScratches(action.scratchCount);
+          lensView.classList.add("scratched");
+          const nextClarity = 100 - action.damage;
+          setClarity(nextClarity, false);
+          statusBadge.textContent = "傷発生";
+          hudText.textContent = "擦り傷で白く濁り、見え方が低下";
+          hudChip.textContent = nextClarity + "% CLEAR";
+          resultSummary.textContent = action.summary + " お客様の“無意識”が原因だと伝えやすい状態です。";
+          setTalkStage(2);
+        }
+      }
+
+      actionButtons.forEach(btn => {
+        btn.addEventListener("click", () => setAction(btn.dataset.action));
+      });
+
+      standardBtn.addEventListener("click", () => setMode("standard"));
+      coatingBtn.addEventListener("click", () => setMode("coating"));
+      simulateBtn.addEventListener("click", simulate);
+
+      setMode("standard");
+    })();
+  </script>
+</body>
+</html>
