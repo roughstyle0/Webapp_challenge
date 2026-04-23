@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Resort Eyewear | 調光レンズ・シミュレーター</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js コンポーネント定義 (Alpine本体より先にリスナーを登録) -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('simulatorApp', () => ({
+                level: 0,
+                get scriptState() {
+                    const currentLevel = Number(this.level);
+                    if (currentLevel <= 20) return 1;
+                    if (currentLevel > 20 && currentLevel < 80) return 2;
+                    return 3;
+                }
+            }));
+        });
+    </script>
+    <!-- Alpine.js (deferをつけて非同期実行し、初期化イベントを確実にキャッチする) -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Google Fonts: Noto Serif JP (リゾート・高級感の演出) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Serif JP', serif;
+            /* スクロールバウンスを抑え、アプリライクな挙動に */
+            overscroll-behavior-y: none;
+        }
+
+        /* カスタムスライダーのスタイリング（iOS/Android両対応の触りやすいUI） */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 10px 0;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 9999px;
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 32px;
+            width: 32px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -13px;
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+            border-color: #cbd5e1;
+        }
+        
+        /* トークスクリプトのフェードアニメーション用 */
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.5s ease-out; }
+    </style>
+</head>
+<body class="antialiased text-gray-800 overflow-x-hidden">
+
+    <!-- Alpine.js Application State -->
+    <div x-data="simulatorApp" class="relative min-h-[100dvh] w-full flex flex-col">
+        
+        <!-- ==========================================
+             Background Layers (シームレスな環境変化)
+        =========================================== -->
+        <!-- 室内背景 (アイボリー) -->
+        <div class="absolute inset-0 z-0 bg-[#FDFBF7]"></div>
+        <!-- 屋外背景 (スカイブルー〜淡い砂浜のグラデーション) -->
+        <!-- スライダーの値(level)に応じて不透明度を直接操作し、ジワジワ変化させる -->
+        <div class="absolute inset-0 z-0 bg-gradient-to-b from-[#7DD3FC] via-[#E0F2FE] to-[#FEF3C7] transition-opacity duration-100 ease-linear pointer-events-none"
+             :style="`opacity: ${level / 100}`"></div>
+
+        <!-- ==========================================
+             Main Content (Z-index: 10, モバイルファーストレイアウト)
+        =========================================== -->
+        <div class="relative z-10 flex-1 flex flex-col w-full max-w-md mx-auto p-5 pb-8 h-full">
+            
+            <!-- Header -->
+            <header class="w-full text-center py-4 shrink-0">
+                <p class="text-xs tracking-[0.2em] text-gray-400 font-sans uppercase mb-1">Interactive Demo</p>
+                <h1 class="text-xl tracking-widest text-gray-800 uppercase font-light">Photochromic<br><span class="text-sm">調光レンズ体験</span></h1>
+            </header>
+
+            <!-- Simulator Graphic Area (文字と絶対に被らない独立したフレックスブロック) -->
+            <main class="flex-1 flex flex-col items-center justify-center min-h-[250px] my-6">
+                
+                <!-- 環境ステータス表示 -->
+                <div class="mb-8 text-center h-6 flex items-center justify-center transition-all duration-300">
+                    <p class="text-sm tracking-widest text-gray-600 flex items-center gap-2" x-show="level < 10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        INDOOR / ホテル・カフェ
+                    </p>
+                    <p class="text-sm tracking-widest text-gray-800 flex items-center gap-2" x-show="level >= 10 && level < 90" style="display: none;">
+                        <svg class="w-4 h-4 text-amber-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        UV REACTING... / 紫外線反応中
+                    </p>
+                    <p class="text-sm tracking-widest text-sky-800 flex items-center gap-2 font-semibold" x-show="level >= 90" style="display: none;">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+                        OUTDOOR / ビーチ・テラス
+                    </p>
+                </div>
+
+                <!-- メガネSVG (レスポンシブ対応) -->
+                <div class="w-full px-4 transform transition-transform duration-700" :class="level > 50 ? 'scale-105' : 'scale-100'">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 160" class="w-full h-auto drop-shadow-2xl">
+                        <defs>
+                            <clipPath id="leftLensClip">
+                                <path d="M 35 45 C 80 35, 140 40, 160 55 C 170 85, 150 125, 95 130 C 45 135, 25 95, 35 45 Z" />
+                            </clipPath>
+                            <clipPath id="rightLensClip">
+                                <path d="M 365 45 C 320 35, 260 40, 240 55 C 230 85, 250 125, 305 130 C 355 135, 375 95, 365 45 Z" />
+                            </clipPath>
+                        </defs>
+
+                        <!-- 左レンズ (調光部分) - opacityで変化 -->
+                        <path d="M 35 45 C 80 35, 140 40, 160 55 C 170 85, 150 125, 95 130 C 45 135, 25 95, 35 45 Z" 
+                              fill="#2D1A11" 
+                              :fill-opacity="level / 100 * 0.85" 
+                              class="transition-opacity duration-100 ease-linear" />
+                        
+                        <!-- 右レンズ (調光部分) -->
+                        <path d="M 365 45 C 320 35, 260 40, 240 55 C 230 85, 250 125, 305 130 C 355 135, 375 95, 365 45 Z" 
+                              fill="#2D1A11" 
+                              :fill-opacity="level / 100 * 0.85" 
+                              class="transition-opacity duration-100 ease-linear" />
+
+                        <!-- フレーム (細身で高級感のあるベッコウ風ダークブラウン) -->
+                        <path d="M 25 35 C 80 20, 150 30, 170 50 L 160 55 C 140 40, 80 35, 35 45 C 25 95, 45 135, 95 130 C 150 125, 170 85, 160 55 L 175 45 C 190 60, 210 60, 225 45 L 240 55 C 230 85, 250 125, 305 130 C 355 135, 375 95, 365 45 C 320 35, 260 40, 240 55 L 230 50 C 250 30, 320 20, 375 35 C 390 90, 360 145, 305 145 C 240 145, 215 95, 230 65 C 215 50, 185 50, 170 65 C 185 95, 160 145, 95 145 C 40 145, 10 90, 25 35 Z" 
+                              fill="#1c1917" />
+                        
+                        <!-- ヨロイ（テンプル接続部） -->
+                        <rect x="10" y="45" width="25" height="12" rx="4" fill="#3f3f46" transform="rotate(-10 20 50)" />
+                        <rect x="365" y="45" width="25" height="12" rx="4" fill="#3f3f46" transform="rotate(10 380 50)" />
+
+                        <!-- レンズ反射ハイライト（高級感の演出） -->
+                        <path d="M 50 30 L 120 100 L 100 120 L 30 50 Z" fill="white" opacity="0.15" clip-path="url(#leftLensClip)" />
+                        <path d="M 280 30 L 350 100 L 330 120 L 260 50 Z" fill="white" opacity="0.15" clip-path="url(#rightLensClip)" />
+                    </svg>
+                </div>
+            </main>
+
+            <!-- Control & Script Area (グラスモーフィズム) -->
+            <footer class="w-full shrink-0 bg-white/40 backdrop-blur-xl rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60">
+                
+                <!-- インストラクション -->
+                <p class="text-xs text-center text-gray-500 mb-4 font-sans tracking-wide">
+                    スライダーを動かして、お客様に変化をお見せください
+                </p>
+
+                <!-- 紫外線スライダー -->
+                <div class="mb-6 relative">
+                    <div class="flex justify-between items-center text-gray-500 mb-1 px-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    
+                    <input type="range" 
+                           id="uv-slider" 
+                           x-model="level" 
+                           min="0" max="100" 
+                           :style="`background: linear-gradient(to right, #475569 ${level}%, rgba(255,255,255,0.5) ${level}%);`">
+                </div>
+
+                <!-- ==========================================
+                     接客トークスクリプト (プログレッシブ・ディクロージャー)
+                     ※高さを固定してガタつきを防止
+                =========================================== -->
+                <div class="min-h-[140px] relative">
+                    
+                    <!-- 1. 導入トーク (室内: 0〜20) -->
+                    <div x-show="scriptState === 1" 
+                         x-transition:enter="transition ease-out duration-500 delay-150"
+                         x-transition:enter-start="opacity-0 translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="absolute inset-0 p-4 bg-white/70 rounded-2xl border-l-4 border-gray-400">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2 py-0.5 bg-gray-200 text-gray-700 text-[10px] font-bold rounded uppercase tracking-wider font-sans">Talk 1. ヒアリング</span>
+                        </div>
+                        <p class="text-sm leading-relaxed text-gray-800">
+                            「GWのご旅行、楽しみですね。<br>
+                            普段メガネをお使いだと、<mark class="bg-amber-100/80 px-1 py-0.5 rounded font-medium text-amber-900">外に出るたびにサングラスに掛け替える</mark>のは、お荷物にもなりますしお手間ではありませんか？」
+                        </p>
+                    </div>
+
+                    <!-- 2. 実演トーク (変化中: 21〜80) -->
+                    <div x-show="scriptState === 2" 
+                         x-transition:enter="transition ease-out duration-500 delay-150"
+                         x-transition:enter-start="opacity-0 translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="absolute inset-0 p-4 bg-sky-50/80 rounded-2xl border-l-4 border-sky-400">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2 py-0.5 bg-sky-200 text-sky-800 text-[10px] font-bold rounded uppercase tracking-wider font-sans">Talk 2. デモンストレーション</span>
+                        </div>
+                        <p class="text-sm leading-relaxed text-gray-800">
+                            「こちらの『調光レンズ』なら、外に出ると<mark class="bg-sky-200/60 px-1 py-0.5 rounded font-medium text-sky-900">紫外線に反応して、このように自動で色が変わる</mark>んです。魔法みたいですよね。」
+                        </p>
+                    </div>
+
+                    <!-- 3. クロージング (屋外: 81〜100) -->
+                    <div x-show="scriptState === 3" 
+                         x-transition:enter="transition ease-out duration-500 delay-150"
+                         x-transition:enter-start="opacity-0 translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="absolute inset-0 p-4 bg-amber-50/90 rounded-2xl border-l-4 border-amber-400">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-bold rounded uppercase tracking-wider font-sans">Talk 3. クロージング</span>
+                        </div>
+                        <p class="text-sm leading-relaxed text-gray-800">
+                            「これ1本あれば、ホテルのロビーから眩しいビーチまで<mark class="bg-amber-200/60 px-1 py-0.5 rounded font-bold text-amber-900">ずっと掛けっぱなしでOK</mark>です。もう2本持ち歩く必要はありません。今年の旅行は、身軽に楽しみませんか？」
+                        </p>
+                    </div>
+
+                </div>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>
