@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE CLEAR VISION - BLC Lens Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Theme Definition:
+      高級カメラレンズや高機能スポーツサングラスのLPを意識したシャープなUI。
+      不要な丸み(border-radius)や甘い影(box-shadow)を排除し、
+      直線的でハイコントラストな世界観を構築。
+    */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Oswald:wght@500;700&display=swap');
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #050505; /* 漆黒に近い背景 */
+      color: #e5e5e5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-oswald {
+      font-family: 'Oswald', sans-serif;
+    }
+
+    /* シミュレーション画像用のフィルター効果 */
+    .lens-image {
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* 標準レンズ: 青色光の散乱による白飛び・ボヤけを表現 */
+    .filter-standard {
+      filter: brightness(1.25) contrast(0.75) blur(1.5px) saturate(0.8);
+    }
+
+    /* BLCレンズ: 霞みが晴れ、コントラストと彩度が向上したHD画質を表現 */
+    .filter-blc {
+      filter: brightness(1.0) contrast(1.35) blur(0px) saturate(1.2);
+    }
+
+    /* UIアクセントライン */
+    .accent-line-cyan {
+      border-left: 4px solid #22d3ee; /* Tailwind cyan-400 */
+    }
+    
+    .accent-line-orange {
+      border-left: 4px solid #f97316; /* Tailwind orange-500 */
+    }
+
+    /* シャープなボタンデザイン (テンプレ脱却) */
+    .sharp-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      background: transparent;
+      border: 1px solid #333;
+    }
+    .sharp-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+      transition: all 0.5s ease;
+    }
+    .sharp-btn:hover::before {
+      left: 100%;
+    }
+    .sharp-btn:hover {
+      border-color: #f97316; /* オレンジのハイライト */
+    }
+
+    /* スクロールバーのカスタマイズ */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f97316;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+
+  <!-- ヘッダー -->
+  <header class="w-full border-b border-gray-800 bg-black/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="font-oswald text-2xl tracking-widest text-white">PRO-VISION <span class="text-orange-500">HD</span></h1>
+        <p class="text-xs text-gray-500 uppercase tracking-widest mt-1">Advanced Lens Simulator</p>
+      </div>
+      <!-- 戻るボタン (Step 1でのみ表示) -->
+      <button id="btn-back" class="hidden text-sm text-gray-400 hover:text-white transition-colors uppercase tracking-wider flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        シーン選択へ戻る
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-grow flex flex-col w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+    
+    <!-- ==========================================
+         STEP 0: シーン選択 (プログレッシブ・ディクロージャー)
+         ========================================== -->
+    <div id="step-0" class="flex flex-col items-center justify-center flex-grow w-full py-10 animate-fade-in">
+      <div class="text-center mb-12 max-w-2xl">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4 leading-tight">眩しいのは光だけじゃない。</h2>
+        <p class="text-gray-400 text-sm sm:text-base leading-relaxed">
+          「ブルーライトカットはパソコン用」という常識を覆す。<br>
+          お客様の「屋外で見えにくいシーン」を選択し、驚愕のコントラストを体験してください。
+        </p>
+      </div>
+
+      <!-- シーン選択グリッド -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+        <!-- ドライブ -->
+        <button onclick="selectScene('drive')" class="sharp-btn group flex flex-col items-start p-6 text-left w-full">
+          <span class="text-cyan-400 font-oswald tracking-widest text-sm mb-2">SCENE 01</span>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-orange-500 transition-colors">晴天時のドライブ</h3>
+          <p class="text-gray-500 text-sm">景色が白飛びして対向車や路面が見えにくい</p>
+        </button>
+
+        <!-- 公園 -->
+        <button onclick="selectScene('park')" class="sharp-btn group flex flex-col items-start p-6 text-left w-full">
+          <span class="text-cyan-400 font-oswald tracking-widest text-sm mb-2">SCENE 02</span>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-orange-500 transition-colors">公園での見守り</h3>
+          <p class="text-gray-500 text-sm">強い日差しで輪郭がボヤけ、子供を見失いそうになる</p>
+        </button>
+
+        <!-- スマホ -->
+        <button onclick="selectScene('smartphone')" class="sharp-btn group flex flex-col items-start p-6 text-left w-full">
+          <span class="text-cyan-400 font-oswald tracking-widest text-sm mb-2">SCENE 03</span>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-orange-500 transition-colors">屋外でのスマホ確認</h3>
+          <p class="text-gray-500 text-sm">画面が反射して文字が全く読めない</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         STEP 1: シミュレーター & トークスクリプト
+         ========================================== -->
+    <div id="step-1" class="hidden flex-col lg:flex-row gap-8 w-full animate-fade-in pb-10">
+      
+      <!-- 左カラム: シミュレーターエリア -->
+      <div class="w-full lg:w-3/5 flex flex-col gap-4">
+        <div class="flex justify-between items-end border-b border-gray-800 pb-2">
+          <h2 id="sim-title" class="text-2xl font-bold text-white tracking-wide">晴天時のドライブ</h2>
+          <span id="sim-status" class="font-oswald text-cyan-400 tracking-widest text-sm bg-cyan-400/10 px-3 py-1">STANDARD LENS</span>
+        </div>
+
+        <!-- 画像コンテナ (絶対配置でテキストと被らないようaspect-videoで領域確保) -->
+        <div class="relative w-full aspect-video bg-gray-900 overflow-hidden border border-gray-800">
+          <img id="sim-image" src="" alt="シミュレーション画像" class="lens-image filter-standard">
+          
+          <!-- 画像上のステータス表示 -->
+          <div class="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm px-4 py-2 border-l-2 border-cyan-400">
+            <p id="sim-overlay-text" class="text-sm font-bold text-white">青色光の散乱により視界が白く霞む</p>
+          </div>
+        </div>
+
+        <!-- レンズ切り替えコントローラー -->
+        <div class="bg-gray-900/50 p-4 border border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-sm text-gray-400 tracking-wider">LENS FILTER CONTROL</div>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button id="btn-standard" onclick="setLensMode('standard')" class="flex-1 sm:flex-none px-6 py-3 border border-gray-700 bg-gray-800 text-white font-bold tracking-wider hover:bg-gray-700 transition-colors">標準レンズ</button>
+            <button id="btn-blc" onclick="setLensMode('blc')" class="flex-1 sm:flex-none px-6 py-3 border border-orange-500 bg-orange-500/10 text-orange-500 font-bold tracking-wider hover:bg-orange-500 hover:text-white transition-colors relative overflow-hidden group">
+              <span class="relative z-10">BLCレンズ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右カラム: 接客トークカンペエリア (モバイル時は下部に配置され絶対被らない) -->
+      <div class="w-full lg:w-2/5 flex flex-col gap-6">
+        <div class="bg-[#0a0a0a] border border-gray-800 p-6 flex-grow flex flex-col">
+          <div class="flex items-center gap-3 mb-6 border-b border-gray-800 pb-4">
+            <span class="w-2 h-2 bg-orange-500 animate-pulse"></span>
+            <h3 class="font-oswald tracking-widest text-lg text-gray-300">STAFF TALK SCRIPT</h3>
+          </div>
+
+          <!-- スクリプトコンテンツ -->
+          <div class="flex flex-col gap-6" id="script-container">
+            <!-- 導入 -->
+            <div class="accent-line-cyan pl-4 opacity-70">
+              <p class="text-xs text-cyan-400 font-bold mb-1 uppercase tracking-widest">Step 1: ヒアリング</p>
+              <p id="script-intro" class="text-gray-300 leading-relaxed"></p>
+            </div>
+
+            <!-- 標準レンズ時の説明 -->
+            <div id="script-standard-block" class="accent-line-orange pl-4 transition-opacity duration-500">
+              <p class="text-xs text-orange-500 font-bold mb-1 uppercase tracking-widest">Step 2: 現状（標準レンズ）の解説</p>
+              <p id="script-standard" class="text-gray-100 text-lg leading-relaxed font-medium"></p>
+            </div>
+
+            <!-- BLCレンズ時の説明 (初期状態では非表示/半透明) -->
+            <div id="script-blc-block" class="accent-line-orange pl-4 opacity-30 transition-opacity duration-500">
+              <p class="text-xs text-orange-500 font-bold mb-1 uppercase tracking-widest">Step 3: 解決策（BLCレンズ）の提示 <span class="text-gray-500 text-[10px] ml-2">※ボタン切替後に読む</span></p>
+              <p id="script-blc" class="text-gray-100 text-lg leading-relaxed font-medium"></p>
+            </div>
+          </div>
+          
+          <div class="mt-auto pt-6 text-xs text-gray-600 border-t border-gray-900">
+            ※カラーハイライトされた部分に感情を込めてお話しください。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // --- Data Definition ---
+    const scenesData = {
+      drive: {
+        title: "晴天時のドライブ",
+        imageUrl: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200",
+        intro: "運転中、路面や対向車が白く反射して見えにくいこと、ありませんか？",
+        standardText: "太陽光に含まれる『青色光』は空気中で散乱しやすく、このように<span class='text-orange-400'>視界全体に白い霞（かすみ）</span>を生み出してしまいます。眩しさの正体は、光量だけでなくこの『ノイズ』なんです。",
+        blcText: "ここでブルーライトカットレンズを通すと…ご覧ください。<span class='text-cyan-400'>青色光の乱反射がカットされ、景色が『HD画質』のようにクッキリとシャープ</span>になりましたよね。実はこれ、パソコン用ではなく『究極の日常用フィルター』なんです。",
+        overlayStandard: "青色光の散乱により視界が白く霞む",
+        overlayBlc: "乱反射がカットされ輪郭がシャープに"
+      },
+      park: {
+        title: "公園での見守り",
+        imageUrl: "https://images.unsplash.com/photo-1605553551528-76cceac2cce6?auto=format&fit=crop&q=80&w=1200",
+        intro: "公園でお子様を目で追うとき、強い日差しで輪郭がぼやけて見失いそうになることはありませんか？",
+        standardText: "青い光が乱反射することで、<span class='text-orange-400'>景色全体に白いベール</span>がかかったようになります。これがコントラストを下げ、目の疲れの大きな原因になっています。",
+        blcText: "ブルーライトをカットするだけで、この白いベールが一瞬で晴れます。<span class='text-cyan-400'>葉っぱの一枚一枚、お子様の表情までクッキリ</span>見えますよね。屋外でこそ、このレンズが真価を発揮するんです。",
+        overlayStandard: "白いベールがかかりコントラストが低下",
+        overlayBlc: "クリアな視界でディテールが復活"
+      },
+      smartphone: {
+        title: "屋外でのスマホ確認",
+        imageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1200",
+        intro: "屋外でスマホを取り出したとき、画面が空の色や光で反射して、全く見えないことはありませんか？",
+        standardText: "外の強烈な太陽光（青色光）が画面に反射し、さらに空気中の乱反射と重なることで、<span class='text-orange-400'>画面の文字が完全に白飛び</span>してしまいます。",
+        blcText: "このレンズなら、周囲の<span class='text-cyan-400'>乱反射ノイズだけをピンポイントで取り除きます。</span>いちいち日陰を探したり、手で覆ったりしなくても、屋外でクリアに画面を確認できるようになりますよ。",
+        overlayStandard: "反射と白飛びで文字が読めない",
+        overlayBlc: "乱反射ノイズを除去し画面がクリアに"
+      }
+    };
+
+    // --- State & DOM Elements ---
+    let currentScene = null;
+    let currentLens = 'standard';
+
+    const step0 = document.getElementById('step-0');
+    const step1 = document.getElementById('step-1');
+    const btnBack = document.getElementById('btn-back');
+    
+    const simTitle = document.getElementById('sim-title');
+    const simImage = document.getElementById('sim-image');
+    const simStatus = document.getElementById('sim-status');
+    const simOverlayText = document.getElementById('sim-overlay-text');
+    
+    const btnStandard = document.getElementById('btn-standard');
+    const btnBlc = document.getElementById('btn-blc');
+    
+    const scriptIntro = document.getElementById('script-intro');
+    const scriptStandard = document.getElementById('script-standard');
+    const scriptBlc = document.getElementById('script-blc');
+    const blockStandard = document.getElementById('script-standard-block');
+    const blockBlc = document.getElementById('script-blc-block');
+
+    // --- Actions ---
+
+    // シーン選択 (Step 0 -> Step 1)
+    function selectScene(sceneKey) {
+      currentScene = scenesData[sceneKey];
+      
+      // データバインディング
+      simTitle.textContent = currentScene.title;
+      simImage.src = currentScene.imageUrl;
+      scriptIntro.innerHTML = currentScene.intro;
+      scriptStandard.innerHTML = currentScene.standardText;
+      scriptBlc.innerHTML = currentScene.blcText;
+      
+      // 初期状態は標準レンズにリセット
+      setLensMode('standard');
+      
+      // 画面切り替え
+      step0.classList.add('hidden');
+      step1.classList.remove('hidden');
+      step1.classList.add('flex'); // lg:flex-rowの適用のため
+      btnBack.classList.remove('hidden');
+      
+      // スクロールをトップへ
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // レンズモード切り替え
+    function setLensMode(mode) {
+      currentLens = mode;
+      
+      if (mode === 'standard') {
+        // 画像フィルター更新
+        simImage.className = 'lens-image filter-standard';
+        simStatus.textContent = 'STANDARD LENS';
+        simStatus.className = 'font-oswald tracking-widest text-sm px-3 py-1 bg-gray-800 text-gray-400';
+        simOverlayText.textContent = currentScene.overlayStandard;
+        simOverlayText.parentElement.className = 'absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm px-4 py-2 border-l-2 border-gray-500';
+        
+        // ボタン状態
+        btnStandard.classList.replace('bg-gray-800', 'bg-white');
+        btnStandard.classList.replace('text-white', 'text-black');
+        btnStandard.classList.replace('border-gray-700', 'border-white');
+        
+        btnBlc.classList.replace('bg-orange-500', 'bg-orange-500/10');
+        btnBlc.classList.replace('text-white', 'text-orange-500');
+        
+        // トークスクリプトのフォーカス切り替え
+        blockStandard.classList.remove('opacity-30');
+        blockStandard.classList.add('opacity-100');
+        blockBlc.classList.remove('opacity-100');
+        blockBlc.classList.add('opacity-30');
+        
+      } else if (mode === 'blc') {
+        // 画像フィルター更新 (劇的な変化)
+        simImage.className = 'lens-image filter-blc';
+        simStatus.textContent = 'BLC HD LENS';
+        simStatus.className = 'font-oswald tracking-widest text-sm px-3 py-1 bg-orange-500/20 text-orange-500';
+        simOverlayText.textContent = currentScene.overlayBlc;
+        simOverlayText.parentElement.className = 'absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm px-4 py-2 border-l-2 border-orange-500';
+        
+        // ボタン状態
+        btnStandard.classList.replace('bg-white', 'bg-gray-800');
+        btnStandard.classList.replace('text-black', 'text-white');
+        btnStandard.classList.replace('border-white', 'border-gray-700');
+        
+        btnBlc.classList.replace('bg-orange-500/10', 'bg-orange-500');
+        btnBlc.classList.replace('text-orange-500', 'text-white');
+        
+        // トークスクリプトのフォーカス切り替え
+        blockStandard.classList.remove('opacity-100');
+        blockStandard.classList.add('opacity-30');
+        blockBlc.classList.remove('opacity-30');
+        blockBlc.classList.add('opacity-100');
+      }
+    }
+
+    // 戻るボタン
+    btnBack.addEventListener('click', () => {
+      step1.classList.add('hidden');
+      step1.classList.remove('flex');
+      step0.classList.remove('hidden');
+      btnBack.classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+  </script>
+</body>
+</html>
