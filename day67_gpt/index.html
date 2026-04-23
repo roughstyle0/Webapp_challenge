@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>青色光カット・屋外用 驚愕コントラスト体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --bg:#05070b;
+      --bg-soft:#0b0f16;
+      --panel:#0f1621;
+      --panel-2:#141d2a;
+      --line:rgba(255,255,255,.12);
+      --line-strong:rgba(255,255,255,.2);
+      --text:#f4f8ff;
+      --muted:#a9b5c7;
+      --cyan:#27d7ff;
+      --cyan-soft:rgba(39,215,255,.18);
+      --orange:#ff7b2c;
+      --orange-soft:rgba(255,123,44,.18);
+      --good:#8ef0ff;
+      --shadow:0 24px 60px rgba(0,0,0,.42);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ min-height:100%; margin:0; }
+    body{
+      font-family:"Inter","Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(39,215,255,.10), transparent 24%),
+        radial-gradient(circle at left 20%, rgba(255,123,44,.08), transparent 22%),
+        linear-gradient(180deg, #05070b 0%, #0a1018 52%, #05070b 100%);
+    }
+
+    .shell{
+      max-width:1200px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      padding:16px;
+    }
+
+    .hero,
+    .glass-panel{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025)),
+        linear-gradient(135deg, rgba(39,215,255,.06), transparent 42%);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
+    .metal-text{
+      background:linear-gradient(180deg,#ffffff 0%,#dbe7f4 45%,#92a3b8 100%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+
+    .badge{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.05);
+    }
+
+    .accent-ring{
+      box-shadow:0 0 0 1px rgba(39,215,255,.18) inset, 0 16px 32px rgba(39,215,255,.08);
+    }
+
+    .scene-btn,
+    .mode-btn,
+    .preset-btn,
+    .primary-btn{
+      transition:transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease, opacity .22s ease;
+    }
+
+    .scene-btn:hover,
+    .mode-btn:hover,
+    .preset-btn:hover,
+    .primary-btn:hover{
+      transform:translateY(-1px);
+    }
+
+    .scene-btn.active,
+    .mode-btn.active,
+    .preset-btn.active{
+      border-color:rgba(39,215,255,.46);
+      background:
+        linear-gradient(180deg, rgba(39,215,255,.16), rgba(255,255,255,.04)),
+        rgba(255,255,255,.04);
+      box-shadow:0 0 0 1px rgba(39,215,255,.15) inset, 0 12px 30px rgba(39,215,255,.08);
+    }
+
+    .sim-wrap{
+      display:grid;
+      gap:16px;
+    }
+
+    .view-card{
+      display:grid;
+      gap:14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02)),
+        radial-gradient(circle at top right, rgba(39,215,255,.05), transparent 30%);
+      border:1px solid var(--line);
+      border-radius:26px;
+      padding:14px;
+    }
+
+    .landscape{
+      display:grid;
+      gap:0;
+      border-radius:24px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background:#cde9ff;
+      min-height:340px;
+    }
+
+    .scene-topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:10px 12px;
+      background:rgba(0,0,0,.16);
+      border-bottom:1px solid rgba(255,255,255,.12);
+    }
+
+    .scene-canvas{
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      gap:0;
+      min-height:280px;
+      transition:filter .55s ease, transform .4s ease;
+    }
+
+    .sky{
+      min-height:76px;
+      transition:background .55s ease;
+    }
+
+    .horizon{
+      min-height:42px;
+      transition:background .55s ease;
+    }
+
+    .scene-body{
+      display:grid;
+      align-items:stretch;
+      gap:0;
+      transition:background .55s ease;
+    }
+
+    .ground{
+      min-height:82px;
+      transition:background .55s ease;
+    }
+
+    .glare-layer{
+      pointer-events:none;
+      transition:opacity .45s ease;
+      opacity:1;
+      background:
+        radial-gradient(circle at 18% 24%, rgba(255,255,255,.80), transparent 18%),
+        radial-gradient(circle at 78% 12%, rgba(255,255,255,.55), transparent 22%),
+        linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08));
+    }
+
+    .clarity-layer{
+      display:grid;
+      gap:0;
+      transition:filter .55s ease, opacity .45s ease;
+    }
+
+    .screen-overlay{
+      transition:opacity .45s ease, background .45s ease;
+    }
+
+    .hud{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px;
+      background:linear-gradient(180deg, transparent, rgba(0,0,0,.32));
+      border-top:1px solid rgba(255,255,255,.12);
+    }
+
+    .metric-bar{
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .metric-fill{
+      height:100%;
+      width:34%;
+      transition:width .55s ease, background .55s ease;
+      background:linear-gradient(90deg, rgba(255,255,255,.8), rgba(200,210,220,.85));
+    }
+
+    .metric-fill.clear{
+      background:linear-gradient(90deg, rgba(39,215,255,.92), rgba(255,123,44,.92));
+    }
+
+    .talk-card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      opacity:.34;
+      transform:scale(.985);
+      transition:opacity .24s ease, transform .24s ease, border-color .24s ease, box-shadow .24s ease, background .24s ease;
+    }
+
+    .talk-card.active{
+      opacity:1;
+      transform:scale(1);
+      border-color:rgba(39,215,255,.34);
+      background:
+        linear-gradient(180deg, rgba(39,215,255,.12), rgba(255,255,255,.04)),
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      box-shadow:0 12px 28px rgba(39,215,255,.08);
+    }
+
+    .hl-cyan{
+      color:#a4f5ff;
+      font-weight:700;
+    }
+
+    .hl-orange{
+      color:#ffb17f;
+      font-weight:700;
+    }
+
+    .hidden-soft{ display:none; }
+
+    .fade-up{ animation:fadeUp .48s ease both; }
+
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(10px); }
+      to{ opacity:1; transform:translateY(0); }
+    }
+
+    /* Scene primitives */
+    .drive-scene .sky{
+      background:
+        linear-gradient(180deg, #ccecff 0%, #8fdcff 62%, #6ab8f0 100%);
+    }
+    .drive-scene .horizon{
+      background:linear-gradient(180deg, #dbe9b1, #aeca76);
+    }
+    .drive-scene .scene-body{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0)),
+        linear-gradient(180deg, #a4b2bd 0%, #808e99 100%);
+      grid-template-columns:1fr;
+    }
+    .drive-scene .ground{
+      background:
+        linear-gradient(180deg, #3f454c 0%, #262a30 100%);
+    }
+
+    .park-scene .sky{
+      background:
+        linear-gradient(180deg, #d4f1ff 0%, #9fe2ff 58%, #7ec7ff 100%);
+    }
+    .park-scene .horizon{
+      background:linear-gradient(180deg, #cbe8a2, #8ac56c);
+    }
+    .park-scene .scene-body{
+      background:
+        linear-gradient(90deg, #7fc86a 0%, #5ca650 100%);
+      grid-template-columns:1fr 1fr;
+    }
+    .park-scene .ground{
+      background:
+        linear-gradient(180deg, #6aa95f 0%, #3f7b39 100%);
+    }
+
+    .phone-scene .sky{
+      background:
+        linear-gradient(180deg, #d9f4ff 0%, #9cdcff 60%, #7cc4ff 100%);
+    }
+    .phone-scene .horizon{
+      background:linear-gradient(180deg, #e0e4e8, #b8c1ca);
+    }
+    .phone-scene .scene-body{
+      background:
+        linear-gradient(180deg, #dfe6ee 0%, #c7d1da 100%);
+      grid-template-columns:1fr;
+    }
+    .phone-scene .ground{
+      background:
+        linear-gradient(180deg, #a7b3bf 0%, #7b8896 100%);
+    }
+
+    .road-lines{
+      display:grid;
+      gap:10px;
+      padding:20px 18px;
+    }
+
+    .road-line{
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.82);
+    }
+
+    .park-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      padding:18px;
+      align-items:end;
+    }
+
+    .person{
+      display:grid;
+      gap:8px;
+      justify-items:center;
+      padding:10px 0;
+    }
+
+    .head{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      background:rgba(255,255,255,.95);
+    }
+
+    .body-line{
+      width:12px;
+      height:54px;
+      border-radius:999px;
+      background:rgba(255,255,255,.95);
+    }
+
+    .arm-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+      width:58px;
+    }
+
+    .arm{
+      height:8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.92);
+    }
+
+    .phone-grid{
+      display:grid;
+      place-items:center;
+      padding:18px;
+    }
+
+    .phone-card{
+      width:min(180px, 72%);
+      display:grid;
+      gap:0;
+      padding:10px;
+      border-radius:26px;
+      background:linear-gradient(180deg, #10151d, #070a10);
+      border:2px solid rgba(255,255,255,.25);
+      box-shadow:0 18px 34px rgba(0,0,0,.28);
+    }
+
+    .phone-screen{
+      min-height:210px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.14);
+      background:
+        linear-gradient(135deg, rgba(39,215,255,.36), rgba(255,123,44,.28)),
+        linear-gradient(180deg, #b8f0ff, #ffffff 45%, #ffd5bf 100%);
+    }
+
+    .std-look .clarity-layer{
+      filter:blur(2.7px) brightness(1.10) contrast(.78) saturate(.72);
+    }
+
+    .std-look .glare-layer{
+      opacity:1;
+    }
+
+    .cut-look .clarity-layer{
+      filter:blur(0px) brightness(.98) contrast(1.22) saturate(1.26);
+    }
+
+    .cut-look .glare-layer{
+      opacity:.10;
+    }
+
+    .screen-glare-on{
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.08) 35%, transparent 52%),
+        linear-gradient(180deg, rgba(255,255,255,.24), transparent 60%);
+      opacity:.92;
+    }
+
+    .screen-glare-off{
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.08), transparent 38%);
+      opacity:.14;
+    }
+
+    @media (min-width: 1024px){
+      .shell{ padding:24px; }
+      .sim-wrap{ grid-template-columns:0.96fr 1.04fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero rounded-[32px] p-4 sm:p-6 lg:p-7">
+      <div class="grid gap-5 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-wrap gap-2">
+            <span class="badge rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.24em] text-slate-200">
+              OUTDOOR CONTRAST EXPERIENCE
+            </span>
+            <span class="badge rounded-full px-3 py-1 text-xs font-medium text-slate-200">
+              新人スタッフ向け提案サポート
+            </span>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <h1 class="metal-text text-3xl font-bold leading-tight sm:text-4xl">
+              眩しいのは光だけじゃない。
+            </h1>
+            <p class="text-base font-semibold text-cyan-200 sm:text-lg">
+              「青色光カット・屋外用」驚愕コントラスト体験シミュレーター
+            </p>
+            <p class="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              「ブルーライトカットはパソコン用」と思っているお客様に対して、
+              屋外の太陽光による乱反射こそ見えにくさの原因だと、
+              <span class="font-semibold text-white">“HD画質の差”として体感で伝える</span>ための接客アプリです。
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-[26px] p-4 sm:p-5">
+            <div class="flex flex-col gap-3">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">STEP 1</p>
+                <h2 class="mt-1 text-lg font-semibold text-white">まずは「屋外で見えにくい場面」を1つ選ぶ</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-300">
+                  初期表示はここだけ。情報を絞って、まずはお客様の「あるある」に当てはめる構成にしています。
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 gap-3">
+                <button type="button" class="scene-btn rounded-[20px] border border-white/10 bg-white/5 px-4 py-4 text-left" data-scene="drive">
+                  <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">SCENE 01</span>
+                  <span class="mt-1 block text-base font-semibold text-white">晴天時のドライブ</span>
+                  <span class="mt-1 block text-sm leading-6 text-slate-300">景色が白飛びして見えにくい</span>
+                </button>
+
+                <button type="button" class="scene-btn rounded-[20px] border border-white/10 bg-white/5 px-4 py-4 text-left" data-scene="park">
+                  <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">SCENE 02</span>
+                  <span class="mt-1 block text-base font-semibold text-white">公園での子供の見守り</span>
+                  <span class="mt-1 block text-sm leading-6 text-slate-300">日差しで輪郭がボヤける</span>
+                </button>
+
+                <button type="button" class="scene-btn rounded-[20px] border border-white/10 bg-white/5 px-4 py-4 text-left" data-scene="phone">
+                  <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">SCENE 03</span>
+                  <span class="mt-1 block text-base font-semibold text-white">屋外でのスマホ確認</span>
+                  <span class="mt-1 block text-sm leading-6 text-slate-300">画面が反射して見えない</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-[28px] p-4 sm:p-5">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">CONCEPT</p>
+                <h2 class="mt-1 text-xl font-semibold text-white">提案の切り口</h2>
+              </div>
+              <span class="badge rounded-full px-3 py-1 text-xs font-semibold text-cyan-200">
+                SHARP / CLEAR / HD
+              </span>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-[20px] border border-white/10 bg-white/5 p-4">
+                <p class="text-sm font-semibold text-white">標準レンズ</p>
+                <p class="mt-2 text-sm leading-6 text-slate-300">
+                  青色光の散乱によって、景色全体が白くかすみ、輪郭が甘く見えやすい状態を表現します。
+                </p>
+              </div>
+              <div class="rounded-[20px] border border-cyan-200/20 bg-cyan-400/5 p-4">
+                <p class="text-sm font-semibold text-white">ブルーライトカットレンズ</p>
+                <p class="mt-2 text-sm leading-6 text-slate-300">
+                  白い霞みがスッと晴れ、コントラストと彩度が上がって、外の景色がクッキリ見える体験を再現します。
+                </p>
+              </div>
+            </div>
+
+            <div class="rounded-[22px] border border-white/10 bg-black/20 p-4">
+              <p class="text-sm leading-7 text-slate-300">
+                おすすめの見せ方は
+                <span class="font-semibold text-white">「標準レンズで白っぽさを体感 → ブルーライトカットでHD化」</span>
+                の順番です。違いが大きく出るので、追加オプションの納得度が一気に上がります。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="simSection" class="hidden-soft glass-panel rounded-[32px] p-4 sm:p-6 lg:p-7">
+      <div class="sim-wrap">
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-2">
+            <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">STEP 2</p>
+            <h2 class="text-2xl font-bold text-white">コントラスト改善シミュレーション</h2>
+            <p class="text-sm leading-7 text-slate-300">
+              同じ屋外シーンでも、標準レンズかブルーライトカットかで見え方が大きく変わります。切り替えて驚きを作ってください。
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-[26px] p-4 sm:p-5">
+            <div class="grid gap-4">
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button id="standardBtn" type="button" class="mode-btn active rounded-[20px] border border-white/10 bg-white/5 px-4 py-4 text-left">
+                  <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">MODE</span>
+                  <span class="mt-1 block text-base font-semibold text-white">標準レンズ</span>
+                  <span class="mt-1 block text-sm leading-6 text-slate-300">グレアで白っぽく、輪郭が甘い</span>
+                </button>
+
+                <button id="cutBtn" type="button" class="mode-btn rounded-[20px] border border-cyan-200/20 bg-cyan-400/5 px-4 py-4 text-left">
+                  <span class="block text-xs font-semibold tracking-[0.2em] text-slate-400">MODE</span>
+                  <span class="mt-1 block text-base font-semibold text-white">ブルーライトカットレンズ</span>
+                  <span class="mt-1 block text-sm leading-6 text-slate-300">霞みが晴れてHD画質のようにクッキリ</span>
+                </button>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div class="rounded-[18px] border border-white/10 bg-white/5 px-4 py-3">
+                  <p class="text-xs font-semibold tracking-[0.18em] text-slate-400">選択中のシーン</p>
+                  <p id="selectedSceneLabel" class="mt-1 text-sm font-semibold leading-6 text-white">まだ選択されていません</p>
+                </div>
+                <button id="simulateBtn" type="button" class="primary-btn accent-ring rounded-[18px] border border-cyan-200/20 bg-gradient-to-b from-cyan-400/20 to-orange-400/10 px-5 py-4 text-sm font-semibold text-white">
+                  この条件で再生
+                </button>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-3">
+                <button type="button" class="preset-btn rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white" data-preset="standard">
+                  まず白っぽさを見る
+                  <span class="mt-1 block text-xs font-medium text-slate-400">標準レンズ</span>
+                </button>
+                <button type="button" class="preset-btn rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white" data-preset="cut">
+                  次にHD化を見る
+                  <span class="mt-1 block text-xs font-medium text-slate-400">ブルーライトカット</span>
+                </button>
+                <button type="button" id="compareBtn" class="preset-btn rounded-[18px] border border-orange-200/20 bg-orange-400/10 px-4 py-3 text-left text-sm font-semibold text-white">
+                  比較トークを開始
+                  <span class="mt-1 block text-xs font-medium text-slate-300">接客導線用</span>
+                </button>
+              </div>
+
+              <div id="errorBox" class="hidden-soft rounded-[18px] border border-orange-200/20 bg-orange-300/10 px-4 py-3 text-sm leading-6 text-orange-100">
+                先にシーンを1つ選んでください。
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-[26px] p-4 sm:p-5">
+            <div class="grid gap-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-semibold text-white">見え方の鮮明度</span>
+                <span id="clarityText" class="badge rounded-full px-3 py-1 text-xs font-semibold text-slate-100">34%</span>
+              </div>
+              <div class="metric-bar">
+                <div id="clarityFill" class="metric-fill"></div>
+              </div>
+              <p id="resultSummary" class="text-sm leading-6 text-slate-300">
+                シーンを選ぶと、屋外での「白っぽさ」と「HDのようなクッキリ感」を比較できます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="view-card">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">VISUAL</p>
+                <h3 class="mt-1 text-lg font-semibold text-white">屋外視界イメージ</h3>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span id="modeBadge" class="badge rounded-full px-3 py-1 text-xs font-semibold text-slate-100">標準レンズ</span>
+                <span id="statusBadge" class="badge rounded-full px-3 py-1 text-xs font-semibold text-slate-100">スタンバイ</span>
+              </div>
+            </div>
+
+            <div id="landscape" class="landscape drive-scene std-look" aria-label="屋外の見え方シミュレーション">
+              <div class="scene-topbar">
+                <span id="sceneChip" class="badge rounded-full px-3 py-1 text-xs font-semibold text-slate-100">未選択</span>
+                <span id="viewChip" class="badge rounded-full px-3 py-1 text-xs font-semibold text-slate-100">GLARE VIEW</span>
+              </div>
+
+              <div class="scene-canvas">
+                <div class="clarity-layer" id="clarityLayer">
+                  <div class="sky"></div>
+                  <div class="horizon"></div>
+                  <div class="scene-body" id="sceneBody">
+                    <div id="sceneContent" class="road-lines">
+                      <div class="road-line"></div>
+                      <div class="road-line"></div>
+                      <div class="road-line"></div>
+                    </div>
+                  </div>
+                  <div class="ground"></div>
+                </div>
+                <div id="glareLayer" class="glare-layer"></div>
+                <div id="screenOverlay" class="screen-overlay"></div>
+              </div>
+
+              <div class="hud">
+                <div class="flex flex-col gap-1">
+                  <span class="text-[11px] font-semibold tracking-[0.18em] text-white/70">CURRENT RESULT</span>
+                  <span id="hudText" class="text-sm font-semibold text-white">シーン選択後に再生してください</span>
+                </div>
+                <span id="hudChip" class="badge rounded-full px-3 py-1 text-xs font-semibold text-white">LOW CONTRAST</span>
+              </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-[20px] border border-white/10 bg-white/5 p-4">
+                <p class="text-sm font-semibold text-white">標準レンズの見せ場</p>
+                <p class="mt-2 text-sm leading-6 text-slate-300">
+                  白い霞みと軽いボヤけで、「外で見えにくい」の正体が青色光の散乱だと直感で伝わります。
+                </p>
+              </div>
+              <div class="rounded-[20px] border border-cyan-200/20 bg-cyan-400/5 p-4">
+                <p class="text-sm font-semibold text-white">ブルーライトカットの見せ場</p>
+                <p class="mt-2 text-sm leading-6 text-slate-300">
+                  霞みがサッと抜けて、輪郭と彩度が立つことで、「パソコン用ではなく屋外用でもある」と強く印象づけられます。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-[26px] p-4 sm:p-5">
+            <div class="flex flex-col gap-2">
+              <p class="text-xs font-semibold tracking-[0.22em] text-slate-400">STEP 3</p>
+              <h2 class="text-2xl font-bold text-white">接客トークスクリプト（そのまま読めるカンペ）</h2>
+              <p class="text-sm leading-7 text-slate-300">
+                シミュレーション段階に合わせて、言うべきフレーズだけを強調表示します。
+              </p>
+            </div>
+
+            <div class="mt-4 grid gap-3">
+              <div id="talk1" class="talk-card rounded-[20px] p-4">
+                <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">導入トーク</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-white">
+                  眩しさって、ただ明るいだけじゃなくて、
+                  <span class="hl-cyan">景色全体が白くボヤけること</span>でも見えにくくなるんです。
+                </p>
+              </div>
+
+              <div id="talk2" class="talk-card rounded-[20px] p-4">
+                <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">常識を覆すトーク</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-white">
+                  <span class="hl-cyan">太陽光のブルーライトが空気中で乱反射し、視界を白くボヤけさせているんです。</span>
+                </p>
+              </div>
+
+              <div id="talk3" class="talk-card rounded-[20px] p-4">
+                <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">価値訴求</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-white">
+                  ここでブルーライトカットを入れると、
+                  <span class="hl-orange">コントラストが上がって輪郭がクッキリ</span>見えやすくなります。
+                </p>
+              </div>
+
+              <div id="talk4" class="talk-card rounded-[20px] p-4">
+                <p class="text-xs font-semibold tracking-[0.2em] text-slate-400">決めトーク</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-white">
+                  <span class="hl-orange">これはパソコン用ではなく、外の景色を「HD画質」に変える日常使いのフィルターです。</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const state = {
+        scene: null,
+        mode: "standard"
+      };
+
+      const SCENES = {
+        drive: {
+          label: "晴天時のドライブ",
+          summaryStandard: "路面や遠景が白っぽくにじみ、全体のコントラストが落ちて見えにくい状態です。",
+          summaryCut: "白い霞みが抜けて、道路や景色の境界が締まり、見通しがグッと良く見える印象です。",
+          clarityStandard: 34,
+          clarityCut: 93,
+          hudStandard: "白飛びで景色の境界が甘い",
+          hudCut: "HDのように輪郭が締まる",
+          viewClass: "drive-scene",
+          content: () => `
+            <div class="road-lines">
+              <div class="road-line"></div>
+              <div class="road-line"></div>
+              <div class="road-line"></div>
+            </div>
+          `
+        },
+        park: {
+          label: "公園での子供の見守り",
+          summaryStandard: "日差しの散乱で輪郭が柔らかくなり、人の動きや距離感が取りづらく感じやすい状態です。",
+          summaryCut: "芝生や人物の輪郭が立ち、屋外でも視認性が上がって見守りやすい印象になります。",
+          clarityStandard: 42,
+          clarityCut: 95,
+          hudStandard: "輪郭が白くにじむ",
+          hudCut: "動きの境界がつかみやすい",
+          viewClass: "park-scene",
+          content: () => `
+            <div class="park-grid">
+              <div class="person">
+                <div class="head"></div>
+                <div class="arm-row"><div class="arm"></div><div class="arm"></div></div>
+                <div class="body-line"></div>
+              </div>
+              <div class="person">
+                <div class="head"></div>
+                <div class="arm-row"><div class="arm"></div><div class="arm"></div></div>
+                <div class="body-line"></div>
+              </div>
+            </div>
+          `
+        },
+        phone: {
+          label: "屋外でのスマホ確認",
+          summaryStandard: "画面に強い反射が乗り、通知や文字の情報が白くかぶって見づらい状態です。",
+          summaryCut: "反射のベール感が減って、画面の情報と背景の差がつき、確認しやすく見えます。",
+          clarityStandard: 28,
+          clarityCut: 91,
+          hudStandard: "反射で情報が埋もれる",
+          hudCut: "画面情報がスッと読める",
+          viewClass: "phone-scene",
+          content: () => `
+            <div class="phone-grid">
+              <div class="phone-card">
+                <div class="phone-screen"></div>
+              </div>
+            </div>
+          `
+        }
+      };
+
+      const simSection = document.getElementById("simSection");
+      const sceneButtons = [...document.querySelectorAll(".scene-btn")];
+      const standardBtn = document.getElementById("standardBtn");
+      const cutBtn = document.getElementById("cutBtn");
+      const simulateBtn = document.getElementById("simulateBtn");
+      const compareBtn = document.getElementById("compareBtn");
+      const presetButtons = [...document.querySelectorAll(".preset-btn[data-preset]")];
+
+      const selectedSceneLabel = document.getElementById("selectedSceneLabel");
+      const errorBox = document.getElementById("errorBox");
+      const landscape = document.getElementById("landscape");
+      const sceneBody = document.getElementById("sceneBody");
+      const sceneContent = document.getElementById("sceneContent");
+      const screenOverlay = document.getElementById("screenOverlay");
+      const glareLayer = document.getElementById("glareLayer");
+
+      const modeBadge = document.getElementById("modeBadge");
+      const statusBadge = document.getElementById("statusBadge");
+      const sceneChip = document.getElementById("sceneChip");
+      const viewChip = document.getElementById("viewChip");
+      const hudText = document.getElementById("hudText");
+      const hudChip = document.getElementById("hudChip");
+      const clarityText = document.getElementById("clarityText");
+      const clarityFill = document.getElementById("clarityFill");
+      const resultSummary = document.getElementById("resultSummary");
+
+      const talks = [
+        document.getElementById("talk1"),
+        document.getElementById("talk2"),
+        document.getElementById("talk3"),
+        document.getElementById("talk4")
+      ];
+
+      function showSection() {
+        if (simSection.classList.contains("hidden-soft")) {
+          simSection.classList.remove("hidden-soft");
+          simSection.classList.add("fade-up");
+        }
+      }
+
+      function showError(message) {
+        errorBox.textContent = message || "先にシーンを1つ選んでください。";
+        errorBox.classList.remove("hidden-soft");
+        setTimeout(() => errorBox.classList.add("hidden-soft"), 2400);
+      }
+
+      function setTalkStage(stage) {
+        talks.forEach((card, index) => {
+          card.classList.toggle("active", index < stage);
+        });
+      }
+
+      function setMode(mode) {
+        state.mode = mode;
+        const isCut = mode === "cut";
+        standardBtn.classList.toggle("active", !isCut);
+        cutBtn.classList.toggle("active", isCut);
+
+        modeBadge.textContent = isCut ? "ブルーライトカットレンズ" : "標準レンズ";
+        statusBadge.textContent = "スタンバイ";
+        viewChip.textContent = isCut ? "HD VIEW" : "GLARE VIEW";
+        hudChip.textContent = isCut ? "HIGH CONTRAST" : "LOW CONTRAST";
+
+        if (state.scene) {
+          renderScene();
+          applyVisual(false);
+        } else {
+          setClarity(isCut ? 91 : 34, isCut);
+          resultSummary.textContent = "シーンを選ぶと、屋外での「白っぽさ」と「HDのようなクッキリ感」を比較できます。";
+        }
+
+        setTalkStage(isCut ? 3 : 1);
+      }
+
+      function setClarity(value, clearMode) {
+        const safe = Math.max(0, Math.min(100, Number(value) || 0));
+        clarityText.textContent = safe + "%";
+        clarityFill.style.width = safe + "%";
+        clarityFill.classList.toggle("clear", !!clearMode);
+      }
+
+      function renderScene() {
+        const scene = SCENES[state.scene];
+        if (!scene) return;
+
+        selectedSceneLabel.textContent = scene.label;
+        sceneChip.textContent = scene.label;
+
+        landscape.classList.remove("drive-scene", "park-scene", "phone-scene");
+        landscape.classList.add(scene.viewClass);
+
+        sceneBody.innerHTML = scene.content();
+        const phoneMode = state.scene === "phone";
+        screenOverlay.className = "screen-overlay " + (phoneMode
+          ? (state.mode === "cut" ? "screen-glare-off" : "screen-glare-on")
+          : "");
+      }
+
+      function applyVisual(animated = true) {
+        const scene = SCENES[state.scene];
+        if (!scene) return;
+
+        const isCut = state.mode === "cut";
+        landscape.classList.toggle("std-look", !isCut);
+        landscape.classList.toggle("cut-look", isCut);
+
+        if (animated) {
+          landscape.style.transform = "scale(0.995)";
+          setTimeout(() => {
+            landscape.style.transform = "scale(1)";
+          }, 180);
+        }
+
+        setClarity(isCut ? scene.clarityCut : scene.clarityStandard, isCut);
+        resultSummary.textContent = isCut ? scene.summaryCut : scene.summaryStandard;
+        hudText.textContent = isCut ? scene.hudCut : scene.hudStandard;
+        hudChip.textContent = isCut ? "HIGH CONTRAST" : "LOW CONTRAST";
+        viewChip.textContent = isCut ? "HD VIEW" : "GLARE VIEW";
+        statusBadge.textContent = isCut ? "クッキリ化" : "白ボヤけ再現";
+        screenOverlay.className = "screen-overlay " + (
+          state.scene === "phone"
+            ? (isCut ? "screen-glare-off" : "screen-glare-on")
+            : ""
+        );
+        glareLayer.style.opacity = isCut ? "0.10" : "1";
+        setTalkStage(isCut ? 4 : 2);
+      }
+
+      function setScene(sceneKey) {
+        const scene = SCENES[sceneKey];
+        if (!scene) {
+          showError("シーンの読み込みに失敗しました。");
+          return;
+        }
+        state.scene = sceneKey;
+        sceneButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.scene === sceneKey));
+        showSection();
+        renderScene();
+        applyVisual(false);
+        setTalkStage(1);
+        statusBadge.textContent = "条件選択済み";
+        hudText.textContent = "モードを選んで再生してください";
+      }
+
+      function simulate() {
+        if (!state.scene) {
+          showError("先にシーンを1つ選んでください。");
+          return;
+        }
+        renderScene();
+        applyVisual(true);
+      }
+
+      function runCompareFlow() {
+        if (!state.scene) {
+          showError("先にシーンを1つ選んでください。");
+          return;
+        }
+
+        state.mode = "standard";
+        setMode("standard");
+        simulate();
+
+        setTimeout(() => {
+          state.mode = "cut";
+          setMode("cut");
+          simulate();
+        }, 850);
+      }
+
+      sceneButtons.forEach(btn => {
+        btn.addEventListener("click", () => setScene(btn.dataset.scene));
+      });
+
+      standardBtn.addEventListener("click", () => setMode("standard"));
+      cutBtn.addEventListener("click", () => setMode("cut"));
+      simulateBtn.addEventListener("click", simulate);
+      compareBtn.addEventListener("click", runCompareFlow);
+
+      presetButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const preset = btn.dataset.preset;
+          if (!state.scene) {
+            showError("先にシーンを1つ選んでください。");
+            return;
+          }
+          setMode(preset);
+          simulate();
+        });
+      });
+
+      setMode("standard");
+    })();
+  </script>
+</body>
+</html>
