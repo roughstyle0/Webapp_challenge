@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>調光レンズ 2WAY体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --ivory-1: #f6f0e6;
+      --ivory-2: #efe1cc;
+      --ivory-3: #d9c4a2;
+      --sky-1: #dff5ff;
+      --sky-2: #b4e6ff;
+      --sky-3: #6cc6f2;
+      --ink: #173042;
+      --gold: #b8904f;
+      --gold-soft: rgba(184, 144, 79, 0.18);
+      --glass-alpha: 0.04;
+      --glass-blur: 0px;
+      --glow-alpha: 0.15;
+      --surface: rgba(255,255,255,0.42);
+      --border: rgba(255,255,255,0.35);
+      --shadow: 0 20px 50px rgba(19, 41, 58, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 40%),
+        linear-gradient(180deg, var(--ivory-1), var(--ivory-2));
+      transition: background 900ms ease, color 500ms ease;
+    }
+
+    body.outdoor {
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,0.82), transparent 35%),
+        linear-gradient(180deg, var(--sky-1), var(--sky-2) 55%, #effaff 100%);
+    }
+
+    .resort-shell {
+      background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.22));
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .section-shell {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 36px rgba(19, 41, 58, 0.08);
+    }
+
+    .scene-pill {
+      transition: all 250ms ease;
+    }
+
+    .scene-pill.active {
+      background: rgba(255,255,255,0.82);
+      color: var(--ink);
+      box-shadow: 0 10px 24px rgba(23, 48, 66, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .glasses-wrap {
+      display: grid;
+      gap: 1rem;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .glasses-frame {
+      width: min(100%, 330px);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .lens {
+      aspect-ratio: 1.18 / 0.82;
+      border-radius: 1.6rem;
+      border: 4px solid rgba(23, 48, 66, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.12)),
+        rgba(40, 50, 60, var(--glass-alpha));
+      box-shadow:
+        inset 0 10px 16px rgba(255,255,255,0.35),
+        inset 0 -8px 14px rgba(23, 48, 66, 0.06),
+        0 10px 24px rgba(23, 48, 66, 0.08);
+      transition: background 1100ms ease, transform 500ms ease, box-shadow 800ms ease;
+    }
+
+    .bridge {
+      width: 1.25rem;
+      height: 0.5rem;
+      border-top: 4px solid rgba(23, 48, 66, 0.92);
+      border-radius: 999px;
+      transform: translateY(-0.12rem);
+    }
+
+    .temple-row {
+      width: min(100%, 360px);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .temple {
+      height: 4px;
+      background: rgba(23, 48, 66, 0.92);
+      border-radius: 999px;
+      opacity: 0.7;
+    }
+
+    .shine-tag {
+      background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.48));
+      border: 1px solid rgba(255,255,255,0.5);
+      backdrop-filter: blur(8px);
+    }
+
+    .meter-bar {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #b7c7d1, #4d6475);
+      transition: width 900ms ease;
+    }
+
+    .fade-up {
+      animation: fadeUp 500ms ease both;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    input[type="range"] {
+      appearance: none;
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(239,225,204,0.95), rgba(108,198,242,0.95));
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: white;
+      border: 3px solid rgba(23, 48, 66, 0.9);
+      box-shadow: 0 8px 18px rgba(23, 48, 66, 0.16);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: white;
+      border: 3px solid rgba(23, 48, 66, 0.9);
+      box-shadow: 0 8px 18px rgba(23, 48, 66, 0.16);
+      cursor: pointer;
+    }
+
+    .talk-highlight {
+      background: linear-gradient(120deg, rgba(184, 144, 79, 0.22), rgba(184, 144, 79, 0.05));
+      border-left: 4px solid var(--gold);
+    }
+
+    .badge-soft {
+      background: rgba(255,255,255,0.52);
+      border: 1px solid rgba(255,255,255,0.44);
+    }
+
+    .hidden-soft {
+      display: none;
+    }
+
+    .help-error {
+      color: #9a3e2c;
+      background: rgba(255, 245, 242, 0.72);
+      border: 1px solid rgba(154, 62, 44, 0.16);
+    }
+  </style>
+</head>
+<body>
+  <main class="min-h-screen px-4 py-5 sm:px-6 sm:py-6">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:gap-5">
+      <section class="resort-shell rounded-[2rem] p-5 sm:p-7">
+        <div class="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="badge-soft rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.24em] text-slate-700">
+                RESORT OPTICAL EXPERIENCE
+              </span>
+              <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-700">
+                新人スタッフ向け接客支援
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <h1 class="text-3xl font-semibold leading-tight sm:text-4xl">
+                メガネとサングラスの2WAY。
+                <span class="block text-slate-800/80">調光レンズ体験シミュレーター</span>
+              </h1>
+              <p class="max-w-xl text-sm leading-7 text-slate-700 sm:text-base">
+                ホテルの中ではクリアなメガネ。外のビーチでは自然にサングラス。
+                旅行やお出かけ前のお客様に、<strong>「掛け替え不要の快適さ」</strong>を
+                体感で伝えるための接客アプリです。
+              </p>
+            </div>
+
+            <div class="grid gap-3">
+              <div class="section-shell rounded-[1.6rem] p-4 sm:p-5">
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-col gap-1">
+                    <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">
+                      STEP 1
+                    </p>
+                    <h2 class="text-lg font-semibold">まずは場面を選ぶ</h2>
+                    <p class="text-sm leading-6 text-slate-700">
+                      初期表示は最小限に。ボタンを押すと、体験シミュレーションと接客トークが展開されます。
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      id="startIndoor"
+                      class="scene-pill rounded-[1.4rem] border border-white/50 bg-white/40 px-4 py-4 text-left transition hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                      type="button"
+                    >
+                      <span class="mb-1 block text-xs font-semibold tracking-[0.22em] text-slate-600">INDOOR</span>
+                      <span class="block text-base font-semibold">ホテル・カフェから始める</span>
+                      <span class="mt-1 block text-sm text-slate-700">透明なレンズ状態を見せる</span>
+                    </button>
+
+                    <button
+                      id="startOutdoor"
+                      class="scene-pill rounded-[1.4rem] border border-white/50 bg-white/40 px-4 py-4 text-left transition hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                      type="button"
+                    >
+                      <span class="mb-1 block text-xs font-semibold tracking-[0.22em] text-slate-600">OUTDOOR</span>
+                      <span class="block text-base font-semibold">ビーチ・テラスへ出る</span>
+                      <span class="mt-1 block text-sm text-slate-700">色づく変化を一気に見せる</span>
+                    </button>
+                  </div>
+
+                  <div id="validationMessage" class="hidden-soft help-error rounded-2xl px-4 py-3 text-sm leading-6">
+                    操作に失敗しました。もう一度ボタンを押してください。
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-[1.6rem] bg-slate-900/8 px-4 py-4">
+                <p class="text-sm leading-6 text-slate-700">
+                  おすすめの見せ方：
+                  <span class="font-semibold">「まず室内で透明」→「次に屋外でじわっと色づく」</span>
+                  の順で案内すると、魔法のような変化が伝わりやすくなります。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-shell rounded-[2rem] p-4 sm:p-5">
+            <div class="flex h-full flex-col gap-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">SCENE PREVIEW</p>
+                  <h2 class="text-xl font-semibold">空間ごとの印象</h2>
+                </div>
+                <span id="sceneLabelTop" class="shine-tag rounded-full px-4 py-2 text-sm font-semibold text-slate-800">
+                  未選択
+                </span>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-[1.5rem] bg-white/35 p-4">
+                  <p class="text-sm font-semibold">室内の魅力</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-700">
+                    透明だから、ホテルロビーやカフェでも自然な見え方。普段のメガネ感覚で使えます。
+                  </p>
+                </div>
+                <div class="rounded-[1.5rem] bg-white/35 p-4">
+                  <p class="text-sm font-semibold">屋外の魅力</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-700">
+                    外へ出るとサングラスのように変化。眩しさ対策と快適さを1本で両立できます。
+                  </p>
+                </div>
+              </div>
+
+              <div class="rounded-[1.8rem] bg-gradient-to-b from-white/45 to-white/20 p-4 sm:p-5">
+                <div class="flex flex-col gap-4">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-semibold text-slate-800">レンズ変化の見どころ</p>
+                    <span id="tintBadge" class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700">
+                      透明
+                    </span>
+                  </div>
+
+                  <div class="glasses-wrap">
+                    <div class="temple-row">
+                      <div class="temple"></div>
+                      <div class="shine-tag rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-slate-700">
+                        2WAY
+                      </div>
+                      <div class="temple"></div>
+                    </div>
+
+                    <div class="glasses-frame" aria-label="調光レンズのビジュアル">
+                      <div id="leftLens" class="lens"></div>
+                      <div class="bridge" aria-hidden="true"></div>
+                      <div id="rightLens" class="lens"></div>
+                    </div>
+
+                    <div class="w-full max-w-[330px] rounded-[1.4rem] bg-white/40 p-3">
+                      <div class="flex items-center justify-between gap-3">
+                        <span class="text-xs font-semibold tracking-[0.2em] text-slate-600">着色レベル</span>
+                        <span id="meterText" class="text-sm font-semibold text-slate-800">0%</span>
+                      </div>
+                      <div class="meter-bar mt-2">
+                        <div id="meterFill" class="meter-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="text-center text-sm leading-6 text-slate-700">
+                    レンズは背景とは別ブロックで表示。スマホでも文字と被らず、変化だけをはっきり見せます。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="experiencePanel" class="section-shell hidden-soft rounded-[2rem] p-4 sm:p-6">
+        <div class="grid gap-5 lg:grid-cols-[1.02fr_0.98fr]">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">STEP 2</p>
+              <h2 class="text-2xl font-semibold">室内から屋外へ、じわっと体験</h2>
+              <p class="text-sm leading-7 text-slate-700">
+                スライダーを動かすと、背景とレンズ濃度がシームレスに変化します。
+                お客様に見せながら、生活シーンに置き換えて説明してください。
+              </p>
+            </div>
+
+            <div class="rounded-[1.7rem] bg-white/38 p-4 sm:p-5">
+              <div class="flex flex-col gap-4">
+                <div class="grid grid-cols-2 gap-2 rounded-[1.2rem] bg-white/30 p-2">
+                  <button id="indoorBtn" type="button" class="scene-pill active rounded-[1rem] px-4 py-3 text-sm font-semibold">
+                    室内
+                  </button>
+                  <button id="outdoorBtn" type="button" class="scene-pill rounded-[1rem] px-4 py-3 text-sm font-semibold">
+                    屋外
+                  </button>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-center justify-between gap-3">
+                    <label for="sceneRange" class="text-sm font-semibold text-slate-800">シーン切り替え</label>
+                    <span id="sceneRangeText" class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700">
+                      ホテル・カフェ
+                    </span>
+                  </div>
+                  <input id="sceneRange" type="range" min="0" max="100" step="1" value="0" aria-label="室内から屋外への切り替え" />
+                  <div class="flex items-center justify-between text-xs font-medium text-slate-600">
+                    <span>室内で透明</span>
+                    <span>屋外でサングラス化</span>
+                  </div>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-3">
+                  <button type="button" class="presetBtn rounded-[1.2rem] bg-white/60 px-4 py-3 text-left text-sm font-semibold text-slate-800" data-value="15">
+                    ロビー
+                    <span class="mt-1 block text-xs font-medium text-slate-600">ほぼ透明</span>
+                  </button>
+                  <button type="button" class="presetBtn rounded-[1.2rem] bg-white/60 px-4 py-3 text-left text-sm font-semibold text-slate-800" data-value="55">
+                    テラス
+                    <span class="mt-1 block text-xs font-medium text-slate-600">少し色づく</span>
+                  </button>
+                  <button type="button" class="presetBtn rounded-[1.2rem] bg-white/60 px-4 py-3 text-left text-sm font-semibold text-slate-800" data-value="100">
+                    ビーチ
+                    <span class="mt-1 block text-xs font-medium text-slate-600">しっかり発色</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-[1.7rem] bg-slate-900/8 p-4 sm:p-5">
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-lg font-semibold">接客トークの見せ方</h3>
+                  <span id="phaseBadge" class="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700">
+                    透明説明
+                  </span>
+                </div>
+                <div id="phaseGuide" class="text-sm leading-7 text-slate-700">
+                  まずは「普通のメガネのように使える」安心感から入ると、次の高単価提案につながりやすいです。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">STEP 3</p>
+              <h2 class="text-2xl font-semibold">新人スタッフ用 接客カンペ</h2>
+              <p class="text-sm leading-7 text-slate-700">
+                お客様の前でそのまま読み上げやすいように、段階ごとに一言を絞って表示します。
+              </p>
+            </div>
+
+            <div id="talkStack" class="grid gap-3">
+              <div id="talk1" class="talk-highlight hidden-soft rounded-[1.5rem] p-4 fade-up">
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">導入トーク</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-slate-900">
+                  室内では普通のメガネみたいに<span class="text-amber-800">透明</span>なので、
+                  ホテルの中やカフェでもそのまま自然に使えます。
+                </p>
+              </div>
+
+              <div id="talk2" class="talk-highlight hidden-soft rounded-[1.5rem] p-4 fade-up">
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">変化の見せ場</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-slate-900">
+                  外に出ると紫外線でレンズが<span class="text-amber-800">ジワッと色づいて</span>、
+                  サングラスの役割までしてくれるんです。
+                </p>
+              </div>
+
+              <div id="talk3" class="talk-highlight hidden-soft rounded-[1.5rem] p-4 fade-up">
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">決めトーク</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-slate-900">
+                  <span class="rounded-lg bg-amber-100 px-2 py-1">これ1本で、ホテルの中から眩しいビーチまで掛けっぱなしでOKです。</span>
+                </p>
+              </div>
+
+              <div id="talk4" class="talk-highlight hidden-soft rounded-[1.5rem] p-4 fade-up">
+                <p class="text-xs font-semibold tracking-[0.22em] text-slate-600">クロージング</p>
+                <p class="mt-2 text-base font-semibold leading-7 text-slate-900">
+                  <span class="rounded-lg bg-amber-100 px-2 py-1">もう旅行で2本持ち歩く必要はありません。</span>
+                  掛け外しの手間も減って、移動がすごくラクになります。
+                </p>
+              </div>
+            </div>
+
+            <div class="rounded-[1.7rem] bg-white/38 p-4 sm:p-5">
+              <div class="flex flex-col gap-3">
+                <h3 class="text-lg font-semibold">新人スタッフ向け ひと押しポイント</h3>
+                <ul class="grid gap-2 text-sm leading-7 text-slate-700">
+                  <li class="rounded-2xl bg-white/55 px-4 py-3">
+                    「サングラスを別で持つのが面倒」という悩みに直結します。
+                  </li>
+                  <li class="rounded-2xl bg-white/55 px-4 py-3">
+                    見た目の変化を見せながら話せるので、高単価でも納得を得やすいです。
+                  </li>
+                  <li class="rounded-2xl bg-white/55 px-4 py-3">
+                    GW旅行・海・ドライブなど、具体的な予定に結びつけると提案力が上がります。
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const state = {
+        initialized: false,
+        value: 0
+      };
+
+      const body = document.body;
+      const experiencePanel = document.getElementById('experiencePanel');
+      const validationMessage = document.getElementById('validationMessage');
+
+      const sceneRange = document.getElementById('sceneRange');
+      const indoorBtn = document.getElementById('indoorBtn');
+      const outdoorBtn = document.getElementById('outdoorBtn');
+      const startIndoor = document.getElementById('startIndoor');
+      const startOutdoor = document.getElementById('startOutdoor');
+
+      const leftLens = document.getElementById('leftLens');
+      const rightLens = document.getElementById('rightLens');
+      const tintBadge = document.getElementById('tintBadge');
+      const meterText = document.getElementById('meterText');
+      const meterFill = document.getElementById('meterFill');
+      const sceneLabelTop = document.getElementById('sceneLabelTop');
+      const sceneRangeText = document.getElementById('sceneRangeText');
+      const phaseBadge = document.getElementById('phaseBadge');
+      const phaseGuide = document.getElementById('phaseGuide');
+
+      const talk1 = document.getElementById('talk1');
+      const talk2 = document.getElementById('talk2');
+      const talk3 = document.getElementById('talk3');
+      const talk4 = document.getElementById('talk4');
+
+      const presetButtons = Array.from(document.querySelectorAll('.presetBtn'));
+
+      function safeNumber(value) {
+        const num = Number(value);
+        if (Number.isNaN(num)) return 0;
+        return Math.max(0, Math.min(100, num));
+      }
+
+      function showError() {
+        validationMessage.classList.remove('hidden-soft');
+        window.setTimeout(() => {
+          validationMessage.classList.add('hidden-soft');
+        }, 2500);
+      }
+
+      function showPanel() {
+        if (!state.initialized) {
+          state.initialized = true;
+          experiencePanel.classList.remove('hidden-soft');
+          experiencePanel.classList.add('fade-up');
+        }
+      }
+
+      function updateTalks(value) {
+        const v = safeNumber(value);
+
+        talk1.classList.toggle('hidden-soft', v > 30);
+        talk2.classList.toggle('hidden-soft', v < 20 || v > 75);
+        talk3.classList.toggle('hidden-soft', v < 55);
+        talk4.classList.toggle('hidden-soft', v < 82);
+
+        if (v <= 25) {
+          phaseBadge.textContent = '透明説明';
+          phaseGuide.textContent = 'まずは「普通のメガネのように使える」安心感から入ると、次の高単価提案につながりやすいです。';
+        } else if (v <= 60) {
+          phaseBadge.textContent = '変化を実演';
+          phaseGuide.textContent = 'スライダーを動かしながら「外に出ると自然に色づく」と見せると、魔法のような印象が残ります。';
+        } else if (v <= 85) {
+          phaseBadge.textContent = '快適さ訴求';
+          phaseGuide.textContent = 'ここで「掛けっぱなしでOK」を強く伝えると、メガネとサングラスの2本持ち比較がしやすくなります。';
+        } else {
+          phaseBadge.textContent = '旅行提案';
+          phaseGuide.textContent = '最後は「旅行で2本持ち歩かなくていい」に着地。GWや海、ドライブの予定に結びつけてください。';
+        }
+      }
+
+      function updateVisual(value) {
+        const v = safeNumber(value);
+        const alpha = (0.04 + (v / 100) * 0.58).toFixed(3);
+        const fill = `${v}%`;
+
+        leftLens.style.background = `
+          linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.10)),
+          rgba(52, 60, 68, ${alpha})
+        `;
+        rightLens.style.background = `
+          linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.10)),
+          rgba(52, 60, 68, ${alpha})
+        `;
+
+        leftLens.style.transform = v > 50 ? 'translateY(-1px)' : 'translateY(0)';
+        rightLens.style.transform = v > 50 ? 'translateY(-1px)' : 'translateY(0)';
+
+        meterFill.style.width = fill;
+        meterText.textContent = fill;
+
+        if (v <= 10) {
+          tintBadge.textContent = '透明';
+          sceneLabelTop.textContent = '室内モード';
+          sceneRangeText.textContent = 'ホテル・カフェ';
+        } else if (v <= 55) {
+          tintBadge.textContent = 'ほんのり発色';
+          sceneLabelTop.textContent = '移動中';
+          sceneRangeText.textContent = 'テラスへ移動';
+        } else if (v <= 85) {
+          tintBadge.textContent = 'サングラス化';
+          sceneLabelTop.textContent = '屋外モード';
+          sceneRangeText.textContent = 'テラス・散策';
+        } else {
+          tintBadge.textContent = 'しっかり発色';
+          sceneLabelTop.textContent = '強い日差し';
+          sceneRangeText.textContent = 'ビーチ・屋外';
+        }
+
+        const outdoor = v >= 50;
+        body.classList.toggle('outdoor', outdoor);
+        indoorBtn.classList.toggle('active', v < 50);
+        outdoorBtn.classList.toggle('active', v >= 50);
+
+        updateTalks(v);
+      }
+
+      function setScene(value) {
+        try {
+          const v = safeNumber(value);
+          state.value = v;
+          sceneRange.value = String(v);
+          showPanel();
+          updateVisual(v);
+        } catch (error) {
+          console.error(error);
+          showError();
+        }
+      }
+
+      startIndoor.addEventListener('click', () => setScene(0));
+      startOutdoor.addEventListener('click', () => setScene(100));
+      indoorBtn.addEventListener('click', () => setScene(0));
+      outdoorBtn.addEventListener('click', () => setScene(100));
+      sceneRange.addEventListener('input', (e) => setScene(e.target.value));
+
+      presetButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const nextValue = button.dataset.value;
+          if (typeof nextValue === 'undefined') {
+            showError();
+            return;
+          }
+          setScene(nextValue);
+        });
+      });
+
+      updateVisual(0);
+    })();
+  </script>
+</body>
+</html>
