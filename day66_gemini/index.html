@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>最強キズ防止コーティング 防御シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Google Fonts: 高級感とシャープさを演出 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;500;700;900&display=swap');
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #0a0a0c; /* Deep Black */
+      color: #e2e8f0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* シミュレーターエリアのアニメーション */
+    @keyframes scratch-draw {
+      to { stroke-dashoffset: 0; }
+    }
+    .scratch-line {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: scratch-draw 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    @keyframes shield-pulse {
+      0% { transform: scale(0.95); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: scale(1.05); opacity: 0.8; }
+    }
+    .shield-active {
+      animation: shield-pulse 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes deflect {
+      0% { transform: scale(1) translateY(0); opacity: 1; }
+      100% { transform: scale(1.5) translateY(-50px); opacity: 0; filter: blur(4px); }
+    }
+    .scratch-deflect {
+      stroke-dasharray: 50;
+      stroke-dashoffset: 0;
+      animation: deflect 0.4s ease-out forwards;
+    }
+
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111827;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 3px;
+    }
+
+    /* UIエフェクト */
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(55, 65, 81, 0.5);
+    }
+    
+    .text-glow {
+      text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+    }
+    
+    .button-glow:hover {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center bg-gray-950 p-0 sm:p-4">
+
+  <!-- Mobile First Wrapper (最大幅をスマホサイズに固定し、レイアウト崩壊を根本から防ぐ) -->
+  <div class="w-full max-w-md h-[100dvh] sm:h-[850px] bg-[#0a0a0c] sm:rounded-2xl shadow-2xl sm:border border-gray-800 flex flex-col overflow-hidden relative">
+
+    <!-- Header -->
+    <header class="shrink-0 bg-gradient-to-b from-gray-900 to-[#0a0a0c] border-b border-gray-800 p-4 flex items-center justify-between z-10">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+        <h1 class="text-xs font-bold tracking-widest text-gray-400">DEFENSE SIMULATOR <span class="text-cyan-500 ml-1 text-glow">PRO</span></h1>
+      </div>
+      <div class="text-[10px] text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-800">STAFF ONLY</div>
+    </header>
+
+    <!-- Simulator Area (絶対配置と重なりを防ぐため、独立したブロックとして高さを固定) -->
+    <div class="shrink-0 relative w-full aspect-[4/3] bg-gray-900 overflow-hidden border-b border-gray-800">
+      <!-- 背景風景（クリアな視界の象徴） -->
+      <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800" alt="Clear View" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 scale-105" id="view-image">
+      
+      <!-- レンズの反射エフェクト（リアリティ演出） -->
+      <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/40 pointer-events-none"></div>
+
+      <!-- エフェクトレイヤー：標準レンズの曇り -->
+      <div id="standard-blur-layer" class="absolute inset-0 bg-white/20 backdrop-blur-[2px] opacity-0 transition-opacity duration-700 pointer-events-none"></div>
+      
+      <!-- エフェクトレイヤー：キズ（SVG描画領域） -->
+      <svg id="scratch-svg" class="absolute inset-0 w-full h-full pointer-events-none z-20"></svg>
+
+      <!-- エフェクトレイヤー：最強シールド -->
+      <div id="shield-layer" class="absolute inset-0 opacity-0 transition-opacity duration-500 z-10 pointer-events-none flex items-center justify-center">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="hex-pattern" width="40" height="69.282" patternUnits="userSpaceOnUse" patternTransform="scale(1.2)">
+              <path d="M40 17.32l-20 11.547L0 17.32V-5.774l20-11.547L40-5.774V17.32zm0 46.188l-20 11.548-20-11.548V40.414L0 28.867l20 11.547 20-11.547v23.094z" fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-opacity="0.4" />
+            </pattern>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#hex-pattern)" class="shield-active"/>
+          <circle cx="50%" cy="50%" r="80%" fill="url(#glow)" class="shield-active"/>
+        </svg>
+      </div>
+
+      <!-- ステータス表示バッジ -->
+      <div class="absolute top-3 left-3 flex gap-2">
+        <div id="status-badge" class="glass-panel px-3 py-1 rounded-full text-xs font-bold text-gray-300 border-gray-600">
+          標準レンズ
+        </div>
+      </div>
+    </div>
+
+    <!-- Control & Talk Area (スクロール可能領域。画像エリアと完全に分離) -->
+    <main class="flex-1 overflow-y-auto p-5 pb-8 relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 to-[#0a0a0c]">
+      
+      <!-- Step 1: 初期状態（NG行動のヒアリング） -->
+      <section id="step1-container" class="flex flex-col gap-6 transition-all duration-500">
+        
+        <!-- スタッフ用カンペ UI -->
+        <div class="bg-gray-800/50 border-l-4 border-yellow-500 rounded-r-lg p-4 shadow-lg">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-yellow-500 text-lg">💬</span>
+            <span class="text-xs font-bold text-gray-400 tracking-wider">接客トークスクリプト（そのままお読みください）</span>
+          </div>
+          <p class="text-sm text-gray-200 leading-relaxed font-medium">
+            「お客様、メガネのレンズ、いつの間にか傷がついて見えにくくなっていませんか？ 実は、<span class="text-yellow-400 font-bold border-b border-yellow-400/50 pb-0.5">無意識の行動が原因</span>かもしれません。よくある行動を1つ選んでみてください。」
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <p class="text-xs text-gray-400 font-bold tracking-widest uppercase text-center mb-1">Select Customer's Action</p>
+          <button onclick="triggerSimulation('clothes')" class="group relative w-full p-4 glass-panel rounded-xl text-left hover:bg-gray-800 transition-all border border-gray-700 hover:border-gray-500 flex items-center justify-between">
+            <span class="text-sm font-bold text-gray-200 group-hover:text-white">👕 つい服の裾（Tシャツ）で拭いてしまう</span>
+            <svg class="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transform group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <button onclick="triggerSimulation('bag')" class="group relative w-full p-4 glass-panel rounded-xl text-left hover:bg-gray-800 transition-all border border-gray-700 hover:border-gray-500 flex items-center justify-between">
+            <span class="text-sm font-bold text-gray-200 group-hover:text-white">👜 鍵や小銭と一緒にカバンへポイッ</span>
+            <svg class="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transform group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <button onclick="triggerSimulation('outdoor')" class="group relative w-full p-4 glass-panel rounded-xl text-left hover:bg-gray-800 transition-all border border-gray-700 hover:border-gray-500 flex items-center justify-between">
+            <span class="text-sm font-bold text-gray-200 group-hover:text-white">🏕️ アウトドアで砂埃がついたまま拭く</span>
+            <svg class="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transform group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- Step 2: シミュレーション結果と解説（選択後に表示） -->
+      <section id="step2-container" class="hidden flex-col gap-6 animate-fade-in-up">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-red-900/50 border border-red-500/50 flex items-center justify-center text-red-500 shrink-0">⚠️</div>
+          <div>
+            <h2 class="text-red-400 text-xs font-bold tracking-widest mb-1">DANGER POINT</h2>
+            <p id="danger-title" class="text-sm font-bold text-gray-100"></p>
+          </div>
+        </div>
+
+        <!-- 動的カンペ UI -->
+        <div class="bg-gray-800/50 border-l-4 border-red-500 rounded-r-lg p-4 shadow-lg">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-red-500 text-lg">💬</span>
+            <span class="text-xs font-bold text-gray-400 tracking-wider">接客トークスクリプト</span>
+          </div>
+          <p id="danger-script" class="text-sm text-gray-200 leading-relaxed font-medium"></p>
+        </div>
+
+        <div class="mt-4">
+          <button onclick="triggerCoating()" class="button-glow relative w-full overflow-hidden rounded-xl p-[1px] group">
+            <span class="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 opacity-70 group-hover:opacity-100 transition-opacity duration-300"></span>
+            <div class="relative bg-gray-950 px-6 py-4 rounded-xl flex items-center justify-center gap-3 transition-all group-hover:bg-opacity-80">
+              <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              <span class="text-sm font-bold text-white tracking-wide">最強キズ防止コーティングで防御する</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Step 3: コーティング成功とクロージング -->
+      <section id="step3-container" class="hidden flex-col gap-6 animate-fade-in-up">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-cyan-900/50 border border-cyan-400/50 flex items-center justify-center text-cyan-400 shrink-0">🛡️</div>
+          <div>
+            <h2 class="text-cyan-400 text-xs font-bold tracking-widest mb-1 text-glow">PERFECT DEFENSE</h2>
+            <p class="text-sm font-bold text-gray-100">100%のクリアな視界を維持</p>
+          </div>
+        </div>
+
+        <!-- 最終クロージング カンペ UI -->
+        <div class="bg-gray-800/50 border-l-4 border-cyan-500 rounded-r-lg p-4 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-cyan-400 text-lg">💬</span>
+            <span class="text-xs font-bold text-gray-400 tracking-wider">クロージング・トーク</span>
+          </div>
+          <p class="text-sm text-gray-200 leading-relaxed font-medium">
+            「ご安心ください。このコーティングなら、先ほどの衝撃も<span class="text-cyan-400 font-bold border-b border-cyan-400/50 pb-0.5">シールドのように強力に弾き返します。</span><br><br>
+            見えにくいストレスから解放され、メガネの寿命をなんと2倍に延ばす、<span class="text-cyan-400 font-bold">最もコスパの良い自己投資</span>です。ぜひご一緒にお付けしませんか？」
+          </p>
+        </div>
+
+        <button onclick="resetApp()" class="mt-4 w-full py-3 text-xs font-bold text-gray-500 hover:text-gray-300 transition-colors border border-gray-800 rounded-xl hover:bg-gray-800">
+          ↻ 別の行動でシミュレーションをやり直す
+        </button>
+      </section>
+
+    </main>
+  </div>
+
+  <style>
+    .animate-fade-in-up {
+      animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+  <script>
+    // --- データロジック: ターゲット層の行動に対する細かなテキスト出し分け ---
+    const actionData = {
+      clothes: {
+        dangerTitle: "服の繊維とホコリによる『ヤスリがけ』",
+        script: "「実はその行動、非常に危険なんです。服の繊維には目に見えない砂埃が付着しており、そのまま拭くことは<span class='text-red-400 font-bold border-b border-red-400/50 pb-0.5'>『紙ヤスリ』でレンズを削っている</span>のと同じ状態なんです。無数の小キズが視界を白く濁らせます。」"
+      },
+      bag: {
+        dangerTitle: "硬い金属との衝突による『深いクラック』",
+        script: "「カバンの中の鍵や小銭は、レンズの最大の天敵です。歩くたびに硬い金属がレンズにぶつかり、<span class='text-red-400 font-bold border-b border-red-400/50 pb-0.5'>修復不可能な深いキズ</span>を刻んでしまいます。光が乱反射し、夜間の運転などが非常に危険になります。」"
+      },
+      outdoor: {
+        dangerTitle: "鉱物系の強力な研磨による『コーティング剥がれ』",
+        script: "「砂埃には非常に硬い鉱物が含まれています。それをそのまま拭き取るのは、レンズ表面の繊細な構造を<span class='text-red-400 font-bold border-b border-red-400/50 pb-0.5'>ゴリゴリと強制的に剥がし落としている</span>のと同じ行為です。一度剥がれると元には戻りません。」"
+      }
+    };
+
+    let currentAction = '';
+
+    // --- DOM Elements ---
+    const step1 = document.getElementById('step1-container');
+    const step2 = document.getElementById('step2-container');
+    const step3 = document.getElementById('step3-container');
+    const svgArea = document.getElementById('scratch-svg');
+    const blurLayer = document.getElementById('standard-blur-layer');
+    const shieldLayer = document.getElementById('shield-layer');
+    const statusBadge = document.getElementById('status-badge');
+    const dangerTitle = document.getElementById('danger-title');
+    const dangerScript = document.getElementById('danger-script');
+
+    // --- アニメーション関数 ---
+    function generateScratches(isDeflected = false) {
+      svgArea.innerHTML = ''; // クリア
+      const numScratches = isDeflected ? 8 : 25; // 防御時は少なめのキズが弾かれる
+      
+      for (let i = 0; i < numScratches; i++) {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        const x1 = Math.random() * 100;
+        const y1 = Math.random() * 100;
+        const length = 10 + Math.random() * 30;
+        const angle = Math.random() * Math.PI * 2;
+        const x2 = x1 + Math.cos(angle) * length;
+        const y2 = y1 + Math.sin(angle) * length;
+
+        line.setAttribute("x1", `${x1}%`);
+        line.setAttribute("y1", `${y1}%`);
+        line.setAttribute("x2", `${x2}%`);
+        line.setAttribute("y2", `${y2}%`);
+        
+        const strokeColor = isDeflected ? "rgba(6, 182, 212, 0.8)" : "rgba(255, 255, 255, 0.7)";
+        line.setAttribute("stroke", strokeColor);
+        line.setAttribute("stroke-width", Math.random() * 1.5 + 0.5);
+        line.setAttribute("stroke-linecap", "round");
+        
+        // クラスの付与（標準か、弾かれるか）
+        line.setAttribute("class", isDeflected ? "scratch-deflect" : "scratch-line");
+        
+        // 描画タイミングを少しずらす
+        line.style.animationDelay = `${Math.random() * 0.2}s`;
+        
+        svgArea.appendChild(line);
+      }
+    }
+
+    // --- 状態遷移 ---
+    
+    // Step 1 -> Step 2 (標準レンズへのダメージ)
+    window.triggerSimulation = (actionKey) => {
+      currentAction = actionKey;
+      const data = actionData[actionKey];
+
+      // テキスト注入
+      dangerTitle.innerText = data.dangerTitle;
+      dangerScript.innerHTML = data.script;
+
+      // プログレッシブ・ディクロージャー (UI切り替え)
+      step1.classList.add('hidden');
+      step2.classList.remove('hidden');
+      step2.classList.add('flex');
+
+      // アニメーション実行 (標準レンズ破壊)
+      statusBadge.innerText = "⚠️ 標準レンズ (ダメージ蓄積)";
+      statusBadge.classList.replace('text-gray-300', 'text-red-400');
+      statusBadge.classList.replace('border-gray-600', 'border-red-500');
+      statusBadge.classList.add('bg-red-900/30');
+
+      generateScratches(false);
+      
+      // 視界が曇る
+      setTimeout(() => {
+        blurLayer.classList.remove('opacity-0');
+        blurLayer.classList.add('opacity-100');
+      }, 300);
+    };
+
+    // Step 2 -> Step 3 (コーティングによる防御)
+    window.triggerCoating = () => {
+      // プログレッシブ・ディクロージャー (UI切り替え)
+      step2.classList.add('hidden');
+      step2.classList.remove('flex');
+      step3.classList.remove('hidden');
+      step3.classList.add('flex');
+
+      // 状態リセット
+      svgArea.innerHTML = '';
+      blurLayer.classList.replace('opacity-100', 'opacity-0');
+
+      // バッジ更新
+      statusBadge.innerHTML = '<span class="text-glow">🛡️ 最強キズ防止コーティング</span>';
+      statusBadge.className = 'glass-panel px-3 py-1 rounded-full text-xs font-bold text-cyan-400 border border-cyan-500/50 bg-cyan-900/30';
+
+      // シールド展開アニメーション
+      shieldLayer.classList.remove('opacity-0');
+      shieldLayer.classList.add('opacity-100');
+
+      // キズが弾かれるアニメーション
+      setTimeout(() => {
+        generateScratches(true);
+      }, 400);
+
+      // シールドを少しフェードアウト（視界確保のため）
+      setTimeout(() => {
+        shieldLayer.classList.replace('opacity-100', 'opacity-60');
+      }, 2000);
+    };
+
+    // リセット処理
+    window.resetApp = () => {
+      step3.classList.add('hidden');
+      step3.classList.remove('flex');
+      step1.classList.remove('hidden');
+      
+      svgArea.innerHTML = '';
+      blurLayer.classList.replace('opacity-100', 'opacity-0');
+      shieldLayer.classList.replace('opacity-60', 'opacity-0');
+      shieldLayer.classList.replace('opacity-100', 'opacity-0');
+      
+      statusBadge.innerText = "標準レンズ";
+      statusBadge.className = 'glass-panel px-3 py-1 rounded-full text-xs font-bold text-gray-300 border border-gray-600';
+    };
+  </script>
+</body>
+</html>
