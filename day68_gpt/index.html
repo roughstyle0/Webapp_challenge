@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>夏の曇りストレスゼロ体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --ice: #72e7ff;
+      --ice-deep: #0ea5e9;
+      --hot: #ff8a2a;
+      --hot-deep: #ef4444;
+      --night: #071421;
+      --panel: rgba(10, 26, 42, .72);
+      --glass: rgba(255,255,255,.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #ecfeff;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(114, 231, 255, .28), transparent 30%),
+        radial-gradient(circle at 92% 12%, rgba(255, 138, 42, .26), transparent 32%),
+        linear-gradient(160deg, #04111d 0%, #082032 48%, #111827 100%);
+      overflow-x: hidden;
+    }
+
+    .ambient-grid {
+      background-image:
+        linear-gradient(rgba(114,231,255,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(114,231,255,.08) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 82%);
+    }
+
+    .air-flow {
+      background: repeating-linear-gradient(
+        115deg,
+        transparent 0px,
+        transparent 20px,
+        rgba(114,231,255,.08) 21px,
+        rgba(114,231,255,.08) 23px
+      );
+      animation: drift 7s linear infinite;
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(-4%, 0, 0); }
+      to { transform: translate3d(4%, 2%, 0); }
+    }
+
+    .shell {
+      width: min(100%, 460px);
+      margin-inline: auto;
+      min-height: 100vh;
+      padding: 22px 16px 28px;
+      position: relative;
+    }
+
+    .top-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(114,231,255,.35);
+      background: rgba(8, 47, 73, .56);
+      color: #cffafe;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: .08em;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 24px rgba(14,165,233,.16) inset;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: var(--ice);
+      box-shadow: 0 0 14px var(--ice);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: .55; transform: scale(.86); }
+      50% { opacity: 1; transform: scale(1.18); }
+    }
+
+    .hero-title {
+      font-size: clamp(30px, 8.6vw, 44px);
+      line-height: 1.03;
+      letter-spacing: -.055em;
+      margin: 18px 0 12px;
+      font-weight: 900;
+    }
+
+    .hero-title span {
+      background: linear-gradient(90deg, #e0fbff, var(--ice), var(--hot));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lead {
+      color: #b6d9e9;
+      line-height: 1.78;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .climate-strip {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 26px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(90deg, rgba(14,165,233,.20), rgba(255,255,255,.06), rgba(249,115,22,.22));
+      backdrop-filter: blur(18px);
+      box-shadow: 0 20px 60px rgba(0,0,0,.24);
+    }
+
+    .climate-cell {
+      min-width: 0;
+      padding: 10px;
+      border-radius: 18px;
+    }
+
+    .climate-label {
+      font-size: 10px;
+      color: #aac7d4;
+      letter-spacing: .12em;
+      margin-bottom: 3px;
+    }
+
+    .climate-value {
+      font-weight: 900;
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .arrow-chip {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 26px 0 12px;
+      font-size: 15px;
+      font-weight: 900;
+      color: #f0fdff;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(var(--ice), var(--hot));
+      box-shadow: 0 0 16px rgba(114,231,255,.65);
+    }
+
+    .scene-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .scene-btn {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.14);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.04)),
+        rgba(6, 20, 32, .74);
+      color: #ecfeff;
+      border-radius: 24px;
+      padding: 15px;
+      text-align: left;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 14px 38px rgba(0,0,0,.18);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .scene-btn:active { transform: scale(.985); }
+    .scene-btn.selected {
+      border-color: rgba(114,231,255,.75);
+      box-shadow: 0 0 0 3px rgba(114,231,255,.12), 0 18px 50px rgba(14,165,233,.18);
+    }
+
+    .scene-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.4), rgba(114,231,255,.16));
+      border: 1px solid rgba(114,231,255,.24);
+    }
+
+    .scene-copy strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.45;
+      letter-spacing: -.02em;
+    }
+
+    .scene-copy small {
+      display: block;
+      color: #93c5d7;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+
+    .reveal {
+      display: none;
+      margin-top: 18px;
+      animation: lift .5s ease both;
+    }
+
+    .reveal.show { display: block; }
+
+    @keyframes lift {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 5px;
+      border-radius: 22px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .mode-tab {
+      border: 0;
+      border-radius: 17px;
+      padding: 12px 8px;
+      color: #c7e6f3;
+      font-weight: 900;
+      font-size: 13px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .mode-tab.active.standard {
+      color: #fff7ed;
+      background: linear-gradient(135deg, rgba(249,115,22,.85), rgba(239,68,68,.55));
+      box-shadow: 0 10px 28px rgba(249,115,22,.26);
+    }
+
+    .mode-tab.active.coat {
+      color: #ecfeff;
+      background: linear-gradient(135deg, rgba(34,211,238,.86), rgba(14,165,233,.55));
+      box-shadow: 0 10px 28px rgba(34,211,238,.24);
+    }
+
+    .viewport {
+      margin-top: 14px;
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.14);
+      background: #06131f;
+      box-shadow: 0 30px 80px rgba(0,0,0,.35);
+    }
+
+    .view-scene {
+      min-height: 290px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+      position: relative;
+      background:
+        radial-gradient(circle at 18% 15%, rgba(114,231,255,.24), transparent 28%),
+        radial-gradient(circle at 86% 16%, rgba(255,138,42,.26), transparent 32%),
+        linear-gradient(180deg, #061827, #10202c 52%, #211711 100%);
+    }
+
+    .environment-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .env-box {
+      padding: 12px;
+      border-radius: 20px;
+      min-height: 82px;
+      border: 1px solid rgba(255,255,255,.14);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .env-box.ice {
+      background: linear-gradient(150deg, rgba(14,165,233,.34), rgba(255,255,255,.08));
+    }
+
+    .env-box.hot {
+      background: linear-gradient(150deg, rgba(249,115,22,.34), rgba(255,255,255,.06));
+    }
+
+    .env-box p {
+      margin: 0;
+      font-size: 11px;
+      color: #c8dce7;
+    }
+
+    .env-box b {
+      display: block;
+      font-size: 21px;
+      line-height: 1;
+      margin-top: 8px;
+    }
+
+    .lens-stage {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 26px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .lens-graphic {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .lens {
+      height: 96px;
+      border-radius: 46% 54% 50% 50% / 56% 56% 44% 44%;
+      border: 2px solid rgba(210,250,255,.74);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.34), rgba(114,231,255,.09)),
+        rgba(255,255,255,.04);
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 24px rgba(255,255,255,.18), 0 0 24px rgba(114,231,255,.10);
+    }
+
+    .lens::before {
+      content: "";
+      display: block;
+      height: 100%;
+      background:
+        linear-gradient(125deg, rgba(255,255,255,.45), transparent 34%),
+        radial-gradient(circle at 50% 65%, rgba(255,255,255,.14), transparent 42%);
+    }
+
+    .fog-layer {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(15,23,42,.68);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    .standard-run .fog-layer {
+      animation: fogShock 3.2s ease-in-out infinite;
+    }
+
+    @keyframes fogShock {
+      0% { opacity: 0; transform: scale(.98); filter: blur(0); }
+      16% { opacity: .98; transform: scale(1.02); filter: blur(1px); }
+      68% { opacity: .90; }
+      100% { opacity: .10; transform: scale(1); }
+    }
+
+    .coat-run .lens {
+      border-color: rgba(103,232,249,.92);
+      box-shadow: inset 0 0 28px rgba(103,232,249,.22), 0 0 28px rgba(34,211,238,.24);
+    }
+
+    .coat-run .lens::after {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.42), transparent 62%);
+      animation: shine 2.4s linear infinite;
+    }
+
+    @keyframes shine {
+      from { transform: translateX(-90%); }
+      to { transform: translateX(90%); }
+    }
+
+    .bridge {
+      height: 16px;
+      width: 44px;
+      border-top: 3px solid rgba(210,250,255,.72);
+      border-radius: 999px;
+      margin-inline: auto;
+      grid-column: 1 / -1;
+      margin-top: -4px;
+    }
+
+    .status-panel {
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      color: #d9f7ff;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .status-marker {
+      flex: 0 0 auto;
+      width: 9px;
+      height: 9px;
+      margin-top: 6px;
+      border-radius: 99px;
+      background: var(--hot);
+      box-shadow: 0 0 12px var(--hot);
+    }
+
+    .coat-run .status-marker {
+      background: var(--ice);
+      box-shadow: 0 0 12px var(--ice);
+    }
+
+    .script-box {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.14);
+      background:
+        linear-gradient(135deg, rgba(114,231,255,.16), rgba(255,138,42,.10)),
+        rgba(5, 18, 30, .78);
+      backdrop-filter: blur(18px);
+    }
+
+    .script-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #a5f3fc;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: .08em;
+      margin-bottom: 10px;
+    }
+
+    .script-text {
+      margin: 0;
+      color: #f8feff;
+      font-size: 15px;
+      line-height: 1.85;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+
+    .script-text mark {
+      color: #082f49;
+      background: linear-gradient(90deg, #67e8f9, #fed7aa);
+      border-radius: 7px;
+      padding: 1px 5px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .step-talks {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .talk-card {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .talk-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      background: rgba(114,231,255,.16);
+      color: #a5f3fc;
+    }
+
+    .talk-card b {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 3px;
+      color: #fff;
+    }
+
+    .talk-card p {
+      margin: 0;
+      font-size: 12px;
+      color: #bdd7e5;
+      line-height: 1.65;
+    }
+
+    .reset-btn {
+      margin-top: 14px;
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 20px;
+      padding: 13px 14px;
+      color: #e0faff;
+      background: rgba(255,255,255,.07);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    @media (min-width: 768px) {
+      .shell { width: min(100%, 900px); padding: 34px 24px 42px; }
+      .app-layout { display: grid; grid-template-columns: .9fr 1.1fr; gap: 22px; align-items: start; }
+      .hero-title { font-size: 56px; }
+      .lead { font-size: 15px; }
+      .reveal { margin-top: 0; }
+      .scene-grid { gap: 14px; }
+      .view-scene { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-grid fixed inset-0 pointer-events-none"></div>
+  <div class="air-flow fixed inset-0 pointer-events-none opacity-80"></div>
+
+  <main class="shell">
+    <div class="top-badge"><span class="pulse-dot"></span>SUMMER ANTI-FOG CONTROL</div>
+
+    <header>
+      <h1 class="hero-title">冷房の部屋から出た瞬間、<span>真っ白な絶望</span>をゼロへ。</h1>
+      <p class="lead">冬だけではありません。夏のメガネ曇りは「冷えたレンズ」と「蒸し暑い外気」の温度差で一気に起きます。まずは、お客様がイラッとする瞬間を1つ選んでください。</p>
+
+      <div class="climate-strip" aria-label="温度差のイメージ">
+        <div class="climate-cell">
+          <div class="climate-label">COOL ROOM</div>
+          <div class="climate-value text-cyan-200">22℃</div>
+        </div>
+        <div class="arrow-chip">→</div>
+        <div class="climate-cell text-right">
+          <div class="climate-label">HUMID OUTSIDE</div>
+          <div class="climate-value text-orange-200">33℃</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-layout mt-6">
+      <section>
+        <h2 class="section-title">夏場に曇ってイラッとする瞬間</h2>
+        <div class="scene-grid" id="sceneButtons"></div>
+      </section>
+
+      <section class="reveal" id="simulatorArea" aria-live="polite">
+        <h2 class="section-title">曇り＆クリア シミュレーション</h2>
+
+        <div class="mode-tabs">
+          <button class="mode-tab standard active" id="standardBtn" type="button">標準レンズ</button>
+          <button class="mode-tab coat" id="coatBtn" type="button">最強くもり止め</button>
+        </div>
+
+        <div class="viewport">
+          <div class="view-scene standard-run" id="viewScene">
+            <div class="environment-panel">
+              <div class="env-box ice">
+                <p id="fromLabel">冷房空間</p>
+                <b class="text-cyan-100" id="fromTemp">22℃</b>
+              </div>
+              <div class="env-box hot">
+                <p id="toLabel">蒸し暑い屋外</p>
+                <b class="text-orange-100" id="toTemp">33℃</b>
+              </div>
+            </div>
+
+            <div class="lens-stage">
+              <div class="lens-graphic" aria-label="レンズの曇り具合">
+                <div class="lens"><div class="fog-layer">WHITE OUT</div></div>
+                <div class="lens"><div class="fog-layer">WHITE OUT</div></div>
+                <div class="bridge"></div>
+              </div>
+              <div class="status-panel" id="statusPanel"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="script-box">
+          <div class="script-kicker">📣 接客トークスクリプト</div>
+          <p class="script-text" id="mainScript"></p>
+          <div class="step-talks" id="stepTalks"></div>
+        </div>
+
+        <button class="reset-btn" type="button" id="replayBtn">もう一度シミュレーションを見る</button>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const scenes = [
+      {
+        id: 'car',
+        icon: '🚗',
+        title: '冷房の効いた車から、夏の屋外に出た瞬間',
+        sub: 'レンズが冷えきった状態で高温多湿の外気へ',
+        from: '冷房の車内',
+        to: '夏の屋外',
+        fromTemp: '21℃',
+        toTemp: '34℃',
+        pain: '車から降りた瞬間、視界が一気に白くなり、足元や段差が見えにくくなります。'
+      },
+      {
+        id: 'train',
+        icon: '🚃',
+        title: '満員電車から、蒸し暑い駅のホームに降りた瞬間',
+        sub: '汗・湿気・人混みで曇りストレスが最大化',
+        from: '冷房の満員電車',
+        to: '蒸し暑いホーム',
+        fromTemp: '23℃',
+        toTemp: '32℃',
+        pain: '人の流れの中で急に見えなくなるので、スマホ確認も移動も一気にストレスになります。'
+      },
+      {
+        id: 'cafe',
+        icon: '☕',
+        title: '涼しいカフェから、テラス席に移動した瞬間',
+        sub: '快適空間から湿度の高い外へ。会話中にも曇る',
+        from: '涼しいカフェ',
+        to: 'テラス席',
+        fromTemp: '22℃',
+        toTemp: '31℃',
+        pain: 'せっかくの外出中に、何度も拭く・待つ・見えないという小さな不快が積み重なります。'
+      }
+    ];
+
+    const sceneButtons = document.getElementById('sceneButtons');
+    const simulatorArea = document.getElementById('simulatorArea');
+    const viewScene = document.getElementById('viewScene');
+    const standardBtn = document.getElementById('standardBtn');
+    const coatBtn = document.getElementById('coatBtn');
+    const replayBtn = document.getElementById('replayBtn');
+    const statusPanel = document.getElementById('statusPanel');
+    const mainScript = document.getElementById('mainScript');
+    const stepTalks = document.getElementById('stepTalks');
+    const fromLabel = document.getElementById('fromLabel');
+    const toLabel = document.getElementById('toLabel');
+    const fromTemp = document.getElementById('fromTemp');
+    const toTemp = document.getElementById('toTemp');
+
+    let selectedScene = scenes[0];
+    let mode = 'standard';
+
+    function renderSceneButtons() {
+      sceneButtons.innerHTML = scenes.map(scene => `
+        <button class="scene-btn" type="button" data-scene="${scene.id}">
+          <span class="scene-icon">${scene.icon}</span>
+          <span class="scene-copy">
+            <strong>${scene.title}</strong>
+            <small>${scene.sub}</small>
+          </span>
+        </button>
+      `).join('');
+
+      sceneButtons.querySelectorAll('.scene-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          selectedScene = scenes.find(scene => scene.id === button.dataset.scene);
+          mode = 'standard';
+          simulatorArea.classList.add('show');
+          document.querySelectorAll('.scene-btn').forEach(btn => btn.classList.remove('selected'));
+          button.classList.add('selected');
+          updateSimulator(true);
+          setTimeout(() => simulatorArea.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        });
+      });
+    }
+
+    function updateSimulator(restartAnimation = false) {
+      fromLabel.textContent = selectedScene.from;
+      toLabel.textContent = selectedScene.to;
+      fromTemp.textContent = selectedScene.fromTemp;
+      toTemp.textContent = selectedScene.toTemp;
+
+      standardBtn.classList.toggle('active', mode === 'standard');
+      coatBtn.classList.toggle('active', mode === 'coat');
+      viewScene.classList.toggle('standard-run', mode === 'standard');
+      viewScene.classList.toggle('coat-run', mode === 'coat');
+
+      if (restartAnimation) {
+        viewScene.style.animation = 'none';
+        viewScene.offsetHeight;
+        viewScene.style.animation = '';
+        document.querySelectorAll('.fog-layer').forEach(layer => {
+          layer.style.animation = 'none';
+          layer.offsetHeight;
+          layer.style.animation = '';
+        });
+      }
+
+      if (mode === 'standard') {
+        statusPanel.innerHTML = `
+          <div class="status-line"><span class="status-marker"></span><span>温度差でレンズ表面に細かい水滴が発生。視界が白くにじみます。</span></div>
+          <div class="status-line"><span class="status-marker"></span><span>${selectedScene.pain}</span></div>
+        `;
+        mainScript.innerHTML = `「実は、<mark>夏の曇りは冬よりも急激で危険</mark>です。冷房で冷えたレンズが、蒸し暑い外気に触れた瞬間に一気に結露します。毎回拭くのは、地味ですがかなりストレスですよね。」`;
+        stepTalks.innerHTML = `
+          <div class="talk-card"><div class="talk-num">1</div><div><b>共感する</b><p>「冬だけでなく、夏の外出時にも曇りはかなり起きやすいです。」</p></div></div>
+          <div class="talk-card"><div class="talk-num">2</div><div><b>危険性を見せる</b><p>「一瞬見えないだけでも、段差・人混み・運転後の移動では不安があります。」</p></div></div>
+        `;
+      } else {
+        statusPanel.innerHTML = `
+          <div class="status-line"><span class="status-marker"></span><span>特殊な親水膜が水滴を粒にせず、薄くなじませるため白く曇りにくい状態を維持します。</span></div>
+          <div class="status-line"><span class="status-marker"></span><span>同じ温度差でも、視界はクリアなまま。拭く・待つ・塗る手間を減らせます。</span></div>
+        `;
+        mainScript.innerHTML = `「こちらは、<mark>スプレーやジェルを毎日塗る“あの面倒な作業”から解放される</mark>メンテナンスフリーの防曇コーティングです。夏の移動が多い方ほど、毎日のタイパがかなり良くなります。」`;
+        stepTalks.innerHTML = `
+          <div class="talk-card"><div class="talk-num">1</div><div><b>手間をなくす価値</b><p>「曇るたびに拭く、くもり止めを塗る、その小さな手間を減らせます。」</p></div></div>
+          <div class="talk-card"><div class="talk-num">2</div><div><b>高単価の納得材料</b><p>「毎日使うメガネだからこそ、“見えない瞬間”をなくす快適性に価値があります。」</p></div></div>
+          <div class="talk-card"><div class="talk-num">3</div><div><b>クロージング</b><p>「夏も冬も曇りストレスを減らしたいなら、今回は防曇コーティングまで入れておくのがおすすめです。」</p></div></div>
+        `;
+      }
+    }
+
+    standardBtn.addEventListener('click', () => {
+      mode = 'standard';
+      updateSimulator(true);
+    });
+
+    coatBtn.addEventListener('click', () => {
+      mode = 'coat';
+      updateSimulator(true);
+    });
+
+    replayBtn.addEventListener('click', () => updateSimulator(true));
+
+    renderSceneButtons();
+  </script>
+</body>
+</html>
