@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>最強くもり止めコーティング体験シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        cyber: ['"Rajdhani"', 'sans-serif'],
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#0a0a0f',
+                            panel: '#12121c',
+                            border: '#2a2a40',
+                            ice: '#00e5ff',
+                            hot: '#ff6d00',
+                            text: '#e0e0e0',
+                            highlight: '#facc15'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-ice': '0 0 10px rgba(0, 229, 255, 0.5), inset 0 0 5px rgba(0, 229, 255, 0.2)',
+                        'neon-hot': '0 0 15px rgba(255, 109, 0, 0.6), inset 0 0 8px rgba(255, 109, 0, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base & Reset */
+        body {
+            background-color: #0a0a0f;
+            color: #e0e0e0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Cyberpunk UI Elements */
+        .cyber-panel {
+            background: linear-gradient(145deg, #12121c, #0a0a0f);
+            border: 1px solid #2a2a40;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cyber-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--panel-accent, #2a2a40), transparent);
+        }
+
+        .cyber-button {
+            position: relative;
+            background: transparent;
+            border: 1px solid var(--btn-color, #00e5ff);
+            color: var(--btn-color, #00e5ff);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .cyber-button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: var(--btn-color, #00e5ff);
+            opacity: 0.1;
+            transition: all 0.3s ease;
+            z-index: -1;
+        }
+
+        .cyber-button:active::before {
+            left: 0;
+            opacity: 0.3;
+        }
+
+        /* Lens Simulation Area */
+        #lens-viewport {
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #8FBC8F 50%, #2E8B57 100%);
+            transition: filter 1s ease-in-out;
+            /* 疑似的な風景（CSSのみで表現） */
+            background-size: 100% 200%;
+            background-position: center bottom;
+        }
+
+        /* Fog Animation Classes */
+        .lens-clear {
+            filter: blur(0px) brightness(1) contrast(1);
+        }
+        .lens-fogged {
+            filter: blur(12px) brightness(1.5) contrast(0.8);
+        }
+        .lens-coated {
+            filter: blur(0px) brightness(1.05) contrast(1.1);
+        }
+
+        /* Water Drops (Coating Effect) */
+        .water-drop {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2), 1px 1px 2px rgba(255,255,255,0.8);
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        @keyframes drop-fade-out {
+            0% { opacity: 0; transform: scale(0.5); }
+            20% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5) translateY(20px); }
+        }
+
+        /* Talk Script Highlight */
+        .script-highlight {
+            background: linear-gradient(transparent 60%, rgba(250, 204, 21, 0.4) 60%);
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Scanline Overlay for Cyber feel */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.3;
+        }
+
+        /* Utilities */
+        .hidden-step { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col items-center p-4">
+    <div class="scanlines"></div>
+
+    <!-- Main App Container: 完璧なレスポンシブ骨組み (最大幅固定、中央配置) -->
+    <main class="w-full max-w-md flex flex-col gap-6 relative z-10 pb-10">
+        
+        <!-- Header -->
+        <header class="text-center pt-4">
+            <p class="text-cyber-ice font-cyber tracking-widest text-sm mb-1">ENVIRONMENT SIMULATOR v2.0</p>
+            <h1 class="text-2xl font-black text-white leading-tight">
+                「夏の曇り」<br>ストレスゼロ体験
+            </h1>
+        </header>
+
+        <!-- ==========================================
+             STEP 1: シチュエーション選択 (初期画面)
+        =========================================== -->
+        <section id="step-1" class="flex flex-col gap-4 fade-in">
+            <div class="cyber-panel p-5 rounded-lg text-center" style="--panel-accent: #00e5ff;">
+                <p class="text-sm text-gray-300 mb-4">お客様が日常で遭遇する、<br><span class="text-cyber-ice font-bold">急激な温度差</span>のシーンを選択してください。</p>
+                
+                <div class="flex flex-col gap-3">
+                    <button onclick="startSimulation('car')" class="cyber-button rounded p-4 text-left flex items-center justify-between" style="--btn-color: #00e5ff;">
+                        <div>
+                            <span class="block text-xs font-cyber text-gray-400">SCENE 01</span>
+                            <span class="block font-bold text-base mt-1">冷房の効いた車 → 夏の屋外</span>
+                        </div>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+
+                    <button onclick="startSimulation('train')" class="cyber-button rounded p-4 text-left flex items-center justify-between" style="--btn-color: #00e5ff;">
+                        <div>
+                            <span class="block text-xs font-cyber text-gray-400">SCENE 02</span>
+                            <span class="block font-bold text-base mt-1">満員電車 → 蒸し暑い駅のホーム</span>
+                        </div>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+
+                    <button onclick="startSimulation('cafe')" class="cyber-button rounded p-4 text-left flex items-center justify-between" style="--btn-color: #00e5ff;">
+                        <div>
+                            <span class="block text-xs font-cyber text-gray-400">SCENE 03</span>
+                            <span class="block font-bold text-base mt-1">涼しいカフェ → テラス席</span>
+                        </div>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             STEP 2 & 3: シミュレーション & トーク
+        =========================================== -->
+        <section id="step-2" class="hidden-step flex-col gap-4">
+            
+            <!-- Environment Indicator (温度・湿度) -->
+            <div id="env-panel" class="cyber-panel p-4 rounded-lg flex justify-between items-center transition-colors duration-1000" style="--panel-accent: #00e5ff;">
+                <div class="flex flex-col">
+                    <span class="text-xs font-cyber text-gray-400 mb-1" id="env-label">INDOOR (AIR CONDITIONED)</span>
+                    <div class="flex items-end gap-2">
+                        <span class="font-cyber text-4xl font-bold leading-none text-white" id="val-temp">22</span>
+                        <span class="text-sm text-gray-400 pb-1">°C</span>
+                    </div>
+                </div>
+                <div class="h-10 w-[1px] bg-cyber-border"></div>
+                <div class="flex flex-col text-right">
+                    <span class="text-xs font-cyber text-gray-400 mb-1">HUMIDITY</span>
+                    <div class="flex items-end justify-end gap-2">
+                        <span class="font-cyber text-4xl font-bold leading-none text-white" id="val-hum">40</span>
+                        <span class="text-sm text-gray-400 pb-1">%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lens Viewport (文字と画像は絶対に被らせない独立ブロック) -->
+            <div class="w-full aspect-video rounded-lg overflow-hidden border-2 border-cyber-border relative flex items-center justify-center bg-gray-900" id="lens-frame">
+                <!-- 視界(背景) -->
+                <div id="lens-viewport" class="absolute inset-0 lens-clear"></div>
+                
+                <!-- 親水コーティングエフェクト用コンテナ -->
+                <div id="water-drop-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+
+                <!-- ステータスラベル (ビューポート内の情報表示用。絶対被らない位置に配置) -->
+                <div class="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-xs font-cyber tracking-widest text-white border border-gray-600" id="lens-status-label">
+                    STANDARD LENS
+                </div>
+            </div>
+
+            <!-- Control Action (プログレッシブ開示) -->
+            <div id="action-area" class="w-full flex justify-center py-2 min-h-[60px]">
+                <!-- 初期は空、曇り発生後にボタンを挿入 -->
+            </div>
+
+            <!-- Talk Script Container (スタッフ向けカンペ - 独立ブロック) -->
+            <div class="cyber-panel p-4 rounded-lg border-l-4 border-l-cyber-ice mt-2 relative" id="talk-script-panel">
+                <span class="absolute -top-3 left-3 bg-cyber-dark px-2 text-xs font-bold text-cyber-ice flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                    接客トーク
+                </span>
+                <!-- トーク内容はJSで動的に注入し、情報過多を防ぐ -->
+                <p id="talk-content" class="text-sm leading-relaxed mt-2 text-gray-200">
+                    <!-- Text inserted via JS -->
+                </p>
+            </div>
+
+            <!-- Reset Button -->
+            <button onclick="resetApp()" class="mt-4 text-xs text-gray-500 underline text-center w-full py-2">
+                シナリオを選び直す
+            </button>
+
+        </section>
+    </main>
+
+    <script>
+        // --- State Data ---
+        const scenes = {
+            car: { name: "冷房の車 → 外", tIn: 22, hIn: 40, tOut: 36, hOut: 85 },
+            train: { name: "満員電車 → ホーム", tIn: 24, hIn: 50, tOut: 34, hOut: 90 },
+            cafe: { name: "カフェ → テラス", tIn: 20, hIn: 30, tOut: 35, hOut: 75 }
+        };
+
+        // --- DOM Elements ---
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const valTemp = document.getElementById('val-temp');
+        const valHum = document.getElementById('val-hum');
+        const envLabel = document.getElementById('env-label');
+        const envPanel = document.getElementById('env-panel');
+        const lensViewport = document.getElementById('lens-viewport');
+        const lensStatusLabel = document.getElementById('lens-status-label');
+        const lensFrame = document.getElementById('lens-frame');
+        const actionArea = document.getElementById('action-area');
+        const talkContent = document.getElementById('talk-content');
+        const dropContainer = document.getElementById('water-drop-container');
+        const talkPanel = document.getElementById('talk-script-panel');
+
+        let currentScene = null;
+
+        // --- Core Logic ---
+
+        function startSimulation(sceneKey) {
+            currentScene = scenes[sceneKey];
+            
+            // UI Switch (プログレッシブ・ディクロージャー)
+            step1.classList.add('hidden-step');
+            step2.classList.remove('hidden-step');
+            step2.classList.add('flex');
+            
+            // 初期状態（室内）セット
+            setEnvironmentUI(currentScene.tIn, currentScene.hIn, 'INDOOR', 'cyber-ice');
+            lensViewport.className = 'absolute inset-0 lens-clear';
+            lensStatusLabel.innerText = 'STANDARD LENS';
+            talkContent.innerHTML = `〇〇様、現在<span class="script-highlight">「${currentScene.name}」</span>に出る場面を想定しています。<br>このまま外に出るとどうなるか、ご覧ください。`;
+            talkPanel.style.borderLeftColor = 'var(--cyber-ice)';
+            actionArea.innerHTML = '';
+            dropContainer.innerHTML = '';
+
+            // 2秒後に外に出るイベント発火
+            setTimeout(() => {
+                triggerFogEvent();
+            }, 2500);
+        }
+
+        function triggerFogEvent() {
+            // 温度・湿度を屋外（高温多湿）へアニメーション
+            animateValue(valTemp, currentScene.tIn, currentScene.tOut, 1000);
+            animateValue(valHum, currentScene.hIn, currentScene.hOut, 1000);
+            
+            // UIをホット仕様へ変更
+            envLabel.innerText = 'OUTDOOR (HOT & HUMID)';
+            envLabel.classList.replace('text-gray-400', 'text-cyber-hot');
+            envPanel.classList.add('shadow-neon-hot');
+            envPanel.style.setProperty('--panel-accent', '#ff6d00');
+            
+            // 絶望の曇りエフェクト実行（1秒かけてジワッと、その後一気に真っ白）
+            setTimeout(() => {
+                lensViewport.className = 'absolute inset-0 lens-fogged';
+                
+                // 絶望トークの表示
+                talkPanel.style.borderLeftColor = '#ef4444'; // Red alert
+                talkContent.innerHTML = `
+                    <span class="text-red-400 font-bold block mb-1">【お客様への声掛け】</span>
+                    「あっという間に真っ白ですね…。実は、<span class="script-highlight">冬よりも夏の温度差の方が、結露が急激で危険</span>なんです。これでは何も見えませんよね。」
+                `;
+
+                // 解決策ボタンの提示 (プログレッシブ開示)
+                actionArea.innerHTML = `
+                    <button onclick="applyCoating()" class="cyber-button w-full max-w-[240px] rounded-full py-3 font-bold text-center fade-in shadow-neon-ice" style="--btn-color: #00e5ff; background: rgba(0,229,255,0.1);">
+                        最強くもり止めを適用する
+                    </button>
+                `;
+            }, 800);
+        }
+
+        function applyCoating() {
+            // アクションボタンを消す
+            actionArea.innerHTML = `
+                <div class="flex items-center gap-2 text-cyber-ice font-cyber text-sm fade-in">
+                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    ANTI-FOG COATING ACTIVATED...
+                </div>
+            `;
+
+            // フレームを発光させる演出
+            lensFrame.classList.add('border-cyber-ice', 'shadow-neon-ice');
+            lensStatusLabel.innerText = 'ANTI-FOG COATED';
+            lensStatusLabel.classList.replace('border-gray-600', 'border-cyber-ice');
+            lensStatusLabel.classList.add('text-cyber-ice');
+
+            setTimeout(() => {
+                // 曇りを一瞬で消す
+                lensViewport.className = 'absolute inset-0 lens-coated';
+                
+                // 親水エフェクト（水滴が馴染んで消える演出）
+                createWaterDrops();
+
+                actionArea.innerHTML = `
+                    <div class="text-cyber-ice font-bold tracking-wide fade-in flex items-center gap-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        視界クリア維持
+                    </div>
+                `;
+
+                // クロージングトークの表示
+                talkPanel.style.borderLeftColor = 'var(--cyber-ice)';
+                talkContent.innerHTML = `
+                    <span class="text-cyber-ice font-bold block mb-1">【提案・クロージング】</span>
+                    「ご覧ください！特殊な親水膜が水滴を瞬時に馴染ませて、<span class="script-highlight">1秒たりとも曇らせません。</span><br>
+                    毎日スプレーを塗る<span class="script-highlight">『あの面倒な作業』から解放される、メンテナンスフリーのレンズ</span>です。」
+                `;
+            }, 600);
+        }
+
+        function resetApp() {
+            step2.classList.add('hidden-step');
+            step2.classList.remove('flex');
+            step1.classList.remove('hidden-step');
+            
+            // クリーンアップ
+            envLabel.classList.remove('text-cyber-hot');
+            envLabel.classList.add('text-gray-400');
+            envPanel.classList.remove('shadow-neon-hot');
+            lensFrame.classList.remove('border-cyber-ice', 'shadow-neon-ice');
+            lensStatusLabel.classList.remove('border-cyber-ice', 'text-cyber-ice');
+            lensStatusLabel.classList.add('border-gray-600');
+        }
+
+        // --- Utilities ---
+        function setEnvironmentUI(temp, hum, label, accentClass) {
+            valTemp.innerText = temp;
+            valHum.innerText = hum;
+            envLabel.innerText = label;
+            envPanel.classList.remove('shadow-neon-hot', 'shadow-neon-ice');
+            // Reset to defaults
+        }
+
+        // 数値のカウントアップアニメーション（サイバー感の演出）
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // easeOutQuart 
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+                obj.innerHTML = Math.floor(easeOut * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // 親水コーティングが水滴を弾く/馴染ませるサイバーな演出
+        function createWaterDrops() {
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const drop = document.createElement('div');
+                    const size = Math.random() * 15 + 5;
+                    drop.className = 'water-drop';
+                    drop.style.width = `${size}px`;
+                    drop.style.height = `${size}px`;
+                    drop.style.left = `${Math.random() * 100}%`;
+                    drop.style.top = `${Math.random() * 100}%`;
+                    drop.style.animation = `drop-fade-out ${1.5 + Math.random()}s ease-out forwards`;
+                    dropContainer.appendChild(drop);
+                    
+                    // Cleanup
+                    setTimeout(() => drop.remove(), 3000);
+                }, i * 100);
+            }
+        }
+    </script>
+</body>
+</html>
