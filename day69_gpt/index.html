@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>疲れ目軽減・機能性カラーレンズ シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            clinic: {
+              ivory: '#F8F5EC',
+              sand: '#E8DDCA',
+              ink: '#2E332F',
+              sage: '#B8CDBE',
+              sageDark: '#6E8B77',
+              lavender: '#C9C3E6',
+              brown: '#B58B68',
+              mist: '#EEF3EF'
+            }
+          },
+          boxShadow: {
+            glow: '0 0 34px rgba(255,255,255,.95), 0 0 70px rgba(255,255,255,.8)',
+            soft: '0 18px 50px rgba(75, 67, 52, .12)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(201,195,230,.38), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(184,205,190,.5), transparent 34%),
+        linear-gradient(135deg, #F8F5EC 0%, #F2EBDD 100%);
+      color: #2E332F;
+    }
+
+    .glass-panel {
+      background: rgba(255, 252, 244, .78);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, .78);
+    }
+
+    .scene-standard {
+      filter: brightness(1.14) contrast(1.24);
+      animation: flicker 1.7s infinite;
+    }
+
+    .scene-standard .read-text {
+      text-shadow:
+        0 0 2px rgba(46,51,47,.8),
+        1px 0 3px rgba(255,255,255,.9),
+        -1px 0 3px rgba(255,255,255,.9);
+      letter-spacing: .015em;
+    }
+
+    .scene-tinted {
+      filter: brightness(.96) contrast(.95) saturate(.94);
+      background-blend-mode: multiply;
+    }
+
+    .lens-gray {
+      background:
+        linear-gradient(rgba(178, 177, 165, .22), rgba(178, 177, 165, .22)),
+        var(--scene-bg);
+    }
+
+    .lens-brown {
+      background:
+        linear-gradient(rgba(181, 139, 104, .18), rgba(181, 139, 104, .18)),
+        var(--scene-bg);
+    }
+
+    .lens-green {
+      background:
+        linear-gradient(rgba(184, 205, 190, .22), rgba(184, 205, 190, .22)),
+        var(--scene-bg);
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      42% { opacity: .94; }
+      45% { opacity: 1; }
+      49% { opacity: .9; }
+      53% { opacity: 1; }
+    }
+
+    .phone-notch {
+      width: 74px;
+      height: 20px;
+      border-radius: 999px;
+      background: #242824;
+      margin: 0 auto 10px;
+    }
+
+    .shine-line {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.9), transparent);
+      animation: shine 2.8s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(120%); }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  <main class="mx-auto flex min-h-screen w-full max-w-md flex-col gap-5 px-4 py-5 sm:max-w-2xl">
+    <header class="glass-panel rounded-[2rem] p-5 shadow-soft">
+      <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-clinic-mist px-3 py-1 text-xs font-bold text-clinic-sageDark">
+        <span class="h-2 w-2 rounded-full bg-clinic-sageDark"></span>
+        Eye Care Lens Advisor
+      </div>
+      <h1 class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+        スマホの文字が<br />
+        <span class="bg-gradient-to-r from-clinic-sageDark to-purple-500 bg-clip-text text-transparent">
+          チカチカするお客様へ
+        </span>
+      </h1>
+      <p class="mt-3 text-sm leading-7 text-stone-600">
+        薄い機能性カラーレンズで、白い光のまぶしさをやわらげる接客シミュレーターです。
+      </p>
+    </header>
+
+    <section id="stepScene" class="glass-panel rounded-[2rem] p-5 shadow-soft">
+      <div class="mb-4">
+        <p class="text-xs font-bold uppercase tracking-[.2em] text-clinic-sageDark">Step 1</p>
+        <h2 class="mt-1 text-lg font-black">お客様の「疲れるシーン」を選択</h2>
+        <p class="mt-2 text-sm leading-6 text-stone-600">
+          まずはお悩みに近いシーンを1つ選んでください。
+        </p>
+      </div>
+
+      <div class="grid gap-3">
+        <button data-scene="office" class="scene-btn group rounded-3xl border border-clinic-sand bg-white/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-clinic-sageDark hover:bg-white">
+          <div class="flex items-start gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-clinic-sage/45 text-xl">💻</div>
+            <div>
+              <p class="font-black">オフィスで長時間のパソコン作業</p>
+              <p class="mt-1 text-sm text-stone-500">画面の白さがまぶしい</p>
+            </div>
+          </div>
+        </button>
+
+        <button data-scene="phone" class="scene-btn group rounded-3xl border border-clinic-sand bg-white/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-clinic-sageDark hover:bg-white">
+          <div class="flex items-start gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-clinic-lavender/45 text-xl">📱</div>
+            <div>
+              <p class="font-black">夜、ベッドでスマホを見る時</p>
+              <p class="mt-1 text-sm text-stone-500">文字がチカチカする</p>
+            </div>
+          </div>
+        </button>
+
+        <button data-scene="outdoor" class="scene-btn group rounded-3xl border border-clinic-sand bg-white/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-clinic-sageDark hover:bg-white">
+          <div class="flex items-start gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-clinic-brown/25 text-xl">🌤️</div>
+            <div>
+              <p class="font-black">曇りや初夏の白っぽい屋外</p>
+              <p class="mt-1 text-sm text-stone-500">景色全体がまぶしい</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <section id="simulator" class="hidden flex-col gap-5">
+      <section class="glass-panel rounded-[2rem] p-5 shadow-soft">
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[.2em] text-clinic-sageDark">Step 2</p>
+            <h2 id="sceneTitle" class="mt-1 text-lg font-black">見え方シミュレーション</h2>
+          </div>
+          <button id="resetBtn" class="rounded-full bg-stone-800 px-4 py-2 text-sm font-bold text-white transition hover:bg-stone-700">
+            シーンを選び直す
+          </button>
+        </div>
+
+        <div class="grid gap-3 rounded-[1.75rem] bg-white/55 p-2">
+          <div class="grid grid-cols-2 gap-2 rounded-[1.35rem] bg-clinic-ivory p-1">
+            <button id="standardBtn" class="lens-btn rounded-[1.1rem] px-3 py-3 text-sm font-black transition">
+              標準レンズ
+            </button>
+            <button id="tintedBtn" class="lens-btn rounded-[1.1rem] px-3 py-3 text-sm font-black transition">
+              薄いカラー
+            </button>
+          </div>
+
+          <div id="sceneCard" class="relative overflow-hidden rounded-[1.65rem] border border-white bg-white p-4 shadow-glow transition duration-500">
+            <div class="shine-line pointer-events-none absolute inset-y-0 left-0 w-1/2 opacity-80"></div>
+
+            <div id="officeMock" class="scene-mock hidden">
+              <div class="rounded-2xl border border-stone-200 bg-white p-3">
+                <div class="mb-3 flex gap-1">
+                  <span class="h-3 w-3 rounded-full bg-red-300"></span>
+                  <span class="h-3 w-3 rounded-full bg-yellow-300"></span>
+                  <span class="h-3 w-3 rounded-full bg-green-300"></span>
+                </div>
+                <div class="grid gap-2">
+                  <div class="h-3 w-2/3 rounded bg-stone-800"></div>
+                  <p class="read-text text-sm leading-7">
+                    売上レポート、顧客管理、メール確認。白い画面を長時間見るほど、文字の輪郭がにじんで感じることがあります。
+                  </p>
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="h-12 rounded-xl bg-stone-100"></div>
+                    <div class="h-12 rounded-xl bg-stone-100"></div>
+                    <div class="h-12 rounded-xl bg-stone-100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="phoneMock" class="scene-mock hidden">
+              <div class="mx-auto max-w-[230px] rounded-[2rem] bg-stone-900 p-3">
+                <div class="phone-notch"></div>
+                <div class="rounded-[1.4rem] bg-white p-4">
+                  <p class="mb-3 text-xs font-bold text-stone-400">22:48 / Message</p>
+                  <p class="read-text text-sm leading-7">
+                    夜のスマホ画面は、周囲が暗いほど白い背景が強く感じられます。小さな文字ほどチカチカしやすくなります。
+                  </p>
+                  <div class="mt-3 h-8 rounded-full bg-stone-100"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="outdoorMock" class="scene-mock hidden">
+              <div class="overflow-hidden rounded-2xl border border-white bg-gradient-to-b from-white via-stone-100 to-clinic-sage/40">
+                <div class="h-20 bg-gradient-to-b from-white to-stone-100"></div>
+                <div class="grid grid-cols-3 gap-2 p-4">
+                  <div class="h-16 rounded-t-full bg-white/85 shadow-glow"></div>
+                  <div class="h-20 rounded-t-full bg-white/90 shadow-glow"></div>
+                  <div class="h-14 rounded-t-full bg-white/85 shadow-glow"></div>
+                </div>
+                <div class="bg-white/80 p-4">
+                  <p class="read-text text-sm leading-7">
+                    曇りの日や初夏の白っぽい日差しは、景色全体の明るさが増して、目が休まりにくくなります。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="effectMessage" class="rounded-[1.5rem] border border-clinic-sand bg-clinic-mist p-4">
+            <p id="effectTitle" class="font-black"></p>
+            <p id="effectText" class="mt-2 text-sm leading-7 text-stone-600"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass-panel rounded-[2rem] p-5 shadow-soft">
+        <div class="mb-4">
+          <p class="text-xs font-bold uppercase tracking-[.2em] text-clinic-sageDark">Step 3</p>
+          <h2 class="mt-1 text-lg font-black">おすすめカラーを選ぶ</h2>
+          <p class="mt-2 text-sm leading-6 text-stone-600">
+            お客様の生活シーンに合わせて、薄い色味を提案できます。
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button data-color="gray" class="color-btn rounded-2xl border border-stone-200 bg-white/70 p-3 text-center transition hover:bg-white">
+            <span class="mx-auto mb-2 block h-8 w-8 rounded-full bg-stone-300"></span>
+            <span class="text-xs font-black">グレー<br />15%</span>
+          </button>
+          <button data-color="brown" class="color-btn rounded-2xl border border-stone-200 bg-white/70 p-3 text-center transition hover:bg-white">
+            <span class="mx-auto mb-2 block h-8 w-8 rounded-full bg-clinic-brown/70"></span>
+            <span class="text-xs font-black">ブラウン<br />15%</span>
+          </button>
+          <button data-color="green" class="color-btn rounded-2xl border border-stone-200 bg-white/70 p-3 text-center transition hover:bg-white">
+            <span class="mx-auto mb-2 block h-8 w-8 rounded-full bg-clinic-sage"></span>
+            <span class="text-xs font-black">グリーン<br />15%</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="glass-panel rounded-[2rem] p-5 shadow-soft">
+        <div class="mb-4">
+          <p class="text-xs font-bold uppercase tracking-[.2em] text-clinic-sageDark">Talk Script</p>
+          <h2 class="mt-1 text-lg font-black">新人スタッフ用・接客カンペ</h2>
+        </div>
+
+        <div class="grid gap-3">
+          <div class="rounded-[1.5rem] bg-stone-900 p-4 text-white">
+            <p class="mb-2 text-xs font-bold text-clinic-sage">まず共感</p>
+            <p id="talkEmpathy" class="text-sm font-bold leading-7"></p>
+          </div>
+          <div class="rounded-[1.5rem] bg-white/75 p-4">
+            <p class="mb-2 text-xs font-bold text-clinic-sageDark">価値説明</p>
+            <p id="talkValue" class="text-sm font-bold leading-7 text-stone-700"></p>
+          </div>
+          <div class="rounded-[1.5rem] border-2 border-clinic-sage bg-clinic-mist p-4">
+            <p class="mb-2 text-xs font-bold text-clinic-sageDark">クロージング</p>
+            <p id="talkClose" class="text-sm font-black leading-7 text-stone-800"></p>
+          </div>
+        </div>
+
+        <button id="copyBtn" class="mt-4 w-full rounded-2xl bg-clinic-sageDark px-4 py-4 font-black text-white shadow-soft transition hover:brightness-95">
+          接客トークをコピー
+        </button>
+        <p id="copyMessage" class="mt-3 hidden rounded-xl bg-white/80 p-3 text-center text-sm font-bold text-clinic-sageDark">
+          コピーしました。店頭でそのまま使えます。
+        </p>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const scenes = {
+      office: {
+        title: 'オフィスの白いPC画面',
+        mock: 'officeMock',
+        standardTitle: '標準レンズ：白い画面が強く、文字の輪郭がにじみやすい状態',
+        standardText: '長時間の事務作業では、白背景のまぶしさが積み重なり、ピント合わせの負担を感じやすくなります。',
+        tintedTitle: '薄いカラー：白の発光感を抑え、文字の輪郭が落ち着く',
+        tintedText: '15%程度の薄いカラーなら暗くなりすぎず、画面のギラつきだけをやわらげて、集中しやすい見え方に整えます。',
+        empathy: '「パソコン作業が長いと、夕方に目が重くなる感じはありませんか？」',
+        value: '「薄いカラーレンズは、サングラスのように暗くするものではなく、白い画面の嫌なチラつきをやわらげる仕事用のレンズです。」',
+        close: '「これは目を守るだけでなく、仕事の集中力を上げるためのビジネスギアとしておすすめできます。」'
+      },
+      phone: {
+        title: '夜のスマホ画面',
+        mock: 'phoneMock',
+        standardTitle: '標準レンズ：暗い部屋で白い画面だけが浮き、文字がチカチカ',
+        standardText: '周囲が暗いほどスマホの白背景は強く感じられ、小さな文字を見る負担が増えやすくなります。',
+        tintedTitle: '薄いカラー：白い光がスッと落ち着き、文字が読みやすい',
+        tintedText: '薄いカラーが光の刺激をやわらげ、黒文字とのコントラストを穏やかに整えます。',
+        empathy: '「寝る前のスマホで、文字がチカチカして目が疲れることはありませんか？」',
+        value: '「薄いカラーなら見た目は自然なまま、白い画面のまぶしさだけをやわらげられます。」',
+        close: '「普段使いのメガネに少し機能を足すだけで、夜のスマホ時間がかなり楽になります。」'
+      },
+      outdoor: {
+        title: '白っぽい日差しの屋外',
+        mock: 'outdoorMock',
+        standardTitle: '標準レンズ：景色全体が白く飛び、目が休まりにくい',
+        standardText: '曇天や初夏の強い反射光は、サングラスをかけるほどではなくても、目にじわじわ負担をかけます。',
+        tintedTitle: '薄いカラー：景色の白飛びを抑え、自然に見やすい',
+        tintedText: '濃すぎないカラーが明るさを残したまま反射感を抑え、外出時のまぶしさを自然に軽減します。',
+        empathy: '「曇りの日なのに、外に出ると景色が白っぽくまぶしく感じることはありませんか？」',
+        value: '「濃いサングラスに抵抗がある方でも、15%前後の薄いカラーなら日常のメガネとして自然に使えます。」',
+        close: '「室内でも屋外でも使いやすいので、初めての機能性カラーとして非常に選びやすいです。」'
+      }
+    };
+
+    const colors = {
+      gray: 'lens-gray',
+      brown: 'lens-brown',
+      green: 'lens-green'
+    };
+
+    let currentScene = null;
+    let currentMode = 'standard';
+    let currentColor = 'gray';
+
+    const simulator = document.getElementById('simulator');
+    const stepScene = document.getElementById('stepScene');
+    const sceneCard = document.getElementById('sceneCard');
+    const sceneTitle = document.getElementById('sceneTitle');
+    const effectTitle = document.getElementById('effectTitle');
+    const effectText = document.getElementById('effectText');
+    const standardBtn = document.getElementById('standardBtn');
+    const tintedBtn = document.getElementById('tintedBtn');
+    const copyMessage = document.getElementById('copyMessage');
+
+    document.querySelectorAll('.scene-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        currentScene = button.dataset.scene;
+        currentMode = 'standard';
+        render();
+        stepScene.classList.add('hidden');
+        simulator.classList.remove('hidden');
+        simulator.classList.add('flex');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
+    standardBtn.addEventListener('click', () => {
+      currentMode = 'standard';
+      render();
+    });
+
+    tintedBtn.addEventListener('click', () => {
+      currentMode = 'tinted';
+      render();
+    });
+
+    document.querySelectorAll('.color-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        currentColor = button.dataset.color;
+        currentMode = 'tinted';
+        render();
+      });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      simulator.classList.add('hidden');
+      simulator.classList.remove('flex');
+      stepScene.classList.remove('hidden');
+      currentScene = null;
+      copyMessage.classList.add('hidden');
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (!currentScene) return;
+
+      const data = scenes[currentScene];
+      const script = [
+        data.empathy,
+        data.value,
+        data.close
+      ].join('\n');
+
+      try {
+        await navigator.clipboard.writeText(script);
+        copyMessage.textContent = 'コピーしました。店頭でそのまま使えます。';
+      } catch (error) {
+        copyMessage.textContent = 'コピーできませんでした。画面の文章を長押ししてコピーしてください。';
+      }
+
+      copyMessage.classList.remove('hidden');
+    });
+
+    function render() {
+      if (!currentScene || !scenes[currentScene]) return;
+
+      const data = scenes[currentScene];
+
+      sceneTitle.textContent = data.title;
+      document.querySelectorAll('.scene-mock').forEach(mock => mock.classList.add('hidden'));
+      document.getElementById(data.mock).classList.remove('hidden');
+
+      sceneCard.className = 'relative overflow-hidden rounded-[1.65rem] border border-white p-4 transition duration-500';
+
+      Object.values(colors).forEach(colorClass => sceneCard.classList.remove(colorClass));
+
+      if (currentMode === 'standard') {
+        sceneCard.classList.add('bg-white', 'shadow-glow', 'scene-standard');
+        sceneCard.classList.remove('scene-tinted');
+        effectTitle.textContent = data.standardTitle;
+        effectText.textContent = data.standardText;
+      } else {
+        sceneCard.classList.add('shadow-soft', 'scene-tinted', colors[currentColor]);
+        sceneCard.classList.remove('scene-standard');
+        effectTitle.textContent = data.tintedTitle;
+        effectText.textContent = data.tintedText;
+      }
+
+      standardBtn.className = currentMode === 'standard'
+        ? 'lens-btn rounded-[1.1rem] bg-stone-900 px-3 py-3 text-sm font-black text-white transition'
+        : 'lens-btn rounded-[1.1rem] px-3 py-3 text-sm font-black text-stone-500 transition';
+
+      tintedBtn.className = currentMode === 'tinted'
+        ? 'lens-btn rounded-[1.1rem] bg-clinic-sageDark px-3 py-3 text-sm font-black text-white transition'
+        : 'lens-btn rounded-[1.1rem] px-3 py-3 text-sm font-black text-stone-500 transition';
+
+      document.querySelectorAll('.color-btn').forEach(button => {
+        const active = button.dataset.color === currentColor && currentMode === 'tinted';
+        button.classList.toggle('ring-2', active);
+        button.classList.toggle('ring-clinic-sageDark', active);
+        button.classList.toggle('bg-white', active);
+      });
+
+      document.getElementById('talkEmpathy').textContent = data.empathy;
+      document.getElementById('talkValue').textContent = data.value;
+      document.getElementById('talkClose').textContent = data.close;
+    }
+  </script>
+</body>
+</html>
