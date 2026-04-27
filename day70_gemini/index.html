@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>極上シリコン鼻パッド 吸いつき体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'nude': '#FDF9F6', // 肌馴染みの良いヌードベージュ（背景）
+            'coral': '#E88B82', // ソフトコーラル（アクセント・シリコン）
+            'coral-light': '#FCECEB', // 極薄いコーラル（ボーダー等）
+            'charcoal': '#5C4A45', // 優しさと引き締めを両立するチャコールブラウン
+            'skin': '#F5DCD0', // 鼻の肌色
+            'pad-hard': '#CBD5E1', // 標準パッド（硬いプラスチック）
+            'pad-soft': '#FDBAAB', // シリコンパッド（半透明感のあるコーラル）
+          },
+          fontFamily: {
+            'sans': ['"Zen Kaku Gothic New"', 'sans-serif'],
+            'serif': ['"Noto Serif JP"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+    /* ----- CSS Animations for Simulation ----- */
+    
+    /* 1. 滑る（Slip） */
+    @keyframes slip {
+      0% { transform: translateY(0); }
+      40% { transform: translateY(18px); }
+      50% { transform: translateY(18px); }
+      100% { transform: translateY(0); }
+    }
+    .anim-slip { animation: slip 2s infinite ease-in-out; }
+
+    /* 2. 赤く圧迫（Press Red） */
+    @keyframes press-red {
+      0% { background-color: #F5DCD0; transform: scale(1); }
+      50% { background-color: #F8AFA6; transform: scale(0.96); box-shadow: inset 0 0 15px rgba(232,139,130,0.5); }
+      100% { background-color: #F5DCD0; transform: scale(1); }
+    }
+    .anim-press-red { animation: press-red 2s infinite ease-in-out; }
+
+    /* 3. 硬い反発・痛み（Hard Hit） */
+    @keyframes hard-hit {
+      0% { transform: translateX(0); }
+      10% { transform: translateX(-4px); }
+      20% { transform: translateX(4px); }
+      30% { transform: translateX(-2px); }
+      40% { transform: translateX(2px); }
+      100% { transform: translateX(0); }
+    }
+    .anim-hard-hit { animation: hard-hit 1.5s infinite; }
+
+    /* 4. 極上シリコンの呼吸するようなホールド感（Float Soft） */
+    @keyframes float-soft {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(2px) scale(1.02); }
+    }
+    .anim-float-soft { animation: float-soft 3s infinite ease-in-out; }
+
+    /* ----- Custom Utility ----- */
+    .mark-highlight {
+      background: linear-gradient(transparent 60%, #FCECEB 60%);
+      font-weight: 700;
+      color: #E88B82;
+      padding: 0 0.2rem;
+    }
+    
+    body {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-nude text-charcoal font-sans min-h-screen">
+
+  <!-- Mobile First Container (Absolute constraint: Layout never breaks) -->
+  <main class="max-w-md mx-auto min-h-screen flex flex-col p-6 relative">
+    
+    <!-- Header -->
+    <header class="text-center mb-8 pt-4">
+      <p class="text-xs tracking-[0.2em] text-coral font-bold mb-1">PREMIUM FITTING</p>
+      <div class="h-[1px] w-12 bg-coral mx-auto mb-3"></div>
+    </header>
+
+    <!-- ==========================================
+         STEP 1: 悩み選択 (Progressive Disclosure) 
+         ========================================== -->
+    <section id="step1" class="flex flex-col flex-grow justify-center gap-8 pb-10 transition-opacity duration-500">
+      <div class="text-center space-y-3">
+        <h1 class="font-serif text-2xl font-semibold leading-snug">
+          お客様の「お悩み」は<br>どれですか？
+        </h1>
+        <p class="text-[13px] text-charcoal/70">あてはまる症状をタップして診断を開始</p>
+      </div>
+
+      <div class="flex flex-col gap-4" id="btn-container">
+        <!-- JS generates buttons here to keep logic clean -->
+      </div>
+    </section>
+
+
+    <!-- ==========================================
+         STEP 2 & 3: シミュレーター & トークスクリプト 
+         ========================================== -->
+    <section id="simulator-view" class="hidden flex-col gap-6 w-full pb-8 opacity-0 transition-opacity duration-500">
+      
+      <!-- Title -->
+      <div class="text-center">
+        <h2 id="sim-title" class="font-serif text-[19px] font-semibold leading-relaxed">
+          <!-- Injected by JS -->
+        </h2>
+      </div>
+
+      <!-- Animation Area (Strictly separated from text to avoid overlapping) -->
+      <div class="relative w-full aspect-[4/3] bg-white rounded-2xl shadow-[0_8px_30px_rgba(232,139,130,0.08)] border border-coral-light flex items-center justify-center overflow-hidden">
+        
+        <!-- Center Nose Bridge -->
+        <div id="sim-nose" class="w-14 h-28 bg-skin rounded-full z-10 transition-colors duration-700"></div>
+        
+        <!-- Left Pad Wrapper (Handles position & hard animations) -->
+        <div id="wrap-left" class="absolute left-1/2 -ml-[40px] z-20 transition-transform duration-700">
+          <!-- Left Pad Inner (Handles appearance & soft animations) -->
+          <div id="inner-left" class="w-[18px] h-12 bg-pad-hard rounded-sm transition-all duration-700"></div>
+        </div>
+        
+        <!-- Right Pad Wrapper -->
+        <div id="wrap-right" class="absolute left-1/2 ml-[22px] z-20 transition-transform duration-700">
+          <!-- Right Pad Inner -->
+          <div id="inner-right" class="w-[18px] h-12 bg-pad-hard rounded-sm transition-all duration-700"></div>
+        </div>
+
+      </div>
+
+      <!-- Staff Talk Area (No complex logic skipping, detailed script) -->
+      <div class="bg-white rounded-2xl p-6 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-coral-light relative mt-2">
+        <div class="absolute -top-3 left-5 bg-coral text-white text-[10px] font-bold px-3 py-1.5 rounded-full tracking-widest shadow-sm">
+          STAFF TALK
+        </div>
+        
+        <div class="flex flex-col gap-4 mt-2">
+          <!-- Empathy / Solution Text -->
+          <p id="talk-content" class="text-charcoal leading-[1.8] text-[15px] font-medium">
+            <!-- Injected by JS -->
+          </p>
+          
+          <!-- Closing Text (Only for Step 3) -->
+          <div id="talk-closing" class="hidden border-t border-nude pt-4 mt-1">
+            <p class="text-charcoal leading-[1.8] text-[15px] font-medium">
+              「わずか数百円の追加で、毎日のメガネ時間が激変します。<span class="mark-highlight">一番安くて一番効果のある自己投資</span>として、非常に多くのお客様に喜ばれていますよ。」
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="mt-2">
+        <button id="action-btn" class="w-full py-4 rounded-full font-bold tracking-wide transition-all duration-300 active:scale-95 flex items-center justify-center gap-2">
+          <!-- Injected by JS -->
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    /**
+     * Logic & Content Data
+     * テキストの出し分けやロジックの手抜きを禁止するルールに従い、
+     * 悩み別に的確なアニメーションクラスと接客トークを定義。
+     */
+    const contentData = {
+      slip: {
+        label: "汗をかくとメガネがズルズル滑る",
+        icon: `<svg class="w-5 h-5 text-coral/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>`,
+        hardAnimWrap: "anim-slip",
+        hardAnimNose: "",
+        talkStandard: "「汗でメガネが下がるの、何度も指で押し直さなきゃいけなくて本当にストレスですよね…。」",
+        talkPremium: "「この『極上シリコン』は、<span class='mark-highlight'>体温でじんわりと柔らかく</span>なり、お肌にピタッと吸いつきます。汗をかいても滑りにくく、もう煩わしい押し上げ動作は必要ありません。」"
+      },
+      mark: {
+        label: "夕方、鼻にクッキリ赤い跡がつく",
+        icon: `<svg class="w-5 h-5 text-coral/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>`,
+        hardAnimWrap: "",
+        hardAnimNose: "anim-press-red",
+        talkStandard: "「夕方になるとできる赤い跡、メイクも崩れるし、鏡を見るたびに気になってしまいますよね…。」",
+        talkPremium: "「通常のプラスチックより格段に柔らかく、<span class='mark-highlight'>圧力を面で優しく分散</span>してくれます。赤い跡がつきにくく、まるで着けていないような軽さです。」"
+      },
+      pain: {
+        label: "プラスチックの硬い当たりが痛い",
+        icon: `<svg class="w-5 h-5 text-coral/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`,
+        hardAnimWrap: "anim-hard-hit",
+        hardAnimNose: "",
+        talkStandard: "「硬いプラスチックが骨に当たると、ジンジンしてきて長時間着けているのが辛いですよね…。」",
+        talkPremium: "「硬い当たりが嘘のように変わります。<span class='mark-highlight'>クッションのように優しくホールド</span>してくれるので、長時間のデスクワークでも鼻が痛くなりません。」"
+      }
+    };
+
+    let currentIssueKey = '';
+
+    // DOM Elements
+    const step1 = document.getElementById('step1');
+    const simView = document.getElementById('simulator-view');
+    const btnContainer = document.getElementById('btn-container');
+    
+    const simTitle = document.getElementById('sim-title');
+    const simNose = document.getElementById('sim-nose');
+    const wrapLeft = document.getElementById('wrap-left');
+    const wrapRight = document.getElementById('wrap-right');
+    const innerLeft = document.getElementById('inner-left');
+    const innerRight = document.getElementById('inner-right');
+    
+    const talkContent = document.getElementById('talk-content');
+    const talkClosing = document.getElementById('talk-closing');
+    const actionBtn = document.getElementById('action-btn');
+
+    // Initialize Buttons
+    Object.keys(contentData).forEach(key => {
+      const btn = document.createElement('button');
+      btn.className = "w-full text-left px-6 py-5 bg-white border border-coral-light rounded-2xl shadow-sm text-charcoal font-medium transition-all duration-200 active:scale-95 hover:border-coral hover:shadow-md flex items-center justify-between";
+      btn.innerHTML = `<span class="text-[15px]">${contentData[key].label}</span> ${contentData[key].icon}`;
+      btn.onclick = () => showStep2(key);
+      btnContainer.appendChild(btn);
+    });
+
+    /**
+     * DOMのリセット（アニメーションの競合を防ぐため）
+     */
+    function resetDomStates() {
+      simNose.className = "w-14 h-28 bg-skin rounded-full z-10 transition-colors duration-700";
+      
+      wrapLeft.className = "absolute left-1/2 -ml-[40px] z-20 transition-transform duration-700";
+      wrapLeft.style.transform = "";
+      
+      wrapRight.className = "absolute left-1/2 ml-[22px] z-20 transition-transform duration-700";
+      wrapRight.style.transform = "";
+
+      const innerBase = "w-[18px] h-12 transition-all duration-700 ease-out";
+      innerLeft.className = `${innerBase} bg-pad-hard rounded-sm`;
+      innerRight.className = `${innerBase} bg-pad-hard rounded-sm`;
+    }
+
+    /**
+     * Step 2: 現在の悩み（標準パッド）の表示
+     */
+    function showStep2(key) {
+      currentIssueKey = key;
+      const data = contentData[key];
+
+      // Fade Transition
+      step1.style.opacity = '0';
+      setTimeout(() => {
+        step1.classList.add('hidden');
+        simView.classList.remove('hidden');
+        
+        // Setup View
+        simTitle.innerHTML = `<span class="text-[12px] text-charcoal/50 block mb-1 font-sans tracking-wider">現在の状態：標準パッド</span>ストレスが発生しています`;
+        
+        resetDomStates();
+        
+        // Apply Hard Animations based on issue
+        if(data.hardAnimNose) simNose.classList.add(data.hardAnimNose);
+        if(data.hardAnimWrap) {
+          wrapLeft.classList.add(data.hardAnimWrap);
+          wrapRight.classList.add(data.hardAnimWrap);
+        }
+
+        // Setup Talk Script
+        talkContent.innerHTML = data.talkStandard;
+        talkClosing.classList.add('hidden');
+
+        // Setup Button
+        actionBtn.innerHTML = `極上シリコンを提案する ✨`;
+        actionBtn.className = "w-full py-4 rounded-full bg-coral text-white font-bold tracking-wide shadow-[0_4px_15px_rgba(232,139,130,0.4)] transition-all duration-300 active:scale-95 flex items-center justify-center gap-2";
+        actionBtn.onclick = showStep3;
+
+        // Fade In
+        setTimeout(() => { simView.style.opacity = '1'; }, 50);
+      }, 500);
+    }
+
+    /**
+     * Step 3: 解決策（極上シリコン）の表示
+     */
+    function showStep3() {
+      const data = contentData[currentIssueKey];
+
+      // Setup View
+      simTitle.innerHTML = `<span class="text-[12px] text-coral font-bold block mb-1 font-sans tracking-wider">提案後：極上シリコンパッド</span>優しく吸いつき、ストレスゼロへ`;
+
+      resetDomStates();
+
+      // Apply Soft Animations (The Premium Feel)
+      // 少し内側に寄せて「吸いつき」を表現
+      wrapLeft.style.transform = "translateX(5px)";
+      wrapRight.style.transform = "translateX(-5px)";
+
+      // 形がふっくらし、色が変わり、呼吸するようなアニメーションを付与
+      const premiumInnerClass = "w-[22px] h-[50px] bg-pad-soft rounded-[10px] shadow-[0_0_12px_rgba(253,186,171,0.7)] anim-float-soft transition-all duration-700 ease-out";
+      innerLeft.className = premiumInnerClass;
+      innerRight.className = premiumInnerClass;
+
+      // Setup Talk Script
+      talkContent.innerHTML = data.talkPremium;
+      talkClosing.classList.remove('hidden');
+
+      // Setup Button
+      actionBtn.innerHTML = `最初からやり直す`;
+      actionBtn.className = "w-full py-4 rounded-full bg-transparent border-2 border-coral-light text-coral font-bold tracking-wide transition-all duration-300 active:scale-95 flex items-center justify-center mt-4";
+      actionBtn.onclick = resetApp;
+    }
+
+    /**
+     * Reset App to Step 1
+     */
+    function resetApp() {
+      simView.style.opacity = '0';
+      setTimeout(() => {
+        simView.classList.add('hidden');
+        step1.classList.remove('hidden');
+        setTimeout(() => { step1.style.opacity = '1'; }, 50);
+      }, 500);
+    }
+  </script>
+</body>
+</html>
