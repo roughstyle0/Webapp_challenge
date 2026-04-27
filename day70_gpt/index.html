@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>極上シリコン鼻パッド｜吸いつき体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --skin-50: #fff8f5;
+      --skin-100: #f9ece6;
+      --skin-200: #efd5ca;
+      --nude: #d9aa9b;
+      --coral: #e98274;
+      --coral-deep: #c96a5d;
+      --ink: #4b3530;
+      --muted: #8a6a62;
+      --cream: #fffdf9;
+      --shadow: 0 24px 80px rgba(159, 98, 82, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255, 211, 203, 0.65), transparent 28rem),
+        radial-gradient(circle at 90% 20%, rgba(233, 130, 116, 0.18), transparent 22rem),
+        linear-gradient(145deg, #fffaf7 0%, #f8e7df 52%, #f3d7cc 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .luxury-frame {
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 247, 242, 0.56)),
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.18) 0 8px, rgba(233,130,116,0.05) 8px 16px);
+      border: 1px solid rgba(218, 154, 138, 0.38);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .skin-pill {
+      background: linear-gradient(135deg, rgba(255,255,255,0.84), rgba(255,240,235,0.72));
+      border: 1px solid rgba(217, 170, 155, 0.42);
+    }
+
+    .choice-button {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.85rem;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(217, 170, 155, 0.38);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,242,237,0.68)),
+        radial-gradient(circle at 10% 10%, rgba(233,130,116,0.11), transparent 12rem);
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .choice-button:hover,
+    .choice-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(233, 130, 116, 0.72);
+      box-shadow: 0 18px 44px rgba(201, 106, 93, 0.18);
+      outline: none;
+    }
+
+    .choice-button.is-selected {
+      border-color: rgba(201, 106, 93, 0.95);
+      background:
+        linear-gradient(135deg, rgba(255,246,242,0.96), rgba(255,226,219,0.88)),
+        radial-gradient(circle at 15% 20%, rgba(233,130,116,0.2), transparent 10rem);
+    }
+
+    .choice-icon {
+      display: grid;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 999px;
+      background: linear-gradient(145deg, #fff7f2, #f3cfc4);
+      color: var(--coral-deep);
+      border: 1px solid rgba(233, 130, 116, 0.24);
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .segment-button {
+      border: 1px solid rgba(217, 170, 155, 0.34);
+      background: rgba(255, 255, 255, 0.48);
+      color: var(--muted);
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
+    }
+
+    .segment-button:hover,
+    .segment-button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+      border-color: rgba(233, 130, 116, 0.72);
+    }
+
+    .segment-button.is-active {
+      color: #fffaf7;
+      border-color: rgba(201, 106, 93, 0.2);
+      background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+      box-shadow: 0 14px 36px rgba(201, 106, 93, 0.24);
+    }
+
+    .simulation-stage {
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.92), transparent 9rem),
+        radial-gradient(circle at 50% 64%, rgba(233, 130, 116, 0.16), transparent 13rem),
+        linear-gradient(180deg, #fffaf7, #f7dfd5);
+      border: 1px solid rgba(217, 170, 155, 0.34);
+      overflow: hidden;
+    }
+
+    .script-panel {
+      background:
+        linear-gradient(145deg, rgba(82, 57, 51, 0.94), rgba(128, 82, 74, 0.9)),
+        radial-gradient(circle at 10% 10%, rgba(233,130,116,0.22), transparent 15rem);
+      color: #fffaf7;
+    }
+
+    .script-mark {
+      color: #4b2c25;
+      background: linear-gradient(135deg, #ffe9df, #ffc8bd);
+      border-radius: 0.7rem;
+      padding: 0.12rem 0.45rem;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      font-weight: 800;
+    }
+
+    .progress-dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 999px;
+      background: rgba(255, 250, 247, 0.3);
+      transition: width 180ms ease, background 180ms ease;
+    }
+
+    .progress-dot.is-active {
+      width: 1.7rem;
+      background: #ffc8bd;
+    }
+
+    .signal-chip {
+      border: 1px solid rgba(217, 170, 155, 0.34);
+      background: rgba(255, 255, 255, 0.58);
+    }
+
+    .anim-slip-pad {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: slipPad 1.45s ease-in-out infinite;
+    }
+
+    .anim-sweat {
+      animation: sweatFall 1.4s ease-in-out infinite;
+    }
+
+    .anim-red-pulse {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: redPulse 1.25s ease-in-out infinite;
+    }
+
+    .anim-press {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: pressPad 1.25s ease-in-out infinite;
+    }
+
+    .anim-bump {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: hardBump 0.9s ease-in-out infinite;
+    }
+
+    .anim-shock {
+      animation: shockBlink 0.9s ease-in-out infinite;
+    }
+
+    .anim-gel {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: gelBreathe 1.9s ease-in-out infinite;
+    }
+
+    .anim-hold {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: holdBounce 1.9s ease-in-out infinite;
+    }
+
+    .anim-soft-fade {
+      animation: softFade 2.4s ease-in-out infinite;
+    }
+
+    @keyframes slipPad {
+      0%, 100% { transform: translateY(-2px) rotate(-1deg); opacity: 0.95; }
+      50% { transform: translateY(18px) rotate(3deg); opacity: 0.72; }
+    }
+
+    @keyframes sweatFall {
+      0% { transform: translateY(-12px); opacity: 0; }
+      35% { opacity: 0.85; }
+      100% { transform: translateY(26px); opacity: 0; }
+    }
+
+    @keyframes redPulse {
+      0%, 100% { transform: scale(0.94); opacity: 0.42; }
+      50% { transform: scale(1.1); opacity: 0.92; }
+    }
+
+    @keyframes pressPad {
+      0%, 100% { transform: translateX(0) scale(1); }
+      50% { transform: translateX(-3px) scale(1.04); }
+    }
+
+    @keyframes hardBump {
+      0%, 100% { transform: translateX(-1px) rotate(-2deg); }
+      45% { transform: translateX(9px) rotate(5deg); }
+      60% { transform: translateX(4px) rotate(-4deg); }
+    }
+
+    @keyframes shockBlink {
+      0%, 100% { opacity: 0.18; transform: scale(0.9); }
+      45% { opacity: 0.9; transform: scale(1.06); }
+    }
+
+    @keyframes gelBreathe {
+      0%, 100% { transform: scale(0.98); opacity: 0.72; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    @keyframes holdBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-3px) scale(1.03); }
+    }
+
+    @keyframes softFade {
+      0%, 100% { opacity: 0.16; }
+      50% { opacity: 0.58; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="luxury-frame rounded-[2rem] p-5 sm:p-7">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="skin-pill rounded-full px-3 py-1 text-xs font-bold tracking-[0.22em] text-[#9b6a60]">
+            SKIN-FIT NOSE PAD
+          </span>
+          <span class="skin-pill rounded-full px-3 py-1 text-xs font-semibold text-[#9b6a60]">
+            新人スタッフ接客カンペ付き
+          </span>
+        </div>
+
+        <div class="grid gap-3">
+          <h1 class="text-3xl font-black leading-tight tracking-tight text-[#4b3530] sm:text-5xl">
+            極上シリコン鼻パッド<br class="hidden sm:block" />
+            吸いつき体験シミュレーター
+          </h1>
+          <p class="max-w-2xl text-sm leading-7 text-[#7f625b] sm:text-base">
+            初夏の「汗でズレる」「鼻に跡がつく」「硬くて痛い」を、数百円の追加で“気持ちいいフィット感”に変えるための提案ツールです。
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <section class="luxury-frame rounded-[2rem] p-5 sm:p-7" aria-labelledby="choice-title">
+      <div class="grid gap-4">
+        <div class="grid gap-2">
+          <p class="text-xs font-bold tracking-[0.24em] text-[#c96a5d]">STEP 01</p>
+          <h2 id="choice-title" class="text-xl font-black sm:text-2xl">
+            お客様のお悩みを1つ選んでください
+          </h2>
+          <p class="text-sm leading-6 text-[#8a6a62]">
+            まずは悩みだけを選択。選んだ後に、比較シミュレーションと読み上げ用トークが開きます。
+          </p>
+        </div>
+
+        <div id="choiceList" class="grid gap-3">
+          <button
+            type="button"
+            class="choice-button rounded-[1.65rem] p-4"
+            data-concern="slip"
+            aria-pressed="false"
+          >
+            <span class="choice-icon" aria-hidden="true">💧</span>
+            <span class="grid gap-1">
+              <span class="text-base font-black">汗をかくとメガネがズルズル滑り落ちる</span>
+              <span class="text-sm leading-6 text-[#8a6a62]">初夏・通勤・マスク時に多いお悩み</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="choice-button rounded-[1.65rem] p-4"
+            data-concern="marks"
+            aria-pressed="false"
+          >
+            <span class="choice-icon" aria-hidden="true">🌙</span>
+            <span class="grid gap-1">
+              <span class="text-base font-black">夕方になると、鼻にクッキリと赤い跡がつく</span>
+              <span class="text-sm leading-6 text-[#8a6a62]">圧迫感・メイク崩れ・見た目のストレス</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="choice-button rounded-[1.65rem] p-4"
+            data-concern="pain"
+            aria-pressed="false"
+          >
+            <span class="choice-icon" aria-hidden="true">◇</span>
+            <span class="grid gap-1">
+              <span class="text-base font-black">プラスチックの硬い当たりが痛くて不快</span>
+              <span class="text-sm leading-6 text-[#8a6a62]">長時間装用で“刺さる感じ”が出やすいケース</span>
+            </span>
+          </button>
+        </div>
+
+        <p id="appError" class="hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert"></p>
+      </div>
+    </section>
+
+    <section id="experience" class="hidden grid gap-5" aria-live="polite">
+      <section class="luxury-frame rounded-[2rem] p-5 sm:p-7" aria-labelledby="sim-title">
+        <div class="grid gap-5">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div class="grid gap-2">
+              <p class="text-xs font-bold tracking-[0.24em] text-[#c96a5d]">STEP 02</p>
+              <h2 id="sim-title" class="text-2xl font-black sm:text-3xl">フィット感を比較</h2>
+              <p id="selectedConcernText" class="text-sm leading-6 text-[#8a6a62]"></p>
+            </div>
+
+            <button
+              id="resetButton"
+              type="button"
+              class="rounded-full border border-[#d9aa9b]/50 bg-white/50 px-4 py-2 text-sm font-bold text-[#8a6a62] transition hover:-translate-y-0.5 hover:border-[#e98274] hover:text-[#c96a5d] focus:outline-none focus:ring-4 focus:ring-[#e98274]/20"
+            >
+              悩みを選び直す
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 gap-2 rounded-[1.7rem] bg-white/35 p-2 sm:grid-cols-2">
+            <button
+              type="button"
+              class="segment-button rounded-[1.25rem] px-4 py-3 text-sm font-black"
+              data-mode="plastic"
+              aria-pressed="true"
+            >
+              標準プラスチックパッド
+            </button>
+            <button
+              type="button"
+              class="segment-button rounded-[1.25rem] px-4 py-3 text-sm font-black"
+              data-mode="silicone"
+              aria-pressed="false"
+            >
+              極上シリコン鼻パッド
+            </button>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-[1.06fr_0.94fr] lg:items-stretch">
+            <div class="simulation-stage rounded-[2rem] p-4 sm:p-6">
+              <div class="grid gap-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="grid gap-1">
+                    <p id="sceneEyebrow" class="text-xs font-bold tracking-[0.22em] text-[#c96a5d]"></p>
+                    <h3 id="sceneTitle" class="text-xl font-black"></h3>
+                  </div>
+                  <span id="modeBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-black"></span>
+                </div>
+
+                <div id="sceneCanvas" class="grid min-h-[270px] place-items-center rounded-[1.6rem] bg-white/45 p-3 sm:min-h-[330px]"></div>
+
+                <div id="signalPills" class="grid grid-cols-1 gap-2 sm:grid-cols-3"></div>
+              </div>
+            </div>
+
+            <aside class="grid gap-4 rounded-[2rem] border border-[#d9aa9b]/30 bg-[#fffaf7]/65 p-4 sm:p-5">
+              <div class="grid gap-2">
+                <p class="text-xs font-bold tracking-[0.22em] text-[#c96a5d]">OBSERVATION</p>
+                <h3 class="text-lg font-black">新人スタッフの観察ポイント</h3>
+                <p id="insightText" class="text-sm leading-7 text-[#7f625b]"></p>
+              </div>
+              <div class="grid gap-2" id="miniPoints"></div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="script-panel rounded-[2rem] p-5 shadow-2xl sm:p-7" aria-labelledby="script-title">
+        <div class="grid gap-5">
+          <div class="grid gap-2">
+            <p class="text-xs font-bold tracking-[0.24em] text-[#ffc8bd]">STEP 03</p>
+            <h2 id="script-title" class="text-2xl font-black">接客トークスクリプト</h2>
+            <p class="text-sm leading-6 text-[#ffe8df]">
+              そのまま読み上げられるカンペです。お客様の悩みに合わせて、言い回しが変わります。
+            </p>
+          </div>
+
+          <div class="grid gap-4 rounded-[1.7rem] bg-white/10 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="grid gap-1">
+                <span id="scriptStage" class="text-sm font-black text-[#ffc8bd]"></span>
+                <span id="scriptCount" class="text-xs font-bold text-[#ffe8df]/75"></span>
+              </div>
+              <div id="scriptProgress" class="flex items-center gap-1.5" aria-hidden="true"></div>
+            </div>
+
+            <p id="scriptCopy" class="text-lg font-bold leading-9 sm:text-xl sm:leading-10"></p>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                id="prevScript"
+                type="button"
+                class="rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-black text-[#fffaf7] transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                前の一言
+              </button>
+              <button
+                id="nextScript"
+                type="button"
+                class="rounded-full bg-[#ffc8bd] px-4 py-3 text-sm font-black text-[#4b3530] transition hover:-translate-y-0.5 hover:bg-[#ffe0d8] focus:outline-none focus:ring-4 focus:ring-[#ffc8bd]/30"
+              >
+                次の一言へ
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const DATA = {
+      slip: {
+        icon: "💧",
+        label: "汗をかくとメガネがズルズル滑り落ちる",
+        short: "汗でズレる",
+        eyebrow: "SWEAT SLIP STRESS",
+        scene: {
+          plastic: {
+            title: "汗で摩擦が抜けて、鼻筋をズルッと下降",
+            badge: "不快ストレス",
+            insight: "標準プラスチックは肌との接触が硬く、汗が入ると“面で支える力”が落ちます。お客様には、メガネを何度も上げ直す小さなストレスを可視化して伝えるのが効果的です。",
+            chips: ["汗で摩擦低下", "鼻筋をズルッ", "上げ直しが増える"],
+            points: [
+              "「汗をかく日だけズレる」なら、鼻パッド素材の相性が原因になりやすいです。",
+              "フレーム調整だけでなく、肌に触れるパーツを変える提案につなげます。"
+            ]
+          },
+          silicone: {
+            title: "じんわり馴染んで、汗の日もピタッと吸いつく",
+            badge: "快適ホールド",
+            insight: "極上シリコンは柔らかく肌に沿うため、点ではなく面で支える感覚を作れます。ズレ対策はもちろん、掛け心地の満足度を上げる“体験価値”として提案できます。",
+            chips: ["体温で馴染む", "面で吸いつく", "位置が安定する"],
+            points: [
+              "“ズレにくい”だけでなく“触れ方がやさしい”と伝えると高級感が出ます。",
+              "数百円の追加で毎日の掛け直しが減る、というコスパ訴求が刺さります。"
+            ]
+          }
+        },
+        scripts: {
+          plastic: [
+            {
+              stage: "共感",
+              copy: "「これからの季節、汗をかいた瞬間にメガネが《ズルッと下がる》のはかなりストレスですよね。」"
+            },
+            {
+              stage: "原因の見える化",
+              copy: "「標準の硬いパッドだと、汗が間に入った時に肌をつかむ力が弱くなり、何度も上げ直す原因になります。」"
+            },
+            {
+              stage: "比較への誘導",
+              copy: "「ここを柔らかいシリコンに変えるだけで、鼻に触れる感覚がかなり変わります。右の《極上シリコン》も見てみてください。」"
+            }
+          ],
+          silicone: [
+            {
+              stage: "体験提案",
+              copy: "「こちらは《体温で馴染む特別なシリコンなので、汗をかいてもピタッと吸いつきます》。夏場のズレ対策にとても相性がいいです。」"
+            },
+            {
+              stage: "使用シーン",
+              copy: "「通勤中や外回りで汗をかいた時も、肌に沿って面で支えるので、メガネを上げ直す回数が減りやすくなります。」"
+            },
+            {
+              stage: "価値訴求",
+              copy: "「数百円の追加で毎日触れる部分の快適さが変わるので、《鼻の赤い跡や痛みが消える、一番安くて一番効果のある自己投資です》。」"
+            },
+            {
+              stage: "クロージング",
+              copy: "「フレームはそのままで、掛け心地だけをアップグレードできます。初夏前に替えておくとかなり快適です。」"
+            }
+          ]
+        }
+      },
+
+      marks: {
+        icon: "🌙",
+        label: "夕方になると、鼻にクッキリと赤い跡がつく",
+        short: "赤い跡",
+        eyebrow: "PRESSURE MARK STRESS",
+        scene: {
+          plastic: {
+            title: "硬いパッドが一点を押して、赤みがクッキリ残る",
+            badge: "圧迫ストレス",
+            insight: "赤い跡は、鼻パッドの圧が小さな面積に集中しているサインです。お客様には“重さ”ではなく“当たり方”の問題として説明すると納得感が高まります。",
+            chips: ["点で圧迫", "夕方に赤み", "メイクも崩れやすい"],
+            points: [
+              "赤みを気にする方には、見た目と肌へのやさしさを同時に訴求します。",
+              "調整だけで解決しにくい場合、素材変更が自然な追加提案になります。"
+            ]
+          },
+          silicone: {
+            title: "圧をやわらかく分散し、赤みをふわっと逃がす",
+            badge: "やさしい分散",
+            insight: "シリコンの柔らかさで接触面が広がり、鼻への圧迫感を分散できます。美容・スキンケア感覚で“肌に優しいパーツ交換”として見せると単価アップにつながります。",
+            chips: ["圧を分散", "跡が残りにくい", "肌あたりが上質"],
+            points: [
+              "“お顔に触れるパーツ”という表現で、スキンケアブランドのような上質感を出します。",
+              "赤い跡が悩みの方には、痛みよりも“帰宅後の見た目”に寄り添います。"
+            ]
+          }
+        },
+        scripts: {
+          plastic: [
+            {
+              stage: "共感",
+              copy: "「夕方に鼻の跡がクッキリ残ると、外した時に気になりますよね。特に初夏は汗で赤みも目立ちやすいです。」"
+            },
+            {
+              stage: "原因の見える化",
+              copy: "「硬いパッドは小さな面で支えるので、鼻の同じ場所に圧が集まりやすく、《赤い跡》につながります。」"
+            },
+            {
+              stage: "比較への誘導",
+              copy: "「ここを柔らかい素材に変えると、押され方が“点”から“面”に変わります。極上シリコンの方をご覧ください。」"
+            }
+          ],
+          silicone: [
+            {
+              stage: "肌への共感",
+              copy: "「こちらは肌に触れる面がやわらかいので、鼻への圧をふわっと逃がします。帰宅後の《クッキリ跡》が気になる方に人気です。」"
+            },
+            {
+              stage: "機能説明",
+              copy: "「《体温で馴染む特別なシリコンなので、汗をかいてもピタッと吸いつきます》。滑りにくいだけでなく、当たり方もやさしくなります。」"
+            },
+            {
+              stage: "価値訴求",
+              copy: "「お顔に毎日触れる部分なので、ここを替えるだけで快適さが大きく変わります。《鼻の赤い跡や痛みが消える、一番安くて一番効果のある自己投資です》。」"
+            },
+            {
+              stage: "クロージング",
+              copy: "「数百円の追加で、見た目の跡と掛け心地の両方にアプローチできます。今のフレームをもっと快適に使えます。」"
+            }
+          ]
+        }
+      },
+
+      pain: {
+        icon: "◇",
+        label: "プラスチックの硬い当たりが痛くて不快",
+        short: "硬くて痛い",
+        eyebrow: "HARD TOUCH STRESS",
+        scene: {
+          plastic: {
+            title: "硬い角がコツンと当たり、長時間で痛みに変わる",
+            badge: "硬質ストレス",
+            insight: "痛みの訴えには、パッドの硬さ・角・圧の集中をセットで説明します。“フレームが悪い”ではなく“触れるパーツを替えれば改善余地がある”と伝えるのがポイントです。",
+            chips: ["硬い角が当たる", "長時間で痛い", "外したくなる"],
+            points: [
+              "痛みを我慢しているお客様には、まず共感を強めると提案を受け入れてもらいやすいです。",
+              "“柔らかいクッションに替える”と、初めてのスタッフでも説明しやすくなります。"
+            ]
+          },
+          silicone: {
+            title: "ぷにっと受け止めて、鼻にやさしくホールド",
+            badge: "極上クッション",
+            insight: "シリコンは硬い角のストレスを和らげ、鼻に触れる瞬間の不快感を軽減します。単なる部品交換ではなく、毎日使う道具の肌ざわりを整える提案にできます。",
+            chips: ["ぷにっと緩衝", "角が当たりにくい", "長時間も快適"],
+            points: [
+              "痛みの悩みには、機能説明より先に“もう我慢しなくていい”という安心感を出します。",
+              "数百円で毎日の不快を減らせるため、追加提案として心理的ハードルが低いです。"
+            ]
+          }
+        },
+        scripts: {
+          plastic: [
+            {
+              stage: "共感",
+              copy: "「硬い鼻パッドが当たる感じ、長時間だと地味につらいですよね。痛いとメガネ自体を外したくなってしまいます。」"
+            },
+            {
+              stage: "原因の見える化",
+              copy: "「プラスチックは形が崩れにくい反面、鼻に当たる角や圧が逃げにくく、《コツンとした痛み》になりやすいです。」"
+            },
+            {
+              stage: "比較への誘導",
+              copy: "「同じメガネでも、鼻に触れる部分だけ柔らかくすると印象が変わります。極上シリコンの動きを見てください。」"
+            }
+          ],
+          silicone: [
+            {
+              stage: "安心提案",
+              copy: "「こちらはぷにっとした弾力で鼻を受け止めるので、硬い当たりが苦手な方にかなりおすすめです。」"
+            },
+            {
+              stage: "機能説明",
+              copy: "「《体温で馴染む特別なシリコンなので、汗をかいてもピタッと吸いつきます》。柔らかいのにズレにくいのがポイントです。」"
+            },
+            {
+              stage: "価値訴求",
+              copy: "「メガネは毎日何時間も掛けるものなので、鼻に触れる部分の快適さは大事です。《鼻の赤い跡や痛みが消える、一番安くて一番効果のある自己投資です》。」"
+            },
+            {
+              stage: "クロージング",
+              copy: "「数百円の追加で、痛みの我慢を減らせます。まずはこの柔らかさを指で触って比べてみてください。」"
+            }
+          ]
+        }
+      }
+    };
+
+    const state = {
+      concern: null,
+      mode: "plastic",
+      step: 0
+    };
+
+    const els = {
+      choiceButtons: document.querySelectorAll("[data-concern]"),
+      modeButtons: document.querySelectorAll("[data-mode]"),
+      experience: document.getElementById("experience"),
+      selectedConcernText: document.getElementById("selectedConcernText"),
+      sceneEyebrow: document.getElementById("sceneEyebrow"),
+      sceneTitle: document.getElementById("sceneTitle"),
+      modeBadge: document.getElementById("modeBadge"),
+      sceneCanvas: document.getElementById("sceneCanvas"),
+      signalPills: document.getElementById("signalPills"),
+      insightText: document.getElementById("insightText"),
+      miniPoints: document.getElementById("miniPoints"),
+      scriptStage: document.getElementById("scriptStage"),
+      scriptCount: document.getElementById("scriptCount"),
+      scriptProgress: document.getElementById("scriptProgress"),
+      scriptCopy: document.getElementById("scriptCopy"),
+      prevScript: document.getElementById("prevScript"),
+      nextScript: document.getElementById("nextScript"),
+      resetButton: document.getElementById("resetButton"),
+      error: document.getElementById("appError"),
+      live: document.getElementById("liveRegion")
+    };
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function withHighlight(value) {
+      return escapeHtml(value).replace(/《(.+?)》/g, '<mark class="script-mark">$1</mark>');
+    }
+
+    function showError(message) {
+      els.error.textContent = message;
+      els.error.classList.remove("hidden");
+      els.live.textContent = message;
+    }
+
+    function clearError() {
+      els.error.textContent = "";
+      els.error.classList.add("hidden");
+    }
+
+    function selectConcern(key) {
+      try {
+        if (!DATA[key]) {
+          showError("選択内容を読み込めませんでした。もう一度、悩みボタンを押してください。");
+          return;
+        }
+
+        clearError();
+        state.concern = key;
+        state.mode = "plastic";
+        state.step = 0;
+        render();
+        els.experience.classList.remove("hidden");
+        els.experience.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        showError("表示中にエラーが発生しました。ページを再読み込みしてから再度お試しください。");
+      }
+    }
+
+    function setMode(mode) {
+      try {
+        if (!["plastic", "silicone"].includes(mode)) {
+          showError("比較モードを切り替えられませんでした。");
+          return;
+        }
+
+        clearError();
+        state.mode = mode;
+        state.step = 0;
+        render();
+      } catch (error) {
+        showError("モード切り替え中にエラーが発生しました。");
+      }
+    }
+
+    function moveScript(direction) {
+      const concern = DATA[state.concern];
+      if (!concern) return;
+
+      const scripts = concern.scripts[state.mode] || [];
+      if (scripts.length === 0) return;
+
+      if (direction > 0) {
+        state.step = state.step >= scripts.length - 1 ? 0 : state.step + 1;
+      } else {
+        state.step = Math.max(0, state.step - 1);
+      }
+
+      renderScript();
+    }
+
+    function resetExperience() {
+      state.concern = null;
+      state.mode = "plastic";
+      state.step = 0;
+      els.experience.classList.add("hidden");
+      clearError();
+
+      els.choiceButtons.forEach((button) => {
+        button.classList.remove("is-selected");
+        button.setAttribute("aria-pressed", "false");
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      els.live.textContent = "悩みの選択をリセットしました。";
+    }
+
+    function render() {
+      const concern = DATA[state.concern];
+      if (!concern) return;
+
+      const scene = concern.scene[state.mode];
+
+      els.choiceButtons.forEach((button) => {
+        const isSelected = button.dataset.concern === state.concern;
+        button.classList.toggle("is-selected", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
+      });
+
+      els.modeButtons.forEach((button) => {
+        const isActive = button.dataset.mode === state.mode;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+
+      els.selectedConcernText.textContent = `選択中のお悩み：${concern.label}`;
+      els.sceneEyebrow.textContent = concern.eyebrow;
+      els.sceneTitle.textContent = scene.title;
+      els.modeBadge.textContent = scene.badge;
+      els.modeBadge.className = state.mode === "silicone"
+        ? "shrink-0 rounded-full bg-[#ffe0d8] px-3 py-1 text-xs font-black text-[#a7554a]"
+        : "shrink-0 rounded-full bg-[#6b4a43] px-3 py-1 text-xs font-black text-[#fffaf7]";
+
+      els.sceneCanvas.innerHTML = renderScene(state.concern, state.mode);
+      els.insightText.textContent = scene.insight;
+
+      els.signalPills.innerHTML = scene.chips.map((chip) => `
+        <div class="signal-chip rounded-2xl px-3 py-2 text-center text-xs font-black text-[#7f625b]">
+          ${escapeHtml(chip)}
+        </div>
+      `).join("");
+
+      els.miniPoints.innerHTML = scene.points.map((point) => `
+        <div class="grid grid-cols-[auto_1fr] gap-2 rounded-2xl bg-white/45 p-3">
+          <span class="mt-1 h-2 w-2 rounded-full bg-[#e98274]"></span>
+          <p class="text-sm leading-6 text-[#7f625b]">${escapeHtml(point)}</p>
+        </div>
+      `).join("");
+
+      renderScript();
+      els.live.textContent = `${concern.short}の${state.mode === "silicone" ? "極上シリコン" : "標準プラスチック"}シミュレーションを表示しました。`;
+    }
+
+    function renderScript() {
+      const concern = DATA[state.concern];
+      if (!concern) return;
+
+      const scripts = concern.scripts[state.mode] || [];
+      if (scripts.length === 0) {
+        els.scriptStage.textContent = "トーク未設定";
+        els.scriptCount.textContent = "";
+        els.scriptCopy.textContent = "この項目の接客トークを表示できませんでした。";
+        return;
+      }
+
+      state.step = Math.min(state.step, scripts.length - 1);
+      const current = scripts[state.step];
+
+      els.scriptStage.textContent = current.stage;
+      els.scriptCount.textContent = `${state.step + 1} / ${scripts.length}`;
+      els.scriptCopy.innerHTML = withHighlight(current.copy);
+      els.prevScript.disabled = state.step === 0;
+      els.nextScript.textContent = state.step === scripts.length - 1 ? "最初に戻る" : "次の一言へ";
+
+      els.scriptProgress.innerHTML = scripts.map((_, index) => `
+        <span class="progress-dot ${index === state.step ? "is-active" : ""}"></span>
+      `).join("");
+    }
+
+    function renderScene(concern, mode) {
+      if (mode === "silicone") {
+        return renderSiliconeScene(concern);
+      }
+
+      return renderPlasticScene(concern);
+    }
+
+    function renderPlasticScene(concern) {
+      const stress = {
+        slip: `
+          <g class="anim-sweat" opacity="0.86">
+            <path d="M98 92 C90 105 90 116 99 121 C110 116 109 105 98 92Z" fill="#7fb7c8"/>
+            <path d="M222 94 C214 107 214 118 223 123 C234 118 233 107 222 94Z" fill="#7fb7c8"/>
+          </g>
+          <g stroke="#c96a5d" stroke-width="4" stroke-linecap="round" opacity="0.5">
+            <path d="M112 138 L112 184"/>
+            <path d="M208 138 L208 184"/>
+          </g>
+          <g class="anim-slip-pad">
+            <ellipse cx="118" cy="134" rx="23" ry="35" fill="#f2e5dc" stroke="#7d635d" stroke-width="5"/>
+            <ellipse cx="202" cy="134" rx="23" ry="35" fill="#f2e5dc" stroke="#7d635d" stroke-width="5"/>
+          </g>
+        `,
+        marks: `
+          <g class="anim-red-pulse">
+            <ellipse cx="121" cy="151" rx="32" ry="44" fill="#d94d46" opacity="0.6"/>
+            <ellipse cx="199" cy="151" rx="32" ry="44" fill="#d94d46" opacity="0.6"/>
+          </g>
+          <g class="anim-press">
+            <ellipse cx="118" cy="137" rx="22" ry="38" fill="#f2e5dc" stroke="#7d635d" stroke-width="5"/>
+          </g>
+          <g class="anim-press" style="animation-delay: .12s">
+            <ellipse cx="202" cy="137" rx="22" ry="38" fill="#f2e5dc" stroke="#7d635d" stroke-width="5"/>
+          </g>
+          <g stroke="#c96a5d" stroke-width="4" stroke-linecap="round" opacity="0.55">
+            <path d="M88 148 C77 154 77 166 88 172"/>
+            <path d="M232 148 C243 154 243 166 232 172"/>
+          </g>
+        `,
+        pain: `
+          <g class="anim-shock" stroke="#c96a5d" stroke-width="5" stroke-linecap="round">
+            <path d="M96 116 L74 96"/>
+            <path d="M224 116 L246 96"/>
+            <path d="M103 196 L80 218"/>
+            <path d="M217 196 L240 218"/>
+          </g>
+          <g class="anim-bump">
+            <polygon points="91,119 139,103 141,164 99,181" fill="#f1e1d8" stroke="#6f5550" stroke-width="5"/>
+            <polygon points="229,119 181,103 179,164 221,181" fill="#f1e1d8" stroke="#6f5550" stroke-width="5"/>
+          </g>
+          <g fill="#c96a5d" opacity="0.65">
+            <circle cx="126" cy="154" r="9"/>
+            <circle cx="194" cy="154" r="9"/>
+          </g>
+        `
+      }[concern];
+
+      return `
+        <svg viewBox="0 0 320 320" class="h-full max-h-[310px] w-full max-w-[360px]" role="img" aria-label="標準プラスチックパッドの不快ストレスを表す図">
+          <defs>
+            <linearGradient id="nosePlastic" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#f2cfc4"/>
+              <stop offset="100%" stop-color="#d9aa9b"/>
+            </linearGradient>
+            <filter id="softShadowPlastic">
+              <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#8f5f55" flood-opacity="0.18"/>
+            </filter>
+          </defs>
+
+          <g filter="url(#softShadowPlastic)">
+            <path d="M160 56 C130 92 118 137 118 189 C118 239 139 270 160 270 C181 270 202 239 202 189 C202 137 190 92 160 56Z" fill="url(#nosePlastic)"/>
+            <path d="M160 79 C149 112 143 154 145 209" fill="none" stroke="#fff7f2" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+          </g>
+
+          <g fill="none" stroke="#4b3530" stroke-width="9" stroke-linecap="round" opacity="0.74">
+            <path d="M58 122 C82 96 118 96 143 120"/>
+            <path d="M177 120 C202 96 238 96 262 122"/>
+            <path d="M143 120 C153 130 167 130 177 120"/>
+          </g>
+
+          ${stress}
+
+          <g fill="none" stroke="#4b3530" stroke-width="5" stroke-linecap="round" opacity="0.28">
+            <path d="M86 246 C119 289 201 289 234 246"/>
+          </g>
+        </svg>
+      `;
+    }
+
+    function renderSiliconeScene(concern) {
+      const comfort = {
+        slip: `
+          <g class="anim-soft-fade" fill="none" stroke="#e98274" stroke-width="5" stroke-linecap="round">
+            <path d="M91 139 C80 166 83 192 100 214"/>
+            <path d="M229 139 C240 166 237 192 220 214"/>
+          </g>
+          <g fill="#e98274" opacity="0.62">
+            <circle cx="110" cy="135" r="3"/>
+            <circle cx="120" cy="152" r="3"/>
+            <circle cx="203" cy="135" r="3"/>
+            <circle cx="214" cy="152" r="3"/>
+          </g>
+        `,
+        marks: `
+          <g class="anim-soft-fade">
+            <ellipse cx="121" cy="151" rx="30" ry="42" fill="#e98274" opacity="0.18"/>
+            <ellipse cx="199" cy="151" rx="30" ry="42" fill="#e98274" opacity="0.18"/>
+          </g>
+          <g fill="none" stroke="#f3b4aa" stroke-width="5" stroke-linecap="round" opacity="0.72">
+            <path d="M91 151 C103 136 135 136 146 151"/>
+            <path d="M174 151 C185 136 217 136 229 151"/>
+          </g>
+        `,
+        pain: `
+          <g class="anim-soft-fade" fill="none" stroke="#e98274" stroke-width="8" stroke-linecap="round" opacity="0.52">
+            <path d="M104 132 C91 152 91 179 108 199"/>
+            <path d="M216 132 C229 152 229 179 212 199"/>
+          </g>
+          <g fill="#fff4ef" opacity="0.86">
+            <ellipse cx="121" cy="157" rx="35" ry="48"/>
+            <ellipse cx="199" cy="157" rx="35" ry="48"/>
+          </g>
+        `
+      }[concern];
+
+      return `
+        <svg viewBox="0 0 320 320" class="h-full max-h-[310px] w-full max-w-[360px]" role="img" aria-label="極上シリコン鼻パッドがやさしく吸いつく図">
+          <defs>
+            <linearGradient id="noseSilicone" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#f8d8ce"/>
+              <stop offset="100%" stop-color="#e8b5a8"/>
+            </linearGradient>
+            <radialGradient id="gelGlow" cx="50%" cy="48%" r="54%">
+              <stop offset="0%" stop-color="#fffaf7" stop-opacity="0.92"/>
+              <stop offset="62%" stop-color="#ffc8bd" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#e98274" stop-opacity="0.08"/>
+            </radialGradient>
+            <filter id="softShadowSilicone">
+              <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#c96a5d" flood-opacity="0.16"/>
+            </filter>
+          </defs>
+
+          <circle cx="160" cy="174" r="116" fill="url(#gelGlow)" class="anim-gel"/>
+
+          <g filter="url(#softShadowSilicone)">
+            <path d="M160 56 C130 92 118 137 118 189 C118 239 139 270 160 270 C181 270 202 239 202 189 C202 137 190 92 160 56Z" fill="url(#noseSilicone)"/>
+            <path d="M160 82 C150 116 146 154 148 210" fill="none" stroke="#fffaf7" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
+          </g>
+
+          <g fill="none" stroke="#4b3530" stroke-width="9" stroke-linecap="round" opacity="0.74">
+            <path d="M58 122 C82 96 118 96 143 120"/>
+            <path d="M177 120 C202 96 238 96 262 122"/>
+            <path d="M143 120 C153 130 167 130 177 120"/>
+          </g>
+
+          ${comfort}
+
+          <g class="anim-hold">
+            <ellipse cx="118" cy="142" rx="27" ry="42" fill="#ffc8bd" stroke="#e98274" stroke-width="5" opacity="0.92"/>
+            <ellipse cx="202" cy="142" rx="27" ry="42" fill="#ffc8bd" stroke="#e98274" stroke-width="5" opacity="0.92"/>
+            <ellipse cx="118" cy="137" rx="13" ry="22" fill="#fff7f2" opacity="0.5"/>
+            <ellipse cx="202" cy="137" rx="13" ry="22" fill="#fff7f2" opacity="0.5"/>
+          </g>
+
+          <g fill="none" stroke="#9f6d63" stroke-width="5" stroke-linecap="round" opacity="0.36">
+            <path d="M91 243 C124 282 196 282 229 243"/>
+          </g>
+        </svg>
+      `;
+    }
+
+    els.choiceButtons.forEach((button) => {
+      button.addEventListener("click", () => selectConcern(button.dataset.concern));
+    });
+
+    els.modeButtons.forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    els.prevScript.addEventListener("click", () => moveScript(-1));
+    els.nextScript.addEventListener("click", () => moveScript(1));
+    els.resetButton.addEventListener("click", resetExperience);
+  </script>
+</body>
+</html>
