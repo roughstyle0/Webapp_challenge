@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Night Drive Lens｜眩しさ撃退シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            dashboard: [
+              "Inter",
+              "ui-sans-serif",
+              "system-ui",
+              "-apple-system",
+              "BlinkMacSystemFont",
+              "Segoe UI",
+              "sans-serif"
+            ]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --deep: #02040a;
+      --panel: rgba(8, 14, 26, .78);
+      --panel-strong: rgba(10, 18, 34, .95);
+      --line: rgba(125, 211, 252, .24);
+      --blue: #3bd7ff;
+      --blue-hot: #9eeeff;
+      --amber: #ffd166;
+      --orange: #ff8a1f;
+      --safe: #d7ff6b;
+      --muted: #8ba4b7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: #eef8ff;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(59, 215, 255, .18), transparent 32rem),
+        radial-gradient(circle at 90% 20%, rgba(255, 138, 31, .08), transparent 20rem),
+        linear-gradient(180deg, #02040a 0%, #050711 48%, #02040a 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    .dashboard-shell {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .018)),
+        linear-gradient(135deg, rgba(59, 215, 255, .08), rgba(255, 138, 31, .04));
+      border: 1px solid rgba(125, 211, 252, .18);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.025) inset,
+        0 24px 80px rgba(0,0,0,.48);
+      backdrop-filter: blur(18px);
+    }
+
+    .glass-strip {
+      background:
+        linear-gradient(90deg, rgba(59, 215, 255, .08), transparent 40%, rgba(255, 209, 102, .08)),
+        rgba(255,255,255,.025);
+      border: 1px solid rgba(125, 211, 252, .14);
+    }
+
+    .choice-btn {
+      position: relative;
+      isolation: isolate;
+      border: 1px solid rgba(125, 211, 252, .18);
+      background:
+        linear-gradient(145deg, rgba(12, 22, 40, .95), rgba(5, 9, 18, .98));
+      transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease;
+    }
+
+    .choice-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background:
+        radial-gradient(circle at 12% 16%, rgba(59, 215, 255, .18), transparent 34%),
+        radial-gradient(circle at 88% 84%, rgba(255, 209, 102, .12), transparent 34%);
+      opacity: .72;
+    }
+
+    .choice-btn:hover,
+    .choice-btn:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(59, 215, 255, .68);
+      box-shadow:
+        0 0 28px rgba(59, 215, 255, .18),
+        0 14px 34px rgba(0,0,0,.42);
+      outline: none;
+    }
+
+    .choice-btn.is-selected {
+      border-color: rgba(255, 209, 102, .78);
+      box-shadow:
+        0 0 0 1px rgba(255, 209, 102, .28) inset,
+        0 0 34px rgba(255, 209, 102, .16);
+    }
+
+    .meter-dot {
+      width: .5rem;
+      height: .5rem;
+      border-radius: 999px;
+      background: var(--blue);
+      box-shadow: 0 0 16px rgba(59, 215, 255, .92);
+    }
+
+    .sim-frame {
+      background:
+        linear-gradient(180deg, rgba(8, 15, 30, .98), rgba(2, 4, 10, .98));
+      border: 1px solid rgba(125, 211, 252, .18);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.026) inset,
+        0 30px 80px rgba(0,0,0,.52);
+    }
+
+    .scene-viewport {
+      position: relative;
+      min-height: 22rem;
+      overflow: hidden;
+      border-radius: 1.75rem;
+      background:
+        radial-gradient(circle at 50% 16%, rgba(36, 56, 82, .92), rgba(3, 6, 13, .88) 36%, #010309 76%),
+        linear-gradient(180deg, #050915 0%, #03050c 100%);
+      border: 1px solid rgba(125, 211, 252, .16);
+      transition: filter .7s cubic-bezier(.2,.8,.2,1), background .7s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .scene-viewport::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.32)),
+        repeating-linear-gradient(
+          180deg,
+          rgba(255,255,255,.035) 0 1px,
+          transparent 1px 5px
+        );
+      mix-blend-mode: screen;
+      opacity: .26;
+      transition: opacity .7s ease;
+    }
+
+    .sky-haze {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(177, 226, 255, .16), transparent 20rem),
+        linear-gradient(180deg, rgba(210, 235, 255, .08), transparent 52%);
+      opacity: .95;
+      filter: blur(1px);
+      transition: opacity .85s ease, filter .85s ease;
+    }
+
+    .road {
+      position: absolute;
+      left: 50%;
+      bottom: -1rem;
+      width: min(105%, 42rem);
+      height: 68%;
+      transform: translateX(-50%);
+      clip-path: polygon(41% 0, 59% 0, 100% 100%, 0 100%);
+      background:
+        linear-gradient(90deg, transparent 0 42%, rgba(255,255,255,.16) 42.7% 43.2%, transparent 43.8% 56.2%, rgba(255,255,255,.16) 56.8% 57.3%, transparent 58% 100%),
+        linear-gradient(180deg, rgba(34, 45, 56, .7), rgba(12, 16, 24, .98));
+      border-top: 1px solid rgba(255,255,255,.16);
+      transition: filter .75s ease, background .75s ease, opacity .75s ease;
+    }
+
+    .lane-stack {
+      position: absolute;
+      left: 50%;
+      bottom: 3%;
+      width: min(18%, 7rem);
+      height: 55%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .lane-mark {
+      height: clamp(1.8rem, 7vw, 3rem);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .42);
+      box-shadow: 0 0 8px rgba(255,255,255,.25);
+      opacity: .26;
+      transform: perspective(8rem) rotateX(40deg);
+      transition: opacity .75s ease, box-shadow .75s ease, background .75s ease;
+    }
+
+    .shoulder-lines {
+      position: absolute;
+      inset: auto 0 1.5rem 0;
+      height: 54%;
+      pointer-events: none;
+      opacity: .25;
+      background:
+        linear-gradient(72deg, transparent 0 28%, rgba(255,255,255,.34) 28.5% 29%, transparent 29.5%),
+        linear-gradient(108deg, transparent 0 71%, rgba(255,255,255,.34) 71.5% 72%, transparent 72.5%);
+      transition: opacity .75s ease, filter .75s ease;
+    }
+
+    .headlights {
+      position: absolute;
+      top: 37%;
+      left: 50%;
+      width: min(66%, 20rem);
+      display: flex;
+      justify-content: space-between;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: transform .85s cubic-bezier(.2,.8,.2,1), filter .85s ease;
+    }
+
+    .lamp {
+      position: relative;
+      width: clamp(1.1rem, 4.8vw, 1.8rem);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle, #ffffff 0 16%, var(--blue-hot) 17% 42%, rgba(59, 215, 255, .3) 43% 68%, transparent 72%);
+      box-shadow:
+        0 0 14px rgba(255,255,255,.9),
+        0 0 36px rgba(59, 215, 255,.95),
+        0 0 86px rgba(59, 215, 255,.72);
+      transition: box-shadow .85s ease, transform .85s ease, background .85s ease;
+    }
+
+    .lamp::before,
+    .lamp::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: clamp(9rem, 56vw, 24rem);
+      height: clamp(9rem, 56vw, 24rem);
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      pointer-events: none;
+      transition: opacity .85s ease, transform .85s ease, filter .85s ease;
+    }
+
+    .lamp::before {
+      background:
+        conic-gradient(
+          from 0deg,
+          transparent 0 4deg,
+          rgba(220, 250, 255, .86) 5deg 8deg,
+          transparent 9deg 42deg,
+          rgba(59, 215, 255, .58) 43deg 47deg,
+          transparent 48deg 88deg,
+          rgba(255,255,255,.8) 89deg 92deg,
+          transparent 93deg 132deg,
+          rgba(59, 215, 255, .5) 133deg 137deg,
+          transparent 138deg 178deg,
+          rgba(255,255,255,.78) 179deg 182deg,
+          transparent 183deg 222deg,
+          rgba(59, 215, 255, .5) 223deg 227deg,
+          transparent 228deg 268deg,
+          rgba(255,255,255,.72) 269deg 272deg,
+          transparent 273deg 314deg,
+          rgba(59, 215, 255, .55) 315deg 319deg,
+          transparent 320deg 360deg
+        );
+      opacity: .92;
+      filter: blur(.8px);
+      animation: flarePulse 1.9s ease-in-out infinite alternate;
+    }
+
+    .lamp::after {
+      background:
+        radial-gradient(circle, rgba(255,255,255,.78) 0 4%, rgba(59,215,255,.34) 5% 18%, rgba(59,215,255,.15) 19% 44%, transparent 68%);
+      opacity: .88;
+      filter: blur(2px);
+      transform: translate(-50%, -50%) scale(1.18);
+    }
+
+    .danger-wash {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 39%, rgba(255,255,255,.28), rgba(59,215,255,.23) 10rem, transparent 18rem),
+        linear-gradient(180deg, transparent, rgba(255,255,255,.08) 56%, transparent);
+      opacity: .9;
+      mix-blend-mode: screen;
+      transition: opacity .85s ease, filter .85s ease;
+    }
+
+    .contrast-rim {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, transparent 0 38%, rgba(215, 255, 107, .08) 62%, rgba(255, 209, 102, .05) 100%);
+      opacity: 0;
+      transition: opacity .85s ease;
+    }
+
+    .rain-layer,
+    .reflection-layer,
+    .highway-lights,
+    .horizon-signals {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      transition: opacity .75s ease, filter .75s ease;
+    }
+
+    .rain-layer {
+      opacity: 0;
+      background:
+        repeating-linear-gradient(
+          104deg,
+          transparent 0 11px,
+          rgba(180, 226, 255, .38) 12px 13px,
+          transparent 14px 25px
+        );
+      transform: skewX(-8deg);
+      animation: rainMove .65s linear infinite;
+      mix-blend-mode: screen;
+    }
+
+    .reflection-layer {
+      opacity: 0;
+      background:
+        radial-gradient(ellipse at 50% 67%, rgba(255,255,255,.36), transparent 22%),
+        radial-gradient(ellipse at 35% 78%, rgba(59,215,255,.32), transparent 22%),
+        radial-gradient(ellipse at 65% 78%, rgba(59,215,255,.32), transparent 22%),
+        linear-gradient(180deg, transparent 40%, rgba(255,255,255,.15) 76%, transparent);
+      filter: blur(5px);
+      mix-blend-mode: screen;
+    }
+
+    .highway-lights {
+      opacity: 0;
+      background:
+        radial-gradient(circle at 22% 43%, rgba(255,209,102,.52) 0 .22rem, transparent .35rem),
+        radial-gradient(circle at 78% 43%, rgba(255,209,102,.52) 0 .22rem, transparent .35rem),
+        radial-gradient(circle at 15% 37%, rgba(59,215,255,.34) 0 .18rem, transparent .32rem),
+        radial-gradient(circle at 85% 37%, rgba(59,215,255,.34) 0 .18rem, transparent .32rem),
+        radial-gradient(circle at 50% 33%, rgba(255,255,255,.46) 0 .16rem, transparent .3rem);
+      filter: blur(1.2px);
+    }
+
+    .horizon-signals {
+      opacity: .16;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 42%;
+      padding: 28% 10% 0;
+    }
+
+    .signal-post {
+      height: 4.6rem;
+      border-radius: 999px 999px .25rem .25rem;
+      border: 1px solid rgba(215,255,107,.26);
+      background:
+        linear-gradient(180deg, rgba(215,255,107,.42), rgba(215,255,107,.02) 34%, transparent);
+      filter: blur(.3px);
+      transform: perspective(16rem) rotateX(20deg);
+      transition: opacity .75s ease, filter .75s ease, box-shadow .75s ease;
+    }
+
+    .scene-rain .rain-layer {
+      opacity: .54;
+    }
+
+    .scene-rain .reflection-layer {
+      opacity: .95;
+    }
+
+    .scene-rain .road {
+      background:
+        linear-gradient(90deg, transparent 0 42%, rgba(255,255,255,.11) 42.7% 43.2%, transparent 43.8% 56.2%, rgba(255,255,255,.11) 56.8% 57.3%, transparent 58% 100%),
+        linear-gradient(180deg, rgba(54, 69, 80, .76), rgba(11, 14, 22, .98));
+      filter: saturate(.74) blur(.4px);
+    }
+
+    .scene-rain .lane-mark {
+      opacity: .13;
+      filter: blur(1.8px);
+    }
+
+    .scene-highway .sky-haze {
+      opacity: 1;
+      filter: blur(4px);
+    }
+
+    .scene-highway .highway-lights {
+      opacity: .82;
+    }
+
+    .scene-highway .headlights {
+      top: 34%;
+      width: min(52%, 16rem);
+      filter: blur(.4px);
+    }
+
+    .scene-highway .road {
+      filter: blur(.6px) saturate(.78);
+    }
+
+    .mode-safe.scene-viewport {
+      background:
+        radial-gradient(circle at 50% 16%, rgba(21, 44, 58, .92), rgba(2, 8, 15, .94) 40%, #010309 78%),
+        linear-gradient(180deg, #050915 0%, #03050c 100%);
+    }
+
+    .mode-safe .sky-haze {
+      opacity: .28;
+      filter: blur(.2px);
+    }
+
+    .mode-safe::before {
+      opacity: .12;
+    }
+
+    .mode-safe .danger-wash {
+      opacity: .1;
+      filter: blur(8px);
+    }
+
+    .mode-safe .contrast-rim {
+      opacity: 1;
+    }
+
+    .mode-safe .lamp {
+      transform: scale(.72);
+      background:
+        radial-gradient(circle, #ffffff 0 14%, #d9fbff 15% 32%, rgba(59, 215, 255, .18) 33% 58%, transparent 72%);
+      box-shadow:
+        0 0 7px rgba(255,255,255,.78),
+        0 0 18px rgba(59, 215, 255,.42);
+    }
+
+    .mode-safe .lamp::before {
+      opacity: .08;
+      transform: translate(-50%, -50%) scale(.22) rotate(18deg);
+      filter: blur(2px);
+      animation: none;
+    }
+
+    .mode-safe .lamp::after {
+      opacity: .16;
+      transform: translate(-50%, -50%) scale(.36);
+      filter: blur(3px);
+    }
+
+    .mode-safe .road {
+      filter: saturate(1.18) contrast(1.08);
+      background:
+        linear-gradient(90deg, transparent 0 42%, rgba(215,255,107,.36) 42.7% 43.2%, transparent 43.8% 56.2%, rgba(215,255,107,.36) 56.8% 57.3%, transparent 58% 100%),
+        linear-gradient(180deg, rgba(32, 46, 49, .86), rgba(13, 18, 23, .98));
+    }
+
+    .mode-safe .lane-mark {
+      opacity: .95;
+      background: rgba(235, 255, 214, .94);
+      box-shadow:
+        0 0 10px rgba(215,255,107,.62),
+        0 0 22px rgba(215,255,107,.24);
+    }
+
+    .mode-safe .shoulder-lines {
+      opacity: .78;
+      filter: drop-shadow(0 0 8px rgba(215,255,107,.34));
+    }
+
+    .mode-safe .rain-layer {
+      opacity: .22;
+    }
+
+    .mode-safe .reflection-layer {
+      opacity: .25;
+      filter: blur(8px);
+    }
+
+    .mode-safe .highway-lights {
+      opacity: .42;
+      filter: blur(.1px);
+    }
+
+    .mode-safe .horizon-signals {
+      opacity: .72;
+    }
+
+    .mode-safe .signal-post {
+      box-shadow: 0 0 16px rgba(215,255,107,.26);
+      filter: blur(0);
+    }
+
+    .toggle-pill {
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(125,211,252,.16);
+    }
+
+    .toggle-btn {
+      transition: background .25s ease, color .25s ease, box-shadow .25s ease, transform .25s ease;
+    }
+
+    .toggle-btn[aria-pressed="true"] {
+      background:
+        linear-gradient(135deg, rgba(59,215,255,.22), rgba(215,255,107,.12));
+      color: #f6feff;
+      box-shadow:
+        0 0 0 1px rgba(59,215,255,.35) inset,
+        0 0 24px rgba(59,215,255,.16);
+    }
+
+    .talk-panel {
+      background:
+        linear-gradient(160deg, rgba(255,209,102,.09), transparent 28%),
+        linear-gradient(180deg, rgba(8,14,26,.96), rgba(4,8,16,.96));
+      border: 1px solid rgba(255,209,102,.2);
+    }
+
+    .script-highlight {
+      color: #fff8d4;
+      background: linear-gradient(transparent 54%, rgba(255, 209, 102, .28) 54%);
+    }
+
+    .safe-highlight {
+      color: #efffbb;
+      background: linear-gradient(transparent 54%, rgba(215, 255, 107, .24) 54%);
+    }
+
+    .toast {
+      transform: translateY(1rem);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes flarePulse {
+      from {
+        transform: translate(-50%, -50%) scale(.94) rotate(0deg);
+        opacity: .72;
+      }
+      to {
+        transform: translate(-50%, -50%) scale(1.1) rotate(8deg);
+        opacity: 1;
+      }
+    }
+
+    @keyframes rainMove {
+      from {
+        background-position: 0 0;
+      }
+      to {
+        background-position: -2rem 4rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-dashboard antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="dashboard-shell rounded-[2rem] p-5 sm:p-7">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[.28em] text-cyan-200/80">
+              <span class="meter-dot"></span>
+              Night Drive Safety Lens
+            </div>
+            <div class="grid gap-2">
+              <h1 class="text-3xl font-black leading-tight tracking-tight text-white sm:text-5xl">
+                眩しさ撃退<br class="sm:hidden" />
+                シミュレーター
+              </h1>
+              <p class="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+                対向車のLED、雨夜の反射、高速道路の霞み。
+                お客様の「怖い瞬間」を選ぶだけで、標準レンズと夜間専用レンズの見え方を新人スタッフでも説明できます。
+              </p>
+            </div>
+          </div>
+
+          <div class="glass-strip grid grid-cols-3 gap-2 rounded-2xl p-3 text-center">
+            <div class="grid gap-1">
+              <span class="text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Mode</span>
+              <span class="text-sm font-black text-cyan-100">Night</span>
+            </div>
+            <div class="grid gap-1">
+              <span class="text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Glare</span>
+              <span class="text-sm font-black text-orange-200">Alert</span>
+            </div>
+            <div class="grid gap-1">
+              <span class="text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Script</span>
+              <span class="text-sm font-black text-lime-200">Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <section id="choiceSection" class="grid gap-4" aria-labelledby="choiceTitle">
+          <div class="flex flex-col gap-1">
+            <p class="text-xs font-black uppercase tracking-[.24em] text-amber-200">Step 01</p>
+            <h2 id="choiceTitle" class="text-xl font-black text-white">
+              お客様が夜の運転で最も怖い瞬間は？
+            </h2>
+            <p class="text-sm leading-6 text-slate-400">
+              まずは1つだけ選択してください。選択後にシミュレーションと接客カンペを表示します。
+            </p>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-3">
+            <button
+              class="choice-btn rounded-3xl p-4 text-left"
+              type="button"
+              data-scene="highbeam"
+            >
+              <span class="mb-3 inline-flex rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[.16em] text-cyan-100">
+                CASE 01
+              </span>
+              <span class="block text-lg font-black leading-snug text-white">
+                対向車のハイビーム・LEDライトの直撃
+              </span>
+              <span class="mt-3 block text-sm leading-6 text-slate-400">
+                青白い光が目に刺さり、周囲が一瞬見えなくなる。
+              </span>
+            </button>
+
+            <button
+              class="choice-btn rounded-3xl p-4 text-left"
+              type="button"
+              data-scene="rain"
+            >
+              <span class="mb-3 inline-flex rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[.16em] text-cyan-100">
+                CASE 02
+              </span>
+              <span class="block text-lg font-black leading-snug text-white">
+                雨の日の夜<br />
+                路面の反射で白線が見えない
+              </span>
+              <span class="mt-3 block text-sm leading-6 text-slate-400">
+                濡れた路面にライトが広がり、車線感覚が不安定になる。
+              </span>
+            </button>
+
+            <button
+              class="choice-btn rounded-3xl p-4 text-left"
+              type="button"
+              data-scene="highway"
+            >
+              <span class="mb-3 inline-flex rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[.16em] text-cyan-100">
+                CASE 03
+              </span>
+              <span class="block text-lg font-black leading-snug text-white">
+                夕暮れ〜夜間の高速道路<br />
+                全体的に視界が霞む
+              </span>
+              <span class="mt-3 block text-sm leading-6 text-slate-400">
+                速度が出ているのに、標識や白線の輪郭がぼやける。
+              </span>
+            </button>
+          </div>
+
+          <p id="errorText" class="hidden rounded-2xl border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm font-bold text-orange-100">
+            シーンを選択してください。
+          </p>
+        </section>
+      </div>
+    </header>
+
+    <section id="appSection" class="hidden grid gap-5" aria-live="polite">
+      <div class="dashboard-shell rounded-[2rem] p-4 sm:p-6">
+        <div class="grid gap-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="grid gap-1">
+              <p class="text-xs font-black uppercase tracking-[.24em] text-amber-200">Step 02</p>
+              <h2 id="sceneTitle" class="text-2xl font-black text-white"></h2>
+              <p id="sceneLead" class="text-sm leading-6 text-slate-400"></p>
+            </div>
+            <button
+              id="resetBtn"
+              type="button"
+              class="rounded-2xl border border-slate-600/70 px-4 py-3 text-sm font-black text-slate-200 transition hover:border-cyan-300/70 hover:bg-cyan-300/10 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
+            >
+              シーンを選び直す
+            </button>
+          </div>
+
+          <div class="toggle-pill grid grid-cols-2 gap-2 rounded-2xl p-2">
+            <button
+              id="standardBtn"
+              type="button"
+              aria-pressed="true"
+              class="toggle-btn rounded-xl px-3 py-3 text-sm font-black text-slate-300"
+            >
+              標準レンズ
+            </button>
+            <button
+              id="safeBtn"
+              type="button"
+              aria-pressed="false"
+              class="toggle-btn rounded-xl px-3 py-3 text-sm font-black text-slate-300"
+            >
+              夜間専用レンズ
+            </button>
+          </div>
+
+          <div id="sceneViewport" class="scene-viewport scene-highbeam" role="img" aria-label="夜間運転の見え方シミュレーション">
+            <div class="sky-haze"></div>
+            <div class="highway-lights"></div>
+            <div class="horizon-signals">
+              <div class="signal-post"></div>
+              <div class="signal-post"></div>
+            </div>
+            <div class="road"></div>
+            <div class="shoulder-lines"></div>
+            <div class="lane-stack" aria-hidden="true">
+              <div class="lane-mark"></div>
+              <div class="lane-mark"></div>
+              <div class="lane-mark"></div>
+              <div class="lane-mark"></div>
+            </div>
+            <div class="rain-layer"></div>
+            <div class="reflection-layer"></div>
+            <div class="headlights" aria-hidden="true">
+              <div class="lamp"></div>
+              <div class="lamp"></div>
+            </div>
+            <div class="danger-wash"></div>
+            <div class="contrast-rim"></div>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-2">
+            <article class="rounded-3xl border border-orange-300/20 bg-orange-400/10 p-4">
+              <p class="mb-2 text-xs font-black uppercase tracking-[.18em] text-orange-200">Standard Lens Risk</p>
+              <h3 class="mb-2 text-lg font-black text-white">標準レンズで起きやすい見え方</h3>
+              <p id="riskText" class="text-sm leading-7 text-slate-300"></p>
+            </article>
+
+            <article class="rounded-3xl border border-lime-300/20 bg-lime-300/10 p-4">
+              <p class="mb-2 text-xs font-black uppercase tracking-[.18em] text-lime-200">Night Lens Effect</p>
+              <h3 class="mb-2 text-lg font-black text-white">夜間専用レンズで伝える価値</h3>
+              <p id="effectText" class="text-sm leading-7 text-slate-300"></p>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div class="talk-panel rounded-[2rem] p-4 sm:p-6">
+        <div class="grid gap-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="grid gap-1">
+              <p class="text-xs font-black uppercase tracking-[.24em] text-amber-200">Step 03</p>
+              <h2 class="text-2xl font-black text-white">新人スタッフ用・接客トークカンペ</h2>
+              <p class="text-sm leading-6 text-slate-400">
+                そのまま読み上げられるよう、共感 → 危険の言語化 → 解決提案 → 安心の締め、の順に表示します。
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 rounded-2xl border border-amber-200/20 bg-amber-200/10 px-3 py-2">
+              <span class="h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_16px_rgba(255,209,102,.9)]"></span>
+              <span id="talkStepBadge" class="text-xs font-black tracking-[.18em] text-amber-100"></span>
+            </div>
+          </div>
+
+          <article class="rounded-3xl border border-white/10 bg-black/30 p-4 sm:p-5">
+            <div class="grid gap-3">
+              <div class="flex items-center gap-2">
+                <span id="talkLabel" class="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[.18em] text-cyan-100"></span>
+              </div>
+              <p id="talkText" class="text-lg font-bold leading-9 text-white"></p>
+            </div>
+          </article>
+
+          <div class="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+            <div class="h-2 overflow-hidden rounded-full bg-white/10">
+              <div id="talkProgress" class="h-full rounded-full bg-gradient-to-r from-cyan-300 via-lime-200 to-amber-200 transition-all duration-300"></div>
+            </div>
+            <button
+              id="prevTalkBtn"
+              type="button"
+              class="rounded-2xl border border-slate-600/70 px-4 py-3 text-sm font-black text-slate-200 transition hover:border-cyan-300/70 hover:bg-cyan-300/10 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
+            >
+              戻る
+            </button>
+            <button
+              id="nextTalkBtn"
+              type="button"
+              class="rounded-2xl bg-gradient-to-r from-cyan-300 to-lime-200 px-5 py-3 text-sm font-black text-slate-950 shadow-[0_0_28px_rgba(59,215,255,.2)] transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-lime-200/50"
+            >
+              次のトーク
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rounded-[2rem] border border-cyan-200/10 bg-cyan-200/5 p-4 text-sm leading-7 text-slate-400">
+        <strong class="text-cyan-100">提案時の一言：</strong>
+        夜間の見え方には個人差があります。強い眩しさ、急な見えづらさ、視力変化を訴えるお客様には、レンズ提案とあわせて眼科受診も丁寧にご案内してください。
+      </aside>
+    </section>
+  </main>
+
+  <div id="toast" class="toast fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-cyan-200/20 bg-slate-950/95 px-4 py-3 text-sm font-bold text-cyan-50 shadow-2xl sm:left-auto sm:w-96">
+    夜間専用レンズ表示に切り替えました。光の拡散が収束し、白線と標識の輪郭が浮き上がります。
+  </div>
+
+  <script>
+    const scenes = {
+      highbeam: {
+        title: "対向車のハイビーム・LEDライトの直撃",
+        lead: "青白いLEDが目に刺さり、スターバースト状に光が散ってしまうシーンです。",
+        risk: "強いLED光が星のように広がり、視線の中心だけでなく周辺視野まで白くにじみます。対向車の横にいる歩行者や、道路端の情報を見落としやすい状態です。",
+        effect: "強烈な光の拡散を抑えながら、道路の白線や端の輪郭は暗くしすぎずに残します。『眩しさを我慢する』のではなく、『危険情報を見やすくする』提案に変えられます。",
+        className: "scene-highbeam",
+        talks: [
+          {
+            label: "共感",
+            html: "「夜の対向車のLED、<span class='script-highlight'>目に刺さるように眩しい</span>ですよね。特にハイビーム気味に感じる車が来ると、一瞬だけ道路の端まで見えにくくなる方が多いです。」"
+          },
+          {
+            label: "危険の言語化",
+            html: "「今のシミュレーションのように、標準レンズでは光が星のように散って、<span class='script-highlight'>歩行者・白線・道路端の情報が光に飲まれる</span>ことがあります。夜の運転では、その一瞬がとても怖いんです。」"
+          },
+          {
+            label: "解決提案",
+            html: "「<span class='safe-highlight'>普通のサングラスを夜にかけるのは危険ですが、これは夜のために作られた特別なレンズです。</span> 全体を暗くするのではなく、眩しさの原因になる光の広がりを抑える設計です。」"
+          },
+          {
+            label: "安心の締め",
+            html: "「<span class='safe-highlight'>眩しい光の波長だけをカットし、路面は明るく見せる。ご自身と家族の命を守る安全装備です。</span> 夜の運転が不安なお客様ほど、まず体感していただきたいレンズです。」"
+          }
+        ]
+      },
+      rain: {
+        title: "雨の日の夜：路面の反射で白線が見えない",
+        lead: "濡れた路面にライトが反射し、白線と反射光の境界が溶けるシーンです。",
+        risk: "雨の日の夜は、ライトが路面に膜のように広がります。白線、停止線、縁石の境目が反射に埋もれ、車線を保つための目印が減ってしまいます。",
+        effect: "反射の白飛びを落ち着かせ、白線と路面の差を見つけやすくします。濡れた路面を暗く潰すのではなく、必要なコントラストを立ち上げる見せ方です。",
+        className: "scene-rain",
+        talks: [
+          {
+            label: "共感",
+            html: "「雨の日の夜って、対向車だけでなく路面全体が光って、<span class='script-highlight'>白線がどこにあるのか分かりにくい</span>ですよね。運転後に目がどっと疲れる方も多いです。」"
+          },
+          {
+            label: "危険の言語化",
+            html: "「濡れた路面は鏡のようにライトを返すので、標準レンズだと白線と反射光が混ざります。つまり、<span class='script-highlight'>車線を判断する材料が減ってしまう</span>状態です。」"
+          },
+          {
+            label: "解決提案",
+            html: "「<span class='safe-highlight'>普通のサングラスを夜にかけるのは危険ですが、これは夜のために作られた特別なレンズです。</span> 暗くしてごまかすのではなく、反射のギラつきを抑えて、白線の輪郭を見つけやすくします。」"
+          },
+          {
+            label: "安心の締め",
+            html: "「<span class='safe-highlight'>眩しい光の波長だけをカットし、路面は明るく見せる。ご自身と家族の命を守る安全装備です。</span> 雨の日にも運転される方には、かなり価値を感じていただきやすいです。」"
+          }
+        ]
+      },
+      highway: {
+        title: "夕暮れ〜夜間の高速道路：全体的に視界が霞む",
+        lead: "薄暗さ、速度、遠方のライトが重なり、標識や白線の輪郭が曖昧になるシーンです。",
+        risk: "夕暮れから夜にかけては、明るさが中途半端でピントの負担が増えます。高速道路では判断時間が短いため、標識や車線のぼやけが不安につながります。",
+        effect: "遠方の光のにじみを抑え、白線や標識の輪郭を拾いやすくします。暗さを足すのではなく、視界のノイズを減らして判断しやすくする提案です。",
+        className: "scene-highway",
+        talks: [
+          {
+            label: "共感",
+            html: "「夕暮れから夜の高速は、明るいのか暗いのか中途半端で、<span class='script-highlight'>全体がうっすら霞んで見える</span>ことがありますよね。速度が出ている分、不安も大きくなります。」"
+          },
+          {
+            label: "危険の言語化",
+            html: "「標準レンズのままだと、遠くのライトや標識の輪郭がにじんで、判断までに少し時間がかかります。高速道路では、<span class='script-highlight'>その少しの遅れがストレス</span>になります。」"
+          },
+          {
+            label: "解決提案",
+            html: "「<span class='safe-highlight'>普通のサングラスを夜にかけるのは危険ですが、これは夜のために作られた特別なレンズです。</span> 視界を暗く潰さず、遠方の光のにじみを抑えて、白線や標識を見つけやすくします。」"
+          },
+          {
+            label: "安心の締め",
+            html: "「<span class='safe-highlight'>眩しい光の波長だけをカットし、路面は明るく見せる。ご自身と家族の命を守る安全装備です。</span> 長距離や高速道路を走る方には、安心感として提案できます。」"
+          }
+        ]
+      }
+    };
+
+    const state = {
+      sceneKey: null,
+      mode: "standard",
+      talkIndex: 0
+    };
+
+    const choiceSection = document.getElementById("choiceSection");
+    const appSection = document.getElementById("appSection");
+    const sceneTitle = document.getElementById("sceneTitle");
+    const sceneLead = document.getElementById("sceneLead");
+    const riskText = document.getElementById("riskText");
+    const effectText = document.getElementById("effectText");
+    const sceneViewport = document.getElementById("sceneViewport");
+    const standardBtn = document.getElementById("standardBtn");
+    const safeBtn = document.getElementById("safeBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const talkStepBadge = document.getElementById("talkStepBadge");
+    const talkLabel = document.getElementById("talkLabel");
+    const talkText = document.getElementById("talkText");
+    const talkProgress = document.getElementById("talkProgress");
+    const prevTalkBtn = document.getElementById("prevTalkBtn");
+    const nextTalkBtn = document.getElementById("nextTalkBtn");
+    const errorText = document.getElementById("errorText");
+    const toast = document.getElementById("toast");
+
+    function getScene() {
+      if (!state.sceneKey || !scenes[state.sceneKey]) {
+        return null;
+      }
+      return scenes[state.sceneKey];
+    }
+
+    function selectScene(sceneKey) {
+      if (!scenes[sceneKey]) {
+        showError("選択されたシーンを読み込めませんでした。もう一度選択してください。");
+        return;
+      }
+
+      state.sceneKey = sceneKey;
+      state.mode = "standard";
+      state.talkIndex = 0;
+
+      document.querySelectorAll("[data-scene]").forEach((button) => {
+        button.classList.toggle("is-selected", button.dataset.scene === sceneKey);
+      });
+
+      errorText.classList.add("hidden");
+      appSection.classList.remove("hidden");
+
+      renderAll();
+
+      window.requestAnimationFrame(() => {
+        appSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function renderAll() {
+      const scene = getScene();
+      if (!scene) {
+        showError("シーン情報がありません。最初から選択してください。");
+        return;
+      }
+
+      sceneTitle.textContent = scene.title;
+      sceneLead.textContent = scene.lead;
+      riskText.textContent = scene.risk;
+      effectText.textContent = scene.effect;
+
+      sceneViewport.className = `scene-viewport ${scene.className}`;
+      if (state.mode === "safe") {
+        sceneViewport.classList.add("mode-safe");
+      }
+
+      standardBtn.setAttribute("aria-pressed", String(state.mode === "standard"));
+      safeBtn.setAttribute("aria-pressed", String(state.mode === "safe"));
+
+      renderTalk();
+    }
+
+    function setMode(mode) {
+      if (!["standard", "safe"].includes(mode)) {
+        return;
+      }
+
+      state.mode = mode;
+      renderAll();
+
+      if (mode === "safe") {
+        showToast();
+      }
+    }
+
+    function renderTalk() {
+      const scene = getScene();
+      if (!scene) {
+        return;
+      }
+
+      const max = scene.talks.length;
+      const safeIndex = Math.min(Math.max(state.talkIndex, 0), max - 1);
+      state.talkIndex = safeIndex;
+
+      const talk = scene.talks[safeIndex];
+
+      talkStepBadge.textContent = `${safeIndex + 1} / ${max}`;
+      talkLabel.textContent = talk.label;
+      talkText.innerHTML = talk.html;
+      talkProgress.style.width = `${((safeIndex + 1) / max) * 100}%`;
+
+      prevTalkBtn.disabled = safeIndex === 0;
+      prevTalkBtn.classList.toggle("opacity-40", safeIndex === 0);
+      prevTalkBtn.classList.toggle("cursor-not-allowed", safeIndex === 0);
+
+      nextTalkBtn.textContent = safeIndex === max - 1 ? "最初に戻る" : "次のトーク";
+    }
+
+    function showError(message) {
+      errorText.textContent = message;
+      errorText.classList.remove("hidden");
+    }
+
+    let toastTimer = null;
+
+    function showToast() {
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2800);
+    }
+
+    document.querySelectorAll("[data-scene]").forEach((button) => {
+      button.addEventListener("click", () => {
+        selectScene(button.dataset.scene);
+      });
+    });
+
+    standardBtn.addEventListener("click", () => setMode("standard"));
+    safeBtn.addEventListener("click", () => setMode("safe"));
+
+    resetBtn.addEventListener("click", () => {
+      state.sceneKey = null;
+      state.mode = "standard";
+      state.talkIndex = 0;
+
+      appSection.classList.add("hidden");
+      document.querySelectorAll("[data-scene]").forEach((button) => {
+        button.classList.remove("is-selected");
+      });
+
+      window.requestAnimationFrame(() => {
+        choiceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    prevTalkBtn.addEventListener("click", () => {
+      if (state.talkIndex > 0) {
+        state.talkIndex -= 1;
+        renderTalk();
+      }
+    });
+
+    nextTalkBtn.addEventListener("click", () => {
+      const scene = getScene();
+      if (!scene) {
+        showError("先にシーンを選択してください。");
+        return;
+      }
+
+      if (state.talkIndex >= scene.talks.length - 1) {
+        state.talkIndex = 0;
+      } else {
+        state.talkIndex += 1;
+      }
+
+      renderTalk();
+    });
+  </script>
+</body>
+</html>
