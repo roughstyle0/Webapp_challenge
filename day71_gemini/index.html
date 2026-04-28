@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ナイトドライブ・シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* =========================================
+           Custom CSS for Simulation Animations
+           ========================================= */
+        
+        /* シミュレーターのベース設定 */
+        #simulator-view {
+            will-change: background-color;
+            transition: background-color 0.8s ease;
+        }
+
+        /* 共通：道路の遠近感表現 */
+        .road-perspective {
+            position: absolute;
+            bottom: -20%;
+            left: -50%;
+            width: 200%;
+            height: 80%;
+            transform: perspective(300px) rotateX(70deg);
+            background-color: #080a0f;
+            transition: background-color 1s ease;
+        }
+        [data-lens="night"] .road-perspective {
+            background-color: #111827; /* 夜間レンズでアスファルトのコントラスト向上 */
+        }
+
+        /* 共通：センターライン */
+        .center-line {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 6px;
+            height: 100%;
+            transform: translateX(-50%);
+            background: repeating-linear-gradient(to top, transparent 0, transparent 20px, rgba(255,255,255,0.7) 20px, rgba(255,255,255,0.7) 60px);
+            transition: all 1s ease;
+            will-change: filter, opacity, background;
+        }
+        [data-lens="normal"] .center-line {
+            opacity: 0.2;
+            filter: blur(4px);
+        }
+        [data-lens="night"] .center-line {
+            opacity: 1;
+            filter: blur(0px);
+            /* 夜間レンズで白線がネオンイエローのようにクッキリ浮き上がる */
+            background: repeating-linear-gradient(to top, transparent 0, transparent 20px, #fde047 20px, #fde047 60px);
+            box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
+        }
+
+        /* --- Scene 1: Highbeam --- */
+        .scene-layer { opacity: 0; pointer-events: none; transition: opacity 0.5s ease; position: absolute; inset: 0; }
+        [data-scene="highbeam"] .s-highbeam { opacity: 1; }
+
+        .light-glare {
+            position: absolute;
+            top: 40%;
+            border-radius: 50%;
+            transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform, filter, box-shadow;
+        }
+        .light-left { left: 40%; transform: translate(-50%, -50%); }
+        .light-right { left: 60%; transform: translate(-50%, -50%); }
+
+        [data-scene="highbeam"][data-lens="normal"] .light-glare {
+            width: 150px;
+            height: 150px;
+            background: #ffffff;
+            box-shadow: 0 0 80px 40px #fff, 0 0 200px 100px rgba(255, 255, 255, 0.6);
+            filter: blur(10px);
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+        [data-scene="highbeam"][data-lens="night"] .light-glare {
+            width: 20px;
+            height: 20px;
+            background: #cffafe; /* 鋭いLEDブルーのコア */
+            box-shadow: 0 0 15px 5px rgba(6, 182, 212, 0.8);
+            filter: blur(1px);
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* --- Scene 2: Rain --- */
+        [data-scene="rain"] .s-rain { opacity: 1; }
+
+        .wet-reflection {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 55%;
+            background: linear-gradient(to top, rgba(255,255,255,0.6), transparent);
+            transition: all 1s ease;
+            will-change: opacity, filter;
+        }
+        [data-scene="rain"][data-lens="normal"] .wet-reflection {
+            opacity: 0.85;
+            filter: blur(12px);
+        }
+        [data-scene="rain"][data-lens="night"] .wet-reflection {
+            opacity: 0;
+            filter: blur(0px);
+        }
+
+        /* --- Scene 3: Highway --- */
+        [data-scene="highway"] .s-highway { opacity: 1; }
+
+        .highway-smog {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center 40%, rgba(100,110,130,0.6), transparent 70%);
+            transition: all 1s ease;
+            will-change: opacity, filter;
+        }
+        [data-scene="highway"][data-lens="normal"] .highway-smog {
+            opacity: 1;
+            filter: blur(6px);
+        }
+        [data-scene="highway"][data-lens="night"] .highway-smog {
+            opacity: 0;
+            filter: blur(0px);
+        }
+
+        .tail-light-glow {
+            position: absolute;
+            top: 45%;
+            border-radius: 50%;
+            background: #ef4444;
+            transition: all 1s ease;
+            will-change: transform, filter, box-shadow;
+        }
+        .tl-left { left: 45%; transform: translate(-50%, -50%); }
+        .tl-right { left: 55%; transform: translate(-50%, -50%); }
+
+        [data-scene="highway"][data-lens="normal"] .tail-light-glow {
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 0 50px 20px rgba(239, 68, 68, 0.7);
+            filter: blur(8px);
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+        [data-scene="highway"][data-lens="night"] .tail-light-glow {
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.9);
+            filter: blur(0px);
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* スクリプトエリアのフェードアニメーション */
+        .script-fade {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-[#030712] text-slate-300 font-sans antialiased min-h-screen selection:bg-cyan-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-[#050810] py-4 px-6 sticky top-0 z-50 shadow-md">
+        <div class="max-w-6xl mx-auto flex items-center gap-3">
+            <div class="w-2 h-6 bg-cyan-500 rounded-sm"></div>
+            <h1 class="text-lg md:text-xl font-bold tracking-wider text-slate-100">
+                NIGHT DRIVE <span class="text-cyan-400 font-light">VISION SIMULATOR</span>
+            </h1>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8 flex flex-col gap-10 pb-20">
+        
+        <!-- =========================================
+             STEP 1: Scene Selection (Progressive Disclosure)
+             ========================================= -->
+        <section id="step-1" class="flex flex-col gap-5">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-mono bg-slate-800 text-slate-300 px-2 py-1 rounded">STEP 01</span>
+                <h2 class="text-base md:text-lg font-semibold text-slate-200">お客様が夜の運転で「最も怖い」と感じる瞬間を選択してください</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Button 1 -->
+                <button data-scene="highbeam" class="scene-btn w-full text-left p-5 bg-[#0B101E] border border-slate-700 hover:border-cyan-500 hover:bg-[#111A30] transition-colors group relative flex flex-col gap-2 rounded-sm shadow-lg">
+                    <div class="accent-line w-1 h-full absolute left-0 top-0 bg-transparent group-hover:bg-cyan-500 transition-colors"></div>
+                    <span class="text-cyan-600 font-mono text-xs font-bold tracking-widest">SCENE A</span>
+                    <span class="font-bold tracking-wide text-slate-200 text-sm md:text-base leading-snug">対向車のハイビーム<br>LEDライトの直撃</span>
+                </button>
+                <!-- Button 2 -->
+                <button data-scene="rain" class="scene-btn w-full text-left p-5 bg-[#0B101E] border border-slate-700 hover:border-cyan-500 hover:bg-[#111A30] transition-colors group relative flex flex-col gap-2 rounded-sm shadow-lg">
+                    <div class="accent-line w-1 h-full absolute left-0 top-0 bg-transparent group-hover:bg-cyan-500 transition-colors"></div>
+                    <span class="text-cyan-600 font-mono text-xs font-bold tracking-widest">SCENE B</span>
+                    <span class="font-bold tracking-wide text-slate-200 text-sm md:text-base leading-snug">雨の日の夜<br><span class="text-xs md:text-sm font-normal text-slate-400">路面の反射で白線が見えない</span></span>
+                </button>
+                <!-- Button 3 -->
+                <button data-scene="highway" class="scene-btn w-full text-left p-5 bg-[#0B101E] border border-slate-700 hover:border-cyan-500 hover:bg-[#111A30] transition-colors group relative flex flex-col gap-2 rounded-sm shadow-lg">
+                    <div class="accent-line w-1 h-full absolute left-0 top-0 bg-transparent group-hover:bg-cyan-500 transition-colors"></div>
+                    <span class="text-cyan-600 font-mono text-xs font-bold tracking-widest">SCENE C</span>
+                    <span class="font-bold tracking-wide text-slate-200 text-sm md:text-base leading-snug">夜間の高速道路<br><span class="text-xs md:text-sm font-normal text-slate-400">全体的に視界が霞む</span></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- =========================================
+             STEP 2 & 3: Simulator & Script (Hidden Initially)
+             ========================================= -->
+        <section id="step-2" class="hidden flex-col lg:flex-row gap-8 items-start">
+            
+            <!-- Left Column: Visual Simulator (Strict Layout Separation) -->
+            <div class="w-full lg:w-1/2 flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-mono bg-cyan-900/50 text-cyan-400 border border-cyan-800 px-2 py-1 rounded">STEP 02</span>
+                    <h2 class="text-base md:text-lg font-semibold text-slate-200">レンズによる視界の比較</h2>
+                </div>
+
+                <!-- Lens Toggle Switch -->
+                <div class="flex p-1 bg-[#050810] border border-slate-800 rounded-sm shadow-inner">
+                    <button id="btn-normal" class="flex-1 py-3 px-2 text-center text-sm md:text-base font-bold bg-slate-800 text-white border-b-2 border-slate-400 shadow-md transition-all rounded-sm">
+                        標準レンズ（裸眼）
+                    </button>
+                    <button id="btn-night" class="flex-1 py-3 px-2 text-center text-sm md:text-base font-bold text-slate-500 bg-transparent border-b-2 border-transparent hover:text-slate-400 transition-all rounded-sm">
+                        夜間専用レンズ着用
+                    </button>
+                </div>
+
+                <!-- CSS Visual Container -->
+                <div id="simulator-view" data-scene="highbeam" data-lens="normal" class="relative w-full aspect-video bg-[#03050a] border border-slate-800 rounded-sm shadow-2xl">
+                    <!-- Base Road (Common) -->
+                    <div class="road-perspective"></div>
+                    <div class="center-line"></div>
+
+                    <!-- Scene: Highbeam -->
+                    <div class="scene-layer s-highbeam">
+                        <div class="light-glare light-left"></div>
+                        <div class="light-glare light-right"></div>
+                    </div>
+
+                    <!-- Scene: Rain -->
+                    <div class="scene-layer s-rain">
+                        <div class="wet-reflection"></div>
+                    </div>
+
+                    <!-- Scene: Highway -->
+                    <div class="scene-layer s-highway">
+                        <div class="highway-smog"></div>
+                        <div class="tail-light-glow tl-left"></div>
+                        <div class="tail-light-glow tl-right"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Talk Script Area (Strict Layout Separation) -->
+            <div class="w-full lg:w-1/2 flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-mono bg-yellow-900/50 text-yellow-400 border border-yellow-800 px-2 py-1 rounded">STEP 03</span>
+                    <h2 class="text-base md:text-lg font-semibold text-slate-200">お客様への接客トークスクリプト</h2>
+                </div>
+
+                <!-- Script Container -->
+                <div class="relative bg-[#0B101E] border border-slate-700 rounded-sm p-6 md:p-8 shadow-xl mt-1">
+                    <!-- Decorative accents -->
+                    <div class="absolute -top-3 left-6 bg-slate-800 text-xs font-mono text-slate-300 px-3 py-1 border border-slate-600 rounded-sm flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> STAFF SCRIPT
+                    </div>
+                    <div id="script-accent-line" class="absolute left-0 top-0 bottom-0 w-1 bg-slate-500 transition-colors duration-500"></div>
+                    
+                    <!-- Script Content injected via JS -->
+                    <div id="script-content" class="script-fade opacity-100 text-sm md:text-base leading-loose text-slate-300 flex flex-col gap-4">
+                        <!-- Content goes here -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const step2 = document.getElementById('step-2');
+            const simView = document.getElementById('simulator-view');
+            const scriptContent = document.getElementById('script-content');
+            const scriptAccentLine = document.getElementById('script-accent-line');
+            const btnNormal = document.getElementById('btn-normal');
+            const btnNight = document.getElementById('btn-night');
+            const sceneButtons = document.querySelectorAll('.scene-btn');
+            
+            // State
+            let currentScene = null;
+            let currentLens = 'normal';
+
+            // Data: Sales Scripts
+            const scenesData = {
+                highbeam: {
+                    normalScript: `
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「最近の車のLEDライト、本当に突き刺さるように眩しいですよね。」</p>
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「光が星のように爆発して<span class="text-cyan-400 font-bold bg-cyan-900/30 px-1 rounded">（スターバースト現象）</span>、一瞬周りの景色や白線が全く見えなくなり、ヒヤッとしたご経験はありませんか？」</p>
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「実はこれ、目のピントを合わせる筋肉を極度に疲労させ、<strong class="text-yellow-400 border-b border-yellow-400/50 pb-0.5">事故のリスクを跳ね上げる非常に危険な状態</strong>なんです。」</p>
+                    `,
+                    nightScript: `
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「そこで、こちらの『夜間運転専用レンズ』をお試しください。」</p>
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「眩しさの原因となる<span class="text-cyan-400 font-bold bg-cyan-900/30 px-1 rounded">特定の光の波長だけをピンポイントでカット</span>します。ご覧の通り、強烈な光の拡散がスッと収まります。」</p>
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「単に全体を暗くする普通のサングラスと違い、<strong class="text-yellow-400 bg-yellow-900/30 px-1 rounded">路面の白線や標識のコントラストを上げてクッキリ見せる</strong>のが特徴です。ご自身とご家族の命を守る安全装備です。」</p>
+                    `
+                },
+                rain: {
+                    normalScript: `
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「雨の日の夜、特に怖いのは路面の乱反射ですよね。」</p>
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「対向車の光や街灯が濡れたアスファルトでギラギラと反射して、<span class="text-cyan-400 font-bold bg-cyan-900/30 px-1 rounded">センターラインや横断歩道が完全に消えてしまう</span>現象です。」</p>
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「歩行者や自転車の発見が遅れ、<strong class="text-yellow-400 border-b border-yellow-400/50 pb-0.5">ヒヤッとした経験は誰もがお持ちだと思います。</strong>」</p>
+                    `,
+                    nightScript: `
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「専用レンズなら、この厄介な乱反射をピンポイントで抑え込みます。」</p>
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「ご覧ください。水面のギラつきが消え、<strong class="text-yellow-400 bg-yellow-900/30 px-1 rounded">黒いアスファルトと白い線がハッキリと見えませんか？</strong>」</p>
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「視界がクリアになることで、雨の夜でも余計な神経を使わず、リラックスして運転できるようになります。」</p>
+                    `
+                },
+                highway: {
+                    normalScript: `
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「夕暮れから夜間にかけての高速道路、なんだか全体がモヤッと霞んで見えませんか？」</p>
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「これは暗闇の中で瞳孔が開き、<span class="text-cyan-400 font-bold bg-cyan-900/30 px-1 rounded">光のピントが合いづらくなる（夜間近視）</span>ことが原因の一つです。」</p>
+                        <p class="flex items-start gap-2"><span class="text-slate-500 mt-1">▶</span> 「前を走る車のテールランプもぼやけて広がり、<strong class="text-yellow-400 border-b border-yellow-400/50 pb-0.5">車間距離が掴みづらくなるため、長時間の運転では非常に疲労が溜まります。</strong>」</p>
+                    `,
+                    nightScript: `
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「このレンズは、視界を邪魔する散乱光をカットし、風景のコントラストを劇的に高めます。」</p>
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「霞が晴れたように視界がシャープになり、<strong class="text-yellow-400 bg-yellow-900/30 px-1 rounded">前の車のテールランプや標識の文字がピントが合ったようにクッキリ</strong>見えます。」</p>
+                        <p class="flex items-start gap-2"><span class="text-cyan-500 mt-1">▶</span> 「目の疲れが全く違います。長距離ドライブの安全を守る、必須のアイテムです。」</p>
+                    `
+                }
+            };
+
+            // Update Script Content with fade animation
+            function updateScript() {
+                const data = scenesData[currentScene];
+                if(!data) return;
+                
+                scriptContent.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if(currentLens === 'normal') {
+                        scriptContent.innerHTML = data.normalScript;
+                        scriptAccentLine.className = 'absolute left-0 top-0 bottom-0 w-1 bg-slate-500 transition-colors duration-500';
+                    } else {
+                        scriptContent.innerHTML = data.nightScript;
+                        scriptAccentLine.className = 'absolute left-0 top-0 bottom-0 w-1 bg-cyan-500 transition-colors duration-500 shadow-[0_0_10px_#06b6d4]';
+                    }
+                    scriptContent.style.opacity = '1';
+                }, 300); // Wait for fade out
+            }
+
+            // Handle Lens Toggle
+            function setLens(lensType) {
+                currentLens = lensType;
+                simView.setAttribute('data-lens', currentLens);
+                
+                if(lensType === 'normal') {
+                    // Normal Button Active
+                    btnNormal.className = 'flex-1 py-3 px-2 text-center text-sm md:text-base font-bold bg-slate-700 text-white border-b-2 border-slate-300 shadow-md transition-all rounded-sm';
+                    btnNight.className = 'flex-1 py-3 px-2 text-center text-sm md:text-base font-bold text-slate-500 bg-transparent border-b-2 border-transparent hover:text-slate-400 transition-all rounded-sm';
+                } else {
+                    // Night Button Active (Neon Style)
+                    btnNight.className = 'flex-1 py-3 px-2 text-center text-sm md:text-base font-bold bg-cyan-950 text-cyan-400 border-b-2 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-sm';
+                    btnNormal.className = 'flex-1 py-3 px-2 text-center text-sm md:text-base font-bold text-slate-500 bg-transparent border-b-2 border-transparent hover:text-slate-400 transition-all rounded-sm';
+                }
+                updateScript();
+            }
+
+            // Handle Scene Selection
+            sceneButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const btnEl = e.currentTarget;
+                    currentScene = btnEl.getAttribute('data-scene');
+                    
+                    // Update Buttons UI
+                    sceneButtons.forEach(b => {
+                        b.classList.remove('border-cyan-500', 'bg-[#111A30]');
+                        b.classList.add('border-slate-700', 'bg-[#0B101E]');
+                        b.querySelector('.accent-line').classList.remove('bg-cyan-500');
+                    });
+                    btnEl.classList.remove('border-slate-700', 'bg-[#0B101E]');
+                    btnEl.classList.add('border-cyan-500', 'bg-[#111A30]');
+                    btnEl.querySelector('.accent-line').classList.add('bg-cyan-500');
+
+                    // Reveal Step 2 (Progressive Disclosure)
+                    if(step2.classList.contains('hidden')) {
+                        step2.classList.remove('hidden');
+                        step2.classList.add('flex');
+                        // Smooth scroll to revealed section
+                        setTimeout(() => {
+                            step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                    }
+                    
+                    // Set Scene logic
+                    simView.setAttribute('data-scene', currentScene);
+                    
+                    // Always reset to normal lens when changing scene to show the "problem" first
+                    setLens('normal');
+                });
+            });
+
+            // Bind Toggle Buttons
+            btnNormal.addEventListener('click', () => setLens('normal'));
+            btnNight.addEventListener('click', () => setLens('night'));
+        });
+    </script>
+</body>
+</html>
