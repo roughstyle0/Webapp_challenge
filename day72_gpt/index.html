@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>両面非球面レンズ 美顔シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --pearl: #fffaf3;
+      --champagne: #d8b56d;
+      --rose: #d96b8a;
+      --rose-deep: #a93f62;
+      --ink: #372b2f;
+      --mist: #f8eef0;
+      --eye-scale: .72;
+      --dent: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(255, 236, 241, .9), transparent 34%),
+        radial-gradient(circle at 88% 16%, rgba(233, 202, 137, .48), transparent 30%),
+        linear-gradient(145deg, #fffdf9 0%, #fff6ef 45%, #f9e7eb 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    }
+
+    .brand-serif {
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+      letter-spacing: .04em;
+    }
+
+    .glass-pearl {
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.88), rgba(255,246,237,.72)),
+        radial-gradient(circle at top left, rgba(255,255,255,.95), transparent 36%);
+      border: 1px solid rgba(216,181,109,.32);
+      box-shadow: 0 24px 70px rgba(151, 81, 104, .14);
+      backdrop-filter: blur(14px);
+    }
+
+    .gold-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(216,181,109,.9), transparent);
+    }
+
+    .choice-btn {
+      border: 1px solid rgba(216,181,109,.42);
+      background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,244,248,.86));
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+    }
+
+    .choice-btn:hover,
+    .choice-btn:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(217,107,138,.72);
+      box-shadow: 0 18px 40px rgba(217,107,138,.18);
+      outline: none;
+    }
+
+    .mode-btn {
+      border: 1px solid rgba(216,181,109,.35);
+      transition: transform .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+    }
+
+    .mode-btn[aria-pressed="true"] {
+      color: white;
+      border-color: rgba(169,63,98,.45);
+      background: linear-gradient(135deg, var(--rose-deep), var(--rose), #e9bf8e);
+      box-shadow: 0 18px 36px rgba(169,63,98,.24);
+    }
+
+    .stage-btn {
+      border: 1px solid rgba(216,181,109,.3);
+      background: rgba(255,255,255,.56);
+    }
+
+    .stage-btn[aria-current="step"] {
+      color: white;
+      background: linear-gradient(135deg, #322529, #a93f62);
+      border-color: transparent;
+    }
+
+    .reveal {
+      animation: reveal .55s cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .face-svg {
+      width: 100%;
+      max-width: 380px;
+      margin-inline: auto;
+      display: block;
+    }
+
+    .face-svg .left-eye-set,
+    .face-svg .right-eye-set,
+    .face-svg .left-cheek-fragment,
+    .face-svg .right-cheek-fragment,
+    .face-svg .lens-haze,
+    .face-svg .beauty-aura {
+      transition:
+        transform .9s cubic-bezier(.2, .9, .1, 1),
+        opacity .9s cubic-bezier(.2, .9, .1, 1),
+        filter .9s ease;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .face-svg[data-mode="standard"] .left-eye-set,
+    .face-svg[data-mode="standard"] .right-eye-set {
+      transform: scale(var(--eye-scale));
+    }
+
+    .face-svg[data-mode="standard"] .left-cheek-fragment {
+      transform: translateX(var(--dent));
+    }
+
+    .face-svg[data-mode="standard"] .right-cheek-fragment {
+      transform: translateX(calc(var(--dent) * -1));
+    }
+
+    .face-svg[data-mode="standard"] .lens-haze {
+      opacity: .82;
+    }
+
+    .face-svg[data-mode="standard"] .beauty-aura {
+      opacity: .12;
+      transform: scale(.96);
+    }
+
+    .face-svg[data-mode="double"] .left-eye-set,
+    .face-svg[data-mode="double"] .right-eye-set {
+      transform: scale(1);
+    }
+
+    .face-svg[data-mode="double"] .left-cheek-fragment,
+    .face-svg[data-mode="double"] .right-cheek-fragment {
+      transform: translateX(0);
+    }
+
+    .face-svg[data-mode="double"] .lens-haze {
+      opacity: .22;
+    }
+
+    .face-svg[data-mode="double"] .beauty-aura {
+      opacity: .72;
+      transform: scale(1.04);
+      filter: drop-shadow(0 0 20px rgba(217,107,138,.32));
+    }
+
+    mark {
+      color: #8c2c4c;
+      background: linear-gradient(transparent 58%, rgba(255, 211, 222, .95) 58%);
+      padding: 0 .12em;
+      border-radius: .2em;
+    }
+
+    .script-box {
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.9), rgba(255,244,248,.76)),
+        linear-gradient(90deg, rgba(216,181,109,.18), transparent);
+      border: 1px solid rgba(216,181,109,.3);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <section class="glass-pearl rounded-[2rem] p-5 sm:p-8">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-3 text-center">
+          <p class="brand-serif text-xs uppercase tracking-[.36em] text-[#a87932]">
+            Beauty Lens Concierge
+          </p>
+          <h1 class="brand-serif text-3xl leading-tight text-[#35262b] sm:text-5xl">
+            目が小さくならない<br class="sm:hidden" />
+            美顔レンズ提案
+          </h1>
+          <p class="mx-auto max-w-2xl text-sm leading-7 text-[#6f5d61] sm:text-base">
+            強度近視のお客様に、両面非球面レンズを「美容投資」として提案するための接客シミュレーターです。
+          </p>
+        </div>
+
+        <div class="gold-line"></div>
+
+        <div class="flex flex-col gap-4">
+          <div class="text-center">
+            <p class="text-xs font-bold uppercase tracking-[.24em] text-[#a93f62]">
+              Step 01
+            </p>
+            <h2 class="brand-serif mt-1 text-xl sm:text-2xl">
+              お客様の現在のお悩みレベルを選んでください
+            </h2>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3" id="levelButtons">
+            <button type="button" data-level="medium" class="choice-btn rounded-3xl p-4 text-left">
+              <span class="block text-xs font-bold tracking-[.18em] text-[#a87932]">中等度</span>
+              <span class="mt-2 block text-lg font-bold">少し目が小さくなる</span>
+              <span class="mt-2 block text-sm leading-6 text-[#746266]">写真を撮ると、目元の印象が少し弱く見えるお客様へ。</span>
+            </button>
+
+            <button type="button" data-level="strong" class="choice-btn rounded-3xl p-4 text-left">
+              <span class="block text-xs font-bold tracking-[.18em] text-[#a87932]">強度</span>
+              <span class="mt-2 block text-lg font-bold">輪郭が凹んで見える</span>
+              <span class="mt-2 block text-sm leading-6 text-[#746266]">レンズ越しのフェイスラインの歪みが気になるお客様へ。</span>
+            </button>
+
+            <button type="button" data-level="ultra" class="choice-btn rounded-3xl p-4 text-left">
+              <span class="block text-xs font-bold tracking-[.18em] text-[#a87932]">最強度</span>
+              <span class="mt-2 block text-lg font-bold">ビン底のようで外に出たくない</span>
+              <span class="mt-2 block text-sm leading-6 text-[#746266]">メガネ姿に自信を失っているお客様へ。</span>
+            </button>
+          </div>
+
+          <p id="appMessage" class="min-h-6 text-center text-sm font-semibold text-[#a93f62]" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultSection" class="hidden reveal">
+      <div class="grid gap-5 lg:grid-cols-[1.02fr_.98fr]">
+        <section class="glass-pearl flex flex-col gap-5 rounded-[2rem] p-5 sm:p-6">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[.24em] text-[#a87932]">Face Simulation</p>
+                <h2 id="scenarioTitle" class="brand-serif mt-1 text-2xl"></h2>
+              </div>
+              <span id="severityBadge" class="rounded-full border border-[#d8b56d66] bg-white/60 px-4 py-2 text-xs font-bold text-[#8c6830]"></span>
+            </div>
+
+            <p id="scenarioLead" class="text-sm leading-7 text-[#6f5d61]"></p>
+          </div>
+
+          <div class="grid gap-3 rounded-[1.6rem] bg-white/42 p-2 sm:grid-cols-2">
+            <button type="button" id="standardBtn" class="mode-btn rounded-[1.2rem] px-4 py-3 text-sm font-bold" aria-pressed="true">
+              標準レンズで見る
+            </button>
+            <button type="button" id="doubleBtn" class="mode-btn rounded-[1.2rem] px-4 py-3 text-sm font-bold" aria-pressed="false">
+              両面非球面に切り替える
+            </button>
+          </div>
+
+          <div class="rounded-[2rem] border border-[#d8b56d44] bg-gradient-to-b from-white/70 to-[#fff4f7]/70 p-4">
+            <svg id="faceSvg" class="face-svg" data-mode="standard" viewBox="0 0 320 360" role="img" aria-label="レンズによる目の縮小と輪郭の凹みを比較する顔のシミュレーション">
+              <defs>
+                <radialGradient id="skinGlow" cx="50%" cy="38%" r="70%">
+                  <stop offset="0%" stop-color="#fff2e9" />
+                  <stop offset="78%" stop-color="#f1c9b7" />
+                  <stop offset="100%" stop-color="#e6ae9c" />
+                </radialGradient>
+
+                <linearGradient id="hairGlow" x1="0%" x2="100%" y1="0%" y2="100%">
+                  <stop offset="0%" stop-color="#4a3030" />
+                  <stop offset="100%" stop-color="#211819" />
+                </linearGradient>
+
+                <linearGradient id="lensGold" x1="0%" x2="100%">
+                  <stop offset="0%" stop-color="#f8e6b2" stop-opacity=".12" />
+                  <stop offset="50%" stop-color="#fff" stop-opacity=".5" />
+                  <stop offset="100%" stop-color="#e7bfd0" stop-opacity=".18" />
+                </linearGradient>
+
+                <clipPath id="leftLensClip">
+                  <ellipse cx="120" cy="178" rx="54" ry="40"></ellipse>
+                </clipPath>
+
+                <clipPath id="rightLensClip">
+                  <ellipse cx="200" cy="178" rx="54" ry="40"></ellipse>
+                </clipPath>
+              </defs>
+
+              <rect x="20" y="18" width="280" height="320" rx="42" fill="#fffaf3" opacity=".58"></rect>
+              <ellipse class="beauty-aura" cx="160" cy="188" rx="106" ry="138" fill="#f7a8bd" opacity=".3"></ellipse>
+
+              <path d="M84 132 C82 66 123 35 160 39 C197 35 238 66 236 132 C259 168 251 252 211 303 C194 325 174 335 160 337 C146 335 126 325 109 303 C69 252 61 168 84 132Z" fill="url(#hairGlow)" opacity=".94"></path>
+
+              <path d="M160 72 C113 72 82 115 80 181 C78 257 119 318 160 327 C201 318 242 257 240 181 C238 115 207 72 160 72Z" fill="url(#skinGlow)" stroke="#d8b56d" stroke-width="2.4"></path>
+
+              <path d="M102 82 C123 58 160 55 189 70 C170 83 137 84 102 82Z" fill="#2d2020" opacity=".82"></path>
+
+              <g clip-path="url(#leftLensClip)">
+                <path class="left-cheek-fragment" d="M101 133 C88 164 88 221 112 264" fill="none" stroke="#9b5d61" stroke-width="5" stroke-linecap="round" opacity=".62"></path>
+                <g class="left-eye-set">
+                  <ellipse cx="121" cy="176" rx="18" ry="9" fill="#fff7f8"></ellipse>
+                  <ellipse cx="121" cy="176" rx="9" ry="8" fill="#35262b"></ellipse>
+                  <circle cx="125" cy="172" r="2.3" fill="#fff"></circle>
+                  <path d="M101 166 C113 157 128 157 142 166" fill="none" stroke="#4a3030" stroke-width="4" stroke-linecap="round"></path>
+                  <path d="M104 190 C117 198 132 198 141 190" fill="none" stroke="#d96b8a" stroke-width="2.2" stroke-linecap="round" opacity=".55"></path>
+                </g>
+              </g>
+
+              <g clip-path="url(#rightLensClip)">
+                <path class="right-cheek-fragment" d="M219 133 C232 164 232 221 208 264" fill="none" stroke="#9b5d61" stroke-width="5" stroke-linecap="round" opacity=".62"></path>
+                <g class="right-eye-set">
+                  <ellipse cx="199" cy="176" rx="18" ry="9" fill="#fff7f8"></ellipse>
+                  <ellipse cx="199" cy="176" rx="9" ry="8" fill="#35262b"></ellipse>
+                  <circle cx="203" cy="172" r="2.3" fill="#fff"></circle>
+                  <path d="M178 166 C192 157 207 157 219 166" fill="none" stroke="#4a3030" stroke-width="4" stroke-linecap="round"></path>
+                  <path d="M180 190 C189 198 204 198 217 190" fill="none" stroke="#d96b8a" stroke-width="2.2" stroke-linecap="round" opacity=".55"></path>
+                </g>
+              </g>
+
+              <path d="M151 188 C146 207 147 220 160 222 C173 220 174 207 169 188" fill="none" stroke="#b87472" stroke-width="2.2" stroke-linecap="round" opacity=".62"></path>
+              <path d="M135 252 C148 265 173 265 186 252" fill="none" stroke="#a93f62" stroke-width="3.2" stroke-linecap="round"></path>
+
+              <g>
+                <ellipse cx="120" cy="178" rx="54" ry="40" fill="url(#lensGold)" stroke="#d8b56d" stroke-width="4"></ellipse>
+                <ellipse cx="200" cy="178" rx="54" ry="40" fill="url(#lensGold)" stroke="#d8b56d" stroke-width="4"></ellipse>
+                <path d="M174 178 C169 171 151 171 146 178" fill="none" stroke="#d8b56d" stroke-width="4" stroke-linecap="round"></path>
+                <path d="M68 176 C50 170 40 160 32 145" fill="none" stroke="#d8b56d" stroke-width="4" stroke-linecap="round"></path>
+                <path d="M252 176 C270 170 280 160 288 145" fill="none" stroke="#d8b56d" stroke-width="4" stroke-linecap="round"></path>
+                <ellipse class="lens-haze" cx="120" cy="178" rx="48" ry="34" fill="#fff" opacity=".45"></ellipse>
+                <ellipse class="lens-haze" cx="200" cy="178" rx="48" ry="34" fill="#fff" opacity=".45"></ellipse>
+                <path d="M92 156 L136 137" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".62"></path>
+                <path d="M174 156 L218 137" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".62"></path>
+              </g>
+            </svg>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-3xl border border-[#d8b56d33] bg-white/50 p-4">
+              <p class="text-xs font-bold text-[#a87932]">目元印象</p>
+              <p id="eyeMetric" class="mt-1 text-xl font-black"></p>
+            </div>
+            <div class="rounded-3xl border border-[#d8b56d33] bg-white/50 p-4">
+              <p class="text-xs font-bold text-[#a87932]">輪郭の凹み</p>
+              <p id="dentMetric" class="mt-1 text-xl font-black"></p>
+            </div>
+            <div class="rounded-3xl border border-[#d8b56d33] bg-white/50 p-4">
+              <p class="text-xs font-bold text-[#a87932]">提案軸</p>
+              <p id="offerMetric" class="mt-1 text-xl font-black"></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass-pearl flex flex-col gap-5 rounded-[2rem] p-5 sm:p-6">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[.24em] text-[#a87932]">Talk Script</p>
+            <h2 class="brand-serif mt-1 text-2xl">新人スタッフ用・接客カンペ</h2>
+            <p class="mt-2 text-sm leading-7 text-[#6f5d61]">
+              下の順番で読むだけで、悩みへの共感から美容投資としての提案まで自然につながります。
+            </p>
+          </div>
+
+          <div id="stageControls" class="grid gap-2"></div>
+
+          <article class="script-box rounded-[2rem] p-5">
+            <div class="flex flex-col gap-3">
+              <div>
+                <p id="scriptStep" class="text-xs font-bold uppercase tracking-[.22em] text-[#a87932]"></p>
+                <h3 id="scriptTitle" class="brand-serif mt-1 text-xl"></h3>
+              </div>
+              <p id="scriptBody" class="text-base leading-8"></p>
+              <div class="rounded-3xl bg-[#fff7f9] p-4">
+                <p class="text-xs font-bold tracking-[.18em] text-[#a93f62]">強調する一言</p>
+                <p id="scriptPunch" class="mt-2 text-lg font-black leading-8 text-[#7e2d4a]"></p>
+              </div>
+            </div>
+          </article>
+
+          <div class="grid gap-3 sm:grid-cols-2">
+            <button type="button" id="prevScriptBtn" class="rounded-2xl border border-[#d8b56d66] bg-white/55 px-4 py-3 text-sm font-bold">
+              前のトークへ
+            </button>
+            <button type="button" id="nextScriptBtn" class="rounded-2xl bg-[#35262b] px-4 py-3 text-sm font-bold text-white">
+              次のトークへ
+            </button>
+          </div>
+
+          <button type="button" id="copyBtn" class="rounded-2xl border border-[#d96b8a66] bg-[#fff6f8] px-4 py-3 text-sm font-bold text-[#a93f62]">
+            現在のカンペをコピー
+          </button>
+
+          <p class="rounded-3xl border border-[#d8b56d33] bg-white/44 p-4 text-xs leading-6 text-[#79666a]">
+            ※シミュレーションは接客説明用のイメージです。実際の見え方は度数、フレームサイズ、瞳孔間距離、フィッティングにより変わります。
+          </p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const scenarios = {
+      medium: {
+        title: '中等度：目元の印象が少し弱く見えるお客様',
+        badge: '自然見え重視',
+        lead: '「そこまで困っていないけれど、写真だと目が小さく見える」という段階。まずは標準レンズの小さな違和感を可視化し、両面非球面で自然な目元へ戻る印象を見せます。',
+        eyeScale: 0.82,
+        dent: 9,
+        standardMetrics: ['約82%', 'ほんのり内側', '第一印象UP'],
+        doubleMetrics: ['素顔に近い', '自然なライン', '上品な投資'],
+        talks: [
+          {
+            label: '共感',
+            title: '悩みを軽く扱わず、美容の悩みとして受け止める',
+            body: '「お写真を撮った時に、<mark>少し目元が控えめに見える</mark>感じが気になるのですね。度数が上がると、レンズの性質で目元の印象が少し変わって見えることがあります。」',
+            punch: '“気のせい”ではなく、レンズで起きる見た目の変化として説明します。'
+          },
+          {
+            label: '比較',
+            title: '標準レンズとの差をやさしく見せる',
+            body: '「標準レンズでも視力補正はできます。ただ、美しさの観点では、目元が少し引いて見えたり、横顔のラインがわずかに変わることがあります。こちらの両面非球面にすると、<mark>素顔に近い自然な目元</mark>へ整いやすくなります。」',
+            punch: '視力ではなく、“お顔の見え方”で比較します。'
+          },
+          {
+            label: '提案',
+            title: 'メイク道具として提案する',
+            body: '「これは単なる視力補正ではなく、お顔を美しく見せるための<mark>『メイク道具』</mark>です。毎日かけるものだからこそ、高いファンデーションを買うよりも、確実に素顔を美しく見せる自己投資です。」',
+            punch: '毎日使う美容アイテムとして、価格ではなく価値で伝えます。'
+          }
+        ]
+      },
+
+      strong: {
+        title: '強度：レンズ越しの輪郭の凹みが気になるお客様',
+        badge: '輪郭補正提案',
+        lead: 'フェイスラインの凹みがはっきり出やすい段階。標準レンズでは頬のラインが内側に引き込まれる印象を見せ、両面非球面で自然な輪郭へ戻る流れを体験してもらいます。',
+        eyeScale: 0.64,
+        dent: 22,
+        standardMetrics: ['約64%', 'はっきり凹み', '輪郭ケア'],
+        doubleMetrics: ['自然に復元', '凹みを軽減', '美顔設計'],
+        talks: [
+          {
+            label: '共感',
+            title: '恥ずかしさに寄り添う',
+            body: '「フェイスラインがレンズ越しに<mark>ガクッと凹んで見える</mark>のは、女性にとってかなり気になりますよね。せっかくメイクや髪型を整えても、メガネで印象が変わってしまうのはもったいないです。」',
+            punch: '“見えればいい”ではなく、“きれいに見える”まで共感します。'
+          },
+          {
+            label: '比較',
+            title: '凹みの原因をシンプルに説明する',
+            body: '「強度近視では、レンズの端にいくほど輪郭が内側に引っ張られて見えやすくなります。両面非球面は、その歪みを抑える設計なので、<mark>頬から顎にかけてのラインが自然に見えやすい</mark>のが大きな魅力です。」',
+            punch: '専門用語より、“頬から顎のライン”で伝えます。'
+          },
+          {
+            label: '提案',
+            title: '美容クリニックのように価値提案する',
+            body: '「これは単なる視力補正ではなく、お顔を美しく見せるための<mark>『メイク道具』</mark>です。輪郭の見え方が整うと、表情全体が上品に見えます。高いファンデーションを買うよりも、確実に素顔を美しく見せる自己投資です。」',
+            punch: '輪郭の悩みには、“美顔設計”という言葉が刺さります。'
+          }
+        ]
+      },
+
+      ultra: {
+        title: '最強度：メガネ姿で外に出たくないお客様',
+        badge: '自信回復提案',
+        lead: '目の縮小と輪郭の凹みが強く出やすく、自己肯定感にも関わる段階。標準レンズの強い歪みから、両面非球面で表情が戻る感覚をドラマティックに見せます。',
+        eyeScale: 0.48,
+        dent: 36,
+        standardMetrics: ['約48%', '大きく凹み', '自信回復'],
+        doubleMetrics: ['印象復活', '自然な輪郭', '最高級提案'],
+        talks: [
+          {
+            label: '共感',
+            title: '深い悩みとして丁寧に受け止める',
+            body: '「“メガネをかけると別人みたいで外に出たくない”というお気持ち、本当におつらいと思います。度数が強い方ほど、目が小さく見えたり、輪郭が大きく凹んで見えたりして、<mark>お顔の印象そのもの</mark>が変わってしまいます。」',
+            punch: '最強度の方には、先に安心感を渡します。'
+          },
+          {
+            label: '比較',
+            title: '最高級レンズの必要性を視覚で納得してもらう',
+            body: '「この度数域では、標準レンズだと“薄さ”だけでなく、<mark>お顔の歪みをどう抑えるか</mark>がとても重要です。両面非球面は、目元の縮小感とフェイスラインの凹みを抑え、素顔に近い印象へ戻すための上位設計です。」',
+            punch: '薄いだけではなく、“顔を守る設計”として伝えます。'
+          },
+          {
+            label: '提案',
+            title: '自己肯定感への投資として背中を押す',
+            body: '「これは単なる視力補正ではなく、お顔を美しく見せるための<mark>『メイク道具』</mark>です。毎朝メガネをかけた時に、“これなら大丈夫”と思えることは大きな価値です。高いファンデーションを買うよりも、確実に素顔を美しく見せる自己投資です。」',
+            punch: '価格ではなく、“外に出る自信”を買う提案にします。'
+          }
+        ]
+      }
+    };
+
+    const state = {
+      level: null,
+      mode: 'standard',
+      talkIndex: 0
+    };
+
+    const el = {
+      result: document.getElementById('resultSection'),
+      appMessage: document.getElementById('appMessage'),
+      scenarioTitle: document.getElementById('scenarioTitle'),
+      scenarioLead: document.getElementById('scenarioLead'),
+      severityBadge: document.getElementById('severityBadge'),
+      standardBtn: document.getElementById('standardBtn'),
+      doubleBtn: document.getElementById('doubleBtn'),
+      faceSvg: document.getElementById('faceSvg'),
+      eyeMetric: document.getElementById('eyeMetric'),
+      dentMetric: document.getElementById('dentMetric'),
+      offerMetric: document.getElementById('offerMetric'),
+      stageControls: document.getElementById('stageControls'),
+      scriptStep: document.getElementById('scriptStep'),
+      scriptTitle: document.getElementById('scriptTitle'),
+      scriptBody: document.getElementById('scriptBody'),
+      scriptPunch: document.getElementById('scriptPunch'),
+      prevScriptBtn: document.getElementById('prevScriptBtn'),
+      nextScriptBtn: document.getElementById('nextScriptBtn'),
+      copyBtn: document.getElementById('copyBtn')
+    };
+
+    function getScenario() {
+      return scenarios[state.level] || null;
+    }
+
+    function selectLevel(level) {
+      if (!scenarios[level]) {
+        showMessage('選択内容を読み込めませんでした。もう一度選び直してください。');
+        return;
+      }
+
+      state.level = level;
+      state.mode = 'standard';
+      state.talkIndex = 0;
+
+      el.result.classList.remove('hidden');
+      showMessage('標準レンズの見え方を表示しました。次に「両面非球面」を押して比較できます。');
+      render();
+
+      window.setTimeout(() => {
+        el.result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+
+    function setMode(mode) {
+      if (!state.level) {
+        showMessage('先にお悩みレベルを選択してください。');
+        return;
+      }
+
+      state.mode = mode === 'double' ? 'double' : 'standard';
+      showMessage(state.mode === 'double'
+        ? '両面非球面レンズで、目元と輪郭が自然に戻る動きを確認できます。'
+        : '標準レンズの縮小・凹みイメージに戻しました。'
+      );
+      render();
+    }
+
+    function setTalkIndex(index) {
+      const scenario = getScenario();
+      if (!scenario) return;
+
+      const max = scenario.talks.length - 1;
+      state.talkIndex = Math.max(0, Math.min(index, max));
+      render();
+    }
+
+    function render() {
+      const scenario = getScenario();
+      if (!scenario) return;
+
+      const isDouble = state.mode === 'double';
+      const metrics = isDouble ? scenario.doubleMetrics : scenario.standardMetrics;
+
+      el.scenarioTitle.textContent = scenario.title;
+      el.scenarioLead.textContent = scenario.lead;
+      el.severityBadge.textContent = scenario.badge;
+
+      el.standardBtn.setAttribute('aria-pressed', String(!isDouble));
+      el.doubleBtn.setAttribute('aria-pressed', String(isDouble));
+
+      el.faceSvg.dataset.mode = state.mode;
+      el.faceSvg.style.setProperty('--eye-scale', scenario.eyeScale);
+      el.faceSvg.style.setProperty('--dent', `${scenario.dent}px`);
+
+      el.eyeMetric.textContent = metrics[0];
+      el.dentMetric.textContent = metrics[1];
+      el.offerMetric.textContent = metrics[2];
+
+      renderTalkControls(scenario);
+      renderTalk(scenario);
+    }
+
+    function renderTalkControls(scenario) {
+      el.stageControls.innerHTML = '';
+
+      scenario.talks.forEach((talk, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'stage-btn rounded-2xl px-4 py-3 text-left text-sm font-bold';
+        button.textContent = `${index + 1}. ${talk.label}`;
+        button.setAttribute('aria-current', index === state.talkIndex ? 'step' : 'false');
+        button.addEventListener('click', () => setTalkIndex(index));
+        el.stageControls.appendChild(button);
+      });
+
+      el.prevScriptBtn.disabled = state.talkIndex === 0;
+      el.nextScriptBtn.disabled = state.talkIndex === scenario.talks.length - 1;
+      el.prevScriptBtn.classList.toggle('opacity-40', state.talkIndex === 0);
+      el.nextScriptBtn.classList.toggle('opacity-40', state.talkIndex === scenario.talks.length - 1);
+    }
+
+    function renderTalk(scenario) {
+      const talk = scenario.talks[state.talkIndex];
+
+      el.scriptStep.textContent = `Talk ${state.talkIndex + 1}`;
+      el.scriptTitle.textContent = talk.title;
+      el.scriptBody.innerHTML = talk.body;
+      el.scriptPunch.textContent = talk.punch;
+    }
+
+    function copyCurrentTalk() {
+      const scenario = getScenario();
+
+      if (!scenario) {
+        showMessage('コピーするカンペがありません。先にお悩みレベルを選択してください。');
+        return;
+      }
+
+      const talk = scenario.talks[state.talkIndex];
+      const plainText = `${talk.title}\n\n${stripHtml(talk.body)}\n\n強調する一言：${talk.punch}`;
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(plainText)
+          .then(() => showMessage('現在の接客カンペをコピーしました。'))
+          .catch(() => fallbackCopy(plainText));
+      } else {
+        fallbackCopy(plainText);
+      }
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showMessage('現在の接客カンペをコピーしました。');
+      } catch (error) {
+        showMessage('コピーに失敗しました。文章を長押しして手動でコピーしてください。');
+      }
+    }
+
+    function stripHtml(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      return div.textContent || div.innerText || '';
+    }
+
+    function showMessage(message) {
+      el.appMessage.textContent = message;
+    }
+
+    document.getElementById('levelButtons').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-level]');
+      if (!button) return;
+      selectLevel(button.dataset.level);
+    });
+
+    el.standardBtn.addEventListener('click', () => setMode('standard'));
+    el.doubleBtn.addEventListener('click', () => setMode('double'));
+    el.prevScriptBtn.addEventListener('click', () => setTalkIndex(state.talkIndex - 1));
+    el.nextScriptBtn.addEventListener('click', () => setTalkIndex(state.talkIndex + 1));
+    el.copyBtn.addEventListener('click', copyCurrentTalk);
+  </script>
+</body>
+</html>
