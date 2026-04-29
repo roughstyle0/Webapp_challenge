@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUXURY LENS - 美顔シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif JP"', 'serif'],
+                    },
+                    colors: {
+                        pearl: '#fdfcfb',
+                        'pearl-dark': '#f4f1eb',
+                        gold: '#d4af37',
+                        'gold-light': '#f3e8cb',
+                        rose: '#d896a2',
+                        'rose-light': '#fcedf0',
+                        'dark-brown': '#3b2f2f',
+                        'gray-brown': '#7a6a65'
+                    },
+                    boxShadow: {
+                        'elegant': '0 10px 25px -5px rgba(59, 47, 47, 0.05), 0 8px 10px -6px rgba(59, 47, 47, 0.01)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスタイル: スムーズなアニメーションとSVG操作用 */
+        :root {
+            --lens-scale: 1;
+            --face-shift: 0px;
+            --transition-speed: 0.8s;
+        }
+
+        body {
+            background-color: theme('colors.pearl');
+            background-image: radial-gradient(circle at top right, #ffffff, transparent 70%);
+        }
+
+        .lens-inner-world {
+            transform-origin: center center;
+            transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 左レンズの中心付近を基準点に */
+        #left-inner { transform-origin: 100px 140px; }
+        /* 右レンズの中心付近を基準点に */
+        #right-inner { transform-origin: 200px 140px; }
+
+        .apply-distortion #left-inner {
+            transform: scale(var(--lens-scale)) translateX(var(--face-shift));
+        }
+        .apply-distortion #right-inner {
+            transform: scale(var(--lens-scale)) translateX(calc(var(--face-shift) * -1));
+        }
+
+        /* エレガントなボタンのホバー・アクティブ状態 */
+        .btn-elegant {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-elegant::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 1px;
+            background-color: theme('colors.gold');
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .btn-elegant:hover::after, .btn-elegant.active::after {
+            width: 80%;
+        }
+        
+        /* スクロールバー非表示（モバイル用） */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="font-serif text-dark-brown min-h-screen flex flex-col items-center pb-12 selection:bg-rose-light selection:text-dark-brown">
+
+    <!-- Header -->
+    <header class="w-full text-center py-8 px-4 flex flex-col items-center gap-2 border-b border-pearl-dark bg-white/50 backdrop-blur-sm sticky top-0 z-50">
+        <h1 class="text-2xl md:text-3xl tracking-widest text-gold font-semibold uppercase">Optique de Beauté</h1>
+        <p class="text-xs md:text-sm text-gray-brown tracking-wider">美顔レンズシミュレーター</p>
+    </header>
+
+    <main class="w-full max-w-lg px-4 md:px-0 mt-8 flex flex-col gap-8 flex-grow">
+        
+        <!-- Step 1: 度数選択 (プログレッシブ・ディクロージャー) -->
+        <section id="step-1" class="flex flex-col gap-6">
+            <div class="text-center">
+                <h2 class="text-lg text-dark-brown mb-2">お客様の現在のお悩みレベルは？</h2>
+                <p class="text-xs text-gray-brown">※該当する度数を選択してください</p>
+            </div>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="selectPower('medium')" id="btn-medium" class="power-btn btn-elegant bg-white border border-pearl-dark py-4 px-6 text-sm tracking-wide text-gray-brown hover:text-dark-brown hover:border-gold transition-colors flex justify-between items-center w-full">
+                    <span>中等度</span>
+                    <span class="text-xs opacity-70">少し目が小さくなる</span>
+                </button>
+                <button onclick="selectPower('high')" id="btn-high" class="power-btn btn-elegant bg-white border border-pearl-dark py-4 px-6 text-sm tracking-wide text-gray-brown hover:text-dark-brown hover:border-gold transition-colors flex justify-between items-center w-full">
+                    <span>強度</span>
+                    <span class="text-xs opacity-70">輪郭が凹んで見える</span>
+                </button>
+                <button onclick="selectPower('extreme')" id="btn-extreme" class="power-btn btn-elegant bg-white border border-pearl-dark py-4 px-6 text-sm tracking-wide text-gray-brown hover:text-dark-brown hover:border-gold transition-colors flex justify-between items-center w-full">
+                    <span>最強度</span>
+                    <span class="text-xs opacity-70">分厚く、外に出たくない</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2: シミュレーター & トーク (選択後にフェードイン表示) -->
+        <section id="step-2" class="hidden flex-col gap-8 opacity-0 transition-opacity duration-1000">
+            
+            <!-- 再選択ボタン (上部に小さく配置) -->
+            <button onclick="resetSimulator()" class="self-center text-xs text-gold border-b border-gold/30 pb-1 hover:text-dark-brown hover:border-dark-brown transition-colors">
+                ← 違うお悩みレベルを選択する
+            </button>
+
+            <!-- シミュレーションエリア (画像とテキストを完全に分離) -->
+            <div class="bg-white rounded-t-full pt-8 pb-4 px-4 shadow-elegant border border-pearl-dark flex flex-col items-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-rose-light/30 to-transparent pointer-events-none"></div>
+                
+                <!-- SVG Face Simulator -->
+                <div class="w-full max-w-[280px] aspect-square relative z-10">
+                    <svg viewBox="0 0 300 300" class="w-full h-full drop-shadow-md" id="simulator-svg">
+                        <defs>
+                            <!-- レンズの形（クリッピングパス用） -->
+                            <clipPath id="left-lens-clip">
+                                <path d="M 60,135 C 60,120 75,115 100,115 C 130,115 135,130 135,145 C 135,165 120,175 95,175 C 70,175 60,165 60,135 Z" />
+                            </clipPath>
+                            <clipPath id="right-lens-clip">
+                                <path d="M 240,135 C 240,120 225,115 200,115 C 170,115 165,130 165,145 C 165,165 180,175 205,175 C 230,175 240,165 240,135 Z" />
+                            </clipPath>
+                        </defs>
+
+                        <!-- 後ろ髪・耳 -->
+                        <path d="M 70,140 C 60,160 65,190 75,200" stroke="#4a3b32" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        <path d="M 230,140 C 240,160 235,190 225,200" stroke="#4a3b32" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+                        <!-- 首 -->
+                        <path d="M 120,220 L 120,280 L 180,280 L 180,220 Z" fill="#fae8e0"/>
+                        
+                        <!-- 顔のベース (レンズ外) -->
+                        <path d="M 80,120 C 80,60 120,40 150,40 C 180,40 220,60 220,120 C 220,180 200,230 150,240 C 100,230 80,180 80,120 Z" fill="#fff0e8" stroke="#f4dbd0" stroke-width="2"/>
+                        
+                        <!-- 眉毛 (レンズ外) -->
+                        <path d="M 90,105 Q 105,95 125,100" stroke="#5a4a42" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M 210,105 Q 195,95 175,100" stroke="#5a4a42" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+                        <!-- 鼻と口 (レンズ外) -->
+                        <path d="M 150,150 L 150,175" stroke="#e0c4b8" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M 135,200 Q 150,210 165,200" stroke="#d896a2" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+                        <!-- 左レンズ越しの世界 -->
+                        <g clip-path="url(#left-lens-clip)" id="left-inner-group">
+                            <g class="lens-inner-world" id="left-inner">
+                                <!-- レンズ内の顔背景 -->
+                                <path d="M 80,120 C 80,60 120,40 150,40 C 180,40 220,60 220,120 C 220,180 200,230 150,240 C 100,230 80,180 80,120 Z" fill="#fff0e8"/>
+                                <!-- 輪郭線（凹みを強調するため） -->
+                                <path d="M 80,120 C 80,150 85,180 100,210" stroke="#eabfb2" stroke-width="4" fill="none"/>
+                                <!-- 左目 -->
+                                <g id="eye-left">
+                                    <path d="M 85,140 Q 100,130 115,140" stroke="#4a3b32" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    <circle cx="100" cy="142" r="5" fill="#4a3b32"/>
+                                    <path d="M 85,145 Q 100,150 115,145" stroke="#4a3b32" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                                </g>
+                            </g>
+                        </g>
+
+                        <!-- 右レンズ越しの世界 -->
+                        <g clip-path="url(#right-lens-clip)" id="right-inner-group">
+                            <g class="lens-inner-world" id="right-inner">
+                                <!-- レンズ内の顔背景 -->
+                                <path d="M 80,120 C 80,60 120,40 150,40 C 180,40 220,60 220,120 C 220,180 200,230 150,240 C 100,230 80,180 80,120 Z" fill="#fff0e8"/>
+                                <!-- 輪郭線（凹みを強調するため） -->
+                                <path d="M 220,120 C 220,150 215,180 200,210" stroke="#eabfb2" stroke-width="4" fill="none"/>
+                                <!-- 右目 -->
+                                <g id="eye-right">
+                                    <path d="M 215,140 Q 200,130 185,140" stroke="#4a3b32" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    <circle cx="200" cy="142" r="5" fill="#4a3b32"/>
+                                    <path d="M 215,145 Q 200,150 185,145" stroke="#4a3b32" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                                </g>
+                            </g>
+                        </g>
+
+                        <!-- メガネのフレーム（最前面、縮小されない） -->
+                        <g id="glasses-frame">
+                            <!-- 左レンズ枠 -->
+                            <path d="M 60,135 C 60,120 75,115 100,115 C 130,115 135,130 135,145 C 135,165 120,175 95,175 C 70,175 60,165 60,135 Z" fill="none" stroke="#d4af37" stroke-width="3"/>
+                            <!-- 右レンズ枠 -->
+                            <path d="M 240,135 C 240,120 225,115 200,115 C 170,115 165,130 165,145 C 165,165 180,175 205,175 C 230,175 240,165 240,135 Z" fill="none" stroke="#d4af37" stroke-width="3"/>
+                            <!-- ブリッジ -->
+                            <path d="M 135,135 Q 150,125 165,135" fill="none" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+                            <!-- テンプル(つる) -->
+                            <path d="M 60,135 L 40,125" fill="none" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M 240,135 L 260,125" fill="none" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- レンズ切り替えトグル (UI) -->
+            <div class="flex flex-col items-center gap-4">
+                <p class="text-xs text-gray-brown tracking-widest text-center">LENS COMPARISON</p>
+                <div class="flex bg-white border border-pearl-dark rounded-full p-1 w-full max-w-sm shadow-sm relative">
+                    <!-- アクティブ背景（JSで移動） -->
+                    <div id="toggle-bg" class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-gold-light rounded-full transition-all duration-300 ease-out z-0"></div>
+                    
+                    <button onclick="switchLens('standard')" id="btn-standard" class="flex-1 py-3 text-sm font-medium z-10 transition-colors text-dark-brown">
+                        標準レンズ
+                    </button>
+                    <button onclick="switchLens('double')" id="btn-double" class="flex-1 py-3 text-sm font-medium z-10 transition-colors text-gray-brown">
+                        両面非球面<span class="text-[10px] ml-1 text-rose block md:inline mt-1 md:mt-0">(最高級)</span>
+                    </button>
+                </div>
+                <div id="lens-status-text" class="text-rose font-medium text-sm h-6 transition-opacity duration-300">
+                    歪みが発生しています
+                </div>
+            </div>
+
+            <!-- 接客トークスクリプト (カンペ) -->
+            <div class="bg-rose-light/20 border border-rose/30 rounded-xl p-5 md:p-6 flex flex-col gap-3 relative shadow-elegant">
+                <!-- カンペバッジ -->
+                <div class="absolute -top-3 left-6 bg-rose text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-wider shadow-sm">
+                    STAFF SCRIPT
+                </div>
+                
+                <h3 class="text-sm text-rose font-semibold border-b border-rose/20 pb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    お客様へのご提案トーク
+                </h3>
+                
+                <div id="talk-script-container" class="text-sm md:text-base leading-relaxed text-dark-brown min-h-[120px]">
+                    <!-- JSでトークテキストを挿入 -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-6 mt-8 text-[10px] text-gray-brown border-t border-pearl-dark">
+        &copy; 2026 Optique de Beauté. All rights reserved.
+    </footer>
+
+    <script>
+        // --- 状態管理 ---
+        const state = {
+            power: null, // 'medium', 'high', 'extreme'
+            lensType: 'standard' // 'standard', 'double'
+        };
+
+        // --- トークスクリプトのデータ（手抜きなし・段階的表示） ---
+        const talkScripts = {
+            medium: {
+                standard: "お客様の度数ですと、こちらの標準レンズでは<span class='bg-rose/10 text-rose font-semibold px-1'>少し目が小さく</span>見えてしまいます。",
+                double: "いかがでしょうか？両面非球面レンズにすることで、<span class='bg-rose/10 text-rose font-semibold px-1'>お目元の印象が自然に保たれ</span>、アイメイクも綺麗に映えます。"
+            },
+            high: {
+                standard: "強度のレンズになりますと、このようにレンズ越しに<span class='bg-rose/10 text-rose font-semibold px-1'>お顔の輪郭が内側に凹んで見え</span>、目がかなり小さくなってしまいます。これが『メガネをかけるとすっぴんに見えちゃう』原因なんです。",
+                double: "ご覧ください。両面非球面レンズなら、輪郭の凹みがスッと解消されます。これは単なる視力補正ではなく、<span class='bg-rose/10 text-rose font-semibold px-1'>お顔を美しく見せるための『メイク道具』</span>と同じです。高いファンデーションを買うよりも、確実に素顔を美しく見せる自己投資になりますよ。"
+            },
+            extreme: {
+                standard: "最強度となると、いわゆる『ビン底メガネ』のようにレンズが分厚くなり、<span class='bg-rose/10 text-rose font-semibold px-1'>輪郭の歪みや目の縮小が顕著に</span>出ます。これではせっかくのお綺麗なお顔立ちがもったいないです…。",
+                double: "両面非球面レンズの真骨頂がこちらです。極限まで歪みを取り除くことで、<span class='bg-rose/10 text-rose font-semibold px-1'>お顔の本来の美しさを取り戻します。</span>お客様の魅力を最大限に引き出す、最高級の美容ツールとしてご提案させてください。もう『外に出たくない』なんて言わせません。"
+            }
+        };
+
+        // --- シミュレーションのパラメータ (縮小率と凹み幅) ---
+        const simParams = {
+            medium: { scale: 0.9, shift: 3 },
+            high: { scale: 0.75, shift: 8 },
+            extreme: { scale: 0.6, shift: 15 }
+        };
+
+        // --- DOM要素 ---
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const simulatorSvg = document.getElementById('simulator-svg');
+        const talkContainer = document.getElementById('talk-script-container');
+        const toggleBg = document.getElementById('toggle-bg');
+        const btnStandard = document.getElementById('btn-standard');
+        const btnDouble = document.getElementById('btn-double');
+        const statusText = document.getElementById('lens-status-text');
+
+        // --- アクション関数 ---
+
+        // 1. 度数を選択したとき
+        function selectPower(powerLevel) {
+            state.power = powerLevel;
+            state.lensType = 'standard'; // 初期値に戻す
+
+            // ボタンのUI更新
+            document.querySelectorAll('.power-btn').forEach(btn => {
+                btn.classList.remove('bg-gold-light', 'border-gold', 'active');
+                btn.classList.add('bg-white', 'border-pearl-dark');
+            });
+            const selectedBtn = document.getElementById(`btn-${powerLevel}`);
+            selectedBtn.classList.remove('bg-white', 'border-pearl-dark');
+            selectedBtn.classList.add('bg-gold-light', 'border-gold', 'active');
+
+            // プログレッシブ・ディクロージャー：Step2を表示
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            
+            // 少し遅延させてフェードインさせる（UIの滑らかさ）
+            setTimeout(() => {
+                step2.classList.remove('opacity-0');
+            }, 50);
+
+            updateSimulator();
+        }
+
+        // 2. 違う度数を選び直すとき
+        function resetSimulator() {
+            step2.classList.add('opacity-0');
+            setTimeout(() => {
+                step2.classList.add('hidden');
+                step1.classList.remove('hidden');
+                // アニメーション用にCSS変数をリセット
+                document.documentElement.style.setProperty('--lens-scale', 1);
+                document.documentElement.style.setProperty('--face-shift', '0px');
+                simulatorSvg.classList.remove('apply-distortion');
+            }, 300); // fade out duration
+        }
+
+        // 3. レンズを切り替えたとき
+        function switchLens(type) {
+            if (state.lensType === type) return;
+            state.lensType = type;
+            updateSimulator();
+        }
+
+        // --- レンダリング関数 ---
+        function updateSimulator() {
+            // トグルのUI更新
+            if (state.lensType === 'standard') {
+                toggleBg.style.transform = 'translateX(0)';
+                btnStandard.classList.replace('text-gray-brown', 'text-dark-brown');
+                btnDouble.classList.replace('text-dark-brown', 'text-gray-brown');
+                statusText.innerHTML = '歪み・縮小が発生しています';
+                statusText.classList.replace('text-gold', 'text-rose');
+            } else {
+                toggleBg.style.transform = 'translateX(100%)';
+                btnStandard.classList.replace('text-dark-brown', 'text-gray-brown');
+                btnDouble.classList.replace('text-gray-brown', 'text-dark-brown');
+                statusText.innerHTML = '✨ 自然で美しいフェイスライン';
+                statusText.classList.replace('text-rose', 'text-gold');
+            }
+
+            // トークスクリプトの更新 (フェードイン効果付き)
+            talkContainer.style.opacity = '0';
+            setTimeout(() => {
+                talkContainer.innerHTML = talkScripts[state.power][state.lensType];
+                talkContainer.style.opacity = '1';
+                talkContainer.style.transition = 'opacity 0.5s ease';
+            }, 200);
+
+            // CSS変数を操作してSVGアニメーションを実行
+            const root = document.documentElement;
+            if (state.lensType === 'standard') {
+                const params = simParams[state.power];
+                root.style.setProperty('--lens-scale', params.scale);
+                root.style.setProperty('--face-shift', `${params.shift}px`);
+                simulatorSvg.classList.add('apply-distortion');
+            } else {
+                // 両面非球面レンズの場合は歪みを無くす(1.0倍, 0px)
+                root.style.setProperty('--lens-scale', 1);
+                root.style.setProperty('--face-shift', '0px');
+                // クラスは残したままCSS変数の値でアニメーションさせる
+            }
+        }
+    </script>
+</body>
+</html>
