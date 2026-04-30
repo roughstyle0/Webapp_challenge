@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POLARIZED LENS SIMULATOR | PRO-GEAR OPTICS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Phosphor Icons (for UI elements) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        function simulatorApp() {
+            return {
+                step: 1,
+                sceneId: null,
+                lensMode: 'none', // 'none', 'normal', 'polarized'
+                
+                get currentScene() {
+                    return this.scenes.find(s => s.id === this.sceneId) || null;
+                },
+
+                get currentTalkScript() {
+                    if(!this.currentScene) return '';
+                    return this.currentScene.talk[this.lensMode];
+                },
+
+                startSimulation(id) {
+                    this.sceneId = id;
+                    this.lensMode = 'none';
+                    this.step = 2;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                reset() {
+                    this.step = 1;
+                    this.sceneId = null;
+                    this.lensMode = 'none';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                // シーンデータ（SVGアートとトークスクリプトを完全内包）
+                scenes: [
+                    {
+                        id: 'drive',
+                        name: '夏のドライブ',
+                        desc: 'フロントガラスへの激しいダッシュボード映り込み',
+                        iconClass: 'ph-fill ph-steering-wheel',
+                        svg: `
+                            <svg viewBox="0 0 800 450" preserveAspectRatio="none" class="w-full h-full">
+                                <!-- Sky --> <rect width="800" height="225" fill="#3b82f6" />
+                                <!-- Road --> <polygon points="0,450 800,450 450,225 350,225" fill="#374151" />
+                                <!-- Center Line --> <polygon points="390,450 410,450 402,225 398,225" fill="#f3f4f6" />
+                                <!-- Side Lines --> <polygon points="20,450 60,450 350,225 345,225" fill="#9ca3af" /><polygon points="780,450 740,450 450,225 455,225" fill="#9ca3af" />
+                                <!-- Mountains --> <path d="M0,225 L150,120 L350,225 Z" fill="#064e3b" /><path d="M250,225 L500,80 L800,225 Z" fill="#065f46" />
+                            </svg>
+                        `,
+                        glareSvg: `
+                            <div class="w-full h-full bg-gradient-to-t from-white/90 via-white/40 to-transparent flex flex-col justify-end">
+                                <!-- Dashboard Grid Reflection -->
+                                <div class="w-full h-1/2 flex gap-4 px-10 opacity-60 transform -skew-x-12 scale-y-150 transform-origin-bottom">
+                                    <div class="w-1/4 h-full bg-white blur-md"></div>
+                                    <div class="w-2/4 h-full bg-white blur-lg"></div>
+                                    <div class="w-1/4 h-full bg-white blur-md"></div>
+                                </div>
+                            </div>
+                        `,
+                        talk: {
+                            none: "お客様、夏のドライブ中、<strong>フロントガラスにダッシュボードが白く映り込んで</strong>、前方の車や道路が見えにくくてヒヤッとしたことはありませんか？",
+                            normal: "一般的なカラーレンズのサングラスをかけると...<br><span class='text-gray-400'>全体が暗くなるだけで、ダッシュボードの白い映り込みは消えません。</span>これではトンネルに入った時に暗すぎてかえって危険です。",
+                            polarized: "ここで<span class='text-aqua font-bold border-b border-aqua'>『偏光レンズ』</span>に切り替えます。…いかがですか？<br>視界を暗くしすぎず、邪魔な<span class='text-aqua font-bold'>『反射光』だけをブラインドのようにスッとカット</span>します！映り込みが完全に消え、長距離運転の疲労感が劇的に変わる必須ギアです。"
+                        }
+                    },
+                    {
+                        id: 'fishing',
+                        name: '釣り・海辺',
+                        desc: '水面のギラギラした乱反射で水底が見えない',
+                        iconClass: 'ph-fill ph-fish-simple',
+                        svg: `
+                            <svg viewBox="0 0 800 450" preserveAspectRatio="none" class="w-full h-full">
+                                <!-- Water Deep --> <rect width="800" height="450" fill="#082f49" />
+                                <!-- Fish Silhouettes (Hidden by default unless glare is removed) -->
+                                <g opacity="0.8">
+                                    <path d="M200,300 Q300,260 380,320 Q300,340 200,300 Z" fill="#020617"/>
+                                    <polygon points="180,280 200,300 170,320" fill="#020617" />
+                                </g>
+                                <g opacity="0.6" transform="translate(300, -100) scale(0.8)">
+                                    <path d="M200,300 Q300,260 380,320 Q300,340 200,300 Z" fill="#020617"/>
+                                    <polygon points="180,280 200,300 170,320" fill="#020617" />
+                                </g>
+                                <!-- Underwater Rocks -->
+                                <circle cx="650" cy="400" r="100" fill="#0f172a" />
+                                <circle cx="100" cy="450" r="80" fill="#0f172a" />
+                            </svg>
+                        `,
+                        glareSvg: `
+                            <div class="w-full h-full bg-gradient-to-b from-white/90 via-cyan-100/60 to-white/20 backdrop-blur-[4px]">
+                                <!-- Sun Reflection on Water -->
+                                <div class="absolute top-1/4 left-1/3 w-64 h-32 bg-white rounded-full blur-[40px] opacity-90"></div>
+                                <div class="absolute top-1/2 left-2/3 w-40 h-10 bg-white rounded-full blur-[20px] opacity-80"></div>
+                            </div>
+                        `,
+                        talk: {
+                            none: "海釣りや川遊びの際、<strong>水面がギラギラと太陽の光を反射して</strong>、水の中の様子や魚影が全く見えないこと、よくありますよね。",
+                            normal: "普通のサングラスでは、眩しさ自体は軽減されますが、<span class='text-gray-400'>水面のギラつき（乱反射）はそのまま残ってしまいます。</span>これでは水底の地形や魚の動きは確認できません。",
+                            polarized: "<span class='text-aqua font-bold border-b border-aqua'>『偏光レンズ』</span>を通した視界をご覧ください。<br>水面の反射光だけを魔法のように消し去ります！見えなかった<span class='text-aqua font-bold'>水底の岩や魚影がくっきりと浮かび上がる</span>、プロの釣り師が絶対に手放さない理由がここにあります。"
+                        }
+                    },
+                    {
+                        id: 'golf',
+                        name: 'ゴルフ・スポーツ',
+                        desc: '強烈な日差しによる芝生や路面の白飛び',
+                        iconClass: 'ph-fill ph-flag-pennant',
+                        svg: `
+                            <svg viewBox="0 0 800 450" preserveAspectRatio="none" class="w-full h-full">
+                                <!-- Sky --> <rect width="800" height="150" fill="#0ea5e9" />
+                                <!-- Grass Field --> <rect y="150" width="800" height="300" fill="#15803d" />
+                                <!-- Putting Green --> <ellipse cx="400" cy="280" rx="250" ry="80" fill="#22c55e" />
+                                <!-- Sand Bunker --> <ellipse cx="150" cy="350" rx="100" ry="30" fill="#fde047" />
+                                <!-- Pin Flag --> 
+                                <line x1="400" y1="280" x2="400" y2="120" stroke="white" stroke-width="4"/>
+                                <polygon points="400,120 460,140 400,160" fill="#ef4444" />
+                            </svg>
+                        `,
+                        glareSvg: `
+                            <div class="w-full h-full bg-white/50 backdrop-saturate-50">
+                                <!-- Glare wash over grass -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-white/80 via-white/30 to-transparent"></div>
+                                <div class="absolute bottom-10 right-20 w-1/2 h-1/2 bg-white blur-[50px] opacity-60"></div>
+                            </div>
+                        `,
+                        talk: {
+                            none: "ゴルフ場やランニング中、強い日差しで<strong>芝生やアスファルトが白飛び</strong>してしまい、起伏やラインが読みにくいことはありませんか？",
+                            normal: "単なる色付きレンズでは、視界全体が暗くなるため、<span class='text-gray-400'>芝の微妙な凹凸や傾斜のコントラストが余計に分かりづらく</span>なってしまいます。",
+                            polarized: "<span class='text-aqua font-bold border-b border-aqua'>『偏光レンズ』</span>なら、白飛びの原因となる乱反射だけを精密にカットします。<br>消えていた<span class='text-aqua font-bold'>芝の目や傾斜のコントラストがくっきり浮かび上がり</span>、あなたの正確なパフォーマンスを強力にサポートします！"
+                        }
+                    }
+                ]
+            }
+        }
+    </script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        aqua: '#00e5ff',
+                        dark: '#0a0a0c',
+                        panel: '#16181d',
+                        panelBorder: '#2a2d35',
+                    },
+                    fontFamily: {
+                        sans: ['"Inter"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Pro-gear specific styling */
+        body {
+            background-color: theme('colors.dark');
+            color: #d1d5db;
+        }
+        .hud-border {
+            border: 1px solid theme('colors.panelBorder');
+            position: relative;
+        }
+        /* Corner markers for tech look */
+        .hud-border::before, .hud-border::after {
+            content: '';
+            position: absolute;
+            width: 8px; height: 8px;
+            border-color: theme('colors.aqua');
+            border-style: solid;
+            transition: all 0.3s ease;
+        }
+        .hud-border::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+        .hud-border::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+        
+        .hud-border:hover::before, .hud-border:hover::after {
+            width: 12px; height: 12px;
+            border-width: 2px;
+        }
+
+        .scanlines {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        
+        /* Aqua Glow text */
+        .text-glow-aqua {
+            color: theme('colors.aqua');
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+        
+        /* Hide scrollbar for cleaner UI */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: theme('colors.dark'); }
+        ::-webkit-scrollbar-thumb { background: theme('colors.panelBorder'); }
+        ::-webkit-scrollbar-thumb:hover { background: theme('colors.aqua'); }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-sans" x-data="simulatorApp()">
+
+    <!-- Header -->
+    <header class="bg-panel border-b border-panelBorder p-4 flex items-center justify-between z-10 relative">
+        <div class="flex items-center gap-3">
+            <i class="ph-fill ph-target text-aqua text-2xl"></i>
+            <div>
+                <h1 class="text-xs font-mono text-gray-400 tracking-widest">PRO-GEAR OPTICS</h1>
+                <p class="text-sm font-bold text-white tracking-wider">POLARIZED SIMULATOR</p>
+            </div>
+        </div>
+        <div class="text-xs font-mono text-aqua border border-aqua/30 px-2 py-1 bg-aqua/10">
+            SYSTEM: ONLINE
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex flex-col relative w-full max-w-2xl mx-auto p-4 gap-6">
+
+        <!-- ==========================================
+             STEP 1: シーン選択画面 (Progressive Disclosure)
+        =========================================== -->
+        <div x-show="step === 1" x-transition.opacity.duration.500ms class="flex flex-col gap-6 pt-4">
+            <div class="text-center space-y-2 mb-4">
+                <h2 class="text-2xl font-bold text-white tracking-wide">SCENARIO SELECT</h2>
+                <p class="text-sm text-gray-400">お客様の「視界を邪魔される瞬間」を選択してください。</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <template x-for="s in scenes" :key="s.id">
+                    <button @click="startSimulation(s.id)" 
+                            class="hud-border bg-panel hover:bg-[#1f2229] transition-colors p-5 flex items-center gap-5 text-left group">
+                        <div class="w-12 h-12 bg-dark border border-panelBorder flex items-center justify-center group-hover:border-aqua group-hover:text-aqua transition-colors">
+                            <i :class="s.iconClass" class="text-2xl"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-white group-hover:text-glow-aqua transition-all" x-text="s.name"></h3>
+                            <p class="text-xs text-gray-400 mt-1" x-text="s.desc"></p>
+                        </div>
+                        <i class="ph ph-caret-right text-gray-600 group-hover:text-aqua"></i>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             STEP 2: シミュレーター画面
+        =========================================== -->
+        <div x-show="step === 2" x-cloak class="flex flex-col gap-4 w-full h-full pb-8" style="display: none;">
+            
+            <!-- Controls Header -->
+            <div class="flex items-center justify-between">
+                <button @click="reset()" class="text-xs font-mono text-gray-400 hover:text-white flex items-center gap-1 transition-colors">
+                    <i class="ph ph-arrow-left"></i> BACK TO SELECT
+                </button>
+                <div class="text-xs font-mono text-aqua" x-text="'SCENE: ' + (currentScene ? currentScene.name : '')"></div>
+            </div>
+
+            <!-- 1. Simulator Display Area (絶対重ならない独立ブロック) -->
+            <div class="hud-border w-full aspect-video bg-black relative overflow-hidden group">
+                <!-- A: Base Scene Background (SVG) -->
+                <div class="absolute inset-0 transition-all duration-1000 ease-in-out"
+                     :class="lensMode === 'polarized' ? 'saturate-[1.3] contrast-[1.15]' : 'saturate-100 contrast-100'">
+                    <div x-html="currentScene ? currentScene.svg : ''" class="w-full h-full"></div>
+                </div>
+
+                <!-- B: Glare / Reflection Layer (反射光) -->
+                <div class="absolute inset-0 transition-opacity duration-1000 ease-in-out mix-blend-screen"
+                     :class="lensMode === 'polarized' ? 'opacity-0' : 'opacity-100'">
+                    <div x-html="currentScene ? currentScene.glareSvg : ''" class="w-full h-full"></div>
+                </div>
+
+                <!-- C: Normal Sunglasses Lens Filter (単なる色付き) -->
+                <div class="absolute inset-0 transition-colors duration-1000 ease-in-out pointer-events-none"
+                     :class="{
+                         'bg-black/0': lensMode === 'none',
+                         'bg-[#3b2f2f]/65': lensMode === 'normal',  /* 標準は暗い茶系で視界を奪う */
+                         'bg-[#1a2b3c]/20': lensMode === 'polarized' /* 偏光はクリアで適度な暗さ */
+                     }">
+                </div>
+
+                <!-- Cosmetic Overlay -->
+                <div class="absolute inset-0 scanlines opacity-50"></div>
+                
+                <!-- Status Badge on UI -->
+                <div class="absolute top-3 right-3 flex items-center gap-2">
+                    <span class="relative flex h-2 w-2" x-show="lensMode === 'polarized'">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-aqua opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-aqua"></span>
+                    </span>
+                    <span class="text-[10px] font-mono tracking-widest px-2 py-1 border backdrop-blur-sm transition-colors duration-500"
+                          :class="{
+                              'text-white border-white/30 bg-black/50': lensMode === 'none',
+                              'text-amber-400 border-amber-400/30 bg-black/70': lensMode === 'normal',
+                              'text-aqua border-aqua/50 bg-aqua/10 font-bold': lensMode === 'polarized'
+                          }"
+                          x-text="lensMode === 'none' ? 'NAKED EYE' : (lensMode === 'normal' ? 'NORMAL LENS' : 'POLARIZED LENS')">
+                    </span>
+                </div>
+            </div>
+
+            <!-- 2. Lens Control Panel -->
+            <div class="flex flex-col gap-2 mt-2">
+                <p class="text-[10px] font-mono text-gray-500 tracking-widest">LENS FILTER CONTROL</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <!-- None -->
+                    <button @click="lensMode = 'none'"
+                            class="py-3 px-2 border text-xs font-bold transition-all flex flex-col items-center gap-1"
+                            :class="lensMode === 'none' ? 'bg-gray-700 border-gray-500 text-white shadow-inner' : 'bg-panel border-panelBorder text-gray-500 hover:border-gray-600'">
+                        <i class="ph ph-eye text-lg"></i>
+                        <span>裸眼</span>
+                    </button>
+                    <!-- Normal -->
+                    <button @click="lensMode = 'normal'"
+                            class="py-3 px-2 border text-xs font-bold transition-all flex flex-col items-center gap-1"
+                            :class="lensMode === 'normal' ? 'bg-[#3b2f2f] border-amber-700/50 text-amber-500 shadow-inner' : 'bg-panel border-panelBorder text-gray-500 hover:border-amber-900/50'">
+                        <i class="ph ph-sunglasses text-lg"></i>
+                        <span>標準レンズ</span>
+                    </button>
+                    <!-- Polarized -->
+                    <button @click="lensMode = 'polarized'"
+                            class="py-3 px-2 border text-xs font-bold transition-all flex flex-col items-center gap-1 relative overflow-hidden"
+                            :class="lensMode === 'polarized' ? 'bg-aqua/10 border-aqua text-aqua shadow-aqua' : 'bg-panel border-panelBorder text-gray-500 hover:border-aqua/50'">
+                        <div x-show="lensMode === 'polarized'" class="absolute inset-0 bg-gradient-to-t from-aqua/20 to-transparent"></div>
+                        <i class="ph-fill ph-sunglasses text-lg relative z-10"></i>
+                        <span class="relative z-10">偏光レンズ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Staff Script Area (手抜き禁止のカンペ) -->
+            <div class="mt-4 flex gap-3 relative">
+                <!-- Label -->
+                <div class="flex flex-col items-center justify-start gap-2 w-6 pt-1">
+                    <i class="ph-fill ph-chat-circle-text text-aqua"></i>
+                    <div class="text-[8px] font-mono text-aqua tracking-[0.2em] transform -rotate-180" style="writing-mode: vertical-rl;">
+                        STAFF SCRIPT
+                    </div>
+                </div>
+                <!-- Script Box -->
+                <div class="flex-grow border-l-2 border-aqua pl-4 py-1 relative">
+                    <div class="absolute -left-[5px] top-2 w-2 h-2 bg-aqua rounded-full"></div>
+                    
+                    <p class="text-xs font-mono text-gray-500 mb-1">▶ READ TO CUSTOMER</p>
+                    
+                    <!-- Dynamic Text Box -->
+                    <div class="bg-panel border border-panelBorder p-4 text-sm leading-relaxed text-gray-300 min-h-[100px] transition-all"
+                         x-html="currentTalkScript">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>
