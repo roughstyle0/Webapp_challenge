@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>偏光レンズ・マジック体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #050708;
+      --panel: #0c1114;
+      --panel-2: #121a1f;
+      --line: rgba(103, 232, 249, .32);
+      --aqua: #22d3ee;
+      --aqua-2: #67e8f9;
+      --amber: #fbbf24;
+      --text: #e5f7fb;
+      --muted: #8aa4ad;
+      --danger: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100dvh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 8%, rgba(34, 211, 238, .14), transparent 28rem),
+        radial-gradient(circle at 90% 0%, rgba(14, 165, 233, .16), transparent 24rem),
+        linear-gradient(135deg, #020405 0%, #071014 48%, #030405 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .24;
+      background-image:
+        linear-gradient(135deg, rgba(255,255,255,.04) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255,255,255,.035) 25%, transparent 25%);
+      background-size: 18px 18px;
+      mix-blend-mode: screen;
+    }
+
+    .brand-kicker {
+      letter-spacing: .22em;
+      font-size: .72rem;
+      color: var(--aqua-2);
+    }
+
+    .gear-panel {
+      border: 1px solid rgba(103, 232, 249, .22);
+      background:
+        linear-gradient(145deg, rgba(18, 26, 31, .94), rgba(4, 8, 10, .92)),
+        repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 1px, transparent 1px 9px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 24px 80px rgba(0,0,0,.38);
+    }
+
+    .aqua-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(103,232,249,.82), transparent);
+    }
+
+    .choice-button {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      border: 1px solid rgba(103, 232, 249, .23);
+      background:
+        linear-gradient(135deg, rgba(8, 14, 17, .98), rgba(18, 26, 31, .92));
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .choice-button::after {
+      content: "";
+      position: absolute;
+      inset: auto -20% -45% 28%;
+      height: 6rem;
+      transform: rotate(-8deg);
+      background: linear-gradient(90deg, transparent, rgba(34,211,238,.18), transparent);
+      z-index: -1;
+    }
+
+    .choice-button:active { transform: scale(.985); }
+
+    @media (hover:hover) {
+      .choice-button:hover {
+        transform: translateY(-2px);
+        border-color: rgba(103, 232, 249, .7);
+        background:
+          linear-gradient(135deg, rgba(10, 22, 27, .98), rgba(20, 32, 38, .94));
+      }
+    }
+
+    .mode-button {
+      border: 1px solid rgba(148, 163, 184, .22);
+      background: rgba(15, 23, 42, .55);
+      color: #cbd5e1;
+      transition: .2s ease;
+    }
+
+    .mode-button[aria-pressed="true"] {
+      border-color: rgba(103,232,249,.9);
+      color: #ecfeff;
+      background:
+        linear-gradient(135deg, rgba(8,145,178,.36), rgba(15,23,42,.72));
+      box-shadow: 0 0 0 1px rgba(34,211,238,.18), 0 0 28px rgba(34,211,238,.14);
+    }
+
+    .scene-shell {
+      min-height: 360px;
+      border-radius: 2rem;
+      overflow: hidden;
+      border: 1px solid rgba(103,232,249,.24);
+      background: #06090b;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.06),
+        inset 0 -30px 70px rgba(0,0,0,.4);
+    }
+
+    .scene {
+      position: relative;
+      width: 100%;
+      min-height: 360px;
+      overflow: hidden;
+      background: #0a1114;
+      transition: filter .8s ease;
+    }
+
+    .scene.is-standard {
+      filter: brightness(.88) saturate(.72);
+    }
+
+    .scene.is-polarized {
+      filter: brightness(1.02) saturate(1.18) contrast(1.15);
+    }
+
+    .scene > div {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .blind-lines {
+      inset: 0;
+      opacity: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0 8px,
+        rgba(103,232,249,.22) 9px 10px,
+        transparent 11px 20px
+      );
+      transform: translateX(-100%);
+      mix-blend-mode: screen;
+    }
+
+    .scene.is-polarized .blind-lines {
+      animation: shutterSweep .82s cubic-bezier(.2,.8,.2,1) forwards;
+    }
+
+    @keyframes shutterSweep {
+      0% { opacity: 0; transform: translateX(-100%); }
+      25% { opacity: .7; }
+      100% { opacity: 0; transform: translateX(100%); }
+    }
+
+    .glare-layer,
+    .glare-band,
+    .glare-patch {
+      transition:
+        opacity .82s cubic-bezier(.2,.8,.2,1),
+        transform .82s cubic-bezier(.2,.8,.2,1),
+        filter .82s ease;
+    }
+
+    .scene.is-standard .glare-layer,
+    .scene.is-standard .glare-band,
+    .scene.is-standard .glare-patch {
+      opacity: 1;
+      filter: blur(0);
+    }
+
+    .scene.is-polarized .glare-layer,
+    .scene.is-polarized .glare-band,
+    .scene.is-polarized .glare-patch {
+      opacity: .04;
+      transform: translateY(-18%) scaleY(.12);
+      filter: blur(10px);
+    }
+
+    .clarity-target {
+      transition: opacity .82s ease, filter .82s ease, transform .82s ease;
+    }
+
+    .scene.is-standard .clarity-target {
+      opacity: .2;
+      filter: blur(4px);
+      transform: translateY(8px);
+    }
+
+    .scene.is-polarized .clarity-target {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+
+    /* Drive Scene */
+    .drive-sky {
+      inset: 0 0 42%;
+      background:
+        radial-gradient(circle at 75% 20%, rgba(255,255,255,.55), transparent 4rem),
+        linear-gradient(#7dd3fc, #155e75 68%, #0f172a);
+    }
+
+    .drive-road {
+      left: -20%;
+      right: -20%;
+      bottom: -14%;
+      height: 62%;
+      background:
+        linear-gradient(100deg, transparent 0 43%, rgba(255,255,255,.75) 44% 45%, transparent 46% 55%, rgba(255,255,255,.75) 56% 57%, transparent 58%),
+        linear-gradient(160deg, #1f2937 0%, #020617 70%);
+      clip-path: polygon(36% 0, 64% 0, 100% 100%, 0 100%);
+    }
+
+    .drive-horizon {
+      left: 0;
+      right: 0;
+      top: 37%;
+      height: 8%;
+      background: linear-gradient(90deg, #064e3b, #0f766e, #14532d);
+    }
+
+    .drive-frame {
+      inset: 6% 4% 7%;
+      border: 16px solid rgba(3,7,10,.75);
+      border-bottom-width: 46px;
+      border-radius: 32px 32px 24px 24px;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.08);
+    }
+
+    .drive-dashboard-reflection {
+      left: 8%;
+      right: 8%;
+      top: 22%;
+      height: 45%;
+      border-radius: 50% 50% 38% 38%;
+      background:
+        linear-gradient(160deg, rgba(255,255,255,.84), rgba(255,255,255,.16) 48%, transparent 78%);
+      clip-path: polygon(0 26%, 100% 4%, 84% 74%, 12% 100%);
+      mix-blend-mode: screen;
+    }
+
+    .drive-forward-car {
+      left: 46%;
+      bottom: 26%;
+      width: 13%;
+      height: 7%;
+      border-radius: 10px 10px 4px 4px;
+      background:
+        radial-gradient(circle at 26% 78%, #e5e7eb 0 8%, transparent 9%),
+        radial-gradient(circle at 74% 78%, #e5e7eb 0 8%, transparent 9%),
+        linear-gradient(#164e63, #082f49);
+      box-shadow: 0 12px 28px rgba(0,0,0,.35);
+    }
+
+    /* Fishing Scene */
+    .sea-sky {
+      inset: 0 0 48%;
+      background:
+        radial-gradient(circle at 82% 20%, rgba(255,255,255,.65), transparent 4rem),
+        linear-gradient(#bae6fd, #38bdf8 64%, #0369a1);
+    }
+
+    .sea-water {
+      inset: 36% 0 0;
+      background:
+        radial-gradient(ellipse at 20% 85%, rgba(34,197,94,.22), transparent 16rem),
+        linear-gradient(#0e7490, #064e5f 48%, #021b22);
+    }
+
+    .sea-depth {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 48%;
+      background:
+        radial-gradient(ellipse at 50% 100%, rgba(15,118,110,.78), transparent 70%),
+        linear-gradient(transparent, rgba(1,22,29,.96));
+    }
+
+    .fish {
+      width: 86px;
+      height: 32px;
+      border-radius: 50% 55% 55% 50%;
+      background: linear-gradient(90deg, #67e8f9, #0891b2);
+      box-shadow: inset -12px 0 18px rgba(2,6,23,.24);
+    }
+
+    .fish::before,
+    .fish::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .fish::before {
+      right: -22px;
+      top: 4px;
+      border-left: 26px solid #0891b2;
+      border-top: 12px solid transparent;
+      border-bottom: 12px solid transparent;
+    }
+
+    .fish::after {
+      left: 18px;
+      top: 9px;
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #031216;
+    }
+
+    .fish-a { left: 20%; bottom: 28%; transform: rotate(-6deg); }
+    .fish-b { left: 58%; bottom: 18%; transform: scale(.78) rotate(8deg); }
+
+    .water-glare-1 {
+      left: -8%;
+      right: -8%;
+      top: 44%;
+      height: 19%;
+      background: repeating-linear-gradient(
+        -8deg,
+        rgba(255,255,255,.86) 0 9px,
+        rgba(255,255,255,.2) 10px 16px,
+        transparent 17px 34px
+      );
+      mix-blend-mode: screen;
+    }
+
+    .water-glare-2 {
+      left: -20%;
+      right: -20%;
+      top: 59%;
+      height: 16%;
+      background: repeating-linear-gradient(
+        6deg,
+        transparent 0 15px,
+        rgba(255,255,255,.72) 16px 20px,
+        transparent 21px 32px
+      );
+      mix-blend-mode: screen;
+    }
+
+    /* Golf Scene */
+    .golf-sky {
+      inset: 0 0 44%;
+      background:
+        radial-gradient(circle at 78% 20%, rgba(255,255,255,.68), transparent 4rem),
+        linear-gradient(#bfdbfe, #38bdf8 70%, #0f766e);
+    }
+
+    .golf-fairway {
+      left: -18%;
+      right: -18%;
+      bottom: -20%;
+      height: 72%;
+      background:
+        repeating-linear-gradient(95deg, rgba(255,255,255,.06) 0 8px, transparent 8px 18px),
+        linear-gradient(115deg, #65a30d, #166534 58%, #052e16);
+      clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+    }
+
+    .golf-flag {
+      left: 62%;
+      bottom: 39%;
+      width: 4px;
+      height: 96px;
+      background: #e5e7eb;
+      box-shadow: 0 8px 22px rgba(0,0,0,.32);
+    }
+
+    .golf-flag::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 0;
+      width: 48px;
+      height: 30px;
+      background: linear-gradient(135deg, #22d3ee, #0e7490);
+      clip-path: polygon(0 0, 100% 18%, 0 100%);
+    }
+
+    .golf-ball {
+      left: 36%;
+      bottom: 20%;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 34% 28%, #fff, #cbd5e1 70%);
+      box-shadow: 0 15px 22px rgba(0,0,0,.34);
+    }
+
+    .golf-target-line {
+      left: 39%;
+      bottom: 26%;
+      width: 32%;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(103,232,249,0), rgba(103,232,249,.9), rgba(103,232,249,0));
+      transform: rotate(-12deg);
+    }
+
+    .grass-glare {
+      left: -10%;
+      right: -10%;
+      top: 42%;
+      height: 45%;
+      background:
+        radial-gradient(ellipse at 42% 54%, rgba(255,255,255,.9), transparent 28%),
+        radial-gradient(ellipse at 72% 38%, rgba(255,255,255,.68), transparent 22%),
+        linear-gradient(110deg, transparent, rgba(255,255,255,.42), transparent);
+      mix-blend-mode: screen;
+    }
+
+    .talk-card {
+      border: 1px solid rgba(103,232,249,.28);
+      background:
+        linear-gradient(135deg, rgba(8, 47, 73, .28), rgba(2, 6, 23, .68));
+    }
+
+    .highlight {
+      color: #ecfeff;
+      background: linear-gradient(transparent 54%, rgba(34,211,238,.28) 54%);
+      font-weight: 800;
+    }
+
+    .toast {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: .24s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (min-width: 768px) {
+      .scene-shell,
+      .scene {
+        min-height: 460px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="relative z-10 mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
+    <section id="choiceView" class="flex flex-1 flex-col justify-center gap-7 py-8">
+      <header class="grid gap-5">
+        <div class="brand-kicker font-black uppercase">Polarized Lens Field Demo</div>
+        <div class="grid gap-4">
+          <h1 class="text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+            ギラつく反射だけが消える。<br />
+            <span class="text-cyan-200">偏光レンズ</span>の魔法を体験。
+          </h1>
+          <p class="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+            新人スタッフでも、お客様の悩みに合わせて「普通のサングラス」と「偏光レンズ」の違いを一瞬で見せられる接客シミュレーターです。
+          </p>
+        </div>
+        <div class="aqua-line"></div>
+      </header>
+
+      <section class="gear-panel grid gap-4 rounded-[2rem] p-4 sm:p-6" aria-labelledby="scenarioTitle">
+        <div class="grid gap-1">
+          <p class="brand-kicker font-black">STEP 01</p>
+          <h2 id="scenarioTitle" class="text-xl font-black">お客様が困っている瞬間を選んでください</h2>
+          <p class="text-sm leading-6 text-slate-400">最初は選択だけ。選んだ後に、専用の見え方比較と接客カンペが開きます。</p>
+        </div>
+        <div id="scenarioButtons" class="grid gap-3"></div>
+      </section>
+    </section>
+
+    <section id="appView" class="hidden grid gap-5 py-4">
+      <header class="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div class="grid gap-2">
+          <button id="backButton" type="button" class="w-fit rounded-full border border-cyan-200/20 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/10">
+            ← 悩みを選び直す
+          </button>
+          <p class="brand-kicker font-black">STEP 02 / LIVE SIMULATION</p>
+          <h2 id="activeTitle" class="text-2xl font-black leading-tight sm:text-4xl"></h2>
+          <p id="activeLead" class="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base"></p>
+        </div>
+
+        <div class="gear-panel grid gap-2 rounded-3xl p-3">
+          <p class="px-1 text-xs font-black uppercase tracking-[.2em] text-slate-400">Lens Mode</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="standardButton" type="button" class="mode-button rounded-2xl px-4 py-3 text-sm font-black" aria-pressed="true">
+              標準サングラス
+            </button>
+            <button id="polarizedButton" type="button" class="mode-button rounded-2xl px-4 py-3 text-sm font-black" aria-pressed="false">
+              偏光レンズ
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid gap-4 lg:grid-cols-[1.25fr_.75fr] lg:items-start">
+        <div class="grid gap-3">
+          <div class="scene-shell">
+            <div id="scene" class="scene is-standard" role="img" aria-label="偏光レンズの見え方シミュレーション"></div>
+          </div>
+
+          <div class="gear-panel grid gap-3 rounded-3xl p-4 sm:grid-cols-3">
+            <div class="grid gap-1 sm:col-span-1">
+              <p class="text-xs font-black tracking-[.18em] text-cyan-200">VISIBLE CHANGE</p>
+              <p id="changeTitle" class="text-lg font-black"></p>
+            </div>
+            <p id="changeBody" class="text-sm leading-7 text-slate-300 sm:col-span-2"></p>
+          </div>
+        </div>
+
+        <aside class="grid gap-4">
+          <section class="gear-panel grid gap-4 rounded-[2rem] p-4 sm:p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="grid gap-1">
+                <p class="brand-kicker font-black">STAFF SCRIPT</p>
+                <h3 class="text-xl font-black">接客トーク・カンペ</h3>
+              </div>
+              <span id="talkStep" class="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-black text-cyan-100"></span>
+            </div>
+
+            <article class="talk-card grid gap-3 rounded-3xl p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="talkBadge" class="rounded-full bg-cyan-300 px-3 py-1 text-xs font-black text-slate-950"></span>
+                <span id="talkIntent" class="text-xs font-bold text-slate-400"></span>
+              </div>
+              <p id="talkLine" class="text-base font-bold leading-8 text-slate-50"></p>
+              <p id="talkNote" class="rounded-2xl border border-cyan-200/15 bg-black/25 p-3 text-sm leading-6 text-slate-300"></p>
+            </article>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button id="prevTalkButton" type="button" class="rounded-2xl border border-slate-500/25 px-4 py-3 text-sm font-black text-slate-200 transition hover:bg-white/5">
+                戻る
+              </button>
+              <button id="nextTalkButton" type="button" class="rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-cyan-200">
+                次のトーク
+              </button>
+            </div>
+
+            <button id="copyButton" type="button" class="rounded-2xl border border-cyan-200/30 px-4 py-3 text-sm font-black text-cyan-100 transition hover:bg-cyan-300/10">
+              今のカンペをコピー
+            </button>
+            <p id="copyToast" class="toast text-center text-xs font-bold text-cyan-100" role="status" aria-live="polite">コピーしました</p>
+          </section>
+
+          <section class="gear-panel grid gap-3 rounded-[2rem] p-4 sm:p-5">
+            <p class="brand-kicker font-black">CLOSE POINT</p>
+            <ul id="benefitList" class="grid gap-2 text-sm leading-6 text-slate-300"></ul>
+          </section>
+        </aside>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const scenarios = {
+      drive: {
+        icon: "DRIVE",
+        title: "夏のドライブ",
+        buttonTitle: "夏のドライブ",
+        buttonSub: "フロントガラスのダッシュボード映り込み",
+        lead: "フロントガラスに白い反射が乗り、前方の車線や車の輪郭がぼやけるシーン。偏光で“映り込みだけ”を落とします。",
+        change: {
+          standardTitle: "色は濃くても、映り込みは残る",
+          standardBody: "標準サングラスでは全体は暗くなりますが、ダッシュボードの白い映り込みがフロントガラスに残り、視界のノイズになります。",
+          polarizedTitle: "白い反射だけがスッと退く",
+          polarizedBody: "偏光レンズでは、ブラインドを閉じるように反射光が消え、車線・前方車・路面のコントラストが立ち上がります。"
+        },
+        benefits: [
+          "長距離運転で目が反射と戦い続ける負担を減らせる",
+          "フロントガラスの映り込みが気になるお客様に体験価値を出しやすい",
+          "単なる濃い色ではなく、高機能ギアとして提案しやすい"
+        ],
+        talks: [
+          {
+            badge: "共感",
+            intent: "まず悩みを言語化",
+            line: "「夏の運転で、フロントガラスにダッシュボードが白く映り込んで、前が見づらい瞬間はありませんか？」",
+            note: "お客様の実体験に近い言葉から入ると、価格ではなく“困りごとの解決”として聞いてもらえます。"
+          },
+          {
+            badge: "実演",
+            intent: "偏光の価値を一言で説明",
+            line: "「サングラスで全体を暗くするのではなく、邪魔な『反射光』だけを<span class='highlight'>ブラインドのようにカット</span>します。」",
+            note: "“暗くする”と“反射だけを消す”の違いを、画面の変化に合わせて見せるのがポイントです。"
+          },
+          {
+            badge: "提案",
+            intent: "高単価レンズへ自然に接続",
+            line: "「視界がクリアになると、夏のレジャー後の運転疲れも変わります。プロも使う必須ギアとして、ドライブ用にかなりおすすめです。」",
+            note: "安全・快適・疲労軽減の3軸で伝えると、色付きレンズとの価格差に納得感が出ます。"
+          }
+        ],
+        sceneHtml: `
+          <div class="drive-sky"></div>
+          <div class="drive-horizon"></div>
+          <div class="drive-road clarity-target"></div>
+          <div class="drive-forward-car clarity-target"></div>
+          <div class="drive-dashboard-reflection glare-layer"></div>
+          <div class="drive-frame"></div>
+          <div class="blind-lines"></div>
+        `
+      },
+      sea: {
+        icon: "WATER",
+        title: "釣り・海辺",
+        buttonTitle: "釣り・海辺",
+        buttonSub: "水面のギラギラ反射で水底が見えない",
+        lead: "水面の白い反射が邪魔で、魚影や水底の地形が見えないシーン。偏光で水面のギラつきを選択的に抑えます。",
+        change: {
+          standardTitle: "水面の白飛びが魚影を隠す",
+          standardBody: "標準サングラスでは水面全体が暗くなるだけで、角度によってはギラギラした反射が残り、水中の情報が読み取りづらいままです。",
+          polarizedTitle: "水面下の魚影が浮かび上がる",
+          polarizedBody: "偏光レンズでは反射光が消え、水面下の魚・岩・浅瀬の輪郭が見えやすくなります。釣りや海辺では違いが非常に伝わりやすい場面です。"
+        },
+        benefits: [
+          "魚影や水底の変化を見たい釣りのお客様に刺さる",
+          "海辺や川遊びでのまぶしさを抑え、目の疲れを軽くできる",
+          "アウトドア用の“道具”として高機能感を出しやすい"
+        ],
+        talks: [
+          {
+            badge: "共感",
+            intent: "水面のストレスを引き出す",
+            line: "「釣りや海辺で、水面が白くギラギラして、水の中がまったく見えないことはありませんか？」",
+            note: "“眩しい”だけでなく“見たいものが見えない”に焦点を当てると、偏光の必要性が伝わります。"
+          },
+          {
+            badge: "実演",
+            intent: "反射だけを切る説明",
+            line: "「偏光レンズは水面の反射光を<span class='highlight'>ブラインドのように整理</span>するので、ただ暗いのではなく、水中の輪郭が見えやすくなります。」",
+            note: "画面の魚影が出る瞬間に合わせて話すと、機能説明が体験に変わります。"
+          },
+          {
+            badge: "提案",
+            intent: "夏レジャーの必須ギア化",
+            line: "「夏のレジャーの疲労感が劇的に変わる、プロも使う必須ギアです。釣り・海・川に行く方なら、価値を感じやすいレンズです。」",
+            note: "趣味用途のお客様には“快適”だけでなく“成果が変わる”という切り口も有効です。"
+          }
+        ],
+        sceneHtml: `
+          <div class="sea-sky"></div>
+          <div class="sea-water"></div>
+          <div class="sea-depth clarity-target"></div>
+          <div class="fish fish-a clarity-target"></div>
+          <div class="fish fish-b clarity-target"></div>
+          <div class="water-glare-1 glare-band"></div>
+          <div class="water-glare-2 glare-band"></div>
+          <div class="blind-lines"></div>
+        `
+      },
+      golf: {
+        icon: "SPORT",
+        title: "ゴルフ・スポーツ",
+        buttonTitle: "ゴルフ・スポーツ",
+        buttonSub: "芝生や路面の白飛びで距離感がつかみにくい",
+        lead: "強い日差しで芝や路面が白く飛び、ボール・ライン・地形のコントラストが落ちるシーン。偏光で眩しさのノイズを抑えます。",
+        change: {
+          standardTitle: "全体が暗くなり、起伏まで沈む",
+          standardBody: "標準サングラスでは眩しさは少し弱まりますが、芝目や路面のコントラストも一緒に沈み、距離感がつかみにくくなります。",
+          polarizedTitle: "白飛びが消え、ラインが締まる",
+          polarizedBody: "偏光レンズでは反射による白飛びが抑えられ、ボール・芝目・ターゲットラインの輪郭がはっきり見えます。"
+        },
+        benefits: [
+          "ゴルフ・ランニング・観戦など屋外スポーツ全般に提案しやすい",
+          "眩しさ対策だけでなく、コントラスト向上という価値を伝えられる",
+          "長時間屋外にいるお客様へ疲労軽減を訴求できる"
+        ],
+        talks: [
+          {
+            badge: "共感",
+            intent: "スポーツ中の見づらさを確認",
+            line: "「晴れた日の芝生や路面って、白く飛んで距離感やラインが見づらくなることがありますよね。」",
+            note: "スポーツ用途では“眩しい”より“プレー中に判断しづらい”を拾うと響きます。"
+          },
+          {
+            badge: "実演",
+            intent: "暗さではなくクリアさを訴求",
+            line: "「偏光レンズは、全体を暗く沈めるのではなく、邪魔な反射だけを<span class='highlight'>スッと間引く</span>ので、芝目や路面の輪郭が残ります。」",
+            note: "スポーツのお客様には、見え方の精度が上がることを具体的に伝えます。"
+          },
+          {
+            badge: "提案",
+            intent: "疲労軽減とギア感で締める",
+            line: "「長時間の屋外では目の疲れが積み重なります。夏のレジャーの疲労感が劇的に変わる、プロも使う必須ギアです。」",
+            note: "“高いレンズ”ではなく“パフォーマンスを支えるギア”として位置づけます。"
+          }
+        ],
+        sceneHtml: `
+          <div class="golf-sky"></div>
+          <div class="golf-fairway clarity-target"></div>
+          <div class="golf-target-line clarity-target"></div>
+          <div class="golf-flag clarity-target"></div>
+          <div class="golf-ball clarity-target"></div>
+          <div class="grass-glare glare-patch"></div>
+          <div class="blind-lines"></div>
+        `
+      }
+    };
+
+    const state = {
+      selected: null,
+      mode: "standard",
+      talkIndex: 0
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    const elements = {
+      choiceView: $("choiceView"),
+      appView: $("appView"),
+      scenarioButtons: $("scenarioButtons"),
+      backButton: $("backButton"),
+      activeTitle: $("activeTitle"),
+      activeLead: $("activeLead"),
+      standardButton: $("standardButton"),
+      polarizedButton: $("polarizedButton"),
+      scene: $("scene"),
+      changeTitle: $("changeTitle"),
+      changeBody: $("changeBody"),
+      talkStep: $("talkStep"),
+      talkBadge: $("talkBadge"),
+      talkIntent: $("talkIntent"),
+      talkLine: $("talkLine"),
+      talkNote: $("talkNote"),
+      prevTalkButton: $("prevTalkButton"),
+      nextTalkButton: $("nextTalkButton"),
+      copyButton: $("copyButton"),
+      copyToast: $("copyToast"),
+      benefitList: $("benefitList")
+    };
+
+    function renderScenarioButtons() {
+      elements.scenarioButtons.innerHTML = Object.entries(scenarios).map(([key, item]) => `
+        <button type="button" class="choice-button grid gap-3 rounded-3xl p-5 text-left sm:grid-cols-[auto_1fr] sm:items-center" data-scenario="${key}">
+          <span class="flex h-12 w-20 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-300/10 text-xs font-black tracking-[.18em] text-cyan-100">
+            ${item.icon}
+          </span>
+          <span class="grid gap-1">
+            <span class="text-lg font-black">${item.buttonTitle}</span>
+            <span class="text-sm leading-6 text-slate-400">${item.buttonSub}</span>
+          </span>
+        </button>
+      `).join("");
+
+      elements.scenarioButtons.querySelectorAll("[data-scenario]").forEach((button) => {
+        button.addEventListener("click", () => selectScenario(button.dataset.scenario));
+      });
+    }
+
+    function selectScenario(key) {
+      if (!scenarios[key]) return;
+      state.selected = key;
+      state.mode = "standard";
+      state.talkIndex = 0;
+      elements.choiceView.classList.add("hidden");
+      elements.appView.classList.remove("hidden");
+      renderApp();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setMode(mode) {
+      state.mode = mode === "polarized" ? "polarized" : "standard";
+      if (state.mode === "polarized" && state.talkIndex === 0) {
+        state.talkIndex = 1;
+      }
+      renderApp();
+    }
+
+    function resetApp() {
+      state.selected = null;
+      state.mode = "standard";
+      state.talkIndex = 0;
+      elements.appView.classList.add("hidden");
+      elements.choiceView.classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderApp() {
+      const item = scenarios[state.selected];
+      if (!item) return resetApp();
+
+      elements.activeTitle.textContent = item.title;
+      elements.activeLead.textContent = item.lead;
+
+      elements.standardButton.setAttribute("aria-pressed", String(state.mode === "standard"));
+      elements.polarizedButton.setAttribute("aria-pressed", String(state.mode === "polarized"));
+
+      elements.scene.className = `scene ${state.mode === "polarized" ? "is-polarized" : "is-standard"}`;
+      elements.scene.innerHTML = item.sceneHtml;
+
+      const modeKey = state.mode === "polarized" ? "polarized" : "standard";
+      elements.changeTitle.textContent = item.change[`${modeKey}Title`];
+      elements.changeBody.textContent = item.change[`${modeKey}Body`];
+
+      elements.benefitList.innerHTML = item.benefits.map((benefit) => `
+        <li class="grid grid-cols-[auto_1fr] gap-2">
+          <span class="mt-2 h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_18px_rgba(34,211,238,.8)]"></span>
+          <span>${benefit}</span>
+        </li>
+      `).join("");
+
+      renderTalk();
+    }
+
+    function renderTalk() {
+      const item = scenarios[state.selected];
+      if (!item) return;
+
+      const safeIndex = Math.min(Math.max(state.talkIndex, 0), item.talks.length - 1);
+      state.talkIndex = safeIndex;
+      const talk = item.talks[safeIndex];
+
+      elements.talkStep.textContent = `${safeIndex + 1} / ${item.talks.length}`;
+      elements.talkBadge.textContent = talk.badge;
+      elements.talkIntent.textContent = talk.intent;
+      elements.talkLine.innerHTML = talk.line;
+      elements.talkNote.textContent = talk.note;
+
+      elements.prevTalkButton.disabled = safeIndex === 0;
+      elements.nextTalkButton.disabled = safeIndex === item.talks.length - 1;
+
+      elements.prevTalkButton.classList.toggle("opacity-40", safeIndex === 0);
+      elements.nextTalkButton.classList.toggle("opacity-40", safeIndex === item.talks.length - 1);
+    }
+
+    function moveTalk(direction) {
+      const item = scenarios[state.selected];
+      if (!item) return;
+      state.talkIndex = Math.min(Math.max(state.talkIndex + direction, 0), item.talks.length - 1);
+      renderTalk();
+    }
+
+    function plainTextFromHtml(html) {
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      return temp.textContent || temp.innerText || "";
+    }
+
+    async function copyCurrentTalk() {
+      const item = scenarios[state.selected];
+      if (!item) return;
+      const talk = item.talks[state.talkIndex];
+      const text = plainTextFromHtml(talk.line);
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("コピーしました");
+      } catch (error) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+          document.execCommand("copy");
+          showToast("コピーしました");
+        } catch (fallbackError) {
+          showToast("コピーできませんでした。長押しで選択してください");
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+    }
+
+    function showToast(message) {
+      elements.copyToast.textContent = message;
+      elements.copyToast.classList.add("show");
+      window.setTimeout(() => {
+        elements.copyToast.classList.remove("show");
+      }, 1800);
+    }
+
+    elements.backButton.addEventListener("click", resetApp);
+    elements.standardButton.addEventListener("click", () => setMode("standard"));
+    elements.polarizedButton.addEventListener("click", () => setMode("polarized"));
+    elements.prevTalkButton.addEventListener("click", () => moveTalk(-1));
+    elements.nextTalkButton.addEventListener("click", () => moveTalk(1));
+    elements.copyButton.addEventListener("click", copyCurrentTalk);
+
+    renderScenarioButtons();
+  </script>
+</body>
+</html>
