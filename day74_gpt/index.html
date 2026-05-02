@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>可視光線調光レンズ ドライブ快適シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: "Inter", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(245, 158, 11, .18), transparent 34%),
+        linear-gradient(180deg, #111827 0%, #030712 100%);
+      color: #ecfeff;
+    }
+    .hud {
+      background: linear-gradient(145deg, rgba(31,41,55,.92), rgba(3,7,18,.96));
+      border: 1px solid rgba(45,212,191,.25);
+      box-shadow: 0 0 40px rgba(45,212,191,.08), inset 0 0 24px rgba(245,158,11,.04);
+    }
+    .scan {
+      background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 100% 8px;
+    }
+    .lens {
+      transition: background-color 1.2s ease, opacity 1.2s ease, box-shadow 1.2s ease;
+    }
+    .lens-clear {
+      background: rgba(134, 239, 172, .14);
+      box-shadow: inset 0 0 30px rgba(134,239,172,.25);
+    }
+    .lens-amber {
+      background: rgba(180, 83, 9, .58);
+      box-shadow: inset 0 0 42px rgba(245,158,11,.55), 0 0 24px rgba(245,158,11,.22);
+    }
+    .lens-dark {
+      background: rgba(17,24,39,.72);
+      box-shadow: inset 0 0 38px rgba(15,23,42,.85);
+    }
+    .pulse {
+      animation: pulseGlow 1.8s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 rgba(45,212,191,.0); }
+      50% { box-shadow: 0 0 28px rgba(45,212,191,.38); }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen p-4">
+  <main class="mx-auto max-w-md">
+    <section class="hud scan rounded-[2rem] p-5 flex flex-col gap-5">
+      <header class="flex flex-col gap-2">
+        <p class="text-xs tracking-[.32em] text-emerald-300">SMART DRIVE LENS HUD</p>
+        <h1 class="text-2xl font-black leading-tight">
+          車内でも色が変わる<br>
+          <span class="text-amber-400">可視光線調光レンズ</span>
+        </h1>
+        <p class="text-sm text-slate-300">
+          お客様の運転シーンを選ぶだけで、通常調光との違いと接客トークを表示します。
+        </p>
+      </header>
+
+      <section id="scenePicker" class="flex flex-col gap-3">
+        <button data-scene="day" class="sceneBtn rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 text-left">
+          <span class="block text-lg font-bold">日中の運転</span>
+          <span class="text-sm text-slate-300">UVカットガラスの車内で眩しい</span>
+        </button>
+        <button data-scene="tunnel" class="sceneBtn rounded-2xl border border-emerald-300/40 bg-emerald-300/10 p-4 text-left">
+          <span class="block text-lg font-bold">連続するトンネル</span>
+          <span class="text-sm text-slate-300">急に暗くなって怖い</span>
+        </button>
+        <button data-scene="sunset" class="sceneBtn rounded-2xl border border-orange-400/40 bg-orange-400/10 p-4 text-left">
+          <span class="block text-lg font-bold">西日の強い夕方</span>
+          <span class="text-sm text-slate-300">サンバイザーでも防げない眩しさ</span>
+        </button>
+      </section>
+
+      <section id="result" class="hidden flex flex-col gap-5">
+        <div class="rounded-3xl border border-slate-600 bg-slate-950/70 p-4 flex flex-col gap-4">
+          <div>
+            <p id="sceneLabel" class="text-xs tracking-[.24em] text-amber-300"></p>
+            <h2 id="sceneTitle" class="text-xl font-black mt-1"></h2>
+            <p id="sceneDesc" class="text-sm text-slate-300 mt-2"></p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+            <div class="rounded-2xl bg-slate-900 p-4 flex flex-col gap-3">
+              <p class="text-sm font-bold text-slate-300">通常の調光レンズ</p>
+              <div class="rounded-2xl border border-slate-700 bg-slate-800 p-4 flex flex-col gap-3">
+                <div id="normalLens" class="lens lens-clear h-28 rounded-[2rem] border border-white/20 flex items-center justify-center">
+                  <span id="normalText" class="text-sm font-bold text-center px-4"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-slate-900 p-4 flex flex-col gap-3">
+              <p class="text-sm font-bold text-emerald-300">可視光線調光レンズ</p>
+              <div class="rounded-2xl border border-emerald-300/30 bg-slate-800 p-4 flex flex-col gap-3">
+                <div id="smartLens" class="lens h-28 rounded-[2rem] border border-white/20 flex items-center justify-center">
+                  <span id="smartText" class="text-sm font-black text-center px-4"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <article class="rounded-3xl border border-amber-400/40 bg-amber-400/10 p-4 flex flex-col gap-3">
+          <p class="text-xs tracking-[.24em] text-amber-300">STAFF TALK SCRIPT</p>
+          <h3 class="text-lg font-black">そのまま読める接客カンペ</h3>
+          <div id="talkScript" class="text-sm leading-7 text-slate-100"></div>
+        </article>
+
+        <button id="resetBtn" class="rounded-full border border-emerald-300/40 bg-emerald-300/10 px-5 py-3 font-bold text-emerald-200">
+          別のシーンを選び直す
+        </button>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const scenes = {
+      day: {
+        label: "SCENE 01 / DAY DRIVE",
+        title: "日中の車内で、通常調光は反応しにくい",
+        desc: "フロントガラスが紫外線をカットするため、従来型は透明に近いまま。可視光線調光は車内の眩しさにも反応します。",
+        normalClass: "lens-clear",
+        smartClass: "lens-amber pulse",
+        normalText: "透明のまま：眩しさが残る",
+        smartText: "ディープアンバーに発色：眩しさを軽減",
+        talk: `
+          <p>「従来の調光レンズは、紫外線に反応するタイプが多いため、<mark class="bg-amber-300 text-slate-950 px-1 rounded">車の中では色が変わりにくい</mark>んです。」</p>
+          <p>「こちらの次世代レンズは、紫外線だけでなく<mark class="bg-emerald-300 text-slate-950 px-1 rounded">光そのものに反応</mark>するので、車内でも適度な濃度に変化します。」</p>
+          <p>「サングラスに掛け替えなくても、運転中の眩しさを自然に抑えられます。」</p>
+        `
+      },
+      tunnel: {
+        label: "SCENE 02 / TUNNEL RESPONSE",
+        title: "暗い場所では、素早くクリアへ戻る安心感",
+        desc: "トンネルに入った瞬間の不安を想定。可視光線調光は暗さを検知し、視界を確保する方向へ退色します。",
+        normalClass: "lens-dark",
+        smartClass: "lens-clear pulse",
+        normalText: "暗所で視界が重く感じる",
+        smartText: "素早くクリア寄りへ：視界を確保",
+        talk: `
+          <p>「サングラスだと、トンネルに入った瞬間に暗くて怖いですよね。」</p>
+          <p>「このレンズは明るい場所では眩しさを抑え、暗がりでは<mark class="bg-emerald-300 text-slate-950 px-1 rounded">透明に近い状態へ戻る</mark>ので、かけ外しの手間がありません。」</p>
+          <p>「まさに、<mark class="bg-amber-300 text-slate-950 px-1 rounded">トンネルでも安心な究極のドライブレンズ</mark>です。」</p>
+        `
+      },
+      sunset: {
+        label: "SCENE 03 / LOW SUN GLARE",
+        title: "西日の刺すような眩しさを、自然にトーンダウン",
+        desc: "夕方の低い角度の光はサンバイザーでも防ぎにくい悩み。車内でも発色することで、視界のストレスを減らします。",
+        normalClass: "lens-clear",
+        smartClass: "lens-amber pulse",
+        normalText: "透明のまま：西日が刺さる",
+        smartText: "アンバー発色：コントラストを保つ",
+        talk: `
+          <p>「夕方の西日は角度が低いので、サンバイザーだけでは防ぎきれないことがあります。」</p>
+          <p>「可視光線調光なら、車内でも光に反応して<mark class="bg-amber-300 text-slate-950 px-1 rounded">自然なサングラス濃度</mark>へ変化します。」</p>
+          <p>「眩しさ対策と安全な視界を両立したい方に、非常に相性の良いレンズです。」</p>
+        `
+      }
+    };
+
+    const result = document.getElementById("result");
+    const scenePicker = document.getElementById("scenePicker");
+    const sceneLabel = document.getElementById("sceneLabel");
+    const sceneTitle = document.getElementById("sceneTitle");
+    const sceneDesc = document.getElementById("sceneDesc");
+    const normalLens = document.getElementById("normalLens");
+    const smartLens = document.getElementById("smartLens");
+    const normalText = document.getElementById("normalText");
+    const smartText = document.getElementById("smartText");
+    const talkScript = document.getElementById("talkScript");
+
+    function applyScene(key) {
+      const scene = scenes[key];
+      if (!scene) return;
+
+      scenePicker.classList.add("hidden");
+      result.classList.remove("hidden");
+
+      sceneLabel.textContent = scene.label;
+      sceneTitle.textContent = scene.title;
+      sceneDesc.textContent = scene.desc;
+      normalText.textContent = scene.normalText;
+      smartText.textContent = "反応中...";
+
+      normalLens.className = "lens h-28 rounded-[2rem] border border-white/20 flex items-center justify-center " + scene.normalClass;
+      smartLens.className = "lens h-28 rounded-[2rem] border border-white/20 flex items-center justify-center lens-clear";
+      talkScript.innerHTML = "";
+
+      setTimeout(() => {
+        smartLens.className = "lens h-28 rounded-[2rem] border border-white/20 flex items-center justify-center " + scene.smartClass;
+        smartText.textContent = scene.smartText;
+        talkScript.innerHTML = scene.talk;
+      }, 650);
+    }
+
+    document.querySelectorAll(".sceneBtn").forEach(btn => {
+      btn.addEventListener("click", () => applyScene(btn.dataset.scene));
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      result.classList.add("hidden");
+      scenePicker.classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>
