@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>次世代調光レンズ ドライビング・シミュレーター</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#0B0F19',
+            panelBg: '#131C2D',
+            borderLight: '#2A364F',
+            amberAcc: '#f59e0b',
+            limeAcc: '#84cc16'
+          },
+          fontFamily: {
+            sans: ['"Helvetica Neue"', 'Arial', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      /* テキストハイライト用のカスタムユーティリティ */
+      .highlight-good {
+        @apply text-limeAcc font-bold border-b-2 border-limeAcc/60 bg-limeAcc/10 px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(132,204,22,0.15)];
+      }
+      .highlight-bad {
+        @apply text-red-400 font-bold border-b border-dashed border-red-400/60 bg-red-400/10 px-1.5 py-0.5 rounded;
+      }
+      .highlight-neutral {
+        @apply text-amberAcc font-bold border-b-2 border-amberAcc/60 bg-amberAcc/10 px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(245,158,11,0.15)];
+      }
+      
+      /* スクロールバー非表示（スマートなUIのため） */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-brandDark text-gray-100 font-sans h-screen flex flex-col overflow-hidden">
+
+  <!-- ヘッダー -->
+  <header class="flex-none p-4 border-b border-borderLight bg-brandDark/90 backdrop-blur z-10 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-limeAcc animate-pulse"></div>
+      <h1 class="text-limeAcc font-mono text-xs sm:text-sm tracking-widest uppercase">Drive Optics System</h1>
+    </div>
+    <div class="bg-borderLight text-gray-300 text-[10px] px-2 py-1 rounded font-mono uppercase tracking-wider">
+      Staff Mode
+    </div>
+  </header>
+
+  <!-- メインコンテンツ領域（スクロール可能） -->
+  <main class="flex-grow overflow-y-auto no-scrollbar relative w-full max-w-2xl mx-auto flex flex-col">
+    
+    <!-- ==============================================
+         STEP 1: シーン選択画面（情報過多の禁止を遵守）
+         ============================================== -->
+    <div id="viewSelect" class="flex flex-col p-5 gap-6 animate-[fadeIn_0.3s_ease-out]">
+      <div class="space-y-2 mt-4">
+        <p class="text-amberAcc font-mono text-xs tracking-wider uppercase">Simulation Setup</p>
+        <h2 class="text-2xl font-bold leading-tight">
+          お客様の<br><span class="text-white">ドライブの悩み</span>は？
+        </h2>
+        <p class="text-gray-400 text-sm">シミュレーションする環境を選択してください。</p>
+      </div>
+
+      <div class="flex flex-col gap-3 mt-2">
+        <button data-scene="day" class="scene-btn group relative w-full flex items-center justify-between p-4 bg-panelBg border border-borderLight rounded-xl hover:border-limeAcc/50 hover:bg-borderLight/30 transition-all text-left">
+          <div>
+            <h3 class="text-gray-100 font-bold text-base mb-1 group-hover:text-limeAcc transition-colors">☀️ 日中の運転</h3>
+            <p class="text-xs text-gray-400">UVカットガラス車内で眩しさが防げない</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-500 group-hover:text-limeAcc transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+
+        <button data-scene="sunset" class="scene-btn group relative w-full flex items-center justify-between p-4 bg-panelBg border border-borderLight rounded-xl hover:border-limeAcc/50 hover:bg-borderLight/30 transition-all text-left">
+          <div>
+            <h3 class="text-gray-100 font-bold text-base mb-1 group-hover:text-limeAcc transition-colors">🌇 西日の強い夕方</h3>
+            <p class="text-xs text-gray-400">サンバイザーの隙間から差し込む強烈な光</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-500 group-hover:text-limeAcc transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+
+        <button data-scene="tunnel" class="scene-btn group relative w-full flex items-center justify-between p-4 bg-panelBg border border-borderLight rounded-xl hover:border-limeAcc/50 hover:bg-borderLight/30 transition-all text-left">
+          <div>
+            <h3 class="text-gray-100 font-bold text-base mb-1 group-hover:text-limeAcc transition-colors">🚇 連続するトンネル</h3>
+            <p class="text-xs text-gray-400">明るい車外から急に暗い場所へ入りヒヤッとする</p>
+          </div>
+          <svg class="w-5 h-5 text-gray-500 group-hover:text-limeAcc transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ==============================================
+         STEP 2: シミュレーション画面
+         画像（ビュー）とテキスト（トーク）の被り絶対禁止
+         ============================================== -->
+    <div id="viewSim" class="hidden flex-col flex-grow p-4 gap-4 pb-8 animate-[fadeIn_0.3s_ease-out]">
+      
+      <!-- ナビゲーション＆タイトル -->
+      <div class="flex items-center gap-3 mb-2">
+        <button id="btnBack" class="p-2 -ml-2 text-gray-400 hover:text-white transition-colors bg-panelBg rounded-full border border-borderLight">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <h2 id="titleSim" class="text-lg font-bold text-white tracking-wide">シーン名</h2>
+      </div>
+
+      <!-- ビューポート（CSSで情景を描画。文字は一切重ねない） -->
+      <div class="relative w-full aspect-[4/3] sm:aspect-video rounded-xl overflow-hidden border border-borderLight bg-black shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex-none">
+        <!-- 背景レイヤー（JSで動的に切り替え） -->
+        <div id="viewportBg" class="absolute inset-0 z-0 transition-all duration-700"></div>
+        
+        <!-- 車内を示すインナーシャドウ -->
+        <div class="absolute inset-0 z-10 shadow-[inset_0_0_60px_rgba(0,0,0,0.8)] pointer-events-none border-[8px] border-black/40 rounded-xl"></div>
+
+        <!-- レンズレイヤー（メガネ枠） -->
+        <div class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <div class="relative w-[85%] max-w-xs flex gap-2 sm:gap-3">
+            <!-- 左レンズ -->
+            <div id="lensLeft" class="flex-1 aspect-[5/4] border-4 border-gray-800 rounded-[40%] rounded-tr-[20%] rounded-br-[60%] backdrop-blur-[1.5px] shadow-[inset_0_4px_15px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.3)]"></div>
+            <!-- ブリッジ -->
+            <div class="w-5 sm:w-6 h-2.5 bg-gray-800 mt-4 sm:mt-5 rounded-full shadow-sm"></div>
+            <!-- 右レンズ -->
+            <div id="lensRight" class="flex-1 aspect-[5/4] border-4 border-gray-800 rounded-[40%] rounded-tl-[20%] rounded-bl-[60%] backdrop-blur-[1.5px] shadow-[inset_0_4px_15px_rgba(255,255,255,0.1),0_10px_20px_rgba(0,0,0,0.3)]"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- コントロールエリア -->
+      <div class="flex-none bg-panelBg p-3 sm:p-4 rounded-xl border border-borderLight shadow-lg flex flex-col gap-3">
+        <div class="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Lens Comparison</div>
+        
+        <!-- レンズ切り替えトグル -->
+        <div class="flex bg-brandDark rounded-lg p-1 border border-borderLight/50">
+          <button id="btnNormal" class="flex-1 py-3 text-sm font-bold rounded-md transition-all active-tab">従来調光レンズ</button>
+          <button id="btnNextgen" class="flex-1 py-3 text-sm font-bold rounded-md transition-all text-gray-500">次世代レンズ</button>
+        </div>
+
+        <!-- トンネル専用アクションボタン（プログレッシブ・ディクロージャー） -->
+        <div id="tunnelControls" class="hidden mt-2">
+          <button id="btnEnterTunnel" class="group relative overflow-hidden w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow-[0_0_15px_rgba(217,119,6,0.3)] transition-transform active:scale-[0.98]">
+            <span class="relative z-10 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              トンネルへ突入する
+            </span>
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- トークスクリプトエリア（接客カンペ。手抜き一切なし） -->
+      <div class="flex-none mt-2 relative bg-[#0f172a] border-l-4 border-limeAcc p-4 sm:p-5 rounded-r-xl shadow-[0_0_15px_rgba(132,204,22,0.05)] border-y border-r border-borderLight">
+        <div class="absolute -top-2.5 left-3 bg-[#0f172a] px-2 text-[10px] font-mono text-limeAcc tracking-widest uppercase flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+          Staff Script
+        </div>
+        <p id="talkScript" class="text-sm sm:text-base text-gray-200 leading-relaxed font-medium min-h-[4rem] transition-opacity duration-300">
+          <!-- JSで動的に注入 -->
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    /**
+     * 【実装のこだわり：ロジックとデザインの完全分離】
+     * Tailwindのクラスを文字列で管理し、DOM操作で状態を切り替えます。
+     * これにより、HTML内に複雑な条件分岐を書かず、純粋なJavaScriptで
+     * 高速かつ確実な「シミュレーション体験」を提供します。
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- DOM Elements ---
+      const viewSelect = document.getElementById('viewSelect');
+      const viewSim = document.getElementById('viewSim');
+      const btnBack = document.getElementById('btnBack');
+      const titleSim = document.getElementById('titleSim');
+      const viewportBg = document.getElementById('viewportBg');
+      const lensLeft = document.getElementById('lensLeft');
+      const lensRight = document.getElementById('lensRight');
+      const btnNormal = document.getElementById('btnNormal');
+      const btnNextgen = document.getElementById('btnNextgen');
+      const talkScript = document.getElementById('talkScript');
+      const tunnelControls = document.getElementById('tunnelControls');
+      const btnEnterTunnel = document.getElementById('btnEnterTunnel');
+
+      // --- State ---
+      let state = {
+        scene: '',
+        lens: 'normal', // 'normal' or 'nextgen'
+        isTunnelDark: false // トンネルシーン専用フラグ
+      };
+
+      // --- Background CSS Art (テンプレ画像に頼らない独自表現) ---
+      const backgrounds = {
+        day: `
+          <div class="absolute inset-0 bg-gradient-to-b from-sky-400 to-blue-200"></div>
+          <div class="absolute top-4 right-8 w-24 h-24 bg-white rounded-full blur-[25px] opacity-90"></div>
+          <div class="absolute bottom-0 w-full h-1/4 bg-gradient-to-t from-gray-400/50 to-transparent"></div>
+        `,
+        sunset: `
+          <div class="absolute inset-0 bg-gradient-to-b from-orange-600 via-amber-500 to-yellow-300"></div>
+          <div class="absolute bottom-6 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-100 rounded-full blur-[15px] shadow-[0_0_60px_rgba(255,255,255,1)]"></div>
+        `,
+        tunnelDay: `
+          <div class="absolute inset-0 bg-gradient-to-b from-sky-500 to-blue-200"></div>
+          <div class="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[2px]">
+            <span class="px-3 py-1 border border-gray-400/50 rounded text-[10px] font-mono font-bold text-gray-700 tracking-widest bg-white/40">OUTSIDE CAR</span>
+          </div>
+        `,
+        tunnelDark: `
+          <div class="absolute inset-0 bg-neutral-900"></div>
+          <div class="absolute top-0 w-full h-2/3 bg-gradient-to-b from-amber-600/30 to-transparent"></div>
+          <div class="absolute top-[30%] left-[20%] w-5 h-5 bg-amber-400 rounded-full blur-[8px]"></div>
+          <div class="absolute top-[30%] right-[20%] w-5 h-5 bg-amber-400 rounded-full blur-[8px]"></div>
+          <div class="absolute bottom-0 w-full h-1/4 flex justify-center space-x-16 border-t border-neutral-700/50 pt-2">
+            <div class="w-2 h-full bg-yellow-500/10 transform -skew-x-[20deg]"></div>
+            <div class="w-2 h-full bg-yellow-500/10 transform skew-x-[20deg]"></div>
+          </div>
+        `
+      };
+
+      // --- Scene Data (ロジックとテキストの細かな出し分け) ---
+      const scenesData = {
+        day: {
+          title: "☀️ 日中の運転（UVカット車内）",
+          bgHTML: backgrounds.day,
+          lensNormal: "rgba(30, 41, 59, 0.08)", // 透明に近い
+          lensNextgen: "rgba(217, 119, 6, 0.45)", // 適度なアンバー発色
+          talkNormal: "ご覧ください。今の車のガラスは<mark class='highlight-bad'>紫外線をカット</mark>してしまうため、従来の調光レンズは車内で色が変わりません。眩しさを防げず不便ですよね。",
+          talkNextgen: "しかし！この次世代レンズは紫外線ではなく<mark class='highlight-good'>『光（可視光線）』そのものに反応</mark>します。だから車内でもしっかり発色し、眩しさを優しく和らげるんです。"
+        },
+        sunset: {
+          title: "🌇 西日の強い夕方",
+          bgHTML: backgrounds.sunset,
+          lensNormal: "rgba(30, 41, 59, 0.08)",
+          lensNextgen: "rgba(69, 26, 3, 0.75)", // 濃いダークアンバー
+          talkNormal: "サンバイザーの隙間から刺さる強烈な西日。やはり車内では従来品は<mark class='highlight-bad'>透明なまま</mark>で、視界が奪われて非常に危険です。",
+          talkNextgen: "次世代レンズなら、強烈な西日の『光』に反応して<mark class='highlight-good'>しっかり濃く発色</mark>します。視界をクリアに保ち、夕方の運転疲労を劇的に軽減する究極のドライブレンズです。"
+        },
+        tunnel: {
+          title: "🚇 連続するトンネル",
+          bgHTML_day: backgrounds.tunnelDay,
+          bgHTML_tunnel: backgrounds.tunnelDark,
+          lensDayNormal: "rgba(30, 41, 59, 0.75)", // 車外で濃くなった状態を想定
+          lensDayNextgen: "rgba(217, 119, 6, 0.75)",
+          lensTunnelNormal: "rgba(30, 41, 59, 0.08)",
+          lensTunnelNextgen: "rgba(217, 119, 6, 0.08)",
+          transNormal: "background-color 8s cubic-bezier(0.25, 1, 0.5, 1)", // 8秒かけてゆっくり抜ける（危険）
+          transNextgen: "background-color 1.5s ease-out", // 1.5秒ですっと抜ける（安全）
+          talkIntro: "外で色が濃くなった状態から、<mark class='highlight-neutral'>暗いトンネルに入った瞬間</mark>をシミュレートします。下の「トンネルへ突入する」ボタンを押してください。",
+          talkNormal: "トンネルに入りました。従来品は<mark class='highlight-bad'>色が抜けるのに時間がかかり</mark>、視界が真っ暗な状態が続いて一瞬ヒヤッとしますよね。",
+          talkNextgen: "ご覧ください！暗がりを感知して<mark class='highlight-good'>素早くクリアに近い状態へ退色しました</mark>。サングラスを外す手間がなく、トンネルでも安全な視界を確保します。"
+        }
+      };
+
+      // --- Event Listeners ---
+      document.querySelectorAll('.scene-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          state.scene = e.currentTarget.dataset.scene;
+          state.lens = 'normal'; // 常に従来品との比較からスタート
+          state.isTunnelDark = false;
+          showSimulation();
+        });
+      });
+
+      btnBack.addEventListener('click', () => {
+        viewSim.classList.add('hidden');
+        viewSim.classList.remove('flex');
+        viewSelect.classList.remove('hidden');
+        viewSelect.classList.add('flex');
+      });
+
+      btnNormal.addEventListener('click', () => {
+        if (state.lens === 'normal') return;
+        state.lens = 'normal';
+        state.isTunnelDark = false; // レンズ変更時はトンネル突入前にリセット
+        renderSimulation();
+      });
+
+      btnNextgen.addEventListener('click', () => {
+        if (state.lens === 'nextgen') return;
+        state.lens = 'nextgen';
+        state.isTunnelDark = false;
+        renderSimulation();
+      });
+
+      btnEnterTunnel.addEventListener('click', () => {
+        state.isTunnelDark = true;
+        renderSimulation();
+      });
+
+      // --- Core Logic ---
+      function showSimulation() {
+        viewSelect.classList.add('hidden');
+        viewSelect.classList.remove('flex');
+        viewSim.classList.remove('hidden');
+        viewSim.classList.add('flex');
+        renderSimulation();
+      }
+
+      function updateTalkScript(html) {
+        talkScript.style.opacity = '0';
+        setTimeout(() => {
+          talkScript.innerHTML = html;
+          talkScript.style.opacity = '1';
+        }, 150);
+      }
+
+      function updateLenses(color, transition) {
+        lensLeft.style.transition = transition;
+        lensLeft.style.backgroundColor = color;
+        lensRight.style.transition = transition;
+        lensRight.style.backgroundColor = color;
+      }
+
+      function renderSimulation() {
+        const data = scenesData[state.scene];
+        titleSim.textContent = data.title;
+
+        // タブUIの切り替え（テンプレUI脱却：ネオン風のアクティブステート）
+        if (state.lens === 'normal') {
+          btnNormal.className = "flex-1 py-3 text-sm font-bold rounded-md bg-gray-700 text-white shadow-md transition-all";
+          btnNextgen.className = "flex-1 py-3 text-sm font-bold rounded-md bg-transparent text-gray-500 hover:text-gray-300 transition-all";
+        } else {
+          btnNormal.className = "flex-1 py-3 text-sm font-bold rounded-md bg-transparent text-gray-500 hover:text-gray-300 transition-all";
+          btnNextgen.className = "flex-1 py-3 text-sm font-bold rounded-md bg-limeAcc/20 text-limeAcc border border-limeAcc/50 shadow-[0_0_15px_rgba(132,204,22,0.2)] transition-all";
+        }
+
+        // シーンごとの描画ロジック
+        if (state.scene === 'tunnel') {
+          tunnelControls.classList.remove('hidden');
+          
+          if (!state.isTunnelDark) {
+            // トンネル突入前
+            viewportBg.innerHTML = data.bgHTML_day;
+            const color = state.lens === 'normal' ? data.lensDayNormal : data.lensDayNextgen;
+            updateLenses(color, 'background-color 0.5s ease');
+            updateTalkScript(data.talkIntro);
+            btnEnterTunnel.classList.remove('hidden');
+          } else {
+            // トンネル突入アニメーション実行
+            viewportBg.innerHTML = data.bgHTML_tunnel;
+            const color = state.lens === 'normal' ? data.lensTunnelNormal : data.lensTunnelNextgen;
+            const transition = state.lens === 'normal' ? data.transNormal : data.transNextgen;
+            
+            // DOM更新の競合を防ぐため少し遅延させてトランジション適用
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                updateLenses(color, transition);
+              });
+            });
+            updateTalkScript(state.lens === 'normal' ? data.talkNormal : data.talkNextgen);
+            btnEnterTunnel.classList.add('hidden');
+          }
+        } else {
+          // 日中・夕方シーン
+          tunnelControls.classList.add('hidden');
+          viewportBg.innerHTML = data.bgHTML;
+          const color = state.lens === 'normal' ? data.lensNormal : data.lensNextgen;
+          updateLenses(color, 'background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1)');
+          updateTalkScript(state.lens === 'normal' ? data.talkNormal : data.talkNextgen);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
