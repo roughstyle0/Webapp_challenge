@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cheek Color Lens Simulator | Staff Training Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            coral: '#F88379',
+            'coral-light': '#FFF0EE',
+            pale: '#FFDBC9',
+            dark: '#2A2A2A',
+            borderGray: '#E5E7EB',
+          },
+          fontFamily: {
+            serif: ['"Noto Serif JP"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #FFFFFF;
+      /* デパコス特有の繊細なタイポグラフィを演出 */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* アニメーション関連 */
+    .fade-in {
+      animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in-text {
+      animation: fadeInText 0.5s ease-out forwards;
+    }
+    @keyframes fadeInText {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* ハイライトマーカーの装飾 */
+    .highlight-coral {
+      background: linear-gradient(transparent 65%, #FFF0EE 65%);
+      font-weight: 600;
+      color: #2A2A2A;
+      padding: 0 0.2rem;
+    }
+
+    /* ボタンのトランジション */
+    .btn-transition {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* 選択されたシーンボタンのスタイル */
+    .scene-active {
+      background-color: #2A2A2A;
+      color: #FFFFFF;
+      border-color: #2A2A2A;
+    }
+
+    /* SVG内部のトランジション（1秒かけてじんわり変化） */
+    .svg-transition {
+      transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="text-dark font-serif selection:bg-coral-light selection:text-coral pb-20">
+
+  <!-- Header -->
+  <header class="w-full py-8 text-center border-b border-borderGray/50">
+    <h1 class="text-2xl md:text-3xl font-light tracking-widest uppercase mb-2">Cheek Color Lens</h1>
+    <p class="text-xs md:text-sm text-gray-400 tracking-widest">Counseling Simulator for Staff</p>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+    
+    <!-- Step 1: Scene Selection (初期表示) -->
+    <section id="step1-scene" class="w-full">
+      <div class="text-center mb-8">
+        <span class="block text-coral text-sm font-semibold tracking-widest mb-2">STEP 01</span>
+        <h2 class="text-xl md:text-2xl">お客様のお悩み（シーン）を選択してください</h2>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <button onclick="selectScene('outing')" id="btn-outing" class="scene-btn btn-transition border border-borderGray py-5 px-4 text-center hover:border-dark hover:bg-gray-50 focus:outline-none">
+          <span class="block text-sm mb-1 text-gray-500">すっぴん隠しに</span>
+          <span class="block text-lg">休日のちょっとしたお出かけ</span>
+        </button>
+        
+        <button onclick="selectScene('online')" id="btn-online" class="scene-btn btn-transition border border-borderGray py-5 px-4 text-center hover:border-dark hover:bg-gray-50 focus:outline-none">
+          <span class="block text-sm mb-1 text-gray-500">顔色の悪さが気になる</span>
+          <span class="block text-lg">急なオンライン会議</span>
+        </button>
+        
+        <button onclick="selectScene('mask')" id="btn-mask" class="scene-btn btn-transition border border-borderGray py-5 px-4 text-center hover:border-dark hover:bg-gray-50 focus:outline-none">
+          <span class="block text-sm mb-1 text-gray-500">暗い印象になりがち</span>
+          <span class="block text-lg">マスク着用時</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: Simulation & Script (シーン選択後に表示) -->
+    <section id="simulation-section" class="hidden w-full mt-20 pt-16 border-t border-borderGray/30">
+      <div class="text-center mb-12">
+        <span class="block text-coral text-sm font-semibold tracking-widest mb-2">STEP 02</span>
+        <h2 class="text-xl md:text-2xl">シミュレーションと接客トーク</h2>
+      </div>
+
+      <!-- 絶対遵守: 要素被り禁止。Flexで完全にブロックを分ける -->
+      <div class="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+        
+        <!-- 左側/上部: シミュレーション領域 -->
+        <div class="w-full lg:w-5/12 flex flex-col items-center">
+          
+          <!-- 洗練された線画SVG -->
+          <div class="w-full max-w-[280px] bg-white aspect-[3/4] flex items-center justify-center mb-8 relative">
+            <svg viewBox="0 0 200 240" class="w-full h-full drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <!-- コーラルピンクのふんわりグラデーション -->
+                <radialGradient id="cheekGradient" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#F88379" stop-opacity="0.7" />
+                  <stop offset="100%" stop-color="#F88379" stop-opacity="0" />
+                </radialGradient>
+                <!-- レンズ下部に色が入るグラデーション -->
+                <linearGradient id="lensGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="40%" stop-color="#F88379" stop-opacity="0" />
+                  <stop offset="100%" stop-color="#F88379" stop-opacity="0.4" />
+                </linearGradient>
+              </defs>
+
+              <!-- 輪郭 -->
+              <path d="M50 40 C50 160, 150 160, 150 40" fill="#ffffff" stroke="#E5E7EB" stroke-width="1.5"/>
+              
+              <!-- 頬（色変化ターゲット） -->
+              <circle cx="75" cy="105" r="28" class="cheek svg-transition" fill="#E2E8F0"/>
+              <circle cx="125" cy="105" r="28" class="cheek svg-transition" fill="#E2E8F0"/>
+
+              <!-- 目と眉 -->
+              <path d="M60 70 Q75 65 85 70" fill="none" stroke="#9CA3AF" stroke-width="1"/>
+              <path d="M115 70 Q125 65 140 70" fill="none" stroke="#9CA3AF" stroke-width="1"/>
+              <path d="M65 80 Q75 76 85 80" fill="none" stroke="#6B7280" stroke-width="1.5"/>
+              <path d="M115 80 Q125 76 135 80" fill="none" stroke="#6B7280" stroke-width="1.5"/>
+              <circle cx="75" cy="83" r="2" fill="#4B5563"/>
+              <circle cx="125" cy="83" r="2" fill="#4B5563"/>
+
+              <!-- 鼻 -->
+              <path d="M100 85 L100 115 Q102 118 105 115" fill="none" stroke="#D1D5DB" stroke-width="1"/>
+              
+              <!-- 口 -->
+              <path d="M90 135 Q100 140 110 135" fill="none" stroke="#D1D5DB" stroke-width="1.5"/>
+
+              <!-- マスク（初期非表示、JSで制御） -->
+              <g id="svg-mask" class="svg-transition" style="opacity: 0;">
+                <path d="M45 110 Q100 95 155 110 L145 160 Q100 180 55 160 Z" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+                <path d="M45 110 C30 110, 30 140, 50 150" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+                <path d="M155 110 C170 110, 170 140, 150 150" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+              </g>
+
+              <!-- メガネフレーム -->
+              <g id="glasses">
+                <path d="M48 85 L60 85 M140 85 L152 85" fill="none" stroke="#2A2A2A" stroke-width="1.5"/>
+                <path d="M95 85 Q100 81 105 85" fill="none" stroke="#2A2A2A" stroke-width="1.5"/>
+                <!-- 左レンズ（色変化ターゲット） -->
+                <rect x="60" y="68" width="35" height="34" rx="10" fill="transparent" stroke="#2A2A2A" stroke-width="1.5" class="lens-glass svg-transition"/>
+                <!-- 右レンズ（色変化ターゲット） -->
+                <rect x="105" y="68" width="35" height="34" rx="10" fill="transparent" stroke="#2A2A2A" stroke-width="1.5" class="lens-glass svg-transition"/>
+              </g>
+            </svg>
+          </div>
+
+          <!-- レンズ切り替えトグル（テンプレ脱却のミニマルUI） -->
+          <div class="w-full flex justify-center gap-4">
+            <button onclick="setLens('clear')" id="btn-lens-clear" class="btn-transition px-6 py-3 border border-dark bg-dark text-white text-sm tracking-widest focus:outline-none w-1/2 max-w-[160px]">
+              CLEAR LENS
+            </button>
+            <button onclick="setLens('cheek')" id="btn-lens-color" class="btn-transition px-6 py-3 border border-borderGray text-gray-400 hover:border-coral hover:text-coral text-sm tracking-widest focus:outline-none w-1/2 max-w-[160px]">
+              CHEEK LENS
+            </button>
+          </div>
+        </div>
+
+        <!-- 右側/下部: トークスクリプト領域 -->
+        <div class="w-full lg:w-7/12 flex flex-col justify-center min-h-[300px]">
+          <div class="border-l border-coral pl-6 py-2">
+            <span class="block text-xs text-gray-500 uppercase tracking-widest mb-4">Staff Script</span>
+            
+            <div id="script-content" class="min-h-[160px]">
+              <!-- JSでテキストが挿入される -->
+            </div>
+
+            <!-- スタッフ用ポイント解説枠 -->
+            <div id="script-point" class="mt-8 p-5 bg-[#FAFAFA] border border-borderGray/50">
+              <span class="block text-[11px] font-bold text-coral tracking-widest mb-2">💡 COUNSELING POINT</span>
+              <span id="point-text" class="text-sm text-dark leading-relaxed"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // 手抜き禁止：全パターンのスクリプトとポイントを網羅
+    const scripts = {
+      outing: {
+        clear: {
+          staff: "お休みの日のちょっとしたお出かけ、メイクをするのは少し億劫ですよね。<br><br>ですが、すっぴんにクリアレンズを合わせると、どうしてもお顔全体が青白く、少しお疲れの印象を与えがちです。",
+          point: "まずは現状の『すっぴん×クリアレンズ』が与えるマイナスの印象に気づいていただく。"
+        },
+        cheek: {
+          staff: "こちらのチークカラーレンズをお試しください。<br><br>レンズの下部に入った色が肌に反射して、天然のチーク代わりになります。メイクの時短になるだけでなく、お顔周りがパッと華やぐ、一番簡単な美容投資です。",
+          point: "『天然のチーク』『一番簡単な美容投資』という強いワードで購買意欲を刺激する。"
+        }
+      },
+      online: {
+        clear: {
+          staff: "リモートワーク中の急なオンライン会議。画面越しだとどうしても血色感が飛び、実際の顔色よりも暗く、体調が悪そうに見えてしまいますよね。<br><br>慌ててメイクをする時間もないかと思います。",
+          point: "オンライン特有の『画面越しだと顔色が悪く見える』というリアルな悩みに共感する。"
+        },
+        cheek: {
+          staff: "そんな時こそチークカラーレンズの出番です。<br><br>レンズ下部の色が頬に血色感をプラスし、画面越しでも健康的で明るい印象を演出します。メイクの時短になるだけでなく、リモート会議でも顔周りがパッと華やぐ、一番簡単な美容投資です。",
+          point: "PCの横に置いておくだけで瞬時に解決できる『タイパの良さ』を強調する。"
+        }
+      },
+      mask: {
+        clear: {
+          staff: "マスクをしていると、お顔の下半分が隠れてしまうため、どうしても目元の印象だけが目立ちます。<br><br>血色感が伝わらずに、全体的に暗く冷たい雰囲気になりがちですよね。",
+          point: "マスク着用時の『表情が伝わりにくい、暗く見える』という課題を提示する。"
+        },
+        cheek: {
+          staff: "マスク着用時にチークカラーレンズを合わせると、レンズに仕込まれた色が目元から頬にかけてふんわりと広がり、マスクをしていても表情が豊かで、優しげな印象に変わります。<br><br>メイクの時短になるだけでなく、一番簡単な美容投資です。",
+          point: "マスクをしていても血色感が漏れ出るメリットを伝え、実用性をアピールする。"
+        }
+      }
+    };
+
+    let currentScene = null;
+    let currentLens = 'clear';
+
+    function selectScene(sceneId) {
+      currentScene = sceneId;
+      
+      // シーンボタンのUI更新
+      document.querySelectorAll('.scene-btn').forEach(btn => {
+        btn.classList.remove('scene-active');
+      });
+      document.getElementById('btn-' + sceneId).classList.add('scene-active');
+
+      // プログレッシブ・ディクロージャー：シミュレーション領域を展開
+      const simSection = document.getElementById('simulation-section');
+      if (simSection.classList.contains('hidden')) {
+        simSection.classList.remove('hidden');
+        simSection.classList.add('fade-in');
+        
+        // スムーズなスクロール
+        setTimeout(() => {
+          simSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+
+      // マスク着用時のSVG表示切替
+      const maskPath = document.getElementById('svg-mask');
+      if (sceneId === 'mask') {
+        maskPath.style.opacity = '1';
+      } else {
+        maskPath.style.opacity = '0';
+      }
+
+      // シーン変更時は、変化のインパクトを出すために一旦クリアレンズに戻す
+      setLens('clear');
+    }
+
+    function setLens(lensType) {
+      currentLens = lensType;
+      
+      // レンズ切り替えボタンのUI更新
+      const btnClear = document.getElementById('btn-lens-clear');
+      const btnColor = document.getElementById('btn-lens-color');
+
+      if (lensType === 'clear') {
+        btnClear.className = "btn-transition px-6 py-3 border border-dark bg-dark text-white text-sm tracking-widest focus:outline-none w-1/2 max-w-[160px]";
+        btnColor.className = "btn-transition px-6 py-3 border border-borderGray text-gray-400 hover:border-coral hover:text-coral text-sm tracking-widest focus:outline-none w-1/2 max-w-[160px]";
+      } else {
+        btnClear.className = "btn-transition px-6 py-3 border border-borderGray text-gray-400 hover:border-dark hover:text-dark text-sm tracking-widest focus:outline-none w-1/2 max-w-[160px]";
+        btnColor.className = "btn-transition px-6 py-3 border border-coral bg-coral text-white text-sm tracking-widest focus:outline-none w-1/2 max-w-[160px]";
+      }
+
+      // SVGの色変化アニメーション
+      const cheeks = document.querySelectorAll('.cheek');
+      const lenses = document.querySelectorAll('.lens-glass');
+      
+      if (lensType === 'clear') {
+        // 青白く疲れた印象（Slate 200）
+        cheeks.forEach(c => c.setAttribute('fill', '#E2E8F0'));
+        lenses.forEach(l => l.setAttribute('fill', 'transparent'));
+      } else {
+        // ふんわりコーラルピンクのグラデーション
+        cheeks.forEach(c => c.setAttribute('fill', 'url(#cheekGradient)'));
+        lenses.forEach(l => l.setAttribute('fill', 'url(#lensGradient)'));
+      }
+
+      // トークスクリプトの更新（アニメーション付き）
+      const scriptData = scripts[currentScene][lensType];
+      const scriptContent = document.getElementById('script-content');
+      const pointText = document.getElementById('point-text');
+      
+      // テキストハイライトの適用（特定のキーワードを強調）
+      let formattedText = scriptData.staff.replace(/チークカラーレンズ/g, '<span class="highlight-coral">チークカラーレンズ</span>');
+      formattedText = formattedText.replace(/一番簡単な美容投資/g, '<span class="highlight-coral">一番簡単な美容投資</span>');
+      formattedText = formattedText.replace(/天然のチーク/g, '<span class="highlight-coral">天然のチーク</span>');
+      formattedText = formattedText.replace(/青白く/g, '<span class="text-gray-400 border-b border-gray-400">青白く</span>');
+      formattedText = formattedText.replace(/暗く/g, '<span class="text-gray-400 border-b border-gray-400">暗く</span>');
+
+      // リフローを利用してアニメーションを再トリガー
+      scriptContent.classList.remove('fade-in-text');
+      document.getElementById('script-point').classList.remove('fade-in-text');
+      void scriptContent.offsetWidth; 
+      
+      scriptContent.innerHTML = `<p class="text-[1.05rem] md:text-lg leading-loose text-dark">${formattedText}</p>`;
+      pointText.textContent = scriptData.point;
+
+      scriptContent.classList.add('fade-in-text');
+      document.getElementById('script-point').classList.add('fade-in-text');
+    }
+  </script>
+</body>
+</html>
