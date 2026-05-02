@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>チークカラーレンズ メイク時短シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: "Inter", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(251, 113, 133, .22), transparent 30%),
+        radial-gradient(circle at 90% 20%, rgba(253, 186, 116, .22), transparent 28%),
+        linear-gradient(180deg, #fff7f8 0%, #ffffff 48%, #fff1f2 100%);
+      color: #3f1d2b;
+    }
+
+    .luxury-shell {
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(251,113,133,.24);
+      box-shadow: 0 24px 80px rgba(244,63,94,.12);
+      backdrop-filter: blur(18px);
+    }
+
+    .cosme-border {
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, #fb7185, #fdba74, #f9a8d4) border-box;
+      border: 1.5px solid transparent;
+    }
+
+    .face {
+      background:
+        radial-gradient(circle at 50% 22%, rgba(255,255,255,.9), transparent 18%),
+        linear-gradient(180deg, #ffe6d7 0%, #ffd6c2 100%);
+    }
+
+    .hair {
+      background: linear-gradient(180deg, #3f1d2b, #6b2638);
+    }
+
+    .cheek-muted {
+      background:
+        radial-gradient(circle at 28% 58%, rgba(148,163,184,.28), transparent 18%),
+        radial-gradient(circle at 72% 58%, rgba(148,163,184,.28), transparent 18%);
+    }
+
+    .cheek-glow {
+      background:
+        radial-gradient(circle at 28% 60%, rgba(251,113,133,.72), transparent 24%),
+        radial-gradient(circle at 72% 60%, rgba(251,113,133,.72), transparent 24%),
+        radial-gradient(circle at 50% 67%, rgba(253,186,116,.38), transparent 34%);
+      animation: bloom .9s ease-out both;
+    }
+
+    .lens-clear {
+      background: rgba(255,255,255,.28);
+      border: 1px solid rgba(255,255,255,.72);
+    }
+
+    .lens-cheek {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.34) 0%, rgba(251,113,133,.34) 72%, rgba(253,186,116,.28) 100%);
+      border: 1px solid rgba(251,113,133,.45);
+      box-shadow: 0 12px 30px rgba(251,113,133,.18);
+      animation: lensTint .9s ease-out both;
+    }
+
+    @keyframes bloom {
+      from { opacity: 0; filter: blur(10px); transform: scale(.94); }
+      to { opacity: 1; filter: blur(0); transform: scale(1); }
+    }
+
+    @keyframes lensTint {
+      from { opacity: .25; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    mark {
+      background: linear-gradient(90deg, #fecdd3, #fed7aa);
+      color: #3f1d2b;
+      padding: 0 .25rem;
+      border-radius: .4rem;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen p-4">
+  <main class="mx-auto max-w-md">
+    <section class="luxury-shell rounded-[2rem] p-5 flex flex-col gap-6">
+      <header class="flex flex-col gap-3">
+        <p class="text-xs tracking-[.34em] text-rose-400 font-bold">BEAUTY LENS STUDIO</p>
+        <h1 class="text-3xl font-black leading-tight">
+          すっぴんでも<br>
+          <span class="text-rose-500">血色感アップ</span>
+        </h1>
+        <p class="text-sm leading-7 text-stone-600">
+          お客様の悩みを選ぶだけで、チークカラーレンズの美容効果と接客トークを確認できます。
+        </p>
+      </header>
+
+      <section id="picker" class="grid gap-3">
+        <button data-scene="holiday" class="sceneBtn cosme-border rounded-3xl p-4 text-left flex flex-col gap-1">
+          <span class="font-black text-lg">休日のちょっとしたお出かけ</span>
+          <span class="text-sm text-stone-500">すっぴん隠しをしたい</span>
+        </button>
+
+        <button data-scene="remote" class="sceneBtn cosme-border rounded-3xl p-4 text-left flex flex-col gap-1">
+          <span class="font-black text-lg">急なオンライン会議</span>
+          <span class="text-sm text-stone-500">画面越しだと顔色が悪く見える</span>
+        </button>
+
+        <button data-scene="mask" class="sceneBtn cosme-border rounded-3xl p-4 text-left flex flex-col gap-1">
+          <span class="font-black text-lg">マスク着用時</span>
+          <span class="text-sm text-stone-500">顔の下半分が隠れて暗い印象になる</span>
+        </button>
+      </section>
+
+      <section id="result" class="hidden flex flex-col gap-5">
+        <div class="rounded-[2rem] bg-white/80 border border-rose-100 p-4 flex flex-col gap-4">
+          <div class="flex flex-col gap-1">
+            <p id="sceneLabel" class="text-xs tracking-[.24em] text-orange-400 font-bold"></p>
+            <h2 id="sceneTitle" class="text-xl font-black"></h2>
+            <p id="sceneDesc" class="text-sm leading-7 text-stone-600"></p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+            <div class="rounded-[1.75rem] bg-slate-50 p-4 flex flex-col gap-3">
+              <p class="text-sm font-black text-slate-500">標準クリアレンズ</p>
+              <div class="faceArea rounded-[1.5rem] bg-white p-4 flex justify-center">
+                <div class="w-44 flex flex-col items-center gap-0">
+                  <div class="hair w-40 h-16 rounded-t-full"></div>
+                  <div class="face relative w-40 h-44 rounded-b-[4rem] rounded-t-[1.5rem] flex flex-col items-center justify-center gap-4">
+                    <div id="normalCheek" class="cheek-muted w-full h-full rounded-b-[4rem] rounded-t-[1.5rem] flex flex-col items-center justify-center gap-4">
+                      <div class="grid grid-cols-2 gap-10">
+                        <div class="w-3 h-3 rounded-full bg-stone-700"></div>
+                        <div class="w-3 h-3 rounded-full bg-stone-700"></div>
+                      </div>
+                      <div class="w-10 h-2 rounded-full bg-stone-400"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p id="normalText" class="text-sm text-slate-500 leading-6"></p>
+            </div>
+
+            <div class="rounded-[1.75rem] bg-rose-50 p-4 flex flex-col gap-3">
+              <p class="text-sm font-black text-rose-500">チークカラーレンズ</p>
+              <div class="faceArea rounded-[1.5rem] bg-white p-4 flex justify-center">
+                <div class="w-44 flex flex-col items-center gap-0">
+                  <div class="hair w-40 h-16 rounded-t-full"></div>
+                  <div class="face w-40 h-44 rounded-b-[4rem] rounded-t-[1.5rem] flex flex-col items-center justify-center gap-4">
+                    <div id="smartCheek" class="w-full h-full rounded-b-[4rem] rounded-t-[1.5rem] flex flex-col items-center justify-center gap-4">
+                      <div id="smartLens" class="lens-clear w-32 h-10 rounded-full flex items-center justify-center">
+                        <span class="text-[10px] font-bold text-rose-500">CHEEK LENS</span>
+                      </div>
+                      <div class="grid grid-cols-2 gap-10">
+                        <div class="w-3 h-3 rounded-full bg-stone-700"></div>
+                        <div class="w-3 h-3 rounded-full bg-stone-700"></div>
+                      </div>
+                      <div class="w-12 h-2 rounded-full bg-rose-400"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p id="smartText" class="text-sm text-rose-600 leading-6 font-bold"></p>
+            </div>
+          </div>
+        </div>
+
+        <article class="rounded-[2rem] bg-gradient-to-br from-rose-50 to-orange-50 border border-rose-200 p-4 flex flex-col gap-3">
+          <p class="text-xs tracking-[.24em] text-rose-400 font-bold">STAFF TALK SCRIPT</p>
+          <h3 class="text-lg font-black">そのまま読める接客カンペ</h3>
+          <div id="talkScript" class="text-sm leading-7 text-stone-700 flex flex-col gap-2"></div>
+        </article>
+
+        <button id="resetBtn" class="rounded-full bg-stone-900 text-white px-5 py-3 font-bold">
+          別のシーンを選び直す
+        </button>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const scenes = {
+      holiday: {
+        label: "SCENE 01 / HOLIDAY",
+        title: "近所のお出かけを、すっぴん感なく明るく",
+        desc: "コンビニや送迎など、フルメイクは面倒。でも顔色はよく見せたいシーンです。",
+        normalText: "標準クリアでは肌色補正がないため、頬に血色が少なく、少し疲れた印象に見えます。",
+        smartText: "レンズ下部のコーラルピンクが頬にふんわり反射。すっぴんでも自然な血色感を演出します。",
+        talk: [
+          "「休日のちょっとした外出だと、わざわざメイクするのは面倒ですよね。」",
+          "「このレンズは、<mark>下部に入った色が肌に反射</mark>して、天然のチーク代わりになります。」",
+          "「かけるだけで顔色が明るく見えるので、近所のお出かけ用にもすごく便利です。」"
+        ]
+      },
+      remote: {
+        label: "SCENE 02 / REMOTE MEETING",
+        title: "画面越しの顔色を、ライトなしで華やかに",
+        desc: "急なオンライン会議では、カメラ越しに顔色が沈んで見えがちです。",
+        normalText: "標準クリアでは画面越しの青白さを補正しにくく、表情まで暗く見えることがあります。",
+        smartText: "ペールオレンジとコーラルの血色グラデーションで、顔周りがパッと明るく見えます。",
+        talk: [
+          "「オンライン会議って、照明の加減で顔色が悪く見えることがありますよね。」",
+          "「チークカラーレンズなら、<mark>メイクを足さなくても顔周りがパッと華やぐ</mark>ので、急な会議にも対応しやすいです。」",
+          "「メイクの時短になるだけでなく、印象管理までできる一番簡単な美容投資です。」"
+        ]
+      },
+      mask: {
+        label: "SCENE 03 / MASK STYLE",
+        title: "マスクで沈む印象を、目元と頬上で明るく",
+        desc: "顔の下半分が隠れると、肌の明るさや表情が伝わりにくくなります。",
+        normalText: "標準クリアではマスク上の肌色が沈みやすく、目元だけが強く見えることがあります。",
+        smartText: "レンズ下部の血色カラーが頬上に広がり、マスク姿でもやわらかい印象を作ります。",
+        talk: [
+          "「マスクをすると、どうしても顔の下半分が隠れて暗い印象になりやすいですよね。」",
+          "「このレンズは、見えている頬上に<mark>ふんわり血色感</mark>を足してくれるので、表情がやさしく見えます。」",
+          "「メイクを頑張らなくても、眼鏡をかけるだけで印象を整えられるのが魅力です。」"
+        ]
+      }
+    };
+
+    const picker = document.getElementById("picker");
+    const result = document.getElementById("result");
+    const sceneLabel = document.getElementById("sceneLabel");
+    const sceneTitle = document.getElementById("sceneTitle");
+    const sceneDesc = document.getElementById("sceneDesc");
+    const normalText = document.getElementById("normalText");
+    const smartText = document.getElementById("smartText");
+    const smartCheek = document.getElementById("smartCheek");
+    const smartLens = document.getElementById("smartLens");
+    const talkScript = document.getElementById("talkScript");
+
+    function selectScene(key) {
+      const scene = scenes[key];
+      if (!scene) return;
+
+      picker.classList.add("hidden");
+      result.classList.remove("hidden");
+
+      sceneLabel.textContent = scene.label;
+      sceneTitle.textContent = scene.title;
+      sceneDesc.textContent = scene.desc;
+      normalText.textContent = scene.normalText;
+      smartText.textContent = "メイクアップ反応中...";
+      talkScript.innerHTML = "";
+
+      smartCheek.className = "w-full h-full rounded-b-[4rem] rounded-t-[1.5rem] flex flex-col items-center justify-center gap-4";
+      smartLens.className = "lens-clear w-32 h-10 rounded-full flex items-center justify-center";
+
+      setTimeout(() => {
+        smartCheek.className = "cheek-glow w-full h-full rounded-b-[4rem] rounded-t-[1.5rem] flex flex-col items-center justify-center gap-4";
+        smartLens.className = "lens-cheek w-32 h-10 rounded-full flex items-center justify-center";
+        smartText.textContent = scene.smartText;
+
+        scene.talk.forEach((line, index) => {
+          setTimeout(() => {
+            const p = document.createElement("p");
+            p.innerHTML = line;
+            p.className = "rounded-2xl bg-white/70 p-3 border border-rose-100";
+            talkScript.appendChild(p);
+          }, index * 420);
+        });
+      }, 500);
+    }
+
+    document.querySelectorAll(".sceneBtn").forEach(button => {
+      button.addEventListener("click", () => selectScene(button.dataset.scene));
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      result.classList.add("hidden");
+      picker.classList.remove("hidden");
+    });
+  </script>
+</body>
+</html>
