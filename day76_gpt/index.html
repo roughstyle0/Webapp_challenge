@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>超低反射コーティング SNS映えシミュレーター</title>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Hiragino Kaku Gothic ProN"', '"Yu Gothic"', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --glass: rgba(199, 221, 232, 0.22);
+      --glass-strong: rgba(202, 232, 245, 0.5);
+      --ink: #f8fafc;
+      --muted: #9aa7b2;
+      --panel: rgba(10, 14, 18, 0.76);
+      --line: rgba(226, 242, 248, 0.16);
+      --glare-a: rgba(255,255,255,.92);
+      --glare-b: rgba(198,237,255,.72);
+      --glow: rgba(255,255,255,.72);
+      --clarity: 38%;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(186, 224, 240, 0.22), transparent 28%),
+        radial-gradient(circle at 86% 28%, rgba(255, 255, 255, 0.12), transparent 24%),
+        linear-gradient(145deg, #050607 0%, #101418 48%, #050607 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle at center, black, transparent 72%);
+    }
+
+    .studio-shell {
+      width: min(100%, 460px);
+    }
+
+    .studio-panel {
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.025)),
+        var(--panel);
+      box-shadow: 0 24px 80px rgba(0,0,0,.46);
+      backdrop-filter: blur(18px);
+    }
+
+    .scenario-button {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(226, 242, 248, .18);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.03)),
+        rgba(255,255,255,.04);
+      transition: transform .22s ease, border-color .22s ease, background .22s ease;
+    }
+
+    .scenario-button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 0 35%, rgba(213,236,246,.18) 46%, transparent 58% 100%);
+      transform: translateX(-100%);
+      transition: transform .65s ease;
+    }
+
+    .scenario-button:hover,
+    .scenario-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(213,236,246,.48);
+      background:
+        linear-gradient(135deg, rgba(210,233,245,.18), rgba(255,255,255,.04)),
+        rgba(255,255,255,.06);
+    }
+
+    .scenario-button:hover::after,
+    .scenario-button:focus-visible::after {
+      transform: translateX(100%);
+    }
+
+    .camera-stage {
+      border: 1px solid rgba(226, 242, 248, .18);
+      background:
+        radial-gradient(circle at 50% 18%, rgba(213, 236, 246, .14), transparent 34%),
+        linear-gradient(180deg, #171d22 0%, #080a0d 100%);
+      overflow: hidden;
+    }
+
+    .camera-stage::before,
+    .camera-stage::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(226,242,248,.12);
+      border-radius: 30px;
+      pointer-events: none;
+    }
+
+    .camera-stage::after {
+      inset: 34px;
+      border-color: rgba(226,242,248,.07);
+      border-radius: 24px;
+    }
+
+    .portrait {
+      width: min(70vw, 240px);
+      height: min(88vw, 310px);
+      position: relative;
+    }
+
+    .face {
+      position: absolute;
+      left: 50%;
+      top: 24px;
+      width: 156px;
+      height: 204px;
+      transform: translateX(-50%);
+      border-radius: 48% 48% 46% 46%;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.94), rgba(203,214,222,.84));
+      box-shadow:
+        inset -18px -20px 30px rgba(0,0,0,.16),
+        0 0 0 1px rgba(255,255,255,.28);
+    }
+
+    .neck {
+      position: absolute;
+      left: 50%;
+      top: 210px;
+      width: 70px;
+      height: 72px;
+      transform: translateX(-50%);
+      border-radius: 0 0 26px 26px;
+      background: linear-gradient(180deg, rgba(210,220,227,.82), rgba(150,164,174,.78));
+    }
+
+    .shoulders {
+      position: absolute;
+      left: 50%;
+      bottom: 4px;
+      width: 220px;
+      height: 84px;
+      transform: translateX(-50%);
+      border-radius: 90px 90px 24px 24px;
+      background:
+        linear-gradient(135deg, rgba(230,240,245,.12), rgba(230,240,245,.04)),
+        #11161b;
+      border: 1px solid rgba(226,242,248,.1);
+    }
+
+    .hair {
+      position: absolute;
+      left: 50%;
+      top: 8px;
+      width: 164px;
+      height: 88px;
+      transform: translateX(-50%);
+      border-radius: 80px 80px 32px 32px;
+      background: linear-gradient(145deg, #11161b, #050607);
+      box-shadow: inset 24px 0 26px rgba(255,255,255,.05);
+    }
+
+    .ear {
+      position: absolute;
+      top: 102px;
+      width: 22px;
+      height: 46px;
+      border-radius: 999px;
+      background: rgba(190,204,214,.8);
+    }
+
+    .ear.left { left: 26px; }
+    .ear.right { right: 26px; }
+
+    .glasses {
+      position: absolute;
+      left: 50%;
+      top: 104px;
+      width: 176px;
+      height: 64px;
+      transform: translateX(-50%);
+      z-index: 4;
+    }
+
+    .lens {
+      position: absolute;
+      top: 0;
+      width: 74px;
+      height: 52px;
+      border-radius: 21px;
+      border: 2px solid rgba(16, 24, 30, .74);
+      background: rgba(213, 236, 246, .08);
+      box-shadow:
+        inset 0 0 18px rgba(213,236,246,.16),
+        0 0 0 1px rgba(255,255,255,.08);
+      overflow: hidden;
+      transition: background .6s ease, border-color .6s ease, box-shadow .6s ease;
+    }
+
+    .lens.left { left: 2px; }
+    .lens.right { right: 2px; }
+
+    .lens::after {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      border-radius: 28px;
+      background:
+        linear-gradient(118deg, transparent 0 21%, var(--glare-a) 31% 46%, transparent 58% 100%),
+        radial-gradient(circle at 68% 34%, var(--glare-b) 0 20%, transparent 42%);
+      box-shadow: 0 0 38px var(--glow);
+      opacity: .96;
+      transform: translateX(0) skewX(-9deg);
+      transition:
+        opacity .72s cubic-bezier(.2,.8,.2,1),
+        transform .72s cubic-bezier(.2,.8,.2,1),
+        filter .72s ease;
+      animation: glarePulse 2.2s ease-in-out infinite;
+    }
+
+    .ultra .lens {
+      background: rgba(213, 236, 246, .035);
+      border-color: rgba(16, 24, 30, .46);
+      box-shadow:
+        inset 0 0 16px rgba(213,236,246,.08),
+        0 0 0 1px rgba(255,255,255,.12);
+    }
+
+    .ultra .lens::after {
+      opacity: .055;
+      transform: translateX(28px) skewX(-9deg);
+      filter: blur(2px);
+      animation: none;
+    }
+
+    .bridge {
+      position: absolute;
+      left: 50%;
+      top: 22px;
+      width: 24px;
+      height: 12px;
+      transform: translateX(-50%);
+      border-top: 3px solid rgba(16,24,30,.72);
+      border-radius: 999px;
+    }
+
+    .temple {
+      position: absolute;
+      top: 18px;
+      width: 28px;
+      height: 3px;
+      background: rgba(16,24,30,.64);
+    }
+
+    .temple.left {
+      left: -18px;
+      transform: rotate(12deg);
+    }
+
+    .temple.right {
+      right: -18px;
+      transform: rotate(-12deg);
+    }
+
+    .eye {
+      position: absolute;
+      top: 120px;
+      width: 19px;
+      height: 9px;
+      border-radius: 999px;
+      background: #101418;
+      z-index: 3;
+      transition: transform .6s ease, opacity .6s ease;
+    }
+
+    .eye::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      width: 3px;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+    }
+
+    .eye.left { left: 76px; }
+    .eye.right { right: 76px; }
+
+    .ultra .eye {
+      transform: scale(1.08);
+      opacity: 1;
+    }
+
+    .brow {
+      position: absolute;
+      top: 104px;
+      width: 32px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(17,22,27,.78);
+      z-index: 2;
+    }
+
+    .brow.left {
+      left: 68px;
+      transform: rotate(-6deg);
+    }
+
+    .brow.right {
+      right: 68px;
+      transform: rotate(6deg);
+    }
+
+    .nose {
+      position: absolute;
+      left: 50%;
+      top: 137px;
+      width: 18px;
+      height: 42px;
+      transform: translateX(-50%);
+      border-right: 2px solid rgba(78,91,101,.34);
+      border-radius: 999px;
+      z-index: 2;
+    }
+
+    .mouth {
+      position: absolute;
+      left: 50%;
+      top: 190px;
+      width: 44px;
+      height: 15px;
+      transform: translateX(-50%);
+      border-bottom: 2px solid rgba(38,48,56,.48);
+      border-radius: 0 0 999px 999px;
+      z-index: 2;
+    }
+
+    .clarity-track {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(226,242,248,.12);
+    }
+
+    .clarity-fill {
+      width: var(--clarity);
+      background:
+        linear-gradient(90deg, rgba(213,236,246,.35), rgba(255,255,255,.95));
+      box-shadow: 0 0 24px rgba(213,236,246,.34);
+      transition: width .6s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .choice-tab {
+      border: 1px solid rgba(226,242,248,.16);
+      background: rgba(255,255,255,.045);
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .choice-tab[aria-pressed="true"] {
+      color: #050607;
+      border-color: rgba(255,255,255,.82);
+      background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(213,236,246,.82));
+      box-shadow: 0 14px 32px rgba(213,236,246,.16);
+    }
+
+    .script-highlight {
+      display: inline;
+      padding: .08em .34em;
+      border-radius: .55em;
+      color: #050607;
+      background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(202,232,245,.86));
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .step-pill {
+      border: 1px solid rgba(226,242,248,.16);
+      background: rgba(255,255,255,.045);
+    }
+
+    .step-pill[aria-current="step"] {
+      color: #050607;
+      background: rgba(255,255,255,.92);
+    }
+
+    @keyframes glarePulse {
+      0%, 100% {
+        opacity: .82;
+        filter: blur(0);
+      }
+      50% {
+        opacity: 1;
+        filter: blur(.5px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app" class="relative mx-auto flex min-h-screen studio-shell flex-col gap-5 px-4 py-5 sm:py-8">
+    <section id="entryView" class="studio-panel rounded-[2rem] p-5 sm:p-6">
+      <div class="grid gap-5">
+        <div class="grid gap-3">
+          <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-300">
+            <span class="h-2 w-2 rounded-full bg-slate-100 shadow-[0_0_18px_rgba(213,236,246,.9)]"></span>
+            Portrait Lens Studio
+          </div>
+
+          <div class="grid gap-2">
+            <h1 class="text-3xl font-black leading-tight tracking-[-0.05em] text-white">
+              目元が、<br />
+              写真でも画面越しでも<br />
+              透き通る。
+            </h1>
+            <p class="text-sm leading-7 text-slate-300">
+              お客様の「レンズが光って目が見えない」瞬間を選ぶだけで、超低反射コーティングの提案トークまで表示します。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid gap-3" aria-label="反射が気になる瞬間を選択">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+            気になる瞬間を選択
+          </p>
+
+          <button type="button" class="scenario-button rounded-3xl p-4 text-left" data-scenario="selfie">
+            <span class="relative z-10 grid gap-1">
+              <span class="text-base font-bold text-white">スマホでの自撮り・記念撮影</span>
+              <span class="text-sm leading-6 text-slate-300">風景や光がレンズに映り込む</span>
+            </span>
+          </button>
+
+          <button type="button" class="scenario-button rounded-3xl p-4 text-left" data-scenario="meeting">
+            <span class="relative z-10 grid gap-1">
+              <span class="text-base font-bold text-white">オンライン会議</span>
+              <span class="text-sm leading-6 text-slate-300">リングライトや画面の光が緑色に反射する</span>
+            </span>
+          </button>
+
+          <button type="button" class="scenario-button rounded-3xl p-4 text-left" data-scenario="flash">
+            <span class="relative z-10 grid gap-1">
+              <span class="text-base font-bold text-white">夜間のフラッシュ撮影</span>
+              <span class="text-sm leading-6 text-slate-300">レンズが真っ白に光ってしまう</span>
+            </span>
+          </button>
+
+          <p id="entryError" class="hidden rounded-2xl border border-red-300/20 bg-red-400/10 px-4 py-3 text-sm text-red-100" role="alert"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="experienceView" class="hidden grid gap-5">
+      <div class="flex items-center justify-between gap-3">
+        <button id="resetBtn" type="button" class="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-slate-100">
+          ← 選び直す
+        </button>
+        <div class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-300">
+          Live Preview
+        </div>
+      </div>
+
+      <section class="studio-panel grid gap-4 rounded-[2rem] p-4 sm:p-5" aria-labelledby="simulationTitle">
+        <div class="grid gap-2">
+          <p id="scenarioKicker" class="text-[11px] font-bold uppercase tracking-[0.26em] text-slate-400"></p>
+          <h2 id="simulationTitle" class="text-2xl font-black leading-tight tracking-[-0.04em]"></h2>
+          <p id="scenarioIssue" class="text-sm leading-7 text-slate-300"></p>
+        </div>
+
+        <div class="camera-stage relative grid min-h-[360px] place-items-center rounded-[2rem] p-5" aria-hidden="true">
+          <div class="portrait">
+            <div class="shoulders"></div>
+            <div class="neck"></div>
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+            <div class="face"></div>
+            <div class="hair"></div>
+            <div class="brow left"></div>
+            <div class="brow right"></div>
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div class="nose"></div>
+            <div class="mouth"></div>
+            <div class="glasses">
+              <div class="temple left"></div>
+              <div class="temple right"></div>
+              <div class="lens left"></div>
+              <div class="lens right"></div>
+              <div class="bridge"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-3">
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" class="choice-tab rounded-2xl px-3 py-3 text-sm font-black" data-coating="standard" aria-pressed="true">
+              標準コーティング
+            </button>
+            <button type="button" class="choice-tab rounded-2xl px-3 py-3 text-sm font-black" data-coating="ultra" aria-pressed="false">
+              超低反射
+            </button>
+          </div>
+
+          <div class="grid gap-2 rounded-3xl border border-white/10 bg-white/[0.035] p-4">
+            <div class="flex items-center justify-between gap-3 text-xs font-bold text-slate-300">
+              <span>目元クリア度</span>
+              <span id="clarityText">38%</span>
+            </div>
+            <div class="clarity-track h-3 overflow-hidden rounded-full">
+              <div id="clarityFill" class="clarity-fill h-full rounded-full"></div>
+            </div>
+            <p id="resultCopy" class="text-sm leading-7 text-slate-200" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="studio-panel grid gap-4 rounded-[2rem] p-4 sm:p-5" aria-labelledby="talkTitle">
+        <div class="grid gap-2">
+          <p class="text-[11px] font-bold uppercase tracking-[0.26em] text-slate-400">
+            Staff Talk Script
+          </p>
+          <h2 id="talkTitle" class="text-2xl font-black leading-tight tracking-[-0.04em]">
+            そのまま読める接客カンペ
+          </h2>
+          <p class="text-sm leading-7 text-slate-300">
+            新人スタッフでも、共感 → 価値提案 → 背中押しの順で自然に伝えられます。
+          </p>
+        </div>
+
+        <div id="stepButtons" class="grid grid-cols-3 gap-2" aria-label="トーク段階"></div>
+
+        <article class="grid gap-3 rounded-3xl border border-white/10 bg-white/[0.035] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="grid gap-1">
+              <p id="scriptStep" class="text-xs font-black uppercase tracking-[0.2em] text-slate-400"></p>
+              <h3 id="scriptTitle" class="text-lg font-black leading-snug text-white"></h3>
+            </div>
+            <button id="copyBtn" type="button" class="shrink-0 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold text-slate-100">
+              コピー
+            </button>
+          </div>
+
+          <p id="scriptBody" class="text-[15px] leading-8 text-slate-100"></p>
+
+          <div class="grid gap-2 rounded-2xl border border-sky-100/10 bg-sky-100/[0.055] p-3">
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+              強調ポイント
+            </p>
+            <p id="scriptPoint" class="text-sm leading-7 text-slate-200"></p>
+          </div>
+
+          <p id="copyStatus" class="min-h-5 text-xs font-bold text-slate-400" aria-live="polite"></p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const scenarios = {
+        selfie: {
+          kicker: 'Selfie / Memory Photo',
+          title: '自撮り・記念写真で、目元を主役に。',
+          issue: '空・窓・照明の白い帯がレンズに映り込み、せっかくの表情がぼやけて見える場面です。',
+          vars: {
+            '--glare-a': 'rgba(255,255,255,.94)',
+            '--glare-b': 'rgba(195,225,240,.78)',
+            '--glow': 'rgba(255,255,255,.72)',
+          },
+          standard: '標準コーティングでは、風景や照明の白い反射がレンズに残りやすく、写真の中で目元の印象が弱く見えます。',
+          ultra: '超低反射コーティングなら、映り込みがすっと静まり、背景よりもお客様の目元がクリアに残ります。',
+          scripts: [
+            {
+              step: '1 共感',
+              title: '写真で目が隠れる残念感に寄り添う',
+              body: '「旅行先や記念写真で、レンズに景色や光が入って目元が見えにくくなることがありますよね。せっかくの表情が伝わりにくいのは、少しもったいないです。」',
+              point: '最初に“写真の失敗あるある”として共感し、悩みを言語化します。'
+            },
+            {
+              step: '2 提案',
+              title: '見られるアイテムとして価値を伝える',
+              body: '「メガネは <span class="script-highlight">『見るため』だけでなく『見られるため』のアイテム</span> でもあります。超低反射コーティングにすると、レンズの白い映り込みを抑え、写真でも目の印象がきれいに残りやすくなります。」',
+              point: '機能説明だけでなく、“SNS映え・記念写真の美観”に変換して伝えます。'
+            },
+            {
+              step: '3 背中押し',
+              title: '購入後の具体的なシーンを想像させる',
+              body: '「集合写真や自撮りで、後から見返したときに目元まで自然に写っていると印象がかなり変わります。写真をよく撮られる方には、かなり満足度の高いコーティングです。」',
+              point: '“あとで見返す写真”を想像してもらい、価値を長期的に感じてもらいます。'
+            }
+          ]
+        },
+
+        meeting: {
+          kicker: 'Online Meeting',
+          title: '会議画面でも、表情がまっすぐ届く。',
+          issue: 'リングライトやモニター光が緑っぽく反射し、画面越しに目線や表情が伝わりづらくなる場面です。',
+          vars: {
+            '--glare-a': 'rgba(98,255,185,.86)',
+            '--glare-b': 'rgba(173,255,218,.7)',
+            '--glow': 'rgba(89,255,180,.62)',
+          },
+          standard: '標準コーティングでは、画面やライトの緑色の反射が目元に乗り、オンライン会議で視線が読みにくく見えます。',
+          ultra: '超低反射コーティングなら、緑のギラつきを抑え、画面越しでも目線と表情が自然に伝わります。',
+          scripts: [
+            {
+              step: '1 共感',
+              title: 'オンライン会議の見え方に気づいてもらう',
+              body: '「オンライン会議で、相手のメガネに緑色の光が映って目が見えにくいことってありますよね。実は自分の画面でも同じことが起きている場合があります。」',
+              point: '相手視点を提示し、“自分では気づきにくい問題”として自然に導入します。'
+            },
+            {
+              step: '2 提案',
+              title: '信頼感とコミュニケーション品質に結びつける',
+              body: '「画面越しでは、目線や表情が信頼感につながります。<span class="script-highlight">レンズのギラつきを抑えることで、写真や画面越しでもあなたの表情がクリアに伝わるようになります</span>。」',
+              point: '“見た目がきれい”だけでなく、仕事上の印象・会話の伝わり方まで価値を広げます。'
+            },
+            {
+              step: '3 背中押し',
+              title: '仕事道具としての納得感を作る',
+              body: '「会議や面談が多い方ほど、毎回の印象が積み重なります。超低反射は、レンズを目立たせるのではなく、お客様の表情を前に出すためのコーティングです。」',
+              point: '価格ではなく“毎日の会議で効く投資”として提案します。'
+            }
+          ]
+        },
+
+        flash: {
+          kicker: 'Night Flash Photo',
+          title: '夜のフラッシュでも、白飛びしない目元へ。',
+          issue: '夜間や暗い店内でフラッシュ撮影をしたとき、レンズが真っ白に光って目元が隠れてしまう場面です。',
+          vars: {
+            '--glare-a': 'rgba(255,255,255,1)',
+            '--glare-b': 'rgba(255,255,255,.9)',
+            '--glow': 'rgba(255,255,255,.92)',
+          },
+          standard: '標準コーティングでは、フラッシュの強い白反射がレンズを覆い、目元が白飛びして見えることがあります。',
+          ultra: '超低反射コーティングなら、強い光でもレンズの存在感を抑え、夜の写真でも自然な表情を残しやすくなります。',
+          scripts: [
+            {
+              step: '1 共感',
+              title: '夜の写真で起きる白飛びを共有する',
+              body: '「夜の集合写真や食事会の写真で、レンズだけ真っ白に光って目が写らないことがありますよね。あとで写真を見たとき、少し残念に感じやすいポイントです。」',
+              point: '具体的な場面を出し、過去の失敗写真を思い出してもらいます。'
+            },
+            {
+              step: '2 提案',
+              title: '強い光でも表情を守る価値を伝える',
+              body: '「超低反射コーティングは、フラッシュのような強い光でもレンズのギラつきを抑えます。<span class="script-highlight">レンズではなく、お客様の目元と表情がきちんと写る</span> のが大きな魅力です。」',
+              point: '“白く光らない”ではなく、“表情が残る”というベネフィットに言い換えます。'
+            },
+            {
+              step: '3 背中押し',
+              title: 'イベント・外食・旅行での安心感を提案する',
+              body: '「夜のお出かけ、結婚式、旅行先の写真など、撮り直しがきかない場面ほど差が出ます。大切な写真を自然に残したい方には、ぜひおすすめしたいコーティングです。」',
+              point: '撮り直しができない大切なシーンを示し、選ぶ理由を明確にします。'
+            }
+          ]
+        }
+      };
+
+      const state = {
+        scenarioKey: null,
+        coating: 'standard',
+        scriptIndex: 0,
+      };
+
+      const app = document.getElementById('app');
+      const entryView = document.getElementById('entryView');
+      const experienceView = document.getElementById('experienceView');
+      const entryError = document.getElementById('entryError');
+      const scenarioKicker = document.getElementById('scenarioKicker');
+      const simulationTitle = document.getElementById('simulationTitle');
+      const scenarioIssue = document.getElementById('scenarioIssue');
+      const resultCopy = document.getElementById('resultCopy');
+      const clarityText = document.getElementById('clarityText');
+      const scriptStep = document.getElementById('scriptStep');
+      const scriptTitle = document.getElementById('scriptTitle');
+      const scriptBody = document.getElementById('scriptBody');
+      const scriptPoint = document.getElementById('scriptPoint');
+      const stepButtons = document.getElementById('stepButtons');
+      const copyStatus = document.getElementById('copyStatus');
+
+      function showError(message) {
+        entryError.textContent = message;
+        entryError.classList.remove('hidden');
+      }
+
+      function clearError() {
+        entryError.textContent = '';
+        entryError.classList.add('hidden');
+      }
+
+      function setScenario(key) {
+        if (!Object.prototype.hasOwnProperty.call(scenarios, key)) {
+          showError('選択内容を確認できませんでした。もう一度ボタンを押してください。');
+          return;
+        }
+
+        clearError();
+        state.scenarioKey = key;
+        state.coating = 'standard';
+        state.scriptIndex = 0;
+        render();
+        requestAnimationFrame(() => {
+          experienceView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      function setCoating(coating) {
+        if (!['standard', 'ultra'].includes(coating)) return;
+        state.coating = coating;
+        render();
+      }
+
+      function setScriptIndex(index) {
+        const scenario = scenarios[state.scenarioKey];
+        if (!scenario || !scenario.scripts[index]) return;
+        state.scriptIndex = index;
+        render();
+      }
+
+      function render() {
+        const scenario = scenarios[state.scenarioKey];
+
+        if (!scenario) {
+          entryView.classList.remove('hidden');
+          experienceView.classList.add('hidden');
+          return;
+        }
+
+        entryView.classList.add('hidden');
+        experienceView.classList.remove('hidden');
+
+        Object.entries(scenario.vars).forEach(([name, value]) => {
+          app.style.setProperty(name, value);
+        });
+
+        const isUltra = state.coating === 'ultra';
+        app.classList.toggle('ultra', isUltra);
+        app.style.setProperty('--clarity', isUltra ? '96%' : '38%');
+
+        scenarioKicker.textContent = scenario.kicker;
+        simulationTitle.textContent = scenario.title;
+        scenarioIssue.textContent = scenario.issue;
+        resultCopy.textContent = isUltra ? scenario.ultra : scenario.standard;
+        clarityText.textContent = isUltra ? '96%' : '38%';
+
+        document.querySelectorAll('[data-coating]').forEach((button) => {
+          const pressed = button.dataset.coating === state.coating;
+          button.setAttribute('aria-pressed', String(pressed));
+        });
+
+        renderStepButtons(scenario);
+        renderScript(scenario);
+      }
+
+      function renderStepButtons(scenario) {
+        stepButtons.innerHTML = '';
+
+        scenario.scripts.forEach((script, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'step-pill rounded-2xl px-2 py-3 text-xs font-black leading-tight text-slate-200';
+          button.textContent = script.step;
+          button.setAttribute('aria-current', index === state.scriptIndex ? 'step' : 'false');
+          button.addEventListener('click', () => setScriptIndex(index));
+          stepButtons.appendChild(button);
+        });
+      }
+
+      function renderScript(scenario) {
+        const script = scenario.scripts[state.scriptIndex] || scenario.scripts[0];
+        scriptStep.textContent = script.step;
+        scriptTitle.textContent = script.title;
+        scriptBody.innerHTML = script.body;
+        scriptPoint.textContent = script.point;
+        copyStatus.textContent = '';
+      }
+
+      async function copyCurrentScript() {
+        const scenario = scenarios[state.scenarioKey];
+        if (!scenario) return;
+
+        const script = scenario.scripts[state.scriptIndex];
+        const plainText = [
+          `【${scenario.title}】`,
+          `${script.step}：${script.title}`,
+          scriptBody.textContent.trim(),
+          `強調ポイント：${script.point}`
+        ].join('\n');
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(plainText);
+          } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = plainText;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+          }
+          copyStatus.textContent = 'カンペをコピーしました。接客前のメモに貼り付けられます。';
+        } catch (error) {
+          copyStatus.textContent = 'コピーできませんでした。本文を長押しして選択してください。';
+        }
+      }
+
+      document.querySelectorAll('[data-scenario]').forEach((button) => {
+        button.addEventListener('click', () => setScenario(button.dataset.scenario));
+      });
+
+      document.querySelectorAll('[data-coating]').forEach((button) => {
+        button.addEventListener('click', () => setCoating(button.dataset.coating));
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        state.scenarioKey = null;
+        state.coating = 'standard';
+        state.scriptIndex = 0;
+        app.classList.remove('ultra');
+        render();
+        requestAnimationFrame(() => {
+          entryView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+
+      document.getElementById('copyBtn').addEventListener('click', copyCurrentScript);
+
+      render();
+    })();
+  </script>
+</body>
+</html>
