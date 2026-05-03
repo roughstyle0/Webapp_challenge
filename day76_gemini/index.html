@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CLEAR LENS PRO - 超低反射コーティングシミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #09090b; color: #f4f4f5; }
+        
+        /* カメラのファインダー風の装飾 */
+        .viewfinder-corners::before, .viewfinder-corners::after,
+        .viewfinder-corners .corner-bottom::before, .viewfinder-corners .corner-bottom::after {
+            content: ''; position: absolute; width: 16px; height: 16px; border-color: #3f3f46; border-style: solid;
+        }
+        .viewfinder-corners::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+        .viewfinder-corners::after { top: 0; right: 0; border-width: 2px 2px 0 0; }
+        .viewfinder-corners .corner-bottom::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+        .viewfinder-corners .corner-bottom::after { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+        /* スクロールバー非表示（UIの洗練のため） */
+        ::-webkit-scrollbar { display: none; }
+
+        /* レンズのベーススタイル */
+        .lens-glass {
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(0px); /* 初期値 */
+        }
+        
+        /* シチュエーション別の反射エフェクト（CSS描画） */
+        .reflect-selfie { background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,0) 60%); }
+        .reflect-meeting { background: radial-gradient(circle at 40% 40%, rgba(74,222,128,0.95) 0%, rgba(74,222,128,0.4) 30%, transparent 60%); }
+        .reflect-flash { background: radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 50%, transparent 80%); box-shadow: 0 0 20px 5px rgba(255,255,255,0.6); }
+        
+        /* 超低反射クリアエフェクト */
+        .reflect-clear { background: linear-gradient(135deg, rgba(191,219,254,0.1) 0%, transparent 100%); border-color: rgba(96,165,250,0.5); backdrop-filter: blur(0px); box-shadow: none; }
+
+        /* フェードインアニメーション */
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 sm:p-8">
+
+    <!-- メインコンテナ（モバイルファースト・絶対重ならない構造） -->
+    <main class="w-full max-w-md flex flex-col gap-6 relative">
+
+        <!-- ヘッダー -->
+        <header class="text-center py-4 border-b border-zinc-800">
+            <h1 class="text-xs tracking-[0.3em] text-zinc-500 uppercase">Clear Lens Pro</h1>
+            <p class="text-lg font-light mt-1 text-zinc-300">「見られる美しさ」シミュレーター</p>
+        </header>
+
+        <!-- STEP 1: シチュエーション選択（初期表示） -->
+        <section id="step1-selection" class="flex flex-col gap-4 fade-in">
+            <p class="text-sm text-zinc-400 text-center mb-2">お客様がレンズの反射を気にされるシーンを選択してください。</p>
+            
+            <button onclick="selectSituation('selfie')" class="group relative bg-zinc-900 border border-zinc-800 p-5 rounded-lg text-left hover:border-zinc-500 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-400">
+                <div class="text-blue-400 text-xs font-bold tracking-widest mb-1 group-hover:text-blue-300">SCENE 01</div>
+                <h2 class="text-base font-medium">スマホでの自撮り・記念撮影</h2>
+                <p class="text-xs text-zinc-500 mt-2">風景や空の光が白く映り込み、目元が隠れる</p>
+            </button>
+
+            <button onclick="selectSituation('meeting')" class="group relative bg-zinc-900 border border-zinc-800 p-5 rounded-lg text-left hover:border-zinc-500 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-400">
+                <div class="text-green-400 text-xs font-bold tracking-widest mb-1 group-hover:text-green-300">SCENE 02</div>
+                <h2 class="text-base font-medium">オンライン会議</h2>
+                <p class="text-xs text-zinc-500 mt-2">リングライトや画面の光が不自然な緑色に反射する</p>
+            </button>
+
+            <button onclick="selectSituation('flash')" class="group relative bg-zinc-900 border border-zinc-800 p-5 rounded-lg text-left hover:border-zinc-500 transition-colors focus:outline-none focus:ring-1 focus:ring-zinc-400">
+                <div class="text-zinc-50 text-xs font-bold tracking-widest mb-1 group-hover:text-white">SCENE 03</div>
+                <h2 class="text-base font-medium">夜間のフラッシュ撮影</h2>
+                <p class="text-xs text-zinc-500 mt-2">強いフラッシュでレンズが真っ白に光ってしまう</p>
+            </button>
+        </section>
+
+
+        <!-- STEP 2: シミュレーション＆トーク（選択後に表示） -->
+        <section id="step2-simulation" class="hidden flex-col gap-6 fade-in">
+            
+            <!-- 上部: シミュレーター（画像・図形エリア・高さ固定でレイアウト保護） -->
+            <div class="viewfinder-corners relative w-full h-64 bg-zinc-900 flex justify-center items-center overflow-hidden">
+                <div class="corner-bottom"></div>
+                <!-- 撮影スタジオ風の背景グリッド -->
+                <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+
+                <!-- ターゲット表示 -->
+                <div class="absolute top-3 left-4 text-[10px] text-zinc-500 tracking-widest" id="sim-target-label">TARGET: SELFIE</div>
+                <div class="absolute top-3 right-4 flex gap-1 items-center">
+                    <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                    <span class="text-[10px] text-zinc-500 tracking-widest">LIVE</span>
+                </div>
+
+                <!-- CSSで描画したミニマルな人物シルエット -->
+                <div class="relative w-40 h-56 mt-12 flex flex-col items-center">
+                    <!-- 頭部 -->
+                    <div class="w-28 h-36 bg-gradient-to-b from-zinc-800 to-zinc-950 rounded-[45%] flex flex-col items-center pt-8 relative shadow-[inset_0_-10px_20px_rgba(0,0,0,0.5)]">
+                        <!-- 目（シルエット） -->
+                        <div class="flex gap-5 w-full justify-center px-4 mt-2">
+                            <div class="w-5 h-1 border-b-2 border-zinc-600 rounded-full opacity-60"></div>
+                            <div class="w-5 h-1 border-b-2 border-zinc-600 rounded-full opacity-60"></div>
+                        </div>
+
+                        <!-- メガネ -->
+                        <div class="absolute top-7 flex gap-1 items-center justify-center w-full">
+                            <!-- 左レンズ -->
+                            <div class="relative w-11 h-8 rounded-lg border-2 border-zinc-500 overflow-hidden lens-glass" id="lens-left">
+                                <div class="absolute inset-0 transition-opacity duration-1000 ease-out" id="refl-layer-left"></div>
+                            </div>
+                            <!-- ブリッジ -->
+                            <div class="w-3 h-[2px] bg-zinc-500"></div>
+                            <!-- 右レンズ -->
+                            <div class="relative w-11 h-8 rounded-lg border-2 border-zinc-500 overflow-hidden lens-glass" id="lens-right">
+                                <div class="absolute inset-0 transition-opacity duration-1000 ease-out" id="refl-layer-right"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 首/肩 -->
+                    <div class="w-48 h-20 bg-zinc-800 rounded-t-[100px] mt-[-10px] shadow-[inset_0_5px_15px_rgba(0,0,0,0.8)]"></div>
+                </div>
+            </div>
+
+            <!-- 操作パネル（トグルスイッチ） -->
+            <div class="flex justify-center items-center bg-zinc-900/50 p-2 rounded-full border border-zinc-800">
+                <button id="btn-normal" onclick="toggleCoating(false)" class="flex-1 py-2 text-xs font-medium rounded-full bg-zinc-800 text-zinc-300 transition-colors">標準コーティング</button>
+                <button id="btn-clear" onclick="toggleCoating(true)" class="flex-1 py-2 text-xs font-medium rounded-full text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    超低反射コーティング
+                </button>
+            </div>
+
+            <!-- 下部: トークスクリプト（テキストエリア・文字被りなし） -->
+            <div class="bg-zinc-900 border-l-2 border-blue-500 p-5 rounded-r-lg relative">
+                <div class="absolute -top-3 left-4 bg-zinc-950 px-2 text-[10px] text-blue-400 tracking-widest font-bold">STAFF TALK SCRIPT</div>
+                
+                <!-- トーク内容をJSで流し込むコンテナ -->
+                <div id="talk-script-content" class="text-sm leading-relaxed text-zinc-300 min-h-[100px] transition-opacity duration-500">
+                    <!-- ここにテキストが挿入されます -->
+                </div>
+            </div>
+
+            <!-- 戻るボタン -->
+            <button onclick="resetApp()" class="mt-2 text-xs text-zinc-500 underline hover:text-zinc-300 text-center py-2">
+                別のシチュエーションを選ぶ
+            </button>
+
+        </section>
+    </main>
+
+    <script>
+        // === 状態管理 ===
+        let currentSituation = null;
+        let isLowReflection = false;
+
+        // === データ定義（接客スクリプトと反射エフェクト） ===
+        const config = {
+            selfie: {
+                label: 'TARGET: SELFIE (自撮り)',
+                reflectClass: 'reflect-selfie',
+                talkNormal: "スマホで自撮りをされる際、背景の空や明るい景色がレンズに白く映り込んでしまい、せっかくの<span class='text-zinc-400'>目元が隠れてしまう</span>ことが多いですよね。",
+                talkClear: "この超低反射コーティングなら、レンズ表面のギラつきを極限まで抑えます。<span class='text-blue-300 font-bold'>写真や動画でも、あなたの自然な表情やアイメイクがそのままクリアに伝わりますよ。</span>"
+            },
+            meeting: {
+                label: 'TARGET: ONLINE MEETING (オンライン会議)',
+                reflectClass: 'reflect-meeting',
+                talkNormal: "オンライン会議中、モニターの光やリングライトがレンズに緑色に反射してしまい、画面越しの相手に<span class='text-zinc-400'>『メガネが光っている』という印象</span>を与えがちです。",
+                talkClear: "超低反射コーティングにすることで、強い光の反射をスッと消し去ります。<span class='text-blue-300 font-bold'>画面越しでも目線がしっかり伝わり、コミュニケーションの質とあなたの好印象をグッと引き上げます。</span>"
+            },
+            flash: {
+                label: 'TARGET: NIGHT FLASH (夜間フラッシュ)',
+                reflectClass: 'reflect-flash',
+                talkNormal: "夜間のフラッシュ撮影や、強い照明の下では、レンズ全体が真っ白に光を跳ね返してしまい、<span class='text-zinc-400'>目元が全く見えなくなってしまいます。</span>",
+                talkClear: "超低反射なら、強いフラッシュの光もここまでカットできます。<span class='text-blue-300 font-bold'>メガネは『見るため』だけでなく『見られるため』のアイテム。大切な瞬間の表情を、クリアなまま残すことができます。</span>"
+            }
+        };
+
+        // === DOM要素 ===
+        const step1 = document.getElementById('step1-selection');
+        const step2 = document.getElementById('step2-simulation');
+        const simLabel = document.getElementById('sim-target-label');
+        const reflLayerLeft = document.getElementById('refl-layer-left');
+        const reflLayerRight = document.getElementById('refl-layer-right');
+        const lensLeft = document.getElementById('lens-left');
+        const lensRight = document.getElementById('lens-right');
+        const btnNormal = document.getElementById('btn-normal');
+        const btnClear = document.getElementById('btn-clear');
+        const talkContent = document.getElementById('talk-script-content');
+
+        // === ロジック ===
+
+        // 1. シチュエーション選択時の処理（プログレッシブ・ディクロージャー）
+        function selectSituation(situation) {
+            currentSituation = situation;
+            isLowReflection = false; // 初期状態は標準コーティング
+
+            // UIの切り替え
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            step2.classList.add('flex'); // tailwindのflexを適用
+
+            // シミュレーターのセットアップ
+            simLabel.innerText = config[situation].label;
+            
+            // 反射クラスのリセットと適用
+            resetReflectionClasses();
+            reflLayerLeft.classList.add(config[situation].reflectClass);
+            reflLayerRight.classList.add(config[situation].reflectClass);
+            
+            // トグルとトークの更新
+            updateUI();
+        }
+
+        // 2. コーティングの切り替え処理
+        function toggleCoating(isClear) {
+            if(isLowReflection === isClear) return; // 状態が同じなら何もしない
+            isLowReflection = isClear;
+            updateUI();
+        }
+
+        // 3. UI全体の更新処理
+        function updateUI() {
+            // トグルボタンのスタイリング
+            if (!isLowReflection) {
+                btnNormal.className = "flex-1 py-2 text-xs font-medium rounded-full bg-zinc-700 text-white transition-colors shadow-inner";
+                btnClear.className = "flex-1 py-2 text-xs font-medium rounded-full text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center gap-1";
+                
+                // 反射をオン（不透明度100%）
+                reflLayerLeft.style.opacity = "1";
+                reflLayerRight.style.opacity = "1";
+                lensLeft.classList.remove('reflect-clear');
+                lensRight.classList.remove('reflect-clear');
+            } else {
+                btnNormal.className = "flex-1 py-2 text-xs font-medium rounded-full text-zinc-500 hover:text-zinc-300 transition-colors";
+                btnClear.className = "flex-1 py-2 text-xs font-medium rounded-full bg-blue-900/40 text-blue-300 border border-blue-500/50 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.2)] flex items-center justify-center gap-1";
+                
+                // 反射をオフ（不透明度0）にして、クリアな質感を付与
+                reflLayerLeft.style.opacity = "0";
+                reflLayerRight.style.opacity = "0";
+                lensLeft.classList.add('reflect-clear');
+                lensRight.classList.add('reflect-clear');
+            }
+
+            // トークスクリプトの更新（フェードアニメーション付き）
+            talkContent.style.opacity = "0";
+            setTimeout(() => {
+                const text = isLowReflection ? config[currentSituation].talkClear : config[currentSituation].talkNormal;
+                talkContent.innerHTML = `
+                    <div class="mb-1 text-[10px] text-zinc-500">${isLowReflection ? '超低反射コーティング提案時' : '標準コーティング（現状）の課題'}</div>
+                    <div class="text-[15px] sm:text-base">${text}</div>
+                `;
+                talkContent.style.opacity = "1";
+            }, 300); // テキストが切り替わるタイミング
+        }
+
+        // 4. アプリのリセット（戻るボタン）
+        function resetApp() {
+            step2.classList.add('hidden');
+            step2.classList.remove('flex');
+            step1.classList.remove('hidden');
+        }
+
+        // ユーティリティ: 全反射クラスの削除
+        function resetReflectionClasses() {
+            const classes = ['reflect-selfie', 'reflect-meeting', 'reflect-flash'];
+            reflLayerLeft.classList.remove(...classes);
+            reflLayerRight.classList.remove(...classes);
+            lensLeft.classList.remove('reflect-clear');
+            lensRight.classList.remove('reflect-clear');
+        }
+    </script>
+</body>
+</html>
