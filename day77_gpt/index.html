@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>顔型×パーソナルカラー フレーム診断</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              salon: {
+                ivory: "#F8F1E7",
+                paper: "#FFF9F0",
+                paper2: "#F4E6D2",
+                charcoal: "#2D2B28",
+                gold: "#B9924A",
+                gold2: "#D8BC79",
+                muted: "#837666",
+                line: "#E6D4B8",
+                ink: "#3A342D"
+              }
+            },
+            boxShadow: {
+              salon: "0 22px 70px rgba(45, 43, 40, .16)",
+              insetSalon: "inset 0 1px 0 rgba(255,255,255,.8)"
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --ivory: #F8F1E7;
+      --paper: #FFF9F0;
+      --paper2: #F4E6D2;
+      --charcoal: #2D2B28;
+      --gold: #B9924A;
+      --gold-soft: #D8BC79;
+      --line: #E6D4B8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--charcoal);
+      background:
+        radial-gradient(circle at top left, rgba(216, 188, 121, .28), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(45, 43, 40, .10), transparent 28rem),
+        linear-gradient(135deg, #f8f1e7 0%, #fffaf2 48%, #efe0c8 100%);
+      font-family:
+        "Hiragino Mincho ProN",
+        "Yu Mincho",
+        "YuMincho",
+        "Noto Serif JP",
+        Georgia,
+        serif;
+    }
+
+    button,
+    input {
+      font-family:
+        "Hiragino Sans",
+        "Yu Gothic",
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
+    }
+
+    .salon-shell {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.56), rgba(255,255,255,.16)),
+        repeating-linear-gradient(
+          90deg,
+          rgba(185, 146, 74, .055) 0,
+          rgba(185, 146, 74, .055) 1px,
+          transparent 1px,
+          transparent 18px
+        );
+    }
+
+    .counseling-sheet {
+      background:
+        linear-gradient(180deg, rgba(255,249,240,.98), rgba(255,249,240,.92)),
+        linear-gradient(135deg, rgba(185,146,74,.10), transparent);
+      border: 1px solid rgba(185, 146, 74, .28);
+      box-shadow: 0 24px 80px rgba(45, 43, 40, .15);
+    }
+
+    .gold-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(185,146,74,.85), transparent);
+    }
+
+    .option-button {
+      border: 1px solid rgba(185, 146, 74, .28);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,249,240,.9));
+      transition:
+        transform .18s ease,
+        border-color .18s ease,
+        background .18s ease,
+        box-shadow .18s ease;
+    }
+
+    .option-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(185, 146, 74, .72);
+      box-shadow: 0 12px 30px rgba(45, 43, 40, .10);
+    }
+
+    .option-button.selected {
+      border-color: rgba(45, 43, 40, .78);
+      background:
+        linear-gradient(135deg, rgba(45,43,40,.96), rgba(82,72,58,.96));
+      color: #FFF9F0;
+      box-shadow: 0 16px 40px rgba(45, 43, 40, .22);
+    }
+
+    .frame-icon {
+      display: grid;
+      grid-template-columns: minmax(74px, 1fr) 28px minmax(74px, 1fr);
+      align-items: center;
+      justify-items: center;
+      width: 100%;
+      max-width: 280px;
+      padding: 22px 14px;
+      border-radius: 28px;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.62), rgba(244,230,210,.64));
+      border: 1px solid rgba(185,146,74,.26);
+    }
+
+    .lens {
+      width: 76px;
+      height: 52px;
+      border: 6px solid currentColor;
+      background: rgba(255,255,255,.18);
+    }
+
+    .lens.square {
+      border-radius: 16px;
+    }
+
+    .lens.round {
+      width: 66px;
+      height: 58px;
+      border-radius: 999px;
+    }
+
+    .bridge {
+      width: 28px;
+      height: 6px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .palette-swatch {
+      min-height: 62px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.4);
+    }
+
+    .talk-script {
+      background:
+        linear-gradient(135deg, rgba(185,146,74,.16), rgba(255,249,240,.88));
+      border: 1px solid rgba(185,146,74,.34);
+    }
+
+    .marker {
+      background: linear-gradient(transparent 58%, rgba(216,188,121,.58) 58%);
+      padding-inline: .12em;
+    }
+
+    .fade-in {
+      animation: fadeIn .34s ease both;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in,
+      .option-button {
+        animation: none;
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="min-h-dvh salon-shell">
+    <main class="min-h-dvh grid place-items-center px-4 py-6 sm:px-6">
+      <!-- 初期画面：要件通り、最小UIはボタンのみ -->
+      <section id="welcomeScreen" class="w-full max-w-sm grid place-items-center">
+        <button
+          id="startButton"
+          type="button"
+          class="w-full rounded-full bg-salon-charcoal px-8 py-5 text-base font-semibold tracking-[.22em] text-salon-paper shadow-salon ring-1 ring-salon-gold/30 transition hover:-translate-y-0.5 hover:bg-black focus:outline-none focus:ring-4 focus:ring-salon-gold/35 active:translate-y-0"
+        >
+          診断を始める
+        </button>
+      </section>
+
+      <!-- 診断画面 -->
+      <section
+        id="diagnosisScreen"
+        class="hidden w-full max-w-2xl fade-in"
+        aria-live="polite"
+      >
+        <div class="counseling-sheet rounded-[2rem] p-5 sm:p-8">
+          <header class="grid gap-4">
+            <div class="grid gap-2">
+              <p class="text-xs font-semibold tracking-[.32em] text-salon-gold">
+                PERSONAL FRAME COUNSELING
+              </p>
+              <h1 class="text-2xl font-semibold leading-tight tracking-wide text-salon-charcoal sm:text-3xl">
+                顔型×パーソナルカラー<br class="sm:hidden" />
+                簡易フレーム診断
+              </h1>
+              <p class="text-sm leading-7 text-salon-muted">
+                新人スタッフでも、理由を添えて似合うフレームを提案できる接客サポートツールです。
+              </p>
+            </div>
+
+            <div class="gold-divider"></div>
+
+            <div class="grid gap-3">
+              <div class="flex items-center justify-between gap-3 text-xs font-semibold text-salon-muted">
+                <span id="stepLabel">STEP 1 / 2</span>
+                <span id="stepCaption">輪郭タイプ</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-salon-paper2">
+                <div
+                  id="progressBar"
+                  class="h-full w-1/2 rounded-full bg-gradient-to-r from-salon-gold to-salon-gold2 transition-all duration-300"
+                ></div>
+              </div>
+            </div>
+          </header>
+
+          <div id="questionArea" class="mt-7 grid gap-6 fade-in">
+            <div class="grid gap-3">
+              <p id="questionKicker" class="text-xs font-bold tracking-[.26em] text-salon-gold">
+                FACE LINE
+              </p>
+              <h2 id="questionText" class="text-xl font-semibold leading-relaxed text-salon-ink">
+                お顔の輪郭はどちらに近いですか？
+              </h2>
+              <p id="questionHint" class="text-sm leading-7 text-salon-muted">
+                厳密に分類するより、「第一印象として近い方」を選ぶと接客で使いやすくなります。
+              </p>
+            </div>
+
+            <div id="optionsArea" class="grid gap-3"></div>
+
+            <p id="errorMessage" class="hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+              選択肢を1つ選んでから次へ進んでください。
+            </p>
+
+            <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+              <p class="text-xs leading-6 text-salon-muted">
+                接客メモ：迷われている場合は「どちらかというと」で選んで問題ありません。
+              </p>
+              <button
+                id="nextButton"
+                type="button"
+                class="rounded-full bg-salon-charcoal px-7 py-4 text-sm font-bold tracking-[.16em] text-salon-paper transition hover:-translate-y-0.5 hover:bg-black focus:outline-none focus:ring-4 focus:ring-salon-gold/35 active:translate-y-0"
+              >
+                次へ進む
+              </button>
+            </div>
+          </div>
+
+          <div id="resultArea" class="mt-8 hidden fade-in"></div>
+        </div>
+
+        <button
+          id="resetButton"
+          type="button"
+          class="mt-5 w-full rounded-full border border-salon-gold/40 bg-white/35 px-6 py-4 text-sm font-bold tracking-[.18em] text-salon-charcoal backdrop-blur transition hover:bg-white/60 focus:outline-none focus:ring-4 focus:ring-salon-gold/30"
+        >
+          もう一度診断する
+        </button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        key: "face",
+        stepLabel: "STEP 1 / 2",
+        caption: "輪郭タイプ",
+        kicker: "FACE LINE",
+        text: "お顔の輪郭はどちらに近いですか？",
+        hint: "厳密に分類するより、「第一印象として近い方」を選ぶと接客で使いやすくなります。",
+        options: [
+          {
+            value: "round",
+            title: "丸みがある",
+            description: "やわらかく親しみやすい印象。頬やフェイスラインに曲線を感じるタイプ。"
+          },
+          {
+            value: "sharp",
+            title: "直線的でシャープ",
+            description: "すっきり知的な印象。あご先や輪郭に直線・角度を感じるタイプ。"
+          }
+        ]
+      },
+      {
+        key: "tone",
+        stepLabel: "STEP 2 / 2",
+        caption: "肌色タイプ",
+        kicker: "PERSONAL COLOR",
+        text: "お肌の色味はどちらに近いですか？",
+        hint: "首元や手元の色味も参考にしながら、黄み・青みのどちらが自然に見えるかで選びます。",
+        options: [
+          {
+            value: "warm",
+            title: "黄みより（イエベ）",
+            description: "ベージュ、キャメル、ゴールド系が肌になじみやすいタイプ。"
+          },
+          {
+            value: "cool",
+            title: "青み・ピンクより（ブルベ）",
+            description: "グレー、ネイビー、シルバー系で透明感が出やすいタイプ。"
+          }
+        ]
+      }
+    ];
+
+    const recommendations = {
+      "round-warm": {
+        title: "スクエア / ウェリントン",
+        subtitle: "やわらかな輪郭を、ほどよく引き締める王道バランス。",
+        frameType: "square",
+        frameColor: "#5B4632",
+        shapeLabel: "角のあるフレーム",
+        colorLabel: "ブラウン / カーキ系",
+        palette: [
+          { name: "ブラウン", color: "#5B4632" },
+          { name: "キャメル", color: "#A66F3F" },
+          { name: "カーキ", color: "#6E7152" }
+        ],
+        script: "お客様の輪郭は丸みがあり、やわらかく親しみやすい印象です。そこにスクエアやウェリントンのような少し角のある形を合わせると、フェイスラインが自然に引き締まって見えます。お肌は黄みよりなので、ブラウンやカーキ系を選ぶと肌なじみが良く、落ち着いた上品さも出せます。"
+      },
+      "round-cool": {
+        title: "スクエア / ウェリントン",
+        subtitle: "甘さを抑え、凛とした透明感を引き出す組み合わせ。",
+        frameType: "square",
+        frameColor: "#22252B",
+        shapeLabel: "角のあるフレーム",
+        colorLabel: "ブラック / ネイビー系",
+        palette: [
+          { name: "ブラック", color: "#1F2023" },
+          { name: "ネイビー", color: "#1D2B46" },
+          { name: "スレート", color: "#59616C" }
+        ],
+        script: "お客様の丸みのある輪郭には、スクエアやウェリントンの直線感を少し足すと、やさしい印象を残しながら顔立ちがすっきり見えます。お肌は青み・ピンクよりなので、ブラックやネイビー系を合わせると肌の透明感が引き立ち、知的で洗練された雰囲気になります。"
+      },
+      "sharp-warm": {
+        title: "ボストン / ラウンド",
+        subtitle: "シャープな印象に、温度感とやさしさを添える提案。",
+        frameType: "round",
+        frameColor: "#B9924A",
+        shapeLabel: "丸みのあるフレーム",
+        colorLabel: "ゴールド / べっ甲系",
+        palette: [
+          { name: "ゴールド", color: "#B9924A" },
+          { name: "べっ甲", color: "#7A4F2A" },
+          { name: "ハニー", color: "#C58A3A" }
+        ],
+        script: "お客様の輪郭は直線的でシャープな印象があるため、ボストンやラウンドの丸みを足すと、表情がやわらかく見えます。お肌は黄みよりなので、ゴールドやべっ甲系のカラーが自然になじみ、血色感と華やかさを引き出してくれます。"
+      },
+      "sharp-cool": {
+        title: "ボストン / ラウンド",
+        subtitle: "直線的な顔立ちをやわらげ、クリーンに整える一本。",
+        frameType: "round",
+        frameColor: "#9BA1A8",
+        shapeLabel: "丸みのあるフレーム",
+        colorLabel: "シルバー / クリアグレー系",
+        palette: [
+          { name: "シルバー", color: "#B7BCC2" },
+          { name: "クリアグレー", color: "#8C9298" },
+          { name: "アイスグレー", color: "#D8DDE1" }
+        ],
+        script: "お客様の輪郭は直線的でシャープなので、ボストンやラウンドのような丸みのある形を合わせると、強さが和らぎ、親しみやすさが出ます。お肌は青み・ピンクよりなので、シルバーやクリアグレー系を選ぶと透明感が高まり、軽やかで都会的な印象に仕上がります。"
+      }
+    };
+
+    const state = {
+      started: false,
+      step: 0,
+      answers: {
+        face: "",
+        tone: ""
+      }
+    };
+
+    const welcomeScreen = document.getElementById("welcomeScreen");
+    const diagnosisScreen = document.getElementById("diagnosisScreen");
+    const startButton = document.getElementById("startButton");
+    const resetButton = document.getElementById("resetButton");
+
+    const stepLabel = document.getElementById("stepLabel");
+    const stepCaption = document.getElementById("stepCaption");
+    const progressBar = document.getElementById("progressBar");
+    const questionArea = document.getElementById("questionArea");
+    const questionKicker = document.getElementById("questionKicker");
+    const questionText = document.getElementById("questionText");
+    const questionHint = document.getElementById("questionHint");
+    const optionsArea = document.getElementById("optionsArea");
+    const errorMessage = document.getElementById("errorMessage");
+    const nextButton = document.getElementById("nextButton");
+    const resultArea = document.getElementById("resultArea");
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderQuestion() {
+      const question = questions[state.step];
+      const currentAnswer = state.answers[question.key];
+
+      stepLabel.textContent = question.stepLabel;
+      stepCaption.textContent = question.caption;
+      progressBar.style.width = state.step === 0 ? "50%" : "100%";
+      questionKicker.textContent = question.kicker;
+      questionText.textContent = question.text;
+      questionHint.textContent = question.hint;
+      nextButton.textContent = state.step === questions.length - 1 ? "結果を見る" : "次へ進む";
+
+      errorMessage.classList.add("hidden");
+      resultArea.classList.add("hidden");
+      questionArea.classList.remove("hidden");
+
+      optionsArea.innerHTML = "";
+
+      question.options.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = [
+          "option-button",
+          "w-full",
+          "rounded-[1.4rem]",
+          "p-5",
+          "text-left",
+          "focus:outline-none",
+          "focus:ring-4",
+          "focus:ring-salon-gold/30",
+          currentAnswer === option.value ? "selected" : ""
+        ].join(" ");
+
+        button.setAttribute("aria-pressed", currentAnswer === option.value ? "true" : "false");
+        button.dataset.value = option.value;
+
+        button.innerHTML = `
+          <span class="grid gap-2">
+            <span class="flex items-center justify-between gap-3">
+              <span class="text-base font-bold tracking-wide">${escapeHTML(option.title)}</span>
+              <span class="grid size-6 place-items-center rounded-full border border-current text-xs">✓</span>
+            </span>
+            <span class="text-sm leading-7 opacity-80">${escapeHTML(option.description)}</span>
+          </span>
+        `;
+
+        button.addEventListener("click", () => {
+          state.answers[question.key] = option.value;
+          renderQuestion();
+        });
+
+        optionsArea.appendChild(button);
+      });
+    }
+
+    function createPaletteHTML(palette) {
+      return palette.map((swatch) => `
+        <div class="grid gap-2">
+          <div
+            class="palette-swatch"
+            style="background:${escapeHTML(swatch.color)}"
+            aria-label="${escapeHTML(swatch.name)}"
+          ></div>
+          <p class="text-center text-xs font-bold text-salon-muted">${escapeHTML(swatch.name)}</p>
+        </div>
+      `).join("");
+    }
+
+    function renderResult() {
+      const key = `${state.answers.face}-${state.answers.tone}`;
+      const result = recommendations[key];
+
+      if (!result) {
+        errorMessage.textContent = "診断結果を表示できませんでした。選択内容を確認してください。";
+        errorMessage.classList.remove("hidden");
+        return;
+      }
+
+      questionArea.classList.add("hidden");
+      resultArea.classList.remove("hidden");
+
+      resultArea.innerHTML = `
+        <div class="grid gap-6">
+          <div class="grid gap-3 text-center">
+            <p class="text-xs font-bold tracking-[.30em] text-salon-gold">RECOMMENDATION</p>
+            <h2 class="text-2xl font-semibold leading-snug text-salon-charcoal sm:text-3xl">
+              ${escapeHTML(result.title)}
+            </h2>
+            <p class="mx-auto max-w-md text-sm leading-7 text-salon-muted">
+              ${escapeHTML(result.subtitle)}
+            </p>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-[1fr_1fr]">
+            <section class="grid gap-4 rounded-[1.8rem] border border-salon-gold/25 bg-white/35 p-5">
+              <div class="grid gap-1">
+                <p class="text-xs font-bold tracking-[.24em] text-salon-gold">FRAME SHAPE</p>
+                <h3 class="text-lg font-semibold">${escapeHTML(result.shapeLabel)}</h3>
+              </div>
+
+              <div class="grid place-items-center text-[${escapeHTML(result.frameColor)}]">
+                <div class="frame-icon" style="color:${escapeHTML(result.frameColor)}">
+                  <div class="lens ${result.frameType === "round" ? "round" : "square"}"></div>
+                  <div class="bridge"></div>
+                  <div class="lens ${result.frameType === "round" ? "round" : "square"}"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid gap-4 rounded-[1.8rem] border border-salon-gold/25 bg-white/35 p-5">
+              <div class="grid gap-1">
+                <p class="text-xs font-bold tracking-[.24em] text-salon-gold">COLOR PALETTE</p>
+                <h3 class="text-lg font-semibold">${escapeHTML(result.colorLabel)}</h3>
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                ${createPaletteHTML(result.palette)}
+              </div>
+            </section>
+          </div>
+
+          <section class="talk-script grid gap-4 rounded-[1.8rem] p-5 sm:p-6">
+            <div class="grid gap-1">
+              <p class="text-xs font-bold tracking-[.24em] text-salon-gold">STAFF TALK SCRIPT</p>
+              <h3 class="text-lg font-semibold">そのまま読める接客カンペ</h3>
+            </div>
+
+            <p class="text-base leading-9 text-salon-ink">
+              <span class="marker">${escapeHTML(result.script)}</span>
+            </p>
+          </section>
+
+          <section class="grid gap-3 rounded-[1.8rem] bg-salon-charcoal p-5 text-salon-paper">
+            <p class="text-xs font-bold tracking-[.24em] text-salon-gold2">NEXT ACTION</p>
+            <p class="text-sm leading-7">
+              まずはおすすめ形状を2本、次におすすめカラーを1本ご提案してください。
+              「形で輪郭補正、色で肌映え」という順番で説明すると、納得感のある接客になります。
+            </p>
+          </section>
+        </div>
+      `;
+    }
+
+    function handleNext() {
+      const question = questions[state.step];
+      const selectedValue = state.answers[question.key];
+
+      if (!selectedValue) {
+        errorMessage.textContent = "選択肢を1つ選んでから次へ進んでください。";
+        errorMessage.classList.remove("hidden");
+        return;
+      }
+
+      if (state.step < questions.length - 1) {
+        state.step += 1;
+        renderQuestion();
+        return;
+      }
+
+      renderResult();
+    }
+
+    function resetDiagnosis() {
+      state.started = false;
+      state.step = 0;
+      state.answers.face = "";
+      state.answers.tone = "";
+
+      diagnosisScreen.classList.add("hidden");
+      welcomeScreen.classList.remove("hidden");
+      resultArea.innerHTML = "";
+      resultArea.classList.add("hidden");
+      questionArea.classList.remove("hidden");
+      startButton.focus();
+    }
+
+    startButton.addEventListener("click", () => {
+      state.started = true;
+      welcomeScreen.classList.add("hidden");
+      diagnosisScreen.classList.remove("hidden");
+      renderQuestion();
+      nextButton.focus();
+    });
+
+    nextButton.addEventListener("click", handleNext);
+    resetButton.addEventListener("click", resetDiagnosis);
+  </script>
+</body>
+</html>
