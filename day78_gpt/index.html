@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Golf Contrast Lens Score-Up Experience</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              british: "#082416",
+              british2: "#0d3a25",
+              fairway: "#1f6b43",
+              ivory: "#f8f6ef",
+              gold: "#c8a24a",
+              gold2: "#ead58d",
+              ink: "#102017"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --british: #082416;
+      --british-2: #0d3a25;
+      --fairway: #1f6b43;
+      --ivory: #f8f6ef;
+      --gold: #c8a24a;
+      --gold-soft: #ead58d;
+      --line: rgba(234, 213, 141, .32);
+      --glass: rgba(248, 246, 239, .08);
+      --danger: #f0b0a6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ivory);
+      font-family:
+        ui-serif,
+        "Hiragino Mincho ProN",
+        "Yu Mincho",
+        Georgia,
+        serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(200, 162, 74, .22), transparent 28rem),
+        radial-gradient(circle at 90% 8%, rgba(83, 154, 103, .18), transparent 22rem),
+        linear-gradient(145deg, #03120b 0%, #082416 42%, #03130c 100%);
+    }
+
+    button,
+    input,
+    textarea {
+      font-family:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    .course-texture {
+      background-image:
+        linear-gradient(135deg, rgba(255, 255, 255, .035) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255, 255, 255, .025) 25%, transparent 25%),
+        linear-gradient(45deg, rgba(200, 162, 74, .04) 25%, transparent 25%);
+      background-size: 22px 22px;
+    }
+
+    .gold-rule {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .choice-button {
+      border: 1px solid rgba(234, 213, 141, .36);
+      background:
+        linear-gradient(140deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),
+        linear-gradient(180deg, rgba(31,107,67,.22), rgba(8,36,22,.8));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.12),
+        0 20px 48px rgba(0,0,0,.26);
+      transition: transform .22s ease, border-color .22s ease, background .22s ease;
+    }
+
+    .choice-button:hover,
+    .choice-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(234, 213, 141, .86);
+      background:
+        linear-gradient(140deg, rgba(234,213,141,.14), rgba(255,255,255,.04)),
+        linear-gradient(180deg, rgba(31,107,67,.32), rgba(8,36,22,.86));
+      outline: none;
+    }
+
+    .premium-panel {
+      border: 1px solid rgba(234, 213, 141, .24);
+      background:
+        linear-gradient(145deg, rgba(248,246,239,.105), rgba(248,246,239,.035)),
+        linear-gradient(180deg, rgba(8,36,22,.92), rgba(5,20,12,.92));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.10),
+        0 26px 70px rgba(0,0,0,.34);
+    }
+
+    .lens-tab {
+      border: 1px solid rgba(248,246,239,.14);
+      background: rgba(248,246,239,.06);
+      color: rgba(248,246,239,.72);
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .lens-tab:hover,
+    .lens-tab:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(234, 213, 141, .48);
+      outline: none;
+    }
+
+    .lens-tab.is-active {
+      color: #07160d;
+      border-color: rgba(234, 213, 141, .95);
+      background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+      box-shadow: 0 14px 26px rgba(200,162,74,.22);
+    }
+
+    .course-window {
+      display: grid;
+      gap: .75rem;
+      width: 100%;
+      min-height: 19rem;
+      padding: .8rem;
+      overflow: hidden;
+      border-radius: 2rem;
+      border: 1px solid rgba(234,213,141,.30);
+      background:
+        linear-gradient(180deg, rgba(248,246,239,.08), rgba(248,246,239,.025)),
+        #133d28;
+      transition: filter .65s ease, background .65s ease;
+    }
+
+    @media (min-width: 640px) {
+      .course-window {
+        min-height: 23rem;
+        padding: 1rem;
+      }
+    }
+
+    .course-window.standard {
+      filter: saturate(.74) contrast(.82);
+      background:
+        linear-gradient(180deg, rgba(230,230,210,.05), rgba(230,230,210,.02)),
+        #46684a;
+    }
+
+    .course-window.golf {
+      filter: saturate(1.28) contrast(1.2);
+      background:
+        linear-gradient(180deg, rgba(234,213,141,.10), rgba(248,246,239,.035)),
+        #0e3a25;
+      animation: lensReveal .68s ease both;
+    }
+
+    .green-surface {
+      display: grid;
+      grid-template-rows: repeat(8, minmax(1.1rem, 1fr));
+      gap: .32rem;
+      min-height: 13rem;
+      padding: .65rem;
+      border-radius: 1.55rem;
+      border: 1px solid rgba(255,255,255,.11);
+      transition: background .6s ease, box-shadow .6s ease;
+    }
+
+    .standard .green-surface {
+      background:
+        linear-gradient(90deg, rgba(70,107,70,.96), rgba(76,119,76,.96));
+      box-shadow: inset 0 0 24px rgba(0,0,0,.12);
+    }
+
+    .golf .green-surface {
+      background:
+        radial-gradient(ellipse at 25% 35%, rgba(234,213,141,.19), transparent 24%),
+        radial-gradient(ellipse at 72% 58%, rgba(0,0,0,.24), transparent 28%),
+        linear-gradient(115deg, #0c321f, #2b7e4a 48%, #0f3824);
+      box-shadow:
+        inset 0 18px 34px rgba(255,255,255,.08),
+        inset 0 -22px 42px rgba(0,0,0,.24);
+    }
+
+    .green-stripe {
+      border-radius: 999px;
+      transition: transform .6s ease, opacity .6s ease, background .6s ease, box-shadow .6s ease;
+    }
+
+    .standard .green-stripe {
+      opacity: .76;
+      background: linear-gradient(90deg, #5b8058, #527753);
+      box-shadow: none;
+    }
+
+    .golf .green-stripe {
+      opacity: 1;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.10), transparent 18%, rgba(0,0,0,.22) 52%, rgba(234,213,141,.13) 100%),
+        linear-gradient(180deg, #2b8550, #0f3b24);
+      box-shadow:
+        inset 0 2px 2px rgba(255,255,255,.15),
+        inset 0 -4px 8px rgba(0,0,0,.24),
+        0 6px 12px rgba(0,0,0,.18);
+    }
+
+    .golf .green-stripe:nth-child(2n) {
+      transform: translateX(.55rem) scaleY(1.05);
+    }
+
+    .golf .green-stripe:nth-child(3n) {
+      transform: translateX(-.35rem) scaleY(.92);
+    }
+
+    .read-line {
+      display: grid;
+      grid-template-columns: .6fr 1fr .6fr;
+      align-items: center;
+      gap: .65rem;
+      padding: .7rem;
+      border-radius: 1.3rem;
+      border: 1px solid rgba(255,255,255,.10);
+      transition: background .6s ease, box-shadow .6s ease;
+    }
+
+    .standard .read-line {
+      background: rgba(70,107,70,.48);
+    }
+
+    .golf .read-line {
+      background: linear-gradient(90deg, rgba(234,213,141,.16), rgba(255,255,255,.06), rgba(0,0,0,.12));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .ball {
+      width: 1.55rem;
+      height: 1.55rem;
+      justify-self: center;
+      border-radius: 999px;
+      background: radial-gradient(circle at 32% 28%, #fff, #e9ece6 44%, #bfc8bf 100%);
+      transition: transform .55s ease, opacity .55s ease, filter .55s ease, box-shadow .55s ease;
+    }
+
+    .standard .ball {
+      opacity: .55;
+      filter: blur(.25px);
+      box-shadow: none;
+    }
+
+    .golf .ball {
+      opacity: 1;
+      transform: scale(1.13);
+      filter: drop-shadow(0 7px 7px rgba(0,0,0,.45));
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.9),
+        0 0 0 3px rgba(234,213,141,.20);
+    }
+
+    .break-curve {
+      height: .68rem;
+      border-radius: 999px;
+      transition: transform .6s ease, opacity .6s ease, background .6s ease, box-shadow .6s ease;
+    }
+
+    .standard .break-curve {
+      opacity: .28;
+      background: #6f8b67;
+    }
+
+    .golf .break-curve {
+      opacity: 1;
+      transform: rotate(-7deg);
+      background: linear-gradient(90deg, transparent, var(--gold-soft), #ffffff, var(--gold));
+      box-shadow: 0 0 18px rgba(234,213,141,.28);
+    }
+
+    .cup {
+      width: 1.7rem;
+      height: 1.7rem;
+      justify-self: center;
+      border-radius: 999px;
+      transition: transform .55s ease, opacity .55s ease, box-shadow .55s ease, background .55s ease;
+    }
+
+    .standard .cup {
+      opacity: .42;
+      background: radial-gradient(circle, #344837 0 38%, #657e61 39% 100%);
+    }
+
+    .golf .cup {
+      transform: scale(1.08);
+      opacity: 1;
+      background: radial-gradient(circle, #08140c 0 38%, #e8d78c 39% 46%, #f8f6ef 47% 100%);
+      box-shadow: 0 0 20px rgba(234,213,141,.28);
+    }
+
+    .tee-sky {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: .38rem;
+      min-height: 13rem;
+      padding: .75rem;
+      border-radius: 1.55rem;
+      border: 1px solid rgba(255,255,255,.11);
+      transition: background .65s ease, box-shadow .65s ease;
+    }
+
+    .standard .tee-sky {
+      background: linear-gradient(180deg, #9aa59d, #7c8c7b 65%, #537251);
+    }
+
+    .golf .tee-sky {
+      background:
+        radial-gradient(circle at 70% 24%, rgba(255,255,255,.38), transparent 22%),
+        linear-gradient(180deg, #c9dde2 0%, #8fb59e 62%, #17643d 100%);
+      box-shadow: inset 0 -24px 34px rgba(0,0,0,.22);
+    }
+
+    .sky-band {
+      border-radius: 999px;
+      transition: transform .6s ease, opacity .6s ease, background .6s ease, box-shadow .6s ease;
+    }
+
+    .standard .sky-band {
+      opacity: .58;
+      background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(95,111,97,.18));
+    }
+
+    .golf .sky-band {
+      opacity: .96;
+      background: linear-gradient(90deg, rgba(255,255,255,.46), rgba(234,213,141,.10), rgba(7,36,22,.16));
+      box-shadow: inset 0 -5px 9px rgba(0,0,0,.10);
+    }
+
+    .flight-zone {
+      display: grid;
+      grid-template-columns: .45fr 1fr .55fr;
+      align-items: center;
+      gap: .55rem;
+      padding: .72rem;
+      border-radius: 1.3rem;
+      border: 1px solid rgba(255,255,255,.10);
+      transition: background .6s ease, box-shadow .6s ease;
+    }
+
+    .standard .flight-zone {
+      background: rgba(95,116,94,.48);
+    }
+
+    .golf .flight-zone {
+      background: linear-gradient(90deg, rgba(234,213,141,.13), rgba(255,255,255,.07), rgba(0,0,0,.10));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+
+    .tee-marker {
+      display: grid;
+      gap: .22rem;
+      justify-items: center;
+    }
+
+    .tee-peg {
+      width: .65rem;
+      height: 1.55rem;
+      border-radius: 999px 999px .15rem .15rem;
+      background: linear-gradient(180deg, #f7e39b, #a77b2e);
+    }
+
+    .air-ball {
+      width: 1.3rem;
+      height: 1.3rem;
+      justify-self: center;
+      border-radius: 999px;
+      background: radial-gradient(circle at 32% 25%, #fff, #eef1ed 52%, #bcc6bf);
+      transition: transform .65s ease, opacity .65s ease, filter .65s ease, box-shadow .65s ease;
+    }
+
+    .standard .air-ball {
+      opacity: .24;
+      filter: blur(.9px);
+      transform: translateY(.1rem);
+      box-shadow: none;
+    }
+
+    .golf .air-ball {
+      opacity: 1;
+      filter: drop-shadow(0 8px 8px rgba(0,0,0,.42));
+      transform: translateY(-.55rem) scale(1.18);
+      box-shadow:
+        inset 0 2px 5px rgba(255,255,255,.92),
+        0 0 0 4px rgba(234,213,141,.22);
+    }
+
+    .flight-trail {
+      height: .65rem;
+      border-radius: 999px;
+      transition: transform .65s ease, opacity .65s ease, background .65s ease, box-shadow .65s ease;
+    }
+
+    .standard .flight-trail {
+      opacity: .18;
+      background: #e5e8e0;
+    }
+
+    .golf .flight-trail {
+      opacity: .94;
+      transform: rotate(-9deg);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), var(--gold-soft));
+      box-shadow: 0 0 18px rgba(255,255,255,.24);
+    }
+
+    .fairway-target {
+      width: 2.35rem;
+      height: 2.35rem;
+      justify-self: center;
+      border-radius: 999px;
+      transition: transform .65s ease, opacity .65s ease, background .65s ease, box-shadow .65s ease;
+    }
+
+    .standard .fairway-target {
+      opacity: .45;
+      background: radial-gradient(circle, #6c8569 0 40%, #587559 41% 100%);
+    }
+
+    .golf .fairway-target {
+      opacity: 1;
+      transform: scale(1.08);
+      background:
+        radial-gradient(circle, rgba(255,255,255,.94) 0 24%, rgba(234,213,141,.85) 25% 37%, rgba(17,89,51,.95) 38% 100%);
+      box-shadow: 0 0 24px rgba(234,213,141,.25);
+    }
+
+    .script-highlight {
+      color: #09160d;
+      background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+      padding: .08rem .34rem;
+      border-radius: .42rem;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      font-weight: 800;
+    }
+
+    .step-dot {
+      width: .55rem;
+      height: .55rem;
+      border-radius: 999px;
+      background: rgba(248,246,239,.22);
+      transition: transform .2s ease, background .2s ease;
+    }
+
+    .step-dot.is-active {
+      transform: scale(1.25);
+      background: var(--gold-soft);
+    }
+
+    .metric {
+      border: 1px solid rgba(248,246,239,.12);
+      background: rgba(248,246,239,.055);
+    }
+
+    .golf-only-glow {
+      transition: border-color .4s ease, background .4s ease, box-shadow .4s ease;
+    }
+
+    .golf .golf-only-glow,
+    .lens-mode-golf .golf-only-glow {
+      border-color: rgba(234,213,141,.45);
+      background: rgba(234,213,141,.12);
+      box-shadow: 0 0 24px rgba(234,213,141,.08);
+    }
+
+    .fade-up {
+      animation: fadeUp .46s ease both;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes lensReveal {
+      0% {
+        filter: saturate(.75) contrast(.8);
+      }
+      45% {
+        filter: saturate(1.65) contrast(1.34);
+      }
+      100% {
+        filter: saturate(1.28) contrast(1.2);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="course-texture">
+  <main class="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-4 py-5 sm:px-6 sm:py-8">
+    <header class="grid gap-4">
+      <div class="flex items-center justify-between gap-3">
+        <div class="grid gap-1">
+          <p class="text-[11px] font-bold uppercase tracking-[0.32em] text-gold2/80">
+            Golf Contrast Lens
+          </p>
+          <h1 class="text-2xl font-black leading-tight tracking-tight text-ivory sm:text-4xl">
+            スコアを縮める視界体験
+          </h1>
+        </div>
+        <div class="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-gold/50 bg-ivory/10 text-gold2 shadow-2xl">
+          <span class="text-lg font-black">−3</span>
+        </div>
+      </div>
+
+      <div class="gold-rule"></div>
+
+      <p class="max-w-2xl text-sm leading-7 text-ivory/74 sm:text-base">
+        新人スタッフが、お客様の悩みに合わせて
+        <span class="text-gold2">「普通のサングラス」と「ゴルフ専用コントラストレンズ」</span>
+        の違いを見せながら提案できる体験デモです。
+      </p>
+    </header>
+
+    <section id="scenePicker" class="grid gap-4 fade-up" aria-labelledby="scenePickerTitle">
+      <div class="grid gap-2">
+        <p class="text-[11px] font-bold uppercase tracking-[0.28em] text-gold2/75">Step 01</p>
+        <h2 id="scenePickerTitle" class="text-xl font-black leading-tight sm:text-2xl">
+          お客様の悩みを選んでください
+        </h2>
+        <p class="text-sm leading-6 text-ivory/68">
+          まずは質問を1つに絞り、会話の入口を作ります。
+        </p>
+      </div>
+
+      <div class="grid gap-3">
+        <button type="button" class="choice-button grid gap-3 rounded-[1.7rem] p-5 text-left" data-scene="putting">
+          <span class="flex items-center justify-between gap-4">
+            <span class="text-lg font-black leading-snug text-ivory">
+              グリーン上でのパッティング
+            </span>
+            <span class="rounded-full border border-gold/50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold2">
+              Green
+            </span>
+          </span>
+          <span class="text-sm leading-6 text-ivory/70">
+            芝目や傾斜が読めず、打ち出し方向に自信が持てない。
+          </span>
+        </button>
+
+        <button type="button" class="choice-button grid gap-3 rounded-[1.7rem] p-5 text-left" data-scene="tee">
+          <span class="flex items-center justify-between gap-4">
+            <span class="text-lg font-black leading-snug text-ivory">
+              ティーショット
+            </span>
+            <span class="rounded-full border border-gold/50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-gold2">
+              Flight
+            </span>
+          </span>
+          <span class="text-sm leading-6 text-ivory/70">
+            曇り空と白いボールが同化し、飛んだ方向を見失いやすい。
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section id="experience" class="hidden grid gap-5" aria-live="polite">
+      <div class="premium-panel grid gap-4 rounded-[2rem] p-4 sm:p-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div class="grid gap-1">
+            <p class="text-[11px] font-bold uppercase tracking-[0.28em] text-gold2/75">
+              Selected Scene
+            </p>
+            <h2 id="sceneTitle" class="text-xl font-black leading-tight sm:text-2xl"></h2>
+            <p id="sceneProblem" class="text-sm leading-6 text-ivory/68"></p>
+          </div>
+          <button id="resetButton" type="button" class="rounded-full border border-ivory/20 px-4 py-2 text-sm font-bold text-ivory/80 transition hover:border-gold/70 hover:text-gold2 focus:outline-none focus:ring-2 focus:ring-gold/60">
+            悩みを選び直す
+          </button>
+        </div>
+
+        <div class="grid gap-2 rounded-[1.35rem] border border-ivory/10 bg-black/15 p-2">
+          <p class="px-2 pt-1 text-xs font-bold uppercase tracking-[0.22em] text-ivory/48">
+            Lens Mode
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="standardButton" type="button" class="lens-tab rounded-full px-3 py-3 text-sm font-black" data-lens="standard">
+              標準サングラス
+            </button>
+            <button id="golfButton" type="button" class="lens-tab rounded-full px-3 py-3 text-sm font-black" data-lens="golf">
+              ゴルフ専用レンズ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <section class="premium-panel grid gap-4 rounded-[2.2rem] p-4 sm:p-5" aria-labelledby="simTitle">
+        <div class="grid gap-2">
+          <p class="text-[11px] font-bold uppercase tracking-[0.28em] text-gold2/75">
+            Step 02
+          </p>
+          <h3 id="simTitle" class="text-xl font-black leading-tight">
+            コントラストアップ・シミュレーション
+          </h3>
+          <p id="lensNarrative" class="text-sm leading-6 text-ivory/68"></p>
+        </div>
+
+        <div id="visualMount"></div>
+
+        <div id="metricGrid" class="grid gap-3 sm:grid-cols-3"></div>
+      </section>
+
+      <section class="premium-panel grid gap-4 rounded-[2.2rem] p-4 sm:p-5" aria-labelledby="scriptTitle">
+        <div class="grid gap-2">
+          <p class="text-[11px] font-bold uppercase tracking-[0.28em] text-gold2/75">
+            Step 03
+          </p>
+          <h3 id="scriptTitle" class="text-xl font-black leading-tight">
+            接客トークスクリプト
+          </h3>
+          <p class="text-sm leading-6 text-ivory/68">
+            画面を見せながら、そのまま読み上げられる新人スタッフ用のカンペです。
+          </p>
+        </div>
+
+        <div class="grid gap-3 rounded-[1.6rem] border border-gold/25 bg-ivory/[.055] p-4 golf-only-glow">
+          <div class="flex items-center justify-between gap-3">
+            <div class="grid gap-1">
+              <p id="scriptStepLabel" class="text-xs font-black uppercase tracking-[0.22em] text-gold2"></p>
+              <h4 id="scriptStepTitle" class="text-lg font-black leading-snug"></h4>
+            </div>
+            <span id="stepCounter" class="rounded-full border border-ivory/15 px-3 py-1 text-xs font-bold text-ivory/64"></span>
+          </div>
+
+          <p id="scriptCopy" class="text-base font-semibold leading-8 text-ivory/90"></p>
+
+          <div id="stepDots" class="flex items-center gap-2 pt-1" aria-hidden="true"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button id="prevScript" type="button" class="rounded-full border border-ivory/18 px-4 py-3 text-sm font-black text-ivory/76 transition hover:border-gold/60 hover:text-gold2 focus:outline-none focus:ring-2 focus:ring-gold/60">
+            戻る
+          </button>
+          <button id="nextScript" type="button" class="rounded-full bg-gradient-to-r from-gold2 to-gold px-4 py-3 text-sm font-black text-[#07160d] shadow-xl shadow-black/20 transition hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-gold2">
+            次のトーク
+          </button>
+        </div>
+
+        <button id="copyScript" type="button" class="rounded-[1.2rem] border border-gold/30 bg-black/15 px-4 py-3 text-sm font-bold text-gold2 transition hover:bg-gold/10 focus:outline-none focus:ring-2 focus:ring-gold/60">
+          現在のカンペをコピー
+        </button>
+
+        <p id="toast" class="hidden rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-gold2"></p>
+      </section>
+    </section>
+
+    <p id="appError" class="hidden rounded-2xl border border-red-200/30 bg-red-950/30 px-4 py-3 text-sm font-bold text-red-100" role="alert"></p>
+  </main>
+
+  <script>
+    const scenes = {
+      putting: {
+        title: "グリーン上でのパッティング",
+        problem: "芝目や微妙な傾斜がのっぺり見えて、カップまでのラインが読みにくいシーン。",
+        standardNarrative: "標準サングラスでは、明るさは落ちても芝の濃淡まで沈みやすく、起伏の手がかりが弱くなります。",
+        golfNarrative: "ゴルフ専用レンズでは、芝の明暗差と影が立ち上がり、傾斜・順目・逆目のヒントが視界に残ります。",
+        metrics: {
+          standard: [
+            ["芝目の立体感", "低い", "芝の濃淡がつぶれて見える"],
+            ["ライン判断", "不安定", "微妙な曲がりが拾いにくい"],
+            ["提案キーワード", "眩しさ対策", "サングラスの説明で終わりやすい"]
+          ],
+          golf: [
+            ["芝目の立体感", "高い", "起伏と影がクッキリ浮き上がる"],
+            ["ライン判断", "安定", "打ち出し方向の根拠を作りやすい"],
+            ["提案キーワード", "スコアアップ", "道具として価値を伝えられる"]
+          ]
+        },
+        scripts: [
+          {
+            label: "共感",
+            title: "まず悩みを言語化する",
+            copy: "「グリーン上で“なんとなく曲がりそう”とは感じても、芝目や傾斜の根拠が見えないと、最後は勘になってしまいますよね。」"
+          },
+          {
+            label: "比較",
+            title: "普通のサングラスとの差を見せる",
+            copy: "「標準サングラスは眩しさを落とす目的なので、芝の濃淡まで一緒に沈みやすいです。こちらの専用レンズに切り替えると、芝の影と起伏が残るので、ラインの読み方が変わります。」"
+          },
+          {
+            label: "価値訴求",
+            title: "ゴルフ専用ギアとして定義する",
+            copy: "「<span class='script-highlight'>これは単に眩しさを防ぐサングラスではありません。芝の起伏を読み、スコアを縮めるための『ゴルフ用ギア（道具）』です</span>。」"
+          },
+          {
+            label: "投資対効果",
+            title: "パター購入との比較で納得感を作る",
+            copy: "「パターを替えても、ラインが読めなければ打ち出しは迷います。だからこそ、<span class='script-highlight'>新しいパターを1本買うよりも、確実なスコアアップに繋がります</span>、というご提案です。」"
+          },
+          {
+            label: "クロージング",
+            title: "試着への自然な導線",
+            copy: "「まずはこの視界差を店内で体感してください。見え方が変わると、グリーン上で迷う時間が減るイメージまで持っていただけると思います。」"
+          }
+        ]
+      },
+
+      tee: {
+        title: "ティーショット",
+        problem: "曇り空や薄い雲と白いボールが同化し、打球の初速方向を追いにくいシーン。",
+        standardNarrative: "標準サングラスでは、空全体が暗くなり、白いボールの輪郭も一緒に沈んでしまいます。",
+        golfNarrative: "ゴルフ専用レンズでは、空・雲・白球の境界を強調し、飛び出したボールの輪郭を追いやすくします。",
+        metrics: {
+          standard: [
+            ["白球の輪郭", "弱い", "曇り空に溶け込みやすい"],
+            ["初速方向の追跡", "難しい", "打ち出し直後を見失いやすい"],
+            ["提案キーワード", "暗さ調整", "眩しさ対策だけに聞こえる"]
+          ],
+          golf: [
+            ["白球の輪郭", "強い", "背景からボールが浮き上がる"],
+            ["初速方向の追跡", "追いやすい", "打球の行方を同伴者に頼りにくくなる"],
+            ["提案キーワード", "ロスト軽減", "プレー全体の安心感を伝えられる"]
+          ]
+        },
+        scripts: [
+          {
+            label: "共感",
+            title: "“見失うストレス”に寄り添う",
+            copy: "「ティーショットで白いボールが曇り空に入ると、打った瞬間は良くても途中で見失ってしまうことがありますよね。」"
+          },
+          {
+            label: "比較",
+            title: "暗くするだけでは解決しないと伝える",
+            copy: "「標準サングラスは全体を暗くするので、空の眩しさは抑えられます。ただ、白球の輪郭も一緒に沈むため、ボールを追う目的では物足りないことがあります。」"
+          },
+          {
+            label: "価値訴求",
+            title: "専用レンズの役割を明確にする",
+            copy: "「<span class='script-highlight'>これは単に眩しさを防ぐサングラスではありません。芝の起伏を読み、スコアを縮めるための『ゴルフ用ギア（道具）』です</span>。ティーショットでは、白球の輪郭を背景から浮かせる役割があります。」"
+          },
+          {
+            label: "投資対効果",
+            title: "クラブ購入より先に視界を整える",
+            copy: "「飛距離を伸ばすクラブも魅力的ですが、ボールを見失う不安があるとプレー全体の集中が切れます。<span class='script-highlight'>新しいパターを1本買うよりも、確実なスコアアップに繋がります</span>、という考え方で選ばれています。」"
+          },
+          {
+            label: "クロージング",
+            title: "同伴者に頼らない安心感で背中を押す",
+            copy: "「“今のどこに飛びました？”と聞く回数を減らせるだけでも、ラウンドの安心感は大きく変わります。まずは標準レンズとの見え方の差を比べてみてください。」"
+          }
+        ]
+      }
+    };
+
+    const state = {
+      scene: null,
+      lens: "standard",
+      scriptIndex: 0
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    const scenePicker = $("#scenePicker");
+    const experience = $("#experience");
+    const appError = $("#appError");
+    const toast = $("#toast");
+
+    const sceneTitle = $("#sceneTitle");
+    const sceneProblem = $("#sceneProblem");
+    const lensNarrative = $("#lensNarrative");
+    const visualMount = $("#visualMount");
+    const metricGrid = $("#metricGrid");
+
+    const standardButton = $("#standardButton");
+    const golfButton = $("#golfButton");
+
+    const scriptStepLabel = $("#scriptStepLabel");
+    const scriptStepTitle = $("#scriptStepTitle");
+    const scriptCopy = $("#scriptCopy");
+    const stepCounter = $("#stepCounter");
+    const stepDots = $("#stepDots");
+    const prevScript = $("#prevScript");
+    const nextScript = $("#nextScript");
+    const copyScript = $("#copyScript");
+
+    function showError(message) {
+      appError.textContent = message;
+      appError.classList.remove("hidden");
+    }
+
+    function clearError() {
+      appError.textContent = "";
+      appError.classList.add("hidden");
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 1800);
+    }
+
+    function assertScene(sceneKey) {
+      if (!Object.prototype.hasOwnProperty.call(scenes, sceneKey)) {
+        throw new Error("選択されたシーンを読み込めませんでした。もう一度選択してください。");
+      }
+      return scenes[sceneKey];
+    }
+
+    function selectScene(sceneKey) {
+      try {
+        clearError();
+        assertScene(sceneKey);
+        state.scene = sceneKey;
+        state.lens = "standard";
+        state.scriptIndex = 0;
+        scenePicker.classList.add("hidden");
+        experience.classList.remove("hidden");
+        experience.classList.add("fade-up");
+        render();
+        experience.scrollIntoView({ block: "start" });
+      } catch (error) {
+        showError(error.message || "予期しないエラーが発生しました。");
+      }
+    }
+
+    function resetExperience() {
+      clearError();
+      state.scene = null;
+      state.lens = "standard";
+      state.scriptIndex = 0;
+      experience.classList.add("hidden");
+      scenePicker.classList.remove("hidden");
+      scenePicker.classList.add("fade-up");
+      scenePicker.scrollIntoView({ block: "start" });
+    }
+
+    function setLens(lens) {
+      try {
+        clearError();
+        if (!["standard", "golf"].includes(lens)) {
+          throw new Error("レンズモードを切り替えられませんでした。");
+        }
+        state.lens = lens;
+        render();
+      } catch (error) {
+        showError(error.message || "レンズ切り替え時にエラーが発生しました。");
+      }
+    }
+
+    function changeScript(delta) {
+      try {
+        const scene = assertScene(state.scene);
+        const max = scene.scripts.length - 1;
+        state.scriptIndex = Math.min(max, Math.max(0, state.scriptIndex + delta));
+        renderScript(scene);
+      } catch (error) {
+        showError(error.message || "トークの切り替えに失敗しました。");
+      }
+    }
+
+    function render() {
+      const scene = assertScene(state.scene);
+
+      document.body.classList.toggle("lens-mode-golf", state.lens === "golf");
+
+      sceneTitle.textContent = scene.title;
+      sceneProblem.textContent = scene.problem;
+      lensNarrative.textContent = state.lens === "golf" ? scene.golfNarrative : scene.standardNarrative;
+
+      standardButton.classList.toggle("is-active", state.lens === "standard");
+      golfButton.classList.toggle("is-active", state.lens === "golf");
+      standardButton.setAttribute("aria-pressed", String(state.lens === "standard"));
+      golfButton.setAttribute("aria-pressed", String(state.lens === "golf"));
+
+      visualMount.innerHTML = state.scene === "putting"
+        ? renderPuttingVisual(state.lens)
+        : renderTeeVisual(state.lens);
+
+      renderMetrics(scene);
+      renderScript(scene);
+    }
+
+    function renderPuttingVisual(lens) {
+      return `
+        <div class="course-window ${lens}" aria-label="パッティング時の芝目シミュレーション">
+          <div class="green-surface" aria-hidden="true">
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+            <div class="green-stripe"></div>
+          </div>
+          <div class="read-line" aria-hidden="true">
+            <div class="ball"></div>
+            <div class="break-curve"></div>
+            <div class="cup"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTeeVisual(lens) {
+      return `
+        <div class="course-window ${lens}" aria-label="ティーショット時の白球追跡シミュレーション">
+          <div class="tee-sky" aria-hidden="true">
+            <div class="sky-band"></div>
+            <div class="sky-band"></div>
+            <div class="sky-band"></div>
+            <div class="sky-band"></div>
+            <div class="sky-band"></div>
+            <div class="sky-band"></div>
+          </div>
+          <div class="flight-zone" aria-hidden="true">
+            <div class="tee-marker">
+              <div class="air-ball"></div>
+              <div class="tee-peg"></div>
+            </div>
+            <div class="flight-trail"></div>
+            <div class="fairway-target"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMetrics(scene) {
+      const rows = scene.metrics[state.lens] || [];
+      metricGrid.innerHTML = rows.map(([label, value, description]) => `
+        <div class="metric grid gap-2 rounded-[1.35rem] p-4">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-ivory/46">${label}</p>
+          <p class="text-xl font-black text-gold2">${value}</p>
+          <p class="text-sm leading-6 text-ivory/66">${description}</p>
+        </div>
+      `).join("");
+    }
+
+    function renderScript(scene) {
+      const scripts = scene.scripts;
+      const current = scripts[state.scriptIndex];
+
+      scriptStepLabel.textContent = current.label;
+      scriptStepTitle.textContent = current.title;
+      scriptCopy.innerHTML = current.copy;
+      stepCounter.textContent = `${state.scriptIndex + 1} / ${scripts.length}`;
+
+      stepDots.innerHTML = scripts.map((_, index) => `
+        <span class="step-dot ${index === state.scriptIndex ? "is-active" : ""}"></span>
+      `).join("");
+
+      prevScript.disabled = state.scriptIndex === 0;
+      nextScript.disabled = state.scriptIndex === scripts.length - 1;
+
+      prevScript.classList.toggle("opacity-40", prevScript.disabled);
+      nextScript.classList.toggle("opacity-40", nextScript.disabled);
+
+      nextScript.textContent = state.scriptIndex === scripts.length - 1
+        ? "完了"
+        : "次のトーク";
+    }
+
+    function plainTextFromHtml(html) {
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      return div.textContent || div.innerText || "";
+    }
+
+    async function copyCurrentScript() {
+      try {
+        const scene = assertScene(state.scene);
+        const current = scene.scripts[state.scriptIndex];
+        const text = `【${scene.title} / ${current.label}】\n${current.title}\n${plainTextFromHtml(current.copy)}`;
+
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+
+        showToast("現在のカンペをコピーしました。");
+      } catch (error) {
+        showError("コピーに失敗しました。ブラウザの設定を確認してください。");
+      }
+    }
+
+    $$(".choice-button").forEach((button) => {
+      button.addEventListener("click", () => selectScene(button.dataset.scene));
+    });
+
+    $("#resetButton").addEventListener("click", resetExperience);
+    standardButton.addEventListener("click", () => setLens("standard"));
+    golfButton.addEventListener("click", () => setLens("golf"));
+    prevScript.addEventListener("click", () => changeScript(-1));
+    nextScript.addEventListener("click", () => changeScript(1));
+    copyScript.addEventListener("click", copyCurrentScript);
+  </script>
+</body>
+</html>
