@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOLF LENS PRO | コントラストシミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'british-green': '#133824',
+                        'british-green-light': '#1A4D32',
+                        'gold-light': '#E8D399',
+                        'gold-main': '#D4AF37',
+                        'gold-dark': '#B89020',
+                        'off-white': '#F4F4F0',
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif JP"', 'Mincho', 'serif'],
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムフォントとベーススタイル */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        body {
+            background-color: #F4F4F0;
+            color: #133824;
+            /* テンプレ的な影を排除し、ソリッドな世界観を構築 */
+        }
+
+        /* シミュレーションエリアのCSSアート（画像不使用） */
+        .sim-canvas {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background-color: #87CEEB; /* デフォルト空 */
+            transition: all 0.8s ease-in-out;
+        }
+
+        /* パッティングシーンの要素 */
+        .scene-putt .green-base {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+            border-radius: 50% 50% 0 0 / 20% 20% 0 0;
+            transition: all 0.8s;
+        }
+        .scene-putt .green-undulation {
+            position: absolute;
+            bottom: 20%;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            background: #43A047;
+            border-radius: 50%;
+            opacity: 0.8;
+            transition: all 0.8s;
+        }
+        .scene-putt .cup {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 15px;
+            background: #111;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+        }
+        .scene-putt .ball {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2);
+            transition: all 0.8s;
+        }
+
+        /* ティーショットシーンの要素 */
+        .scene-tee .sky-cloud {
+            position: absolute;
+            top: 20%;
+            left: 30%;
+            width: 100px;
+            height: 40px;
+            background: #fff;
+            border-radius: 20px;
+            opacity: 0.9;
+            transition: all 0.8s;
+        }
+        .scene-tee .sky-cloud::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border-radius: 50%;
+        }
+        .scene-tee .sky-cloud-2 {
+            position: absolute;
+            top: 10%;
+            right: 20%;
+            width: 80px;
+            height: 30px;
+            background: #fff;
+            border-radius: 15px;
+            opacity: 0.7;
+            transition: all 0.8s;
+        }
+        .scene-tee .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30%;
+            background: #388E3C;
+        }
+        .scene-tee .flying-ball {
+            position: absolute;
+            top: 30%;
+            left: 60%;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.8s;
+        }
+
+        /* レンズフィルター（ここが腕の見せ所） */
+        /* 標準レンズ：のっぺり、白飛び、同化 */
+        .lens-normal .sim-canvas {
+            filter: sepia(0.1) contrast(0.7) brightness(1.1) saturate(0.8);
+        }
+        .lens-normal .green-undulation {
+            box-shadow: none;
+            opacity: 0.3; /* 起伏が見えない */
+        }
+        .lens-normal .flying-ball {
+            box-shadow: 0 0 10px #fff;
+            background: #f0f0f0; /* 雲と同化 */
+        }
+        
+        /* 専用レンズ：クッキリ、立体的、ハイコントラスト */
+        .lens-special .sim-canvas {
+            filter: contrast(1.2) saturate(1.4) brightness(0.95);
+        }
+        .lens-special .green-undulation {
+            box-shadow: inset 0 20px 20px rgba(0,0,0,0.3), 0 10px 10px rgba(255,255,255,0.1);
+            background: #2E7D32;
+            opacity: 1; /* 起伏が浮き出る */
+        }
+        .lens-special .ball, .lens-special .flying-ball {
+            background: #FFF;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset -2px -2px 4px rgba(0,0,0,0.3); /* ボールが際立つ */
+        }
+        .lens-special.scene-tee .sim-canvas {
+            background-color: #4A90E2; /* 空の青みが深くなる */
+        }
+
+        /* アニメーションとユーティリティ */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden-step {
+            display: none;
+        }
+        
+        /* 脱テンプレUI：ゴールドの極細ライン装飾 */
+        .border-gold-fine {
+            border: 1px solid #D4AF37;
+        }
+        .btn-gold-outline {
+            border: 1px solid #D4AF37;
+            color: #D4AF37;
+            background: transparent;
+            transition: all 0.3s;
+        }
+        .btn-gold-outline:hover, .btn-gold-outline.active {
+            background: #D4AF37;
+            color: #133824;
+        }
+
+        /* トークスクリプト用ハイライト */
+        .talk-highlight {
+            background: linear-gradient(transparent 60%, rgba(212, 175, 55, 0.4) 60%);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <!-- Header: 高級ブランドの世界観 -->
+    <header class="w-full max-w-4xl text-center mb-10 fade-in">
+        <h1 class="font-serif text-3xl md:text-4xl text-british-green tracking-widest border-b border-gold-main pb-4 inline-block px-8">
+            GOLF LENS PRO
+        </h1>
+        <p class="mt-4 text-sm md:text-base tracking-wide text-british-green-light">
+            スコアを縮めるための、ただ一つの視界。
+        </p>
+    </header>
+
+    <main class="w-full max-w-4xl flex flex-col gap-8">
+        
+        <!-- STEP 1: シーン選択（プログレッシブ・ディクロージャーの起点） -->
+        <section id="step1" class="w-full flex flex-col items-center gap-6 fade-in">
+            <h2 class="font-serif text-xl md:text-2xl text-center text-british-green">
+                お客様の「見え方」のお悩みはどちらですか？
+            </h2>
+            <div class="flex flex-col md:flex-row gap-4 w-full justify-center">
+                <button onclick="selectScene('putt')" class="w-full md:w-64 bg-british-green text-gold-main border border-gold-main py-4 px-6 hover:bg-british-green-light transition duration-300 font-serif tracking-wide">
+                    グリーンでのパッティング<br>
+                    <span class="text-xs text-off-white font-sans mt-1 inline-block">「芝目や傾斜が読めない」</span>
+                </button>
+                <button onclick="selectScene('tee')" class="w-full md:w-64 bg-british-green text-gold-main border border-gold-main py-4 px-6 hover:bg-british-green-light transition duration-300 font-serif tracking-wide">
+                    ティーショット<br>
+                    <span class="text-xs text-off-white font-sans mt-1 inline-block">「空と同化してボールを見失う」</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: シミュレーション＆トーク（選択後に表示） -->
+        <!-- レスポンシブ: 文字と図形の重なりを避けるため、flex-col (モバイル) / lg:flex-row (PC) を使用 -->
+        <section id="step2" class="hidden-step w-full flex-col lg:flex-row gap-8 lg:gap-12 mt-4">
+            
+            <!-- 左側（上部）: シミュレーション画面 -->
+            <div class="w-full lg:w-3/5 flex flex-col gap-4">
+                <!-- レンズ切り替えボタン -->
+                <div class="flex w-full border-gold-fine p-1 bg-off-white">
+                    <button id="btn-normal" onclick="setLens('normal')" class="flex-1 py-2 text-sm md:text-base font-serif btn-gold-outline active">
+                        標準サングラスの視界
+                    </button>
+                    <button id="btn-special" onclick="setLens('special')" class="flex-1 py-2 text-sm md:text-base font-serif btn-gold-outline relative overflow-hidden group">
+                        <span class="relative z-10">GOLF PRO レンズ</span>
+                        <div class="absolute inset-0 bg-gold-main transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300 z-0"></div>
+                        <span class="relative z-10 group-hover:text-british-green transition-colors duration-300 hidden">GOLF PRO レンズ</span>
+                    </button>
+                </div>
+
+                <!-- シミュレーション描画エリア（絶対座標で被らない独立したブロック） -->
+                <div id="sim-container" class="sim-canvas border-gold-fine shadow-lg scene-putt lens-normal">
+                    <!-- JSでシーンの中身を動的に挿入 -->
+                </div>
+                
+                <p class="text-xs text-center text-gray-500">※ボタンを切り替えて視界の違いをご体感ください。</p>
+            </div>
+
+            <!-- 右側（下部）: トークスクリプト（接客カンペ） -->
+            <div class="w-full lg:w-2/5 flex flex-col gap-6 bg-white border-t-4 border-gold-main p-6 shadow-sm">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="bg-gold-main text-british-green text-xs font-bold px-2 py-1">STAFF SCRIPT</span>
+                    <span class="text-sm text-gray-500">お客様へのお声がけ</span>
+                </div>
+
+                <!-- 共感トーク（シーン選択直後に表示） -->
+                <div id="talk-empathy" class="text-sm md:text-base leading-relaxed text-gray-800 space-y-4">
+                    <!-- JSで挿入 -->
+                </div>
+
+                <!-- 提案トーク（専用レンズ選択後に表示されるクロージング） -->
+                <div id="talk-closing" class="hidden-step mt-4 pt-4 border-t border-gray-200 text-sm md:text-base leading-relaxed text-gray-800 space-y-4 fade-in">
+                    <!-- JSで挿入 -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-4xl text-center mt-16 pb-8 border-t border-gray-300 pt-8">
+        <p class="text-xs text-gray-500 font-serif">© 2026 GOLF LENS PRO. Confidential Tool for Staff.</p>
+    </footer>
+
+    <script>
+        // --- 状態管理 ---
+        const state = {
+            scene: null, // 'putt' or 'tee'
+            lens: 'normal' // 'normal' or 'special'
+        };
+
+        // --- データ定義（手抜き禁止のトークスクリプトと描画要素） ---
+        const contentData = {
+            putt: {
+                html: `
+                    <div class="green-base"></div>
+                    <div class="green-undulation"></div>
+                    <div class="cup"></div>
+                    <div class="ball"></div>
+                `,
+                empathyTalk: `
+                    <p>「普通のサングラスだと、<span class="text-british-green font-bold">眩しさは防げても、肝心の芝目や傾斜がのっぺりと見えてしまって</span>、ラインが読めないですよね。」</p>
+                    <p>「お客様も、グリーン上でサングラスを外してしまうことはありませんか？」</p>
+                `
+            },
+            tee: {
+                html: `
+                    <div class="sky-cloud"></div>
+                    <div class="sky-cloud-2"></div>
+                    <div class="ground"></div>
+                    <div class="flying-ball"></div>
+                `,
+                empathyTalk: `
+                    <p>「曇り空の日など、<span class="text-british-green font-bold">空の色と白いボールが同化してしまって</span>、ナイスショットの行方を見失うと焦りますよね。」</p>
+                    <p>「普通のレンズだと、全体が暗くなるだけでコントラストは出ないんです。」</p>
+                `
+            },
+            closingTalk: `
+                <p>「いかがですか？このGOLF PROレンズは、特定の波長をコントロールすることで、<span class="talk-highlight">芝の起伏やボールの輪郭を立体的に浮き上がらせます。</span>」</p>
+                <p class="mt-4 border-l-4 border-gold-main pl-3 text-british-green">「これは単なるサングラスではありません。情報を正しく読み取り、<span class="talk-highlight">確実なスコアアップに繋げるための『ゴルフ用ギア（道具）』</span>です。新しいパターを1本買うよりも、スコアに直結する投資になりますよ。」</p>
+            `
+        };
+
+        // --- ロジック ---
+
+        // 1. シーンを選択したときの処理（プログレッシブ・ディクロージャー）
+        function selectScene(sceneId) {
+            state.scene = sceneId;
+            state.lens = 'normal'; // シーン変更時は必ず標準レンズに戻す
+
+            // UIの切り替え
+            document.getElementById('step2').classList.remove('hidden-step');
+            document.getElementById('step2').classList.add('flex', 'fade-in');
+            
+            // シミュレーション描画
+            const simContainer = document.getElementById('sim-container');
+            simContainer.innerHTML = contentData[sceneId].html;
+            simContainer.className = `sim-canvas border-gold-fine shadow-lg scene-${sceneId} lens-normal`;
+
+            // トークの挿入
+            document.getElementById('talk-empathy').innerHTML = contentData[sceneId].empathyTalk;
+            document.getElementById('talk-closing').classList.add('hidden-step');
+
+            // ボタンの状態リセット
+            updateButtons();
+            
+            // スムーズスクロール
+            document.getElementById('step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // 2. レンズを切り替えたときの処理
+        function setLens(lensId) {
+            if (!state.scene) return;
+            state.lens = lensId;
+
+            // クラスを書き換えてCSSで視界（フィルター）を変化させる
+            const simContainer = document.getElementById('sim-container');
+            simContainer.className = `sim-canvas border-gold-fine shadow-lg scene-${state.scene} lens-${lensId}`;
+
+            updateButtons();
+
+            // 専用レンズ選択時に、クロージングトークを展開（プログレッシブ）
+            if (lensId === 'special') {
+                const closingEl = document.getElementById('talk-closing');
+                closingEl.innerHTML = contentData.closingTalk;
+                closingEl.classList.remove('hidden-step');
+            }
+        }
+
+        // ボタンの見た目更新
+        function updateButtons() {
+            const btnNormal = document.getElementById('btn-normal');
+            const btnSpecial = document.getElementById('btn-special');
+
+            if (state.lens === 'normal') {
+                btnNormal.classList.add('active');
+                btnSpecial.classList.remove('active');
+            } else {
+                btnNormal.classList.remove('active');
+                btnSpecial.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
