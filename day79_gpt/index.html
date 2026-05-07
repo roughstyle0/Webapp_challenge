@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>跳ね上げ式メガネ 便利さ体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gearNavy: "#0B1624",
+            deepNavy: "#111F32",
+            leather: "#6E4728",
+            leatherDark: "#3D2819",
+            brass: "#C7A15A",
+            blaze: "#F97316",
+            parchment: "#F4E9D7"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --navy: #0b1624;
+      --deep: #111f32;
+      --leather: #6e4728;
+      --leather-dark: #3d2819;
+      --orange: #f97316;
+      --brass: #c7a15a;
+      --paper: #f4e9d7;
+      --ink: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--paper);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(249, 115, 22, 0.18), transparent 28rem),
+        radial-gradient(circle at 100% 25%, rgba(199, 161, 90, 0.12), transparent 24rem),
+        linear-gradient(135deg, #08111d 0%, #0b1624 52%, #162237 100%);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .grain {
+      background-image:
+        linear-gradient(135deg, rgba(255,255,255,0.035) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255,255,255,0.025) 25%, transparent 25%);
+      background-size: 18px 18px;
+    }
+
+    .gear-shell {
+      border: 1px solid rgba(199, 161, 90, 0.32);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)),
+        linear-gradient(135deg, rgba(17,31,50,0.96), rgba(11,22,36,0.96));
+      box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+    }
+
+    .leather-rail {
+      background:
+        linear-gradient(90deg, rgba(61,40,25,0.98), rgba(110,71,40,0.98), rgba(61,40,25,0.98));
+      border-top: 1px solid rgba(244,233,215,0.16);
+      border-bottom: 1px solid rgba(0,0,0,0.4);
+    }
+
+    .scene-button {
+      border: 1px solid rgba(199, 161, 90, 0.3);
+      background:
+        linear-gradient(135deg, rgba(244,233,215,0.11), rgba(244,233,215,0.035)),
+        linear-gradient(135deg, rgba(17,31,50,0.95), rgba(11,22,36,0.95));
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .scene-button:hover,
+    .scene-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(249, 115, 22, 0.9);
+      outline: none;
+      background:
+        linear-gradient(135deg, rgba(249,115,22,0.16), rgba(244,233,215,0.05)),
+        linear-gradient(135deg, rgba(17,31,50,0.98), rgba(11,22,36,0.98));
+    }
+
+    .scene-button.active {
+      border-color: rgba(249,115,22,1);
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.16);
+    }
+
+    .mode-button {
+      border: 1px solid rgba(244,233,215,0.18);
+      background: rgba(244,233,215,0.06);
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .mode-button:hover,
+    .mode-button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+      border-color: rgba(249,115,22,0.9);
+    }
+
+    .mode-button.active {
+      color: #111827;
+      border-color: rgba(249,115,22,1);
+      background: linear-gradient(135deg, #ffb15d, #f97316);
+      box-shadow: 0 10px 28px rgba(249,115,22,0.24);
+    }
+
+    .visual-stage {
+      border: 1px solid rgba(199, 161, 90, 0.25);
+      background:
+        linear-gradient(180deg, rgba(244,233,215,0.08), rgba(244,233,215,0.03)),
+        linear-gradient(135deg, #142238, #0b1624);
+    }
+
+    .scene-badge {
+      border: 1px solid rgba(199, 161, 90, 0.28);
+      background: rgba(244,233,215,0.08);
+    }
+
+    .glasses-lab {
+      perspective: 900px;
+      transform-style: preserve-3d;
+    }
+
+    .glasses-unit {
+      width: min(100%, 25rem);
+      margin-inline: auto;
+      display: grid;
+      gap: 0.7rem;
+      transition: transform 420ms ease;
+    }
+
+    .stable-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.55rem;
+      color: rgba(244,233,215,0.7);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .stable-line {
+      height: 0.25rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(199,161,90,0.75), transparent);
+    }
+
+    .flip-front {
+      transform-origin: top center;
+      transform-style: preserve-3d;
+      transition: transform 720ms cubic-bezier(.2,.9,.2,1);
+      display: grid;
+      grid-template-columns: minmax(4.9rem, 1fr) auto minmax(4.9rem, 1fr);
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .lens {
+      min-height: 5.4rem;
+      display: grid;
+      place-items: center;
+      border: 0.28rem solid rgba(42, 28, 18, 0.98);
+      border-radius: 1.2rem;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.2), rgba(244,233,215,0.04)),
+        rgba(103, 151, 180, 0.16);
+      box-shadow:
+        inset 0 0 0 1px rgba(244,233,215,0.16),
+        0 0.55rem 1.4rem rgba(0,0,0,0.22);
+      color: rgba(244,233,215,0.88);
+      text-align: center;
+      padding: 0.7rem;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .bridge {
+      width: 1.6rem;
+      height: 0.55rem;
+      border-top: 0.28rem solid rgba(42,28,18,0.98);
+      border-radius: 999px;
+    }
+
+    .nose-pad-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.45rem;
+    }
+
+    .nose-pad {
+      width: 0.45rem;
+      height: 0.95rem;
+      border-radius: 999px;
+      background: rgba(244,233,215,0.32);
+      border: 1px solid rgba(244,233,215,0.24);
+    }
+
+    .mode-flip .flip-front {
+      transform: rotateX(-68deg) translateY(-0.35rem);
+    }
+
+    .mode-normal .glasses-unit {
+      transform: translateY(-0.25rem) rotate(-1.2deg);
+    }
+
+    .animate-flip .flip-front {
+      animation: flipUp 900ms cubic-bezier(.2,.9,.2,1) both;
+    }
+
+    .animate-normal .glasses-unit {
+      animation: fumble 900ms ease both;
+    }
+
+    @keyframes flipUp {
+      0% { transform: rotateX(0deg) translateY(0); }
+      46% { transform: rotateX(-82deg) translateY(-0.5rem); }
+      68% { transform: rotateX(-58deg) translateY(-0.25rem); }
+      100% { transform: rotateX(-68deg) translateY(-0.35rem); }
+    }
+
+    @keyframes fumble {
+      0%, 100% { transform: translateY(-0.25rem) rotate(-1.2deg); }
+      30% { transform: translateY(-0.95rem) rotate(4deg); }
+      58% { transform: translateY(-0.6rem) rotate(-4deg); }
+      78% { transform: translateY(-0.35rem) rotate(2deg); }
+    }
+
+    .mode-chip {
+      border: 1px solid rgba(244,233,215,0.15);
+      background: rgba(0,0,0,0.16);
+    }
+
+    .only-normal,
+    .only-flip {
+      display: none;
+    }
+
+    .mode-normal .only-normal,
+    .mode-flip .only-flip {
+      display: grid;
+    }
+
+    .view-window {
+      border: 1px solid rgba(244,233,215,0.14);
+      background:
+        linear-gradient(135deg, rgba(244,233,215,0.1), rgba(244,233,215,0.04));
+    }
+
+    .near-view {
+      transition: filter 500ms ease, opacity 500ms ease, transform 500ms ease, background 500ms ease;
+      border: 1px dashed rgba(199,161,90,0.36);
+      background: rgba(244,233,215,0.08);
+    }
+
+    .mode-normal .near-view {
+      filter: blur(1.7px);
+      opacity: 0.58;
+      transform: scale(0.98);
+    }
+
+    .mode-flip .near-view {
+      filter: blur(0);
+      opacity: 1;
+      transform: scale(1);
+      background:
+        linear-gradient(135deg, rgba(249,115,22,0.24), rgba(244,233,215,0.08));
+      border-color: rgba(249,115,22,0.72);
+    }
+
+    .talk-card {
+      border: 1px solid rgba(249,115,22,0.32);
+      background:
+        linear-gradient(135deg, rgba(249,115,22,0.15), rgba(244,233,215,0.06)),
+        rgba(11,22,36,0.82);
+    }
+
+    .step-card {
+      border: 1px solid rgba(199,161,90,0.22);
+      background: rgba(244,233,215,0.06);
+    }
+
+    .soft-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(249,115,22,0.7) rgba(244,233,215,0.1);
+    }
+
+    .error-box {
+      border: 1px solid rgba(248,113,113,0.5);
+      background: rgba(127,29,29,0.24);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app" class="grain min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+    <div class="mx-auto grid w-full max-w-5xl gap-5">
+      <header class="gear-shell overflow-hidden rounded-[2rem]">
+        <div class="leather-rail grid grid-cols-3 gap-2 px-5 py-2 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-orange-100/80">
+          <span>Flip-Up Gear</span>
+          <span class="text-center text-brass">Demo Kit</span>
+          <span class="text-right">For Staff</span>
+        </div>
+
+        <section class="grid gap-5 p-5 sm:p-7">
+          <div class="grid gap-3">
+            <p class="w-fit rounded-full border border-brass/30 bg-white/5 px-3 py-1 text-xs font-bold tracking-[0.18em] text-brass">
+              大人の趣味を止めない、指一本の便利ギア
+            </p>
+            <h1 class="text-3xl font-black leading-tight tracking-tight text-orange-50 sm:text-5xl">
+              かけ外しのイライラ解消！<br />
+              <span class="text-orange-400">跳ね上げ式メガネ</span>体験シミュレーター
+            </h1>
+            <p class="max-w-2xl text-sm leading-7 text-orange-50/76 sm:text-base">
+              お客様の「いちいち外すのが面倒」を、シーン別にその場で体感してもらう新人スタッフ向けカンペ付きデモアプリです。
+            </p>
+          </div>
+
+          <section aria-labelledby="sceneTitle" class="grid gap-4">
+            <div class="grid gap-1">
+              <h2 id="sceneTitle" class="text-lg font-black text-orange-50">まず、お客様がメガネを外したくなる瞬間を選んでください</h2>
+              <p class="text-sm text-orange-50/62">初期表示はここだけ。選択後に、比較シミュレーションと接客トークが開きます。</p>
+            </div>
+
+            <div id="sceneButtons" class="grid gap-3 sm:grid-cols-3"></div>
+          </section>
+        </section>
+      </header>
+
+      <div id="errorArea" class="hidden rounded-2xl error-box p-4 text-sm text-red-100" role="alert"></div>
+
+      <section id="experience" class="hidden grid gap-5" aria-live="polite"></section>
+    </div>
+  </main>
+
+  <script>
+    const scenes = {
+      fishing: {
+        label: "釣り",
+        icon: "🎣",
+        short: "細かい仕掛けを結ぶ時",
+        moment: "針穴・ハリス・結び目を見たい一瞬",
+        taskLabel: "細い糸と小さな針穴",
+        customerPain: "竿、糸、仕掛けで手元が忙しい。メガネを外す動作が入るだけで集中が切れやすいシーンです。",
+        normal: {
+          title: "通常のメガネ：外す・置く・探すが増える",
+          result: "仕掛けのたびにメガネを頭に乗せるため、濡れた手や風でズレ落ちやすくなります。",
+          stress: "両手がもたつく / 落下が不安 / 結び直しで集中が切れる",
+          steps: [
+            "竿や糸を一度落ち着かせる",
+            "メガネを頭の上へ逃がす",
+            "仕掛けに顔を近づけて結ぶ",
+            "風や濡れた手でメガネがズレそうになる"
+          ],
+          talks: [
+            { tag: "共感", text: "釣りの仕掛けを結ぶ時って、ほんの数秒だけ手元を裸眼で見たくなることがありますよね。" },
+            { tag: "課題整理", text: "通常のメガネだと、そのたびに頭へ上げる、首に掛ける、置く、という余計な動きが入ります。" },
+            { tag: "気づき", text: "特に水辺では、手が濡れていたり風があったりするので、落とす不安が強くなりやすいです。" }
+          ]
+        },
+        flip: {
+          title: "跳ね上げ式：指一本で視界を切り替え",
+          result: "フロントだけがカシャッと上がり、メガネを掛けたまま裸眼の手元視界が開きます。",
+          stress: "落下リスクを減らす / 釣りに集中 / 仕掛け作業がスムーズ",
+          steps: [
+            "竿は持ったまま、片手の指でフロントを上げる",
+            "裸眼で針穴と結び目を確認する",
+            "結び終えたらフロントを戻す",
+            "メガネを置かないので、紛失や落下の不安が少ない"
+          ],
+          talks: [
+            { tag: "実演", text: "こちらは、わざわざ外さなくても、指一本でカシャッと上げるだけで手元が見えます。" },
+            { tag: "利便性", text: "釣り場ではメガネを置く場所に困りますが、掛けたままなので落とす心配を減らせます。" },
+            { tag: "締め", text: "仕掛けに集中したい時間を邪魔しない、大人のための便利ギアとして使っていただけます。" }
+          ]
+        }
+      },
+      golf: {
+        label: "ゴルフ",
+        icon: "⛳",
+        short: "手元のスコアカードを書く時",
+        moment: "スコア欄・鉛筆の先を見たい一瞬",
+        taskLabel: "小さなスコア欄と鉛筆",
+        customerPain: "屋外で遠くを見る時間と、手元の小さな文字を見る時間が細かく切り替わるシーンです。",
+        normal: {
+          title: "通常のメガネ：プレー中に外す動きが目立つ",
+          result: "スコア記入のたびにメガネを外すと、帽子・グローブ・ポケット周りで動作が増えます。",
+          stress: "記入が遅れる / ポケットで傷が心配 / 次の打順で慌てる",
+          steps: [
+            "グローブや鉛筆を持ったままメガネを外す",
+            "帽子の上かポケットに一時避難させる",
+            "スコア欄に小さく記入する",
+            "次のショット前にメガネの位置を確認する"
+          ],
+          talks: [
+            { tag: "共感", text: "ゴルフは遠くを見る時間が長いのに、スコアを書く時だけ手元の小さい文字が気になりますよね。" },
+            { tag: "課題整理", text: "通常のフレームだと、外す、しまう、また掛ける、という動きがプレーのリズムに割り込みます。" },
+            { tag: "気づき", text: "ポケットに入れると傷も心配ですし、帽子の上に乗せると落ちないか気になる方も多いです。" }
+          ]
+        },
+        flip: {
+          title: "跳ね上げ式：プレーの流れを止めない",
+          result: "遠くを見るレンズはそのまま。必要な時だけフロントを上げて、手元を裸眼で確認できます。",
+          stress: "スコア記入が速い / 傷つけにくい / プレーのテンポを維持",
+          steps: [
+            "カードを開いたら、指一本でフロントを上げる",
+            "裸眼でスコア欄と鉛筆の先を見る",
+            "記入後すぐにフロントを戻す",
+            "次のショットへ自然に移れる"
+          ],
+          talks: [
+            { tag: "実演", text: "スコアを書く時だけ、指一本でカシャッと上げるだけ。メガネ自体は外しません。" },
+            { tag: "利便性", text: "ポケットに入れないので傷の不安も少なく、落とす心配もなく使えます。" },
+            { tag: "締め", text: "趣味の集中力を途切れさせない、大人のための便利ギアとしてゴルフと相性が良いです。" }
+          ]
+        }
+      },
+      drive: {
+        label: "ドライブ",
+        icon: "🚗",
+        short: "休憩中にスマホの小さい文字を見る時",
+        moment: "スマホ通知・地図の小さい文字を見たい一瞬",
+        taskLabel: "スマホの小さな文字",
+        customerPain: "運転中は遠く、休憩中はスマホ。視線距離が急に変わるため、かけ外しが増えやすいシーンです。",
+        normal: {
+          title: "通常のメガネ：休憩のたびに置き場所問題",
+          result: "スマホを見るために外したメガネを、車内のどこに置いたか忘れやすくなります。",
+          stress: "ダッシュボードで滑る / シートに置き忘れる / 出発前に探す",
+          steps: [
+            "停車してスマホを取り出す",
+            "小さい文字を見るためにメガネを外す",
+            "ダッシュボードや膝の上に一時置きする",
+            "出発前に『どこに置いた？』が起きやすい"
+          ],
+          talks: [
+            { tag: "共感", text: "休憩中にスマホを見る時だけ、メガネを外したくなることはありませんか。" },
+            { tag: "課題整理", text: "車内は置き場所が多いようで、実は滑ったり、シートに紛れたりしやすい環境です。" },
+            { tag: "気づき", text: "運転前に探す動作が入ると、せっかくの休憩後に小さなストレスが残ります。" }
+          ]
+        },
+        flip: {
+          title: "跳ね上げ式：車内で置き場所を作らない",
+          result: "掛けたままフロントを上げるだけ。スマホ確認後はすぐ遠く用の視界へ戻せます。",
+          stress: "置き忘れ防止 / 車内で探さない / 休憩後の出発がスムーズ",
+          steps: [
+            "スマホを手に取ったら、指一本でフロントを上げる",
+            "裸眼で通知や地図の小さい文字を見る",
+            "読み終えたらその場でフロントを戻す",
+            "メガネを置かないので、車内で見失いにくい"
+          ],
+          talks: [
+            { tag: "実演", text: "車内でも、わざわざ外さなくても、指一本でカシャッと上げるだけで手元が見えます。" },
+            { tag: "利便性", text: "ダッシュボードやシートに置かないので、落とす心配も見失う心配も減らせます。" },
+            { tag: "締め", text: "休憩中のスマホ確認から運転再開まで、集中力を途切れさせない大人のための便利ギアです。" }
+          ]
+        }
+      }
+    };
+
+    const state = {
+      sceneKey: null,
+      mode: null,
+      talkIndex: 0
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+
+    const escapeHtml = (value) => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+
+    function showError(message) {
+      const area = $("#errorArea");
+      area.textContent = message;
+      area.classList.remove("hidden");
+    }
+
+    function clearError() {
+      const area = $("#errorArea");
+      area.textContent = "";
+      area.classList.add("hidden");
+    }
+
+    function getCurrentScene() {
+      return scenes[state.sceneKey] || null;
+    }
+
+    function getCurrentModeData() {
+      const scene = getCurrentScene();
+      if (!scene || !state.mode || !scene[state.mode]) return null;
+      return scene[state.mode];
+    }
+
+    function renderSceneButtons() {
+      const wrapper = $("#sceneButtons");
+      wrapper.innerHTML = Object.entries(scenes).map(([key, scene]) => {
+        const active = state.sceneKey === key ? "active" : "";
+        return `
+          <button type="button" class="scene-button ${active} grid min-h-[8.5rem] gap-3 rounded-[1.6rem] p-4 text-left" data-scene="${escapeHtml(key)}" aria-pressed="${state.sceneKey === key}">
+            <span class="grid grid-cols-[auto_1fr] items-center gap-3">
+              <span class="grid h-12 w-12 place-items-center rounded-2xl border border-brass/30 bg-black/20 text-2xl">${escapeHtml(scene.icon)}</span>
+              <span class="grid gap-1">
+                <span class="text-xl font-black text-orange-50">${escapeHtml(scene.label)}</span>
+                <span class="text-xs font-bold uppercase tracking-[0.14em] text-brass">Scene</span>
+              </span>
+            </span>
+            <span class="text-sm leading-6 text-orange-50/78">${escapeHtml(scene.short)}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderExperience() {
+      const experience = $("#experience");
+      const scene = getCurrentScene();
+
+      if (!scene) {
+        experience.classList.add("hidden");
+        experience.innerHTML = "";
+        return;
+      }
+
+      const modeData = getCurrentModeData();
+      const modeName = state.mode === "normal" ? "通常のメガネ" : state.mode === "flip" ? "跳ね上げ式メガネ" : "";
+      const talk = modeData?.talks?.[state.talkIndex];
+
+      experience.classList.remove("hidden");
+      experience.innerHTML = `
+        <section class="gear-shell grid gap-5 rounded-[2rem] p-5 sm:p-7">
+          <div class="grid gap-4">
+            <button type="button" data-reset-scene class="w-fit rounded-full border border-brass/30 bg-white/5 px-4 py-2 text-xs font-black text-orange-50/88 transition hover:border-orange-400 hover:text-orange-200">
+              ← シーンを選び直す
+            </button>
+
+            <div class="grid gap-3 rounded-[1.5rem] border border-brass/25 bg-black/15 p-4">
+              <div class="grid grid-cols-[auto_1fr] gap-3">
+                <div class="grid h-14 w-14 place-items-center rounded-2xl bg-orange-500/16 text-3xl">${escapeHtml(scene.icon)}</div>
+                <div class="grid gap-1">
+                  <p class="text-xs font-black uppercase tracking-[0.2em] text-brass">Selected Moment</p>
+                  <h2 class="text-2xl font-black text-orange-50">${escapeHtml(scene.label)}：${escapeHtml(scene.short)}</h2>
+                </div>
+              </div>
+              <p class="text-sm leading-7 text-orange-50/72">${escapeHtml(scene.customerPain)}</p>
+            </div>
+          </div>
+
+          <section class="grid gap-3" aria-label="比較モード選択">
+            <p class="text-sm font-black text-orange-50">次に、体験するメガネを選んでください</p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              ${renderModeButton("normal", "通常のメガネ", "外す・置く・探すストレスを確認")}
+              ${renderModeButton("flip", "跳ね上げ式メガネ", "指一本でカシャッと上げる体験")}
+            </div>
+          </section>
+        </section>
+
+        ${modeData ? renderSimulation(scene, modeData, modeName, talk) : renderModePrompt()}
+      `;
+
+      if (modeData) {
+        requestAnimationFrame(() => {
+          const target = $("#simulationTop");
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    }
+
+    function renderModeButton(mode, title, sub) {
+      const active = state.mode === mode ? "active" : "";
+      return `
+        <button type="button" data-mode="${mode}" class="mode-button ${active} grid gap-1 rounded-2xl p-4 text-left" aria-pressed="${state.mode === mode}">
+          <span class="text-base font-black">${escapeHtml(title)}</span>
+          <span class="text-xs leading-5 ${state.mode === mode ? "text-slate-900/80" : "text-orange-50/62"}">${escapeHtml(sub)}</span>
+        </button>
+      `;
+    }
+
+    function renderModePrompt() {
+      return `
+        <section class="gear-shell rounded-[2rem] p-5 sm:p-7">
+          <div class="grid gap-3 rounded-[1.5rem] border border-dashed border-brass/35 bg-white/5 p-5 text-center">
+            <p class="text-4xl">👓</p>
+            <h3 class="text-xl font-black text-orange-50">比較モードを選ぶと、シミュレーションが展開します</h3>
+            <p class="text-sm leading-7 text-orange-50/68">
+              通常のメガネでは「外す手間」、跳ね上げ式では「フロントが上がる動き」を確認できます。
+            </p>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderSimulation(scene, modeData, modeName, talk) {
+      const modeClass = state.mode === "flip" ? "mode-flip animate-flip" : "mode-normal animate-normal";
+      const nextDisabled = state.talkIndex >= modeData.talks.length - 1;
+      const progressPercent = Math.round(((state.talkIndex + 1) / modeData.talks.length) * 100);
+
+      return `
+        <section id="simulationTop" class="grid gap-5">
+          <section class="visual-stage ${modeClass} grid gap-5 rounded-[2rem] p-5 sm:p-7">
+            <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
+              <div class="grid gap-1">
+                <p class="text-xs font-black uppercase tracking-[0.22em] text-brass">${escapeHtml(modeName)} Simulation</p>
+                <h3 class="text-2xl font-black text-orange-50">${escapeHtml(modeData.title)}</h3>
+                <p class="text-sm leading-7 text-orange-50/72">${escapeHtml(modeData.result)}</p>
+              </div>
+              <button type="button" data-replay class="rounded-full border border-orange-400/60 bg-orange-500/15 px-4 py-2 text-sm font-black text-orange-100 transition hover:bg-orange-500/25">
+                アニメーション再生
+              </button>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch">
+              <div class="grid gap-4 rounded-[1.5rem] border border-brass/20 bg-black/18 p-4">
+                <div class="grid gap-3 sm:grid-cols-3">
+                  <div class="scene-badge grid gap-1 rounded-2xl p-3">
+                    <span class="text-2xl">${escapeHtml(scene.icon)}</span>
+                    <span class="text-xs font-bold text-orange-50/62">シーン</span>
+                    <span class="text-sm font-black text-orange-50">${escapeHtml(scene.label)}</span>
+                  </div>
+                  <div class="scene-badge grid gap-1 rounded-2xl p-3 sm:col-span-2">
+                    <span class="text-xs font-bold text-orange-50/62">手元で見たいもの</span>
+                    <span class="text-sm font-black leading-6 text-orange-50">${escapeHtml(scene.taskLabel)}</span>
+                    <span class="text-xs leading-5 text-orange-50/58">${escapeHtml(scene.moment)}</span>
+                  </div>
+                </div>
+
+                <div class="glasses-lab grid gap-4 rounded-[1.4rem] bg-gradient-to-br from-slate-950/35 to-orange-950/10 p-4">
+                  <div class="glasses-unit" aria-label="メガネフレームのシミュレーション">
+                    <div class="stable-bar" aria-hidden="true">
+                      <span class="stable-line"></span>
+                      <span>EAR-FIXED FRAME</span>
+                      <span class="stable-line"></span>
+                    </div>
+
+                    <div class="flip-front">
+                      <div class="lens"><span>遠く用<br />レンズ</span></div>
+                      <div class="bridge" aria-hidden="true"></div>
+                      <div class="lens"><span>遠く用<br />レンズ</span></div>
+                    </div>
+
+                    <div class="nose-pad-row" aria-hidden="true">
+                      <span class="nose-pad"></span>
+                      <span class="nose-pad"></span>
+                    </div>
+                  </div>
+
+                  <div class="only-normal grid gap-2">
+                    <p class="text-sm font-black text-orange-200">通常：外す動作が必要</p>
+                    <div class="grid gap-2 sm:grid-cols-3">
+                      <span class="mode-chip rounded-xl p-3 text-center text-xs font-bold text-orange-50/82">頭へ乗せる</span>
+                      <span class="mode-chip rounded-xl p-3 text-center text-xs font-bold text-orange-50/82">両手がもたつく</span>
+                      <span class="mode-chip rounded-xl p-3 text-center text-xs font-bold text-orange-50/82">落下・紛失が不安</span>
+                    </div>
+                  </div>
+
+                  <div class="only-flip grid gap-2">
+                    <p class="text-sm font-black text-orange-200">跳ね上げ式：掛けたまま切り替え</p>
+                    <div class="grid gap-2 sm:grid-cols-3">
+                      <span class="mode-chip rounded-xl p-3 text-center text-xs font-bold text-orange-50/82">指一本</span>
+                      <span class="mode-chip rounded-xl p-3 text-center text-xs font-bold text-orange-50/82">カシャッ</span>
+                      <span class="mode-chip rounded-xl p-3 text-center text-xs font-bold text-orange-50/82">裸眼視界 OPEN</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="view-window grid content-start gap-4 rounded-[1.5rem] p-4">
+                <div class="grid gap-1">
+                  <p class="text-xs font-black uppercase tracking-[0.2em] text-brass">Near View</p>
+                  <h4 class="text-xl font-black text-orange-50">手元の見え方</h4>
+                </div>
+
+                <div class="near-view grid gap-2 rounded-2xl p-4 text-center">
+                  <span class="text-xs font-black uppercase tracking-[0.18em] text-orange-100/72">Bare-eye zone</span>
+                  <span class="text-2xl font-black text-orange-50">${escapeHtml(scene.moment)}</span>
+                  <span class="text-sm leading-6 text-orange-50/72">
+                    ${state.mode === "flip" ? "フロントが上がり、裸眼の手元視界が開きます。" : "通常は外すまで手元の見えづらさが残ります。"}
+                  </span>
+                </div>
+
+                <div class="grid gap-2 rounded-2xl bg-black/18 p-4">
+                  <p class="text-xs font-black uppercase tracking-[0.18em] text-brass">Stress Meter</p>
+                  <p class="text-sm font-black leading-6 text-orange-50">${escapeHtml(modeData.stress)}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="gear-shell grid gap-5 rounded-[2rem] p-5 sm:p-7">
+            <div class="grid gap-2">
+              <p class="text-xs font-black uppercase tracking-[0.22em] text-brass">Behavior Flow</p>
+              <h3 class="text-2xl font-black text-orange-50">お客様に見せる動作シミュレーション</h3>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              ${modeData.steps.map((step, index) => `
+                <div class="step-card grid gap-3 rounded-2xl p-4">
+                  <span class="grid h-9 w-9 place-items-center rounded-full bg-orange-500 text-sm font-black text-slate-950">${index + 1}</span>
+                  <p class="text-sm font-bold leading-6 text-orange-50/86">${escapeHtml(step)}</p>
+                </div>
+              `).join("")}
+            </div>
+          </section>
+
+          <section class="talk-card grid gap-5 rounded-[2rem] p-5 sm:p-7">
+            <div class="grid gap-2">
+              <p class="text-xs font-black uppercase tracking-[0.22em] text-orange-200">Staff Cheat Sheet</p>
+              <h3 class="text-2xl font-black text-orange-50">新人スタッフ用・接客トークスクリプト</h3>
+              <p class="text-sm leading-7 text-orange-50/68">
+                そのまま読み上げられるカンペです。ボタンで段階的に次のトークを表示します。
+              </p>
+            </div>
+
+            <div class="grid gap-4 rounded-[1.5rem] border border-orange-300/24 bg-black/20 p-4">
+              <div class="grid gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-slate-950">${escapeHtml(talk?.tag || "トーク")}</span>
+                  <span class="text-xs font-bold text-orange-50/58">STEP ${state.talkIndex + 1} / ${modeData.talks.length}</span>
+                </div>
+
+                <p id="talkText" class="text-xl font-black leading-9 text-orange-50 sm:text-2xl">
+                  「${escapeHtml(talk?.text || "トークを表示できませんでした。")}」
+                </p>
+              </div>
+
+              <div class="h-2 overflow-hidden rounded-full bg-white/10" aria-label="トーク進行度">
+                <div class="h-full rounded-full bg-orange-500" style="width:${progressPercent}%"></div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-3">
+                <button type="button" data-next-talk class="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-45" ${nextDisabled ? "disabled" : ""}>
+                  ${nextDisabled ? "最後のトークです" : "次のトークを表示"}
+                </button>
+                <button type="button" data-reset-talk class="rounded-2xl border border-brass/35 bg-white/5 px-4 py-3 text-sm font-black text-orange-50 transition hover:border-orange-400">
+                  トークを最初に戻す
+                </button>
+                <button type="button" data-copy-talk class="rounded-2xl border border-brass/35 bg-white/5 px-4 py-3 text-sm font-black text-orange-50 transition hover:border-orange-400">
+                  今の一言をコピー
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
+      `;
+    }
+
+    function selectScene(key) {
+      if (!scenes[key]) {
+        showError("選択したシーンを読み込めませんでした。もう一度選び直してください。");
+        return;
+      }
+
+      clearError();
+      state.sceneKey = key;
+      state.mode = null;
+      state.talkIndex = 0;
+      renderSceneButtons();
+      renderExperience();
+
+      requestAnimationFrame(() => {
+        const experience = $("#experience");
+        if (experience) experience.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function selectMode(mode) {
+      if (!["normal", "flip"].includes(mode)) {
+        showError("比較モードを読み込めませんでした。通常のメガネ、または跳ね上げ式メガネを選んでください。");
+        return;
+      }
+
+      if (!getCurrentScene()) {
+        showError("先にシーンを選択してください。");
+        return;
+      }
+
+      clearError();
+      state.mode = mode;
+      state.talkIndex = 0;
+      renderSceneButtons();
+      renderExperience();
+    }
+
+    function nextTalk() {
+      const modeData = getCurrentModeData();
+      if (!modeData) {
+        showError("トークデータを読み込めませんでした。比較モードを選び直してください。");
+        return;
+      }
+
+      state.talkIndex = Math.min(state.talkIndex + 1, modeData.talks.length - 1);
+      renderExperience();
+    }
+
+    function resetTalk() {
+      state.talkIndex = 0;
+      renderExperience();
+    }
+
+    async function copyTalk() {
+      const talkText = $("#talkText")?.textContent?.trim();
+      if (!talkText) {
+        showError("コピーできるトークが見つかりませんでした。");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(talkText);
+        clearError();
+        const area = $("#errorArea");
+        area.textContent = "接客トークをコピーしました。";
+        area.classList.remove("hidden");
+        area.classList.remove("error-box");
+        area.classList.add("border", "border-orange-300/40", "bg-orange-500/15", "text-orange-50");
+        setTimeout(() => {
+          area.classList.add("hidden");
+          area.classList.add("error-box");
+          area.classList.remove("border", "border-orange-300/40", "bg-orange-500/15", "text-orange-50");
+        }, 1800);
+      } catch (error) {
+        showError("ブラウザの設定によりコピーできませんでした。トーク文を長押しして手動でコピーしてください。");
+      }
+    }
+
+    function replayAnimation() {
+      const stage = document.querySelector(".visual-stage");
+      if (!stage) return;
+
+      const animationClass = state.mode === "flip" ? "animate-flip" : "animate-normal";
+      stage.classList.remove(animationClass);
+      void stage.offsetWidth;
+      stage.classList.add(animationClass);
+    }
+
+    function resetScene() {
+      state.sceneKey = null;
+      state.mode = null;
+      state.talkIndex = 0;
+      clearError();
+      renderSceneButtons();
+      renderExperience();
+
+      requestAnimationFrame(() => {
+        const header = document.querySelector("header");
+        if (header) header.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function bindEvents() {
+      document.addEventListener("click", (event) => {
+        const sceneButton = event.target.closest("[data-scene]");
+        const modeButton = event.target.closest("[data-mode]");
+
+        if (sceneButton) selectScene(sceneButton.dataset.scene);
+        if (modeButton) selectMode(modeButton.dataset.mode);
+        if (event.target.closest("[data-next-talk]")) nextTalk();
+        if (event.target.closest("[data-reset-talk]")) resetTalk();
+        if (event.target.closest("[data-copy-talk]")) copyTalk();
+        if (event.target.closest("[data-replay]")) replayAnimation();
+        if (event.target.closest("[data-reset-scene]")) resetScene();
+      });
+    }
+
+    function init() {
+      try {
+        renderSceneButtons();
+        renderExperience();
+        bindEvents();
+      } catch (error) {
+        showError("アプリの初期化中に問題が発生しました。ページを再読み込みしてください。");
+        console.error(error);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
