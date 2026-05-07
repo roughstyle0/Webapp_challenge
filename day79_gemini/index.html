@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>フリップアップ・ギア体験シミュレーター</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: 雑誌風の上質な明朝体と視認性の高いゴシック体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;600;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gear: {
+                            navy: '#0f172a',      // 深いネイビー（メイン背景）
+                            navyLight: '#1e293b', // 少し明るいネイビー（セクション背景）
+                            orange: '#f97316',    // アクションを促す視認性の高いオレンジ
+                            orangeDark: '#ea580c',
+                            leather: '#92400e',   // レザーブラウン（アクセント）
+                            leatherLight: '#b45309',
+                            paper: '#f8fafc',     // 雑誌の紙面のようなオフホワイト（テキスト）
+                            muted: '#94a3b8'      // 落ち着いたグレー（補足テキスト）
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        serif: ['"Noto Serif JP"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* ベース設定：テンプレ感の排除、雑誌風の余白設定 */
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            -webkit-font-smoothing: antialiased;
+            background-image: 
+                linear-gradient(rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.95)),
+                url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=');
+        }
+
+        /* --------------------------------------
+           メガネのCSSドローイングと3Dアニメーション
+           ※文字とは絶対に重ならない独立したブロック
+           -------------------------------------- */
+        .glasses-demo-area {
+            perspective: 800px; /* 3D空間の奥行き */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 180px;
+            padding: 20px 0;
+            background-color: #1e293b;
+            border-top: 1px solid #334155;
+            border-bottom: 1px solid #334155;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glasses-model {
+            position: relative;
+            width: 240px;
+            height: 80px;
+            transform-style: preserve-3d;
+        }
+
+        /* テンプル（つる）- 固定 */
+        .temple {
+            position: absolute;
+            top: 10px;
+            width: 8px;
+            height: 120px;
+            background-color: #92400e; /* レザーブラウン */
+            border-radius: 4px;
+            transform-origin: top center;
+        }
+        .temple.left {
+            left: 10px;
+            transform: rotateX(75deg) rotateY(-10deg);
+            box-shadow: inset -2px 0 4px rgba(0,0,0,0.5);
+        }
+        .temple.right {
+            right: 10px;
+            transform: rotateX(75deg) rotateY(10deg);
+            box-shadow: inset 2px 0 4px rgba(0,0,0,0.5);
+        }
+
+        /* フロント（レンズ部分）- ここが跳ね上がる */
+        .front-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5px;
+            transform-origin: top center;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); /* カシャッと跳ね上がるバネ感 */
+            transform-style: preserve-3d;
+        }
+
+        /* 跳ね上げ状態のクラス */
+        .front-frame.is-flipped {
+            transform: rotateX(85deg) translateY(-5px);
+        }
+
+        .lens {
+            width: 46%;
+            height: 100%;
+            border: 6px solid #334155; /* マットなグレーフレーム */
+            border-radius: 12px 12px 24px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.3);
+            backdrop-filter: blur(2px);
+        }
+        
+        .lens::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            width: 30%;
+            height: 40%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+            border-radius: 50%;
+            transform: rotate(-30deg);
+        }
+
+        .bridge {
+            width: 8%;
+            height: 6px;
+            background-color: #334155;
+            align-self: flex-start;
+            margin-top: 15px;
+            border-radius: 3px;
+        }
+
+        /* 視界の比喩表現（メガネの奥） */
+        .vision-target {
+            position: absolute;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+            z-index: -1;
+            opacity: 0.3;
+            transition: opacity 0.5s, color 0.5s;
+        }
+        .is-flipped ~ .vision-target {
+            opacity: 1;
+            color: #f8fafc;
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+        }
+
+        /* カスタムボタンスタイル（テンプレ角丸の排除、エッジの効いたデザイン） */
+        .btn-scene {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background-color: transparent;
+            border: 1px solid #475569;
+            color: #f8fafc;
+            text-align: left;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-scene:hover, .btn-scene.active {
+            border-color: #f97316;
+            background-color: rgba(249, 115, 22, 0.05);
+        }
+        .btn-scene.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: #f97316;
+        }
+
+        /* トークスクリプトの強調（蛍光ペンではなく、雑誌のタイポグラフィ風） */
+        .talk-highlight {
+            color: #f97316;
+            font-weight: 900;
+            border-bottom: 2px solid #92400e;
+            padding-bottom: 2px;
+        }
+
+        /* スムーズな表示切り替え */
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <!-- ヘッダー：雑誌の表紙のようなタイポグラフィ -->
+    <header class="pt-10 pb-6 px-6 border-b border-slate-700">
+        <p class="text-gear-orange text-sm font-bold tracking-widest mb-2">PRACTICAL GEAR FOR ADULTS</p>
+        <h1 class="text-3xl font-serif font-bold leading-tight text-gear-paper mb-3">
+            一瞬の妥協も許さない。<br>
+            <span class="text-gear-leatherLight">跳ね上げ式</span>フレーム体験。
+        </h1>
+        <p class="text-gear-muted text-sm leading-relaxed">
+            接客シミュレーター：お客様の「メガネを外したくなる瞬間」を選び、最適な提案トークを展開してください。
+        </p>
+    </header>
+
+    <!-- メインコンテンツ：flexとgapで隙間なくレスポンシブに管理 -->
+    <main class="flex-1 flex flex-col px-6 py-8 gap-8 max-w-2xl mx-auto w-full">
+
+        <!-- STEP 1: シーン選択（初期表示） -->
+        <section id="step1-scene" class="flex flex-col gap-4">
+            <h2 class="text-lg font-serif border-l-4 border-gear-orange pl-3 text-gear-paper">
+                STEP 1. お客様の利用シーンを選択
+            </h2>
+            <div class="flex flex-col gap-3">
+                <button class="btn-scene" onclick="selectScene('fishing')">
+                    <span class="font-bold">🎣 釣り</span>
+                    <span class="text-sm text-gear-muted">細かい仕掛けを結ぶ時</span>
+                </button>
+                <button class="btn-scene" onclick="selectScene('golf')">
+                    <span class="font-bold">⛳️ ゴルフ</span>
+                    <span class="text-sm text-gear-muted">手元のスコアカードを書く時</span>
+                </button>
+                <button class="btn-scene" onclick="selectScene('drive')">
+                    <span class="font-bold">🚙 ドライブ</span>
+                    <span class="text-sm text-gear-muted">休憩中にスマホの小さい文字を見る時</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: 問題提起（シーン選択後に表示） -->
+        <section id="step2-problem" class="hidden flex-col gap-4 fade-enter">
+            <div class="bg-gear-navyLight p-5 border border-slate-700">
+                <p class="text-gear-orange text-xs font-bold tracking-wider mb-2">CURRENT PROBLEM</p>
+                <p id="problem-text" class="text-gear-paper text-base leading-relaxed mb-4">
+                    <!-- JSでテキストを流し込む -->
+                </p>
+                <button onclick="showSolution()" class="w-full bg-gear-leather hover:bg-gear-leatherLight text-white font-bold py-3 px-4 transition-colors flex justify-center items-center gap-2">
+                    <span>解決策（フリップアップ）を提案する</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 3: 解決策デモと接客トーク（提案ボタン押下後に表示） -->
+        <section id="step3-solution" class="hidden flex-col gap-6 fade-enter pb-10">
+            <h2 class="text-lg font-serif border-l-4 border-gear-orange pl-3 text-gear-paper">
+                STEP 2. フリップアップ機能のデモンストレーション
+            </h2>
+            
+            <!-- アニメーションエリア（文字と絶対に被らない独立ブロック） -->
+            <div class="glasses-demo-area">
+                <div class="glasses-model">
+                    <div class="temple left"></div>
+                    <div class="temple right"></div>
+                    <!-- JSでこの要素に .is-flipped をトグルする -->
+                    <div id="glasses-front" class="front-frame">
+                        <div class="lens"></div>
+                        <div class="bridge"></div>
+                        <div class="lens"></div>
+                    </div>
+                </div>
+                <div class="vision-target font-serif">CLEAR VISION</div>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="flex gap-4">
+                <button onclick="toggleGlasses()" class="flex-1 bg-gear-orange hover:bg-gear-orangeDark text-white font-bold py-3 px-4 shadow-lg shadow-orange-900/50 transition-all active:scale-95">
+                    カシャッと跳ね上げる
+                </button>
+            </div>
+
+            <!-- 接客トークスクリプト（カンペ） -->
+            <div class="mt-4">
+                <p class="text-gear-orange text-xs font-bold tracking-wider mb-3">TALK SCRIPT</p>
+                <div class="flex flex-col gap-4 font-serif text-lg leading-loose bg-gear-navyLight p-6 border-t-2 border-gear-orange">
+                    <p id="talk-intro" class="text-gear-muted">
+                        <!-- JS -->
+                    </p>
+                    <p id="talk-action" class="text-gear-paper">
+                        <!-- JS -->
+                    </p>
+                    <p id="talk-benefit" class="text-gear-paper">
+                        <!-- JS -->
+                    </p>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 text-right">※上記トークを読み上げながら、デモをお見せしてください。</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- データ定義：手抜きなしの充実したテキスト群 ---
+        const sceneData = {
+            fishing: {
+                problem: "ああっ、手元のラインが見えない…！竿を小脇に抱えて、両手でメガネを外して首にかけて…あっ、仕掛け落とした！貴重なマズメ時（チャンス）なのに、煩わしい！",
+                talkIntro: "「釣りの最中、仕掛けの結び直しでメガネを外してイライラしたご経験はありませんか？」",
+                talkAction: "「この『跳ね上げ式フレーム』なら、わざわざ両手で外す必要はありません。<span class='talk-highlight'>指一本でフロントをカシャッと上げるだけ</span>です。」",
+                talkBenefit: "「両手が自由なまま、すぐに手元のピントが合います。大切なロッドを落とす心配もなく、<span class='talk-highlight'>貴重な『時合い』での集中力を絶対に途切れさせない</span>、アングラー必携のギアです。」"
+            },
+            golf: {
+                problem: "グリーン上でスコアカードを書く時、手元が見えづらい。パターを脇に挟んで、片手でメガネを外そうとしたらツルが帽子に引っかかって…落としてレンズに傷が！",
+                talkIntro: "「ラウンド中、スコア記入やスマホ確認のたびに、メガネの着脱に手間取っていませんか？」",
+                talkAction: "「この『跳ね上げ式』なら、パターを持ったままでも大丈夫。<span class='talk-highlight'>片手の指先でカシャッと跳ね上げるだけ</span>で、すぐに手元が見えます。」",
+                talkBenefit: "「外したメガネを落として傷つけるリスクもゼロ。スマートな動作で、<span class='talk-highlight'>プレーの心地よいリズムを一切崩さない</span>、大人のための実用的な一本です。」"
+            },
+            drive: {
+                problem: "長距離ドライブの休憩中、スマホの小さい文字でルート確認。メガネを外してダッシュボードに置いたら、発進時に滑ってフロアに落ちてしまった…。",
+                talkIntro: "「ドライブの休憩時、スマホを見るために外したメガネの置き場に困ったことはありませんか？」",
+                talkAction: "「この『跳ね上げ式』なら、外してどこかに置く必要すらありません。<span class='talk-highlight'>少し手元を見たい時だけ、カシャッと上げる</span>。」",
+                talkBenefit: "「運転席から降りることなく、視界の切り替えが完了します。メガネを見失うストレスから解放され、<span class='talk-highlight'>ドライブの快適さを格段に引き上げる</span>頼もしい相棒になります。」"
+            }
+        };
+
+        // --- ロジック：状態管理とDOM操作（プログレッシブ・ディクロージャー） ---
+        let currentScene = null;
+        let isFlipped = false;
+
+        function selectScene(sceneKey) {
+            currentScene = sceneKey;
+            
+            // ボタンのUI更新（Active状態）
+            document.querySelectorAll('.btn-scene').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // データの注入
+            const data = sceneData[sceneKey];
+            document.getElementById('problem-text').innerHTML = data.problem;
+            
+            // STEP 3（解決策）が開いている場合は一旦閉じる（状態リセット）
+            document.getElementById('step3-solution').classList.add('hidden');
+            document.getElementById('step3-solution').classList.remove('flex');
+            
+            // メガネの状態リセット
+            isFlipped = false;
+            updateGlassesUI();
+
+            // STEP 2（問題提起）の表示
+            const step2 = document.getElementById('step2-problem');
+            step2.classList.remove('hidden');
+            step2.classList.add('flex');
+            
+            // スムーズなスクロール
+            setTimeout(() => {
+                step2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+        }
+
+        function showSolution() {
+            if (!currentScene) return;
+
+            // トークスクリプトの注入
+            const data = sceneData[currentScene];
+            document.getElementById('talk-intro').innerHTML = data.talkIntro;
+            document.getElementById('talk-action').innerHTML = data.talkAction;
+            document.getElementById('talk-benefit').innerHTML = data.talkBenefit;
+
+            // STEP 3（解決策）の表示
+            const step3 = document.getElementById('step3-solution');
+            step3.classList.remove('hidden');
+            step3.classList.add('flex');
+
+            // スムーズなスクロール
+            setTimeout(() => {
+                step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+        }
+
+        function toggleGlasses() {
+            isFlipped = !isFlipped;
+            updateGlassesUI();
+        }
+
+        function updateGlassesUI() {
+            const front = document.getElementById('glasses-front');
+            const btn = document.querySelector('button[onclick="toggleGlasses()"]');
+            
+            if (isFlipped) {
+                front.classList.add('is-flipped');
+                btn.innerHTML = 'メガネを下ろす';
+                btn.classList.remove('bg-gear-orange', 'hover:bg-gear-orangeDark', 'shadow-orange-900/50');
+                btn.classList.add('bg-slate-600', 'hover:bg-slate-500', 'shadow-slate-900/50');
+            } else {
+                front.classList.remove('is-flipped');
+                btn.innerHTML = 'カシャッと跳ね上げる';
+                btn.classList.remove('bg-slate-600', 'hover:bg-slate-500', 'shadow-slate-900/50');
+                btn.classList.add('bg-gear-orange', 'hover:bg-gear-orangeDark', 'shadow-orange-900/50');
+            }
+        }
+    </script>
+</body>
+</html>
