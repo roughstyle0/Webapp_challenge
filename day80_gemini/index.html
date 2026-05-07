@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bespoke Vision | フルオーダーメイドレンズ シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            900: '#060a14',
+                            800: '#0f172a',
+                            700: '#1e293b',
+                        },
+                        platinum: {
+                            DEFAULT: '#e5e4e2',
+                            dark: '#a09f9d',
+                            light: '#ffffff'
+                        },
+                        gold: '#d4af37'
+                    },
+                    fontFamily: {
+                        serif: ['Cinzel', 'serif'],
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'grid-pattern': `
+                            linear-gradient(to right, rgba(229, 228, 226, 0.05) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(229, 228, 226, 0.05) 1px, transparent 1px)
+                        `,
+                        'grid-pattern-fine': `
+                            linear-gradient(to right, rgba(229, 228, 226, 0.02) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(229, 228, 226, 0.02) 1px, transparent 1px)
+                        `
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスクロールバー等、UIの微調整 */
+        body {
+            background-color: #060a14;
+            color: #e5e4e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* テンプレの角丸・影付きカードを廃し、高級テーラー風の細い罫線と余白を基調とするスタイル */
+        .bespoke-border {
+            border: 1px solid rgba(229, 228, 226, 0.2);
+        }
+        .bespoke-border-y {
+            border-top: 1px solid rgba(229, 228, 226, 0.2);
+            border-bottom: 1px solid rgba(229, 228, 226, 0.2);
+        }
+
+        /* 視界シミュレーション：周辺部の歪みとぼやけを表現するマスク */
+        .lens-distortion {
+            /* 中心部はクリア、周辺にいくほどすりガラスのように歪み・ぼやける表現 */
+            mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
+            -webkit-mask-image: radial-gradient(circle at center, transparent 30%, black 80%);
+            backdrop-filter: blur(8px) contrast(1.2) sepia(20%);
+            -webkit-backdrop-filter: blur(8px) contrast(1.2) sepia(20%);
+        }
+
+        /* アニメーション用クラス */
+        .fade-in {
+            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* トークスクリプト内の強調表示 */
+        .highlight-talk {
+            color: #ffffff;
+            border-bottom: 1px solid #d4af37;
+            padding-bottom: 2px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen flex flex-col items-center justify-center p-4 md:p-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdib3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAzNHYzLTVoMnYtM2gtMnptMC0yaC0ydi0zaDJ2M3ptLTItM2gtMnoiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiIvPjwvZz48L3N2Zz4=')]">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl flex flex-col items-center mb-12 fade-in">
+        <p class="font-serif text-platinum-dark text-xs tracking-[0.3em] uppercase mb-2">Bespoke Vision Simulator</p>
+        <h1 class="text-2xl md:text-4xl font-serif text-platinum-light tracking-wider text-center border-b border-platinum-dark pb-4 px-8">
+            究極の視界を、<br class="md:hidden">あなたに合わせて仕立てる。
+        </h1>
+    </header>
+
+    <!-- Main Container: モバイルファーストのflex-colベース -->
+    <main class="w-full max-w-4xl flex flex-col gap-8 md:gap-12 pb-16">
+
+        <!-- Step 1: 初期画面（情報過多を防ぐための最小限のUI） -->
+        <section id="step-1" class="flex flex-col gap-6 w-full fade-in">
+            <div class="text-center mb-4">
+                <p class="text-sm md:text-base text-platinum-dark">お客様が現在抱えている「見え方のお悩み」を選択してください。</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 選択肢ボタン群: テンプレカードではなく、細枠の洗練されたボタン -->
+                <button onclick="selectTrouble('distortion')" class="bespoke-border bg-navy-800/50 hover:bg-navy-700/80 transition-all duration-300 p-6 flex flex-col items-center justify-center gap-4 group text-left h-full">
+                    <span class="font-serif text-xl text-platinum-dark group-hover:text-platinum-light transition-colors">I.</span>
+                    <span class="text-sm leading-relaxed">視界の端（周辺部）が歪んで見えるのが気になる</span>
+                </button>
+                <button onclick="selectTrouble('power')" class="bespoke-border bg-navy-800/50 hover:bg-navy-700/80 transition-all duration-300 p-6 flex flex-col items-center justify-center gap-4 group text-left h-full">
+                    <span class="font-serif text-xl text-platinum-dark group-hover:text-platinum-light transition-colors">II.</span>
+                    <span class="text-sm leading-relaxed">度数が強くて、どうしても見え方に違和感が出る</span>
+                </button>
+                <button onclick="selectTrouble('best')" class="bespoke-border bg-navy-800/50 hover:bg-navy-700/80 transition-all duration-300 p-6 flex flex-col items-center justify-center gap-4 group text-left h-full">
+                    <span class="font-serif text-xl text-platinum-dark group-hover:text-platinum-light transition-colors">III.</span>
+                    <span class="text-sm leading-relaxed">どうせ買うなら、自分の目に一番合った最高のレンズが欲しい</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 2: シミュレーション＆接客トーク (初期状態は非表示) -->
+        <section id="step-2" class="hidden flex-col gap-8 w-full">
+            
+            <!-- お客様への共感導入文 -->
+            <div class="bespoke-border-y py-6 px-4 md:px-8 bg-navy-800/20">
+                <p id="empathy-text" class="text-sm md:text-base leading-loose text-platinum-light text-center">
+                    <!-- JSで動的に挿入 -->
+                </p>
+            </div>
+
+            <!-- シミュレーター & トークエリア: スマホでは縦積み、PCでは横並び（文字と図形の被り絶対回避） -->
+            <div class="flex flex-col lg:flex-row gap-8 items-stretch">
+                
+                <!-- 左側：視界シミュレーションエリア (図形ブロック) -->
+                <div class="w-full lg:w-1/2 flex flex-col gap-4">
+                    <h3 class="font-serif text-xs tracking-widest text-platinum-dark uppercase text-center">Vision Simulator</h3>
+                    
+                    <!-- シミュレーション画面枠 -->
+                    <div class="relative w-full aspect-square md:aspect-video lg:aspect-square bespoke-border bg-navy-900 overflow-hidden group">
+                        
+                        <!-- 背景となる精密なグリッド（視界の基準） -->
+                        <div class="absolute inset-0 bg-grid-pattern bg-[size:40px_40px] opacity-30"></div>
+                        <div class="absolute inset-0 bg-grid-pattern-fine bg-[size:10px_10px] opacity-10"></div>
+                        
+                        <!-- 中央のフォーカスターゲット -->
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 border border-platinum/40 rounded-full flex items-center justify-center">
+                            <div class="w-1 h-1 bg-platinum rounded-full"></div>
+                        </div>
+                        <div class="absolute top-1/2 left-0 w-full h-[1px] bg-platinum/10 -translate-y-1/2"></div>
+                        <div class="absolute left-1/2 top-0 w-[1px] h-full bg-platinum/10 -translate-x-1/2"></div>
+
+                        <!-- 歪み・ぼやけレイヤー (標準レンズ時に表示) -->
+                        <div id="lens-overlay" class="absolute inset-0 lens-distortion transition-all duration-1000 ease-in-out opacity-100">
+                            <!-- 歪みを強調するための疑似グラデーション -->
+                            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(15,23,42,0.6)_100%)]"></div>
+                        </div>
+
+                        <!-- ステータスラベル -->
+                        <div class="absolute bottom-4 left-4 bg-black/80 px-3 py-1 border border-platinum-dark/30 backdrop-blur-sm">
+                            <span id="lens-status-label" class="font-serif text-xs tracking-wider text-platinum-light">STANDARD LENS</span>
+                        </div>
+                    </div>
+
+                    <!-- レンズ切り替えコントローラー -->
+                    <div class="flex bg-navy-800 p-1 bespoke-border mt-2">
+                        <button id="btn-standard" onclick="switchLens('standard')" class="flex-1 py-3 text-xs md:text-sm tracking-widest uppercase transition-all duration-300 bg-platinum text-navy-900 font-bold">
+                            標準レンズ (既製品)
+                        </button>
+                        <button id="btn-bespoke" onclick="switchLens('bespoke')" class="flex-1 py-3 text-xs md:text-sm tracking-widest uppercase transition-all duration-300 text-platinum hover:bg-navy-700">
+                            フルオーダーメイド (個別設計)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 右側：接客トークスクリプトエリア (テキストブロック) -->
+                <div class="w-full lg:w-1/2 flex flex-col gap-6 bg-navy-800/30 p-6 md:p-8 bespoke-border">
+                    <div class="flex items-center gap-3 border-b border-gray-700 pb-4">
+                        <div class="w-2 h-2 bg-platinum rounded-full"></div>
+                        <h3 class="font-serif text-sm tracking-widest text-platinum-light uppercase">Staff Script</h3>
+                        <span class="text-[10px] text-platinum-dark bg-navy-900 px-2 py-0.5 border border-gray-700 ml-auto">※そのままお読みください</span>
+                    </div>
+
+                    <!-- 標準レンズ時のトーク -->
+                    <div id="talk-standard" class="flex flex-col gap-4 text-sm md:text-base leading-loose text-platinum-dark transition-opacity duration-500">
+                        <p>「お客様が現在気になられている違和感は、こちらの<span class="highlight-talk">『標準レンズ』の構造</span>によるものが大きいです。」</p>
+                        <p>「標準レンズは、洋服で例えるなら<span class="highlight-talk">『S・M・Lサイズで作られた既製服』</span>です。多くの方に合うように作られていますが、画面をご覧ください。中心のピントは合っていますが、<span class="highlight-talk">視界の端（周辺部）にはどうしても歪みやぼやけ</span>が生じてしまいます。」</p>
+                        <p id="standard-specific-talk" class="text-platinum italic mt-2 border-l-2 border-platinum-dark pl-4">
+                            <!-- 悩みに応じた専用トーク -->
+                        </p>
+                    </div>
+
+                    <!-- オーダーメイドレンズ時のトーク (初期非表示) -->
+                    <div id="talk-bespoke" class="hidden flex-col gap-4 text-sm md:text-base leading-loose text-platinum-dark transition-opacity duration-500">
+                        <p>「一方、こちらの<span class="highlight-talk">『フルオーダーメイド（個別設計）レンズ』</span>をご覧ください。周辺部の歪みがスゥーッと消え、隅々までクリアになったのがお分かりいただけますでしょうか。」</p>
+                        <p>「これは、お客様専用に仕立てる<span class="highlight-talk">『最高級のオーダースーツ』</span>と同じです。お客様の顔の形、目からレンズまでの距離、フレームの傾き角度まで、すべてをミリ単位で計算し、<span class="highlight-talk">あなた専用の設計図をもとにレンズを削り出します。</span>」</p>
+                        <p id="bespoke-specific-talk" class="text-platinum font-medium mt-2 border-l-2 border-gold pl-4 text-gold">
+                            <!-- 悩みに応じた専用トーク -->
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- リセットボタン -->
+            <div class="text-center mt-8">
+                <button onclick="resetApp()" class="text-xs tracking-widest text-platinum-dark hover:text-platinum-light border-b border-transparent hover:border-platinum-light transition-all pb-1 uppercase">
+                    ← 悩みの選択に戻る
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // データ定義：ユーザーの悩みに応じた細かなテキストの出し分け（手抜き禁止ルールの遵守）
+        const contentData = {
+            distortion: {
+                empathy: "「視界の端が歪むのが気になる」—— そのお悩み、非常によくわかります。実は、レンズの端は物理的に光の屈折が複雑になり、歪みが出やすい部分なのです。",
+                standardTalk: "特に車の運転や、ふと横目でものを見た時に、この周辺部の歪みが『視界の揺れ』や『疲れ』の原因になってしまいます。",
+                bespokeTalk: "個別設計レンズなら、レンズの端まで光学的な補正をかけるため、まるで裸眼のように、どの角度を見てもフラットで自然な視界を手に入れることができます。もう、横目で見ても歪みは気になりません。"
+            },
+            power: {
+                empathy: "「度数が強くて違和感が出る」—— 強い度数の方ほど、レンズを通した世界にストレスを感じやすいものです。レンズが厚くなるほど、収差（見え方のズレ）は大きくなります。",
+                standardTalk: "度数が強い既製品レンズの場合、このシミュレーション以上に、視界がギュッと縮んで見えたり、フェイスラインが凹んで見えたりする違和感が強く出てしまいます。",
+                bespokeTalk: "お度数が強い方にこそ、個別設計レンズは真価を発揮します。お客様の強い度数と、選ばれたフレームの形状を掛け合わせて最適化するため、視界の違和感を極限まで削ぎ落とし、最も薄く美しく仕上がります。"
+            },
+            best: {
+                empathy: "「せっかくなら最高のものを」—— 素晴らしいお考えです。メガネは朝起きてから夜寝るまで、お客様の『視覚』という最も重要な感覚を支え続けるパートナーですから。",
+                standardTalk: "既製品の標準レンズでも見えないわけではありません。しかし、それはあくまで『平均的な人の顔と目』に合わせて作られた、最大公約数的な見え方でしかありません。",
+                bespokeTalk: "お客様は唯一無二の存在です。目とレンズの距離や角度を精緻に計測し、お客様だけの為に作られたこのレンズは、『視界の質』そのものをワンランク上に引き上げ、毎日の生活をより豊かで快適なものに変えてくれます。"
+            }
+        };
+
+        let currentTrouble = '';
+
+        // Step 1 -> Step 2 への遷移とデータ挿入
+        function selectTrouble(troubleType) {
+            currentTrouble = troubleType;
+            const data = contentData[troubleType];
+
+            // テキストの挿入
+            document.getElementById('empathy-text').innerHTML = data.empathy;
+            document.getElementById('standard-specific-talk').innerHTML = data.standardTalk;
+            document.getElementById('bespoke-specific-talk').innerHTML = data.bespokeTalk;
+
+            // UIの切り替え (プログレッシブ・ディクロージャー)
+            document.getElementById('step-1').classList.add('hidden');
+            const step2 = document.getElementById('step-2');
+            step2.classList.remove('hidden');
+            step2.classList.add('flex', 'fade-in');
+
+            // 状態を標準レンズにリセット
+            switchLens('standard');
+            
+            // スクロールを少し下げる（スマホ操作時の配慮）
+            window.scrollTo({ top: document.getElementById('step-2').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        // レンズ（シミュレーションとトーク）の切り替えロジック
+        function switchLens(type) {
+            const overlay = document.getElementById('lens-overlay');
+            const statusLabel = document.getElementById('lens-status-label');
+            const btnStandard = document.getElementById('btn-standard');
+            const btnBespoke = document.getElementById('btn-bespoke');
+            const talkStandard = document.getElementById('talk-standard');
+            const talkBespoke = document.getElementById('talk-bespoke');
+
+            if (type === 'standard') {
+                // シミュレーション変化
+                overlay.style.opacity = '1';
+                overlay.style.transform = 'scale(1)';
+                statusLabel.innerText = 'STANDARD LENS';
+                
+                // ボタンのスタイル切り替え
+                btnStandard.className = "flex-1 py-3 text-xs md:text-sm tracking-widest uppercase transition-all duration-300 bg-platinum text-navy-900 font-bold";
+                btnBespoke.className = "flex-1 py-3 text-xs md:text-sm tracking-widest uppercase transition-all duration-300 text-platinum hover:bg-navy-700";
+
+                // トークスクリプトの切り替え
+                talkBespoke.classList.add('hidden');
+                talkBespoke.classList.remove('flex');
+                talkStandard.classList.remove('hidden');
+                talkStandard.classList.add('flex');
+                
+            } else if (type === 'bespoke') {
+                // シミュレーション変化 (歪みがスゥーッと消える)
+                overlay.style.opacity = '0';
+                overlay.style.transform = 'scale(1.05)'; // 少し広がる演出
+                statusLabel.innerText = 'BESPOKE (INDIVIDUAL) LENS';
+                
+                // ボタンのスタイル切り替え
+                btnStandard.className = "flex-1 py-3 text-xs md:text-sm tracking-widest uppercase transition-all duration-300 text-platinum hover:bg-navy-700";
+                btnBespoke.className = "flex-1 py-3 text-xs md:text-sm tracking-widest uppercase transition-all duration-300 bg-platinum text-navy-900 font-bold border border-platinum";
+
+                // トークスクリプトの切り替え
+                talkStandard.classList.add('hidden');
+                talkStandard.classList.remove('flex');
+                talkBespoke.classList.remove('hidden');
+                talkBespoke.classList.add('flex');
+            }
+        }
+
+        // 初期画面に戻る
+        function resetApp() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('flex', 'fade-in');
+            
+            const step1 = document.getElementById('step-1');
+            step1.classList.remove('hidden');
+            step1.classList.add('fade-in');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
