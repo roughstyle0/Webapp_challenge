@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>キッズ近視進行抑制レンズ 安心シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --cream: #fffdf5;
+      --mint: #b9ead7;
+      --mint-deep: #4fb895;
+      --sky: #a9ddff;
+      --sky-deep: #4aa3df;
+      --soft-yellow: #ffe9a8;
+      --ink: #254052;
+      --muted: #6c7f8c;
+      --coral: #ff9b91;
+      --line: rgba(37, 64, 82, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(169,221,255,.42) 0 120px, transparent 121px),
+        radial-gradient(circle at 88% 14%, rgba(185,234,215,.52) 0 150px, transparent 151px),
+        linear-gradient(180deg, #fffdf7 0%, #f4fbf8 48%, #f7fcff 100%);
+      font-family: ui-rounded, "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+    }
+
+    .soft-board {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.54)),
+        repeating-linear-gradient(45deg, rgba(185,234,215,.11) 0 12px, rgba(169,221,255,.10) 12px 24px);
+      border: 1px solid rgba(79,184,149,.18);
+      box-shadow: 0 18px 60px rgba(58, 121, 148, .14);
+      backdrop-filter: blur(14px);
+    }
+
+    .cloud {
+      width: 76px;
+      height: 40px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      position: relative;
+      box-shadow: 0 10px 22px rgba(74,163,223,.10);
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: inherit;
+    }
+
+    .cloud::before {
+      width: 34px;
+      height: 34px;
+      left: 10px;
+      top: -14px;
+    }
+
+    .cloud::after {
+      width: 42px;
+      height: 42px;
+      right: 8px;
+      top: -20px;
+    }
+
+    .choice-btn {
+      background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(240,251,247,.92));
+      border: 2px solid rgba(79,184,149,.22);
+      box-shadow: 0 12px 26px rgba(45,103,128,.10);
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .choice-btn:hover,
+    .choice-btn:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(79,184,149,.62);
+      box-shadow: 0 16px 32px rgba(45,103,128,.16);
+      outline: none;
+    }
+
+    .choice-icon {
+      background:
+        radial-gradient(circle at 35% 30%, #fff 0 14px, transparent 15px),
+        linear-gradient(135deg, var(--sky), var(--mint));
+    }
+
+    .pill-tab {
+      transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
+    }
+
+    .pill-tab[aria-pressed="true"] {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(48,112,142,.16);
+    }
+
+    .stage {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.50)),
+        radial-gradient(circle at 16% 20%, rgba(255,233,168,.45), transparent 28%),
+        radial-gradient(circle at 90% 8%, rgba(169,221,255,.35), transparent 30%);
+      border: 1px solid rgba(74,163,223,.16);
+    }
+
+    .eye-frame {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      padding: 28px 20px;
+      overflow: hidden;
+    }
+
+    .eye-row {
+      width: min(100%, 330px);
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .lens-figure {
+      width: 54px;
+      height: 118px;
+      border-radius: 50%;
+      border: 3px solid rgba(74,163,223,.54);
+      background: linear-gradient(90deg, rgba(169,221,255,.16), rgba(255,255,255,.74), rgba(185,234,215,.22));
+      box-shadow: inset 0 0 22px rgba(74,163,223,.16);
+      position: relative;
+    }
+
+    .lens-figure.control::before,
+    .lens-figure.control::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 38px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid rgba(79,184,149,.55);
+    }
+
+    .lens-figure.control::before { top: 20px; }
+    .lens-figure.control::after { bottom: 20px; }
+
+    .eye-wrap {
+      width: 220px;
+      height: 148px;
+      display: grid;
+      place-items: center;
+      overflow: visible;
+      position: relative;
+    }
+
+    .eye-ball {
+      width: 168px;
+      height: 124px;
+      border-radius: 56% 48% 48% 56% / 50%;
+      background:
+        radial-gradient(circle at 34% 48%, rgba(255,255,255,.98) 0 23px, rgba(221,246,255,.94) 24px 42px, transparent 43px),
+        linear-gradient(90deg, #fffef7 0%, #eefaff 58%, #e5f8ef 100%);
+      border: 4px solid rgba(37,64,82,.16);
+      box-shadow:
+        inset -14px 0 24px rgba(74,163,223,.10),
+        0 18px 30px rgba(72,123,145,.12);
+      position: relative;
+      transform-origin: left center;
+    }
+
+    .eye-ball.standard {
+      animation: elongate 1.45s ease-in-out infinite alternate;
+      border-color: rgba(255,155,145,.48);
+    }
+
+    .eye-ball.control {
+      animation: calm 1.05s ease-out both;
+      border-color: rgba(79,184,149,.52);
+    }
+
+    .retina {
+      position: absolute;
+      right: 15px;
+      top: 18px;
+      width: 8px;
+      height: 82px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,155,145,.80), rgba(255,201,165,.74));
+    }
+
+    .focus-dot {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      top: 54px;
+      box-shadow: 0 0 0 8px rgba(255,233,168,.35);
+    }
+
+    .standard .focus-dot {
+      right: -26px;
+      background: var(--coral);
+      animation: anxiousDot 1.45s ease-in-out infinite alternate;
+    }
+
+    .control .focus-dot {
+      right: 38px;
+      background: var(--mint-deep);
+      box-shadow: 0 0 0 10px rgba(185,234,215,.48);
+    }
+
+    .ray {
+      position: absolute;
+      left: -22px;
+      height: 3px;
+      width: 122px;
+      border-radius: 999px;
+      transform-origin: left center;
+      background: linear-gradient(90deg, rgba(74,163,223,.2), rgba(74,163,223,.78), rgba(255,233,168,.78));
+    }
+
+    .ray.one { top: 44px; transform: rotate(11deg); }
+    .ray.two { top: 70px; transform: rotate(0deg); }
+    .ray.three { top: 96px; transform: rotate(-11deg); }
+
+    .control .ray {
+      background: linear-gradient(90deg, rgba(79,184,149,.18), rgba(79,184,149,.70), rgba(255,233,168,.70));
+      width: 104px;
+    }
+
+    .blocker {
+      position: absolute;
+      right: -3px;
+      top: 26px;
+      width: 18px;
+      height: 72px;
+      border-radius: 999px;
+      background: rgba(79,184,149,.20);
+      border: 3px solid rgba(79,184,149,.58);
+      opacity: 0;
+      transform: scaleY(.4);
+    }
+
+    .control .blocker {
+      opacity: 1;
+      animation: blockPop .78s ease-out .18s both;
+    }
+
+    .pull-shadow {
+      position: absolute;
+      right: 4px;
+      width: 56px;
+      height: 94px;
+      border-radius: 50%;
+      background: rgba(255,155,145,.12);
+      filter: blur(1px);
+      opacity: 0;
+    }
+
+    .eye-ball.standard + .pull-shadow {
+      opacity: 1;
+      animation: pullPulse 1.45s ease-in-out infinite alternate;
+    }
+
+    .status-chip {
+      border: 1px solid rgba(37,64,82,.10);
+      background: rgba(255,255,255,.68);
+    }
+
+    .talk-card {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.92), rgba(248,255,252,.82)),
+        linear-gradient(90deg, rgba(185,234,215,.18), rgba(169,221,255,.16));
+      border: 1px solid rgba(79,184,149,.20);
+    }
+
+    .highlight {
+      background: linear-gradient(transparent 58%, rgba(255,233,168,.88) 58%);
+      font-weight: 800;
+    }
+
+    .scenario {
+      border: 1px dashed rgba(74,163,223,.34);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.72), rgba(244,251,255,.68));
+    }
+
+    .mini-card {
+      background: rgba(255,255,255,.76);
+      border: 1px solid rgba(37,64,82,.08);
+    }
+
+    .report-step {
+      min-width: 42px;
+      min-height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: rgba(255,255,255,.84);
+      border: 2px solid rgba(74,163,223,.20);
+      font-weight: 900;
+    }
+
+    .report-step.warn {
+      border-color: rgba(255,155,145,.45);
+      color: #c76159;
+      animation: wobble 1.5s ease-in-out infinite;
+    }
+
+    .screen-tile {
+      width: 58px;
+      height: 44px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, rgba(169,221,255,.62), rgba(255,255,255,.84));
+      border: 2px solid rgba(74,163,223,.18);
+      position: relative;
+    }
+
+    .screen-tile::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: -7px;
+      height: 7px;
+      border-radius: 0 0 10px 10px;
+      background: rgba(37,64,82,.12);
+    }
+
+    .risk-orb {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(255,233,168,.82), rgba(255,255,255,.86));
+      border: 2px solid rgba(255,155,145,.24);
+      font-weight: 900;
+    }
+
+    @keyframes elongate {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(1.22); }
+    }
+
+    @keyframes calm {
+      0% { transform: scaleX(1.13); }
+      55% { transform: scaleX(.98); }
+      100% { transform: scaleX(1); }
+    }
+
+    @keyframes anxiousDot {
+      from { transform: translateX(0); opacity: .82; }
+      to { transform: translateX(12px); opacity: 1; }
+    }
+
+    @keyframes blockPop {
+      0% { transform: scaleY(.35); opacity: 0; }
+      70% { transform: scaleY(1.1); opacity: 1; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+
+    @keyframes pullPulse {
+      from { transform: translateX(8px) scaleX(.8); opacity: .24; }
+      to { transform: translateX(30px) scaleX(1.3); opacity: .52; }
+    }
+
+    @keyframes wobble {
+      0%, 100% { transform: rotate(-1deg); }
+      50% { transform: rotate(2deg); }
+    }
+
+    @media (min-width: 768px) {
+      .eye-row {
+        width: min(100%, 520px);
+        grid-template-columns: 76px 1fr;
+        gap: 24px;
+      }
+
+      .lens-figure {
+        width: 70px;
+        height: 144px;
+      }
+
+      .eye-wrap {
+        width: 340px;
+        height: 190px;
+      }
+
+      .eye-ball {
+        width: 242px;
+        height: 158px;
+      }
+
+      .retina {
+        height: 108px;
+        top: 21px;
+      }
+
+      .focus-dot {
+        top: 70px;
+      }
+
+      .ray {
+        width: 170px;
+        left: -42px;
+      }
+
+      .ray.one { top: 56px; }
+      .ray.two { top: 84px; }
+      .ray.three { top: 112px; }
+
+      .control .ray {
+        width: 145px;
+      }
+
+      .blocker {
+        top: 32px;
+        height: 96px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app" class="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+    <section class="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <header class="soft-board rounded-[2rem] px-5 py-6 sm:px-8 sm:py-8">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-4">
+            <div class="cloud shrink-0" aria-hidden="true"></div>
+            <div class="flex flex-col gap-2">
+              <p class="w-fit rounded-full bg-white/70 px-3 py-1 text-xs font-bold tracking-wide text-[#4fb895] ring-1 ring-[#4fb895]/20">
+                小児眼科の待合室みたいに、やさしく説明
+              </p>
+              <h1 class="text-2xl font-black leading-tight tracking-tight sm:text-4xl">
+                キッズ近視進行抑制レンズ<br class="hidden sm:block" />
+                安心シミュレーター
+              </h1>
+              <p class="max-w-2xl text-sm leading-7 text-[#5f7482] sm:text-base">
+                親御さんの不安を受け止めてから、標準レンズと進行抑制レンズの違いを
+                <span class="highlight">「未来の眼を守るサポート」</span>として伝える新人スタッフ向けカンペです。
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="choiceArea" class="soft-board rounded-[2rem] p-5 sm:p-7">
+        <div class="flex flex-col gap-3">
+          <p class="text-sm font-black text-[#4aa3df]">まずは親御さんの一番の不安を選んでください</p>
+          <h2 class="text-xl font-black sm:text-2xl">お子様の視力について、いちばん気になることは？</h2>
+          <p class="text-sm leading-6 text-[#6c7f8c]">最初はここだけ。選択後に、説明・シミュレーション・接客トークが開きます。</p>
+        </div>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-3" id="concernButtons"></div>
+
+        <p id="errorMessage" class="mt-4 hidden rounded-2xl bg-[#fff1ef] px-4 py-3 text-sm font-bold text-[#ba5b53]" role="alert">
+          不安の種類を選択してからシミュレーションを始めてください。
+        </p>
+      </section>
+
+      <section id="resultArea" class="hidden flex-col gap-5" aria-live="polite">
+        <div class="soft-board rounded-[2rem] p-5 sm:p-7">
+          <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[1.1fr_.9fr] lg:items-start">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2">
+                <p id="selectedBadge" class="w-fit rounded-full bg-[#eaf9f3] px-3 py-1 text-xs font-black text-[#4fb895]"></p>
+                <h2 id="selectedTitle" class="text-xl font-black leading-tight sm:text-3xl"></h2>
+                <p id="selectedLead" class="text-sm leading-7 text-[#5f7482] sm:text-base"></p>
+              </div>
+
+              <div class="scenario rounded-[1.75rem] p-4" id="scenarioBox"></div>
+
+              <div class="grid grid-cols-2 gap-3 rounded-[1.5rem] bg-white/55 p-2">
+                <button
+                  id="standardBtn"
+                  type="button"
+                  class="pill-tab rounded-[1.1rem] px-3 py-3 text-left text-sm font-black"
+                  aria-pressed="true"
+                >
+                  <span class="block text-xs opacity-70">比較 1</span>
+                  標準レンズ
+                </button>
+                <button
+                  id="controlBtn"
+                  type="button"
+                  class="pill-tab rounded-[1.1rem] px-3 py-3 text-left text-sm font-black"
+                  aria-pressed="false"
+                >
+                  <span class="block text-xs opacity-70">比較 2</span>
+                  進行抑制レンズ
+                </button>
+              </div>
+            </div>
+
+            <div class="stage rounded-[2rem] p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-black text-[#4aa3df]">眼軸長イメージ</p>
+                  <h3 id="simulationTitle" class="text-lg font-black"></h3>
+                </div>
+                <span id="modeChip" class="status-chip rounded-full px-3 py-1 text-xs font-black"></span>
+              </div>
+
+              <div class="eye-frame mt-3 rounded-[1.5rem] bg-white/45">
+                <div class="eye-row" aria-hidden="true">
+                  <div id="lensFigure" class="lens-figure"></div>
+                  <div class="eye-wrap">
+                    <div id="eyeBall" class="eye-ball standard">
+                      <span class="ray one"></span>
+                      <span class="ray two"></span>
+                      <span class="ray three"></span>
+                      <span class="retina"></span>
+                      <span class="focus-dot"></span>
+                      <span class="blocker"></span>
+                    </div>
+                    <div class="pull-shadow"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid gap-3">
+                <div id="simulationCaption" class="rounded-[1.4rem] bg-white/70 p-4 text-sm font-bold leading-7"></div>
+                <div id="simulationNote" class="rounded-[1.4rem] bg-[#f3fbff] p-4 text-xs leading-6 text-[#5f7482]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="soft-board rounded-[2rem] p-5 sm:p-7">
+          <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[.85fr_1.15fr]">
+            <div class="flex flex-col justify-between gap-4 rounded-[1.75rem] bg-[#f4fbff]/70 p-4">
+              <div class="flex flex-col gap-2">
+                <p class="text-xs font-black text-[#4fb895]">接客スタッフ用カンペ</p>
+                <h3 class="text-xl font-black">読み上げる順番で表示</h3>
+                <p class="text-sm leading-7 text-[#6c7f8c]">
+                  不安を否定せず、共感 → 違いの説明 → 未来価値 → 次の提案の順に進めます。
+                </p>
+              </div>
+
+              <div class="flex gap-2">
+                <button id="prevTalk" type="button" class="flex-1 rounded-2xl bg-white/80 px-4 py-3 text-sm font-black text-[#4aa3df] ring-1 ring-[#4aa3df]/20">
+                  戻る
+                </button>
+                <button id="nextTalk" type="button" class="flex-1 rounded-2xl bg-[#4fb895] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#4fb895]/20">
+                  次のトーク
+                </button>
+              </div>
+            </div>
+
+            <article class="talk-card rounded-[1.75rem] p-5">
+              <div class="mb-4 flex flex-wrap items-center gap-2">
+                <span id="talkStep" class="rounded-full bg-white/80 px-3 py-1 text-xs font-black text-[#4aa3df]"></span>
+                <span id="talkTone" class="rounded-full bg-[#fff7d8] px-3 py-1 text-xs font-black text-[#96712c]"></span>
+              </div>
+              <p id="talkText" class="text-lg font-black leading-9 sm:text-2xl sm:leading-10"></p>
+              <div id="talkPoint" class="mt-4 rounded-[1.25rem] bg-white/68 p-4 text-sm font-bold leading-7 text-[#5f7482]"></div>
+            </article>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <button id="resetBtn" type="button" class="rounded-2xl bg-white/80 px-5 py-4 text-sm font-black text-[#4aa3df] ring-1 ring-[#4aa3df]/20">
+            最初の不安選択に戻る
+          </button>
+          <p class="rounded-2xl bg-white/55 px-4 py-3 text-xs leading-6 text-[#6c7f8c]">
+            ※本ツールは店頭説明を補助するイメージです。実際の適応・効果・治療方針は眼科医または専門スタッフの確認を前提にご案内してください。
+          </p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const concerns = {
+      exam: {
+        badge: "学校検査のたびに度数が進む不安",
+        title: "毎年、学校の視力検査で度が進んでしまう",
+        lead: "“また下がったの？”という不安には、今見えるだけでなく、成長期の変化をゆるやかに見守る提案が響きます。",
+        scenario: `
+          <div class="grid gap-4">
+            <div class="flex items-center gap-3">
+              <div class="report-step">A</div>
+              <div class="h-1 flex-1 rounded-full bg-[#a9ddff]/60"></div>
+              <div class="report-step">B</div>
+              <div class="h-1 flex-1 rounded-full bg-[#ffe9a8]/80"></div>
+              <div class="report-step warn">C</div>
+            </div>
+            <div class="mini-card rounded-[1.25rem] p-4 text-sm leading-7">
+              学校検査の結果が少しずつ変わる時期は、眼球の奥行きである「眼軸長」が伸びやすい成長期。だからこそ、早めに“進みにくくする考え方”を伝えます。
+            </div>
+          </div>
+        `,
+        standardCaption: "標準レンズは、いま網膜でピントが合うように見え方を整えます。ただ、周辺部のピントが奥へズレるイメージが残ると、眼球が後ろへ伸びる方向に引っ張られやすい説明になります。",
+        controlCaption: "進行抑制レンズは、周辺部の特殊設計で“奥へ引っ張るサイン”を手前側に整えるイメージ。眼球がビヨーンと伸びる動きをピタッと受け止め、丸い形を保つサポートとして説明できます。",
+        note: "学校検査の結果を責めるのではなく、“成長期だから変化しやすい。今からできる備えがある”と安心へ変換します。",
+        talks: [
+          {
+            tone: "共感",
+            text: "「学校の検査で毎年変わると、親御さんとしては“このまま進むのかな”と心配になりますよね。」",
+            point: "最初に不安を肯定。販売説明ではなく、相談に乗る姿勢を作ります。"
+          },
+          {
+            tone: "違いの説明",
+            text: "「標準のレンズは<span class='highlight'>『今』見えるようにする</span>ことが中心です。一方でこちらは、近視の進み方そのものをゆるやかにするサポートを考えたレンズです。」",
+            point: "“見える”と“進みにくくする”の価値差を短く明確にします。"
+          },
+          {
+            tone: "未来価値",
+            text: "「つまり、これは単なるメガネではなく、<span class='highlight'>『未来』の眼を守るためのサポート</span>として選んでいただくものです。」",
+            point: "高単価の理由を、価格ではなく将来の安心に置き換えます。"
+          },
+          {
+            tone: "クロージング",
+            text: "「お子様の成長期にしかできない、<span class='highlight'>一生モノの眼の健康へのプレゼント</span>として、一度詳しくご説明させてください。」",
+            point: "押し売りではなく、“詳しく説明する許可”をもらう言い回しにします。"
+          }
+        ]
+      },
+      risk: {
+        badge: "将来の眼の病気が心配",
+        title: "将来、強度の近視になって眼の病気にならないか心配",
+        lead: "将来リスクへの不安には、恐怖をあおらず、“今できる予防的な選択肢”として落ち着いて提案します。",
+        scenario: `
+          <div class="grid gap-4">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="mini-card rounded-[1.25rem] p-3">
+                <div class="risk-orb mx-auto">今</div>
+                <p class="mt-2 text-xs font-bold">見え方改善</p>
+              </div>
+              <div class="mini-card rounded-[1.25rem] p-3">
+                <div class="risk-orb mx-auto">成長</div>
+                <p class="mt-2 text-xs font-bold">眼軸長管理</p>
+              </div>
+              <div class="mini-card rounded-[1.25rem] p-3">
+                <div class="risk-orb mx-auto">未来</div>
+                <p class="mt-2 text-xs font-bold">健康を守る</p>
+              </div>
+            </div>
+            <div class="mini-card rounded-[1.25rem] p-4 text-sm leading-7">
+              強い近視への不安は、“今の視力”だけではなく“将来の眼の健康”の話。進行抑制レンズは、未来への備えとして価値を伝えやすい選択肢です。
+            </div>
+          </div>
+        `,
+        standardCaption: "標準レンズは、日常生活で見えやすくすることに優れています。ただし“進み方への働きかけ”までは説明しにくく、将来不安のある親御さんには物足りなく感じられることがあります。",
+        controlCaption: "進行抑制レンズでは、周辺部のピントをコントロールする設計をイメージで伝えます。眼軸長が伸びる方向のサインをやわらげ、将来の眼の健康に備える提案として説明できます。",
+        note: "病気を断定したり怖がらせたりせず、“リスクをゼロにする”ではなく“進行をゆるやかにするサポート”と表現します。",
+        talks: [
+          {
+            tone: "共感",
+            text: "「将来の眼の病気まで考えて心配されているのは、お子様のことを本当に大切に見ていらっしゃるからだと思います。」",
+            point: "親御さんの不安を“過剰な心配”ではなく“愛情”として受け止めます。"
+          },
+          {
+            tone: "違いの説明",
+            text: "「標準のレンズは<span class='highlight'>『今』見えるようにする</span>だけですが、このレンズは近視の進み方をゆるやかにする設計が入っています。」",
+            point: "将来不安には、機能差よりも“目的の違い”を伝えると納得されやすくなります。"
+          },
+          {
+            tone: "未来価値",
+            text: "「将来のリスクを怖がらせたいのではなく、<span class='highlight'>『未来』の眼を守るためのサポート</span>として、今選べる対策をご紹介したいです。」",
+            point: "不安商法に見えないよう、“怖がらせない”一言を入れます。"
+          },
+          {
+            tone: "クロージング",
+            text: "「お子様の成長期にしかできない、<span class='highlight'>一生モノの眼の健康へのプレゼント</span>として、前向きに検討される方が増えています。」",
+            point: "“高いメガネ”ではなく“健康投資”として位置づけます。"
+          }
+        ]
+      },
+      screen: {
+        badge: "ゲーム・タブレット学習による負担が不安",
+        title: "ゲームやタブレット学習が多くて、眼の負担が不安",
+        lead: "デジタル時間の不安には、叱る方向ではなく、“生活を変えきれない中でもできる眼のサポート”として提案します。",
+        scenario: `
+          <div class="grid gap-4">
+            <div class="flex items-end justify-center gap-3">
+              <div class="screen-tile"></div>
+              <div class="screen-tile scale-110"></div>
+              <div class="screen-tile"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="mini-card rounded-[1.25rem] p-3 text-sm font-bold">近くを見る時間が長い</div>
+              <div class="mini-card rounded-[1.25rem] p-3 text-sm font-bold">休憩が取りにくい</div>
+            </div>
+            <div class="mini-card rounded-[1.25rem] p-4 text-sm leading-7">
+              タブレット学習やゲームを完全になくすのは難しい時代。だからこそ、生活指導に加えて、レンズ側でも成長期の眼をサポートする考え方を伝えます。
+            </div>
+          </div>
+        `,
+        standardCaption: "標準レンズは、遠くや黒板を見やすくする基本の役割が中心です。近くを見る時間が多いお子様では、“今見える”だけでは親御さんの不安が残りやすい場面があります。",
+        controlCaption: "進行抑制レンズは、近くを見る生活が多いお子様にも、眼軸長の伸びをゆるやかにするサポートとして提案できます。生活習慣の工夫と合わせて、レンズでも備える説明ができます。",
+        note: "ゲームや学習を否定しすぎると親御さんが責められた気持ちになります。“現代の生活に合わせた対策”として伝えます。",
+        talks: [
+          {
+            tone: "共感",
+            text: "「タブレット学習もゲームも、今の生活ではゼロにするのが難しいですよね。だからこそ眼の負担が心配になりますよね。」",
+            point: "生活習慣を責めず、現実的な悩みとして受け止めます。"
+          },
+          {
+            tone: "違いの説明",
+            text: "「標準のレンズは<span class='highlight'>『今』見えるようにする</span>ことが中心です。こちらは、成長期の近視進行をゆるやかにするサポートまで考えたレンズです。」",
+            point: "“便利な生活をやめる”ではなく“眼を守る選択肢を足す”提案にします。"
+          },
+          {
+            tone: "安心提案",
+            text: "「休憩や外遊びの工夫に加えて、レンズでも<span class='highlight'>『未来』の眼を守るためのサポート</span>ができます。」",
+            point: "レンズだけで解決と言い切らず、生活指導との併用で信頼感を高めます。"
+          },
+          {
+            tone: "クロージング",
+            text: "「お子様の成長期にしかできない、<span class='highlight'>一生モノの眼の健康へのプレゼント</span>として、ご家庭の生活スタイルに合わせてご提案します。」",
+            point: "家庭ごとの事情に寄り添う言葉で、次の相談につなげます。"
+          }
+        ]
+      }
+    };
+
+    const state = {
+      concernKey: null,
+      lensMode: "standard",
+      talkIndex: 0
+    };
+
+    const el = {
+      concernButtons: document.getElementById("concernButtons"),
+      errorMessage: document.getElementById("errorMessage"),
+      resultArea: document.getElementById("resultArea"),
+      selectedBadge: document.getElementById("selectedBadge"),
+      selectedTitle: document.getElementById("selectedTitle"),
+      selectedLead: document.getElementById("selectedLead"),
+      scenarioBox: document.getElementById("scenarioBox"),
+      standardBtn: document.getElementById("standardBtn"),
+      controlBtn: document.getElementById("controlBtn"),
+      simulationTitle: document.getElementById("simulationTitle"),
+      modeChip: document.getElementById("modeChip"),
+      lensFigure: document.getElementById("lensFigure"),
+      eyeBall: document.getElementById("eyeBall"),
+      simulationCaption: document.getElementById("simulationCaption"),
+      simulationNote: document.getElementById("simulationNote"),
+      talkStep: document.getElementById("talkStep"),
+      talkTone: document.getElementById("talkTone"),
+      talkText: document.getElementById("talkText"),
+      talkPoint: document.getElementById("talkPoint"),
+      prevTalk: document.getElementById("prevTalk"),
+      nextTalk: document.getElementById("nextTalk"),
+      resetBtn: document.getElementById("resetBtn")
+    };
+
+    function renderConcernButtons() {
+      const entries = Object.entries(concerns);
+      el.concernButtons.innerHTML = entries.map(([key, item], index) => `
+        <button
+          type="button"
+          class="choice-btn flex min-h-[118px] w-full items-center gap-4 rounded-[1.7rem] p-4 text-left"
+          data-concern="${key}"
+          aria-label="${item.title}"
+        >
+          <span class="choice-icon grid h-14 w-14 shrink-0 place-items-center rounded-3xl text-xl font-black text-white">
+            ${index + 1}
+          </span>
+          <span class="flex flex-col gap-1">
+            <span class="text-xs font-black text-[#4fb895]">${item.badge}</span>
+            <span class="text-base font-black leading-6">${item.title}</span>
+          </span>
+        </button>
+      `).join("");
+
+      document.querySelectorAll("[data-concern]").forEach(button => {
+        button.addEventListener("click", () => {
+          selectConcern(button.dataset.concern);
+        });
+      });
+    }
+
+    function selectConcern(key) {
+      if (!concerns[key]) {
+        showError();
+        return;
+      }
+
+      state.concernKey = key;
+      state.lensMode = "standard";
+      state.talkIndex = 0;
+      el.errorMessage.classList.add("hidden");
+      el.resultArea.classList.remove("hidden");
+      el.resultArea.classList.add("flex");
+      renderAll();
+
+      requestAnimationFrame(() => {
+        el.resultArea.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    function showError() {
+      el.errorMessage.classList.remove("hidden");
+    }
+
+    function getCurrentConcern() {
+      return concerns[state.concernKey] || null;
+    }
+
+    function setLensMode(mode) {
+      if (!["standard", "control"].includes(mode)) return;
+      state.lensMode = mode;
+      renderLens();
+    }
+
+    function renderAll() {
+      const concern = getCurrentConcern();
+      if (!concern) {
+        showError();
+        return;
+      }
+
+      el.selectedBadge.textContent = concern.badge;
+      el.selectedTitle.textContent = concern.title;
+      el.selectedLead.textContent = concern.lead;
+      el.scenarioBox.innerHTML = concern.scenario;
+
+      renderLens();
+      renderTalk();
+    }
+
+    function renderLens() {
+      const concern = getCurrentConcern();
+      if (!concern) return;
+
+      const isControl = state.lensMode === "control";
+
+      el.standardBtn.setAttribute("aria-pressed", String(!isControl));
+      el.controlBtn.setAttribute("aria-pressed", String(isControl));
+
+      el.standardBtn.className = `pill-tab rounded-[1.1rem] px-3 py-3 text-left text-sm font-black ${
+        !isControl ? "bg-[#fff7d8] text-[#7a5b18]" : "bg-white/50 text-[#6c7f8c]"
+      }`;
+
+      el.controlBtn.className = `pill-tab rounded-[1.1rem] px-3 py-3 text-left text-sm font-black ${
+        isControl ? "bg-[#e4f8ef] text-[#247e64]" : "bg-white/50 text-[#6c7f8c]"
+      }`;
+
+      el.simulationTitle.textContent = isControl
+        ? "丸い形を保つ安心アニメーション"
+        : "奥へ引っ張られる不安アニメーション";
+
+      el.modeChip.textContent = isControl ? "ピタッ！と抑制サポート" : "ビヨーンと伸びるイメージ";
+      el.modeChip.className = `status-chip rounded-full px-3 py-1 text-xs font-black ${
+        isControl ? "text-[#247e64]" : "text-[#ba5b53]"
+      }`;
+
+      el.lensFigure.className = `lens-figure ${isControl ? "control" : ""}`;
+      el.eyeBall.className = `eye-ball ${isControl ? "control" : "standard"}`;
+
+      el.simulationCaption.innerHTML = isControl
+        ? `<span class="highlight">進行抑制レンズ：</span>${concern.controlCaption}`
+        : `<span class="highlight">標準レンズ：</span>${concern.standardCaption}`;
+
+      el.simulationNote.textContent = concern.note;
+    }
+
+    function renderTalk() {
+      const concern = getCurrentConcern();
+      if (!concern) return;
+
+      const talks = concern.talks;
+      const safeIndex = Math.max(0, Math.min(state.talkIndex, talks.length - 1));
+      state.talkIndex = safeIndex;
+
+      const talk = talks[safeIndex];
+
+      el.talkStep.textContent = `STEP ${safeIndex + 1} / ${talks.length}`;
+      el.talkTone.textContent = talk.tone;
+      el.talkText.innerHTML = talk.text;
+      el.talkPoint.textContent = talk.point;
+
+      el.prevTalk.disabled = safeIndex === 0;
+      el.nextTalk.disabled = safeIndex === talks.length - 1;
+
+      el.prevTalk.classList.toggle("opacity-45", safeIndex === 0);
+      el.nextTalk.classList.toggle("opacity-45", safeIndex === talks.length - 1);
+    }
+
+    el.standardBtn.addEventListener("click", () => setLensMode("standard"));
+    el.controlBtn.addEventListener("click", () => setLensMode("control"));
+
+    el.prevTalk.addEventListener("click", () => {
+      state.talkIndex -= 1;
+      renderTalk();
+    });
+
+    el.nextTalk.addEventListener("click", () => {
+      state.talkIndex += 1;
+      renderTalk();
+    });
+
+    el.resetBtn.addEventListener("click", () => {
+      state.concernKey = null;
+      state.lensMode = "standard";
+      state.talkIndex = 0;
+      el.resultArea.classList.add("hidden");
+      el.resultArea.classList.remove("flex");
+      document.getElementById("choiceArea").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    renderConcernButtons();
+  </script>
+</body>
+</html>
