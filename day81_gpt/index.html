@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>次世代UVカットレンズ｜眼病予防シミュレーター</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              medical: {
+                navy: "#08245A",
+                blue: "#0B4B8E",
+                pale: "#EEF7FF",
+                line: "#C9E7FF"
+              },
+              marigold: {
+                400: "#F8C84E",
+                500: "#F5B51B",
+                600: "#D99500"
+              },
+              hev: {
+                400: "#6B5CFF",
+                500: "#4C35F5",
+                600: "#2A1D9D"
+              }
+            },
+            boxShadow: {
+              medical: "0 24px 80px rgba(8,36,90,.14)",
+              glow: "0 0 36px rgba(245,181,27,.42)"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+
+    :root {
+      --navy: #08245A;
+      --blue: #0B4B8E;
+      --pale: #EEF7FF;
+      --line: #C9E7FF;
+      --marigold: #F5B51B;
+      --hev: #4C35F5;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: #0f2447;
+      background:
+        radial-gradient(circle at 18% 8%, rgba(248, 200, 78, .20), transparent 28rem),
+        radial-gradient(circle at 92% 2%, rgba(11, 75, 142, .15), transparent 30rem),
+        linear-gradient(180deg, #ffffff 0%, #f6fbff 42%, #ffffff 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .premium-shell {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .premium-shell::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(8, 36, 90, .04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(8, 36, 90, .04) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.78), transparent 72%);
+    }
+
+    .glass-panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.86)),
+        linear-gradient(135deg, rgba(201,231,255,.55), rgba(248,200,78,.18));
+      border: 1px solid rgba(201, 231, 255, .9);
+      box-shadow: 0 24px 80px rgba(8,36,90,.14);
+      backdrop-filter: blur(18px);
+    }
+
+    .choice-button {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, #ffffff, #f7fbff),
+        linear-gradient(135deg, rgba(11,75,142,.12), rgba(245,181,27,.18));
+      border: 1px solid rgba(11, 75, 142, .16);
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+    }
+
+    .choice-button::after {
+      content: "";
+      position: absolute;
+      inset: auto -30% -70% -30%;
+      height: 110%;
+      background: radial-gradient(circle, rgba(245,181,27,.26), transparent 62%);
+      opacity: 0;
+      transition: opacity .22s ease;
+    }
+
+    .choice-button:hover,
+    .choice-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(245,181,27,.78);
+      box-shadow: 0 18px 42px rgba(8,36,90,.14);
+      outline: none;
+    }
+
+    .choice-button:hover::after,
+    .choice-button:focus-visible::after {
+      opacity: 1;
+    }
+
+    .mode-toggle {
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+    }
+
+    .mode-toggle[aria-pressed="true"] {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(8,36,90,.14);
+    }
+
+    .sim-stage {
+      position: relative;
+      overflow: hidden;
+      border-radius: 2rem;
+      border: 1px solid rgba(201,231,255,.92);
+      background:
+        radial-gradient(circle at 70% 50%, rgba(245,181,27,.16), transparent 18rem),
+        radial-gradient(circle at 22% 46%, rgba(76,53,245,.13), transparent 16rem),
+        linear-gradient(135deg, #ffffff 0%, #f2f8ff 48%, #ffffff 100%);
+    }
+
+    .sim-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(8,36,90,.05), transparent 20%, transparent 80%, rgba(8,36,90,.05)),
+        repeating-linear-gradient(90deg, transparent 0 22px, rgba(8,36,90,.035) 22px 23px);
+    }
+
+    .visual-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: .74fr .36fr 1fr;
+      align-items: center;
+      gap: clamp(.55rem, 2.5vw, 1.4rem);
+      min-height: clamp(230px, 66vw, 340px);
+    }
+
+    .source-orb {
+      width: clamp(3.5rem, 17vw, 6.5rem);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      margin-inline: auto;
+      border: 1px solid rgba(255,255,255,.86);
+      box-shadow: inset 0 0 28px rgba(255,255,255,.62), 0 14px 34px rgba(8,36,90,.13);
+      color: white;
+      font-size: clamp(1.65rem, 6vw, 3rem);
+    }
+
+    .source-skin {
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 38% 34%, #fff8cc 0 10%, transparent 11%),
+        conic-gradient(from 20deg, #FBE7A0, #F5B51B, #F38D1D, #FBE7A0);
+      animation: sunBreath 3.4s ease-in-out infinite;
+    }
+
+    .source-screen {
+      border-radius: 1.2rem;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.28), transparent),
+        linear-gradient(135deg, #142B6F, #4C35F5 60%, #58C9FF);
+      transform: perspective(500px) rotateY(5deg);
+    }
+
+    .source-future {
+      border-radius: 999px;
+      background:
+        radial-gradient(circle, rgba(255,255,255,.22) 0 25%, transparent 26%),
+        conic-gradient(from 180deg, #0B4B8E, #08245A, #F5B51B, #0B4B8E);
+      animation: futureRotate 7s linear infinite;
+    }
+
+    .lens-surface {
+      position: relative;
+      width: clamp(2.5rem, 10vw, 3.8rem);
+      height: clamp(8.8rem, 33vw, 12rem);
+      margin-inline: auto;
+      border-radius: 999px;
+      border: 2px solid rgba(11,75,142,.35);
+      background: linear-gradient(90deg, rgba(255,255,255,.38), rgba(255,255,255,.88), rgba(255,255,255,.34));
+      box-shadow: inset 0 0 24px rgba(11,75,142,.10);
+      transition: border-color .26s ease, box-shadow .26s ease, background .26s ease;
+    }
+
+    .lens-surface::before {
+      content: "";
+      position: absolute;
+      inset: 8%;
+      border-radius: inherit;
+      border-left: 1px solid rgba(255,255,255,.76);
+      border-right: 1px solid rgba(8,36,90,.08);
+    }
+
+    .lens-surface.normal {
+      opacity: .82;
+    }
+
+    .lens-surface.advanced {
+      border-color: rgba(245,181,27,.96);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.42), rgba(255,248,215,.92), rgba(255,255,255,.38)),
+        linear-gradient(180deg, rgba(11,75,142,.10), rgba(245,181,27,.20));
+      box-shadow:
+        inset 0 0 30px rgba(245,181,27,.24),
+        0 0 36px rgba(245,181,27,.42),
+        0 0 0 8px rgba(245,181,27,.10);
+    }
+
+    .shield-spark {
+      position: absolute;
+      inset: -13%;
+      border-radius: inherit;
+      border: 1px solid rgba(245,181,27,.72);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .lens-surface.advanced .shield-spark {
+      animation: shieldPulse 1.8s ease-in-out infinite;
+    }
+
+    .eye-shell {
+      position: relative;
+      width: clamp(8.4rem, 38vw, 15rem);
+      aspect-ratio: 1.88 / 1;
+      margin-inline: auto;
+      border-radius: 74% 26% 72% 28% / 54% 46% 54% 46%;
+      border: 1px solid rgba(8,36,90,.13);
+      background:
+        radial-gradient(circle at 42% 50%, rgba(255,255,255,.98) 0 21%, transparent 22%),
+        radial-gradient(circle at 40% 48%, rgba(201,231,255,.72) 0 31%, transparent 32%),
+        linear-gradient(135deg, #ffffff, #eef7ff 58%, #ffffff);
+      box-shadow:
+        inset -18px 0 26px rgba(8,36,90,.06),
+        inset 10px 0 22px rgba(255,255,255,.92),
+        0 18px 38px rgba(8,36,90,.12);
+    }
+
+    .eye-shell::after {
+      content: "";
+      position: absolute;
+      inset: 8% 12%;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,.70), transparent 45%);
+      pointer-events: none;
+    }
+
+    .iris-disc {
+      position: absolute;
+      left: 40%;
+      top: 50%;
+      width: 32%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background:
+        radial-gradient(circle, #08245A 0 17%, transparent 18%),
+        radial-gradient(circle, #4EA3E5 0 42%, #0B4B8E 43% 68%, #DDF2FF 69%);
+      box-shadow: inset 0 0 18px rgba(255,255,255,.55);
+      z-index: 2;
+    }
+
+    .retina-disc {
+      position: absolute;
+      right: 9%;
+      top: 50%;
+      width: 22%;
+      aspect-ratio: 1;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      z-index: 3;
+      background:
+        radial-gradient(circle, #FFF7C8 0 20%, #F5B51B 21% 58%, #D99500 59%);
+      box-shadow: inset 0 0 14px rgba(255,255,255,.62), 0 0 0 6px rgba(245,181,27,.12);
+      transition: box-shadow .26s ease, filter .26s ease;
+    }
+
+    .mode-normal .retina-disc {
+      filter: saturate(.85);
+      box-shadow:
+        inset 0 0 12px rgba(255,255,255,.45),
+        0 0 0 5px rgba(76,53,245,.16),
+        0 0 22px rgba(76,53,245,.26);
+    }
+
+    .mode-advanced .retina-disc {
+      filter: saturate(1.18);
+      box-shadow:
+        inset 0 0 18px rgba(255,255,255,.75),
+        0 0 0 8px rgba(245,181,27,.17),
+        0 0 32px rgba(245,181,27,.38);
+      animation: calmRetina 2.6s ease-in-out infinite;
+    }
+
+    .damage-ring,
+    .safe-ring {
+      position: absolute;
+      inset: -34%;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .damage-ring {
+      border: 2px solid rgba(76,53,245,.5);
+      animation: damagePulse 1.15s ease-out infinite;
+    }
+
+    .safe-ring {
+      border: 2px solid rgba(245,181,27,.42);
+      animation: safePulse 2.8s ease-out infinite;
+    }
+
+    .beams {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .beam {
+      --angle: 0deg;
+      position: absolute;
+      height: 5px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, transparent, rgba(155,148,255,.05) 4%, rgba(76,53,245,.95) 28%, rgba(62,214,255,.72) 66%, transparent);
+      box-shadow:
+        0 0 12px rgba(76,53,245,.64),
+        0 0 22px rgba(62,214,255,.28);
+      transform-origin: left center;
+    }
+
+    .beam::after {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      transform: translateY(-50%) rotate(45deg);
+      background: rgba(76,53,245,.9);
+      clip-path: polygon(100% 50%, 0 0, 0 100%);
+      filter: drop-shadow(0 0 7px rgba(76,53,245,.78));
+    }
+
+    .normal-beams .beam {
+      width: 46%;
+      left: 15%;
+      animation: passNormal 1.95s linear infinite;
+    }
+
+    .protect-beams .incoming {
+      width: 29%;
+      left: 15%;
+      animation: hitShield 1.8s ease-in-out infinite;
+    }
+
+    .protect-beams .reflect {
+      width: 24%;
+      left: 41%;
+      background:
+        linear-gradient(90deg, rgba(245,181,27,.06), rgba(245,181,27,.92), rgba(255,255,255,.78), transparent);
+      box-shadow:
+        0 0 14px rgba(245,181,27,.72),
+        0 0 28px rgba(245,181,27,.30);
+      animation: reflectAway 1.8s ease-in-out infinite;
+    }
+
+    .protect-beams .reflect::after {
+      background: rgba(245,181,27,.95);
+      filter: drop-shadow(0 0 7px rgba(245,181,27,.85));
+      transform: translateY(-50%) rotate(225deg);
+      left: -8px;
+      right: auto;
+    }
+
+    .stage-skin .beam-1 { top: 35%; --angle: 8deg; animation-delay: 0s; }
+    .stage-skin .beam-2 { top: 46%; --angle: 0deg; animation-delay: .28s; opacity: .86; }
+    .stage-skin .beam-3 { top: 57%; --angle: -7deg; animation-delay: .56s; opacity: .72; }
+
+    .stage-screen .beam-1 { top: 40%; --angle: -1deg; animation-delay: 0s; }
+    .stage-screen .beam-2 { top: 49%; --angle: 0deg; animation-delay: .22s; opacity: .92; }
+    .stage-screen .beam-3 { top: 58%; --angle: 1deg; animation-delay: .44s; opacity: .78; }
+
+    .stage-future .beam-1 { top: 34%; --angle: 5deg; animation-delay: 0s; opacity: .72; }
+    .stage-future .beam-2 { top: 49%; --angle: -2deg; animation-delay: .42s; opacity: .86; }
+    .stage-future .beam-3 { top: 62%; --angle: -8deg; animation-delay: .84s; opacity: .64; }
+
+    .script-card {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,251,255,.94)),
+        linear-gradient(135deg, rgba(11,75,142,.08), rgba(245,181,27,.14));
+      border: 1px solid rgba(201,231,255,.94);
+    }
+
+    .script-quote {
+      position: relative;
+      border-left: 4px solid var(--marigold);
+      background:
+        linear-gradient(90deg, rgba(245,181,27,.13), transparent),
+        rgba(255,255,255,.78);
+    }
+
+    .script-quote strong {
+      color: var(--navy);
+      background: linear-gradient(transparent 58%, rgba(245,181,27,.36) 59%);
+      font-weight: 900;
+    }
+
+    @keyframes sunBreath {
+      0%, 100% { transform: scale(1); box-shadow: inset 0 0 28px rgba(255,255,255,.62), 0 14px 34px rgba(245,181,27,.24); }
+      50% { transform: scale(1.04); box-shadow: inset 0 0 38px rgba(255,255,255,.80), 0 18px 44px rgba(245,181,27,.34); }
+    }
+
+    @keyframes futureRotate {
+      to { rotate: 360deg; }
+    }
+
+    @keyframes passNormal {
+      0% { transform: translateX(-36%) rotate(var(--angle)); opacity: 0; }
+      14% { opacity: 1; }
+      72% { transform: translateX(52%) rotate(var(--angle)); opacity: 1; }
+      100% { transform: translateX(68%) rotate(var(--angle)); opacity: 0; }
+    }
+
+    @keyframes hitShield {
+      0% { transform: translateX(-34%) rotate(var(--angle)); opacity: 0; }
+      22% { opacity: 1; }
+      58% { transform: translateX(9%) rotate(var(--angle)); opacity: 1; }
+      72% { transform: translateX(9%) rotate(var(--angle)); opacity: .96; }
+      100% { transform: translateX(9%) rotate(var(--angle)); opacity: 0; }
+    }
+
+    @keyframes reflectAway {
+      0%, 46% { transform: translateX(0) scaleX(.08) rotate(calc(var(--angle) - 34deg)); opacity: 0; }
+      58% { transform: translateX(0) scaleX(1) rotate(calc(var(--angle) - 34deg)); opacity: 1; }
+      100% { transform: translateX(-26%) scaleX(.74) rotate(calc(var(--angle) - 34deg)); opacity: 0; }
+    }
+
+    @keyframes damagePulse {
+      0% { transform: scale(.68); opacity: .85; }
+      100% { transform: scale(1.9); opacity: 0; }
+    }
+
+    @keyframes safePulse {
+      0% { transform: scale(.72); opacity: .68; }
+      100% { transform: scale(1.75); opacity: 0; }
+    }
+
+    @keyframes shieldPulse {
+      0% { transform: scale(.88); opacity: 0; }
+      45% { opacity: .85; }
+      100% { transform: scale(1.14); opacity: 0; }
+    }
+
+    @keyframes calmRetina {
+      0%, 100% { transform: translateY(-50%) scale(1); }
+      50% { transform: translateY(-50%) scale(1.04); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="premium-shell" x-data="uvLensApp()" x-cloak>
+  <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="flex flex-col gap-4 rounded-[2rem] border border-medical-line/80 bg-white/80 p-5 shadow-medical backdrop-blur md:flex-row md:items-center md:justify-between md:p-7">
+      <div class="flex items-start gap-3">
+        <div class="grid size-12 shrink-0 place-items-center rounded-2xl bg-medical-navy text-xl text-white shadow-lg shadow-medical-blue/20">
+          ◉
+        </div>
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-black uppercase tracking-[.24em] text-medical-blue">Preventive Eye Care Simulator</p>
+          <h1 class="text-balance text-2xl font-black leading-tight text-medical-navy sm:text-3xl">
+            見えない紫外線を可視化する<br class="sm:hidden" />
+            次世代UVカットレンズ提案ナビ
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 rounded-full bg-medical-pale px-4 py-2 text-xs font-bold text-medical-navy">
+        <span class="size-2 rounded-full bg-marigold-500"></span>
+        新人スタッフ用・読み上げカンペ付き
+      </div>
+    </header>
+
+    <section x-show="!selected" x-transition.opacity.duration.300ms class="glass-panel flex flex-col gap-6 rounded-[2.3rem] p-5 sm:p-8">
+      <div class="flex flex-col gap-3">
+        <div class="flex w-fit items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-medical-blue shadow-sm ring-1 ring-medical-line/80">
+          <span class="grid size-6 place-items-center rounded-full bg-marigold-500 text-white">1</span>
+          まずは、お客様の意識に近い入口を選択
+        </div>
+        <h2 class="text-balance text-3xl font-black leading-tight text-medical-navy sm:text-4xl">
+          肌は守っているのに、<br />
+          目の奥は無防備かもしれません。
+        </h2>
+        <p class="max-w-2xl text-sm leading-7 text-slate-600">
+          最初は選択肢だけを表示します。お客様の一言に近いボタンを押すと、提案の流れ・比較アニメーション・接客トークが段階的に開きます。
+        </p>
+      </div>
+
+      <div class="grid gap-3">
+        <button
+          type="button"
+          class="choice-button flex w-full items-center gap-4 rounded-[1.6rem] p-4 text-left"
+          @click="selectScenario('skin')"
+        >
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-marigold-500 text-2xl shadow-lg shadow-marigold-500/20">☀️</span>
+          <span class="flex flex-col gap-1">
+            <span class="text-base font-black leading-snug text-medical-navy">肌のシミやシワ予防のために、日焼け止めを塗っている</span>
+            <span class="text-xs font-bold text-medical-blue">美容意識の高いお客様向け</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="choice-button flex w-full items-center gap-4 rounded-[1.6rem] p-4 text-left"
+          @click="selectScenario('screen')"
+        >
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-hev-500 text-2xl text-white shadow-lg shadow-hev-500/20">💻</span>
+          <span class="flex flex-col gap-1">
+            <span class="text-base font-black leading-snug text-medical-navy">パソコンやスマホをよく使い、目が疲れやすい</span>
+            <span class="text-xs font-bold text-medical-blue">デジタル疲れを感じているお客様向け</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="choice-button flex w-full items-center gap-4 rounded-[1.6rem] p-4 text-left"
+          @click="selectScenario('future')"
+        >
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-medical-navy text-2xl text-white shadow-lg shadow-medical-blue/20">🛡️</span>
+          <span class="flex flex-col gap-1">
+            <span class="text-base font-black leading-snug text-medical-navy">将来の眼病、白内障などが少し不安になってきた</span>
+            <span class="text-xs font-bold text-medical-blue">予防医療・健康投資に響くお客様向け</span>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <template x-if="selected">
+      <section id="simulation-area" class="flex flex-col gap-5">
+        <div class="glass-panel flex flex-col gap-5 rounded-[2.3rem] p-5 sm:p-8">
+          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div class="flex flex-col gap-2">
+              <button
+                type="button"
+                class="flex w-fit items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-black text-medical-blue shadow-sm ring-1 ring-medical-line/80"
+                @click="resetApp()"
+              >
+                ← 別のお客様に切り替える
+              </button>
+
+              <div class="flex items-center gap-2 pt-2">
+                <span class="grid size-10 place-items-center rounded-2xl bg-medical-navy text-white" x-text="scenario.icon"></span>
+                <p class="text-xs font-black uppercase tracking-[.22em] text-medical-blue" x-text="scenario.badge"></p>
+              </div>
+
+              <h2 class="text-balance text-2xl font-black leading-tight text-medical-navy sm:text-3xl" x-text="scenario.title"></h2>
+              <p class="max-w-3xl text-sm leading-7 text-slate-600" x-text="scenario.lead"></p>
+            </div>
+
+            <div class="rounded-[1.4rem] bg-medical-navy p-4 text-white shadow-lg shadow-medical-blue/20 md:max-w-xs">
+              <p class="text-xs font-black text-marigold-400">提案の軸</p>
+              <p class="mt-1 text-sm font-bold leading-6" x-text="scenario.pitch"></p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 rounded-[1.7rem] bg-white/72 p-2 ring-1 ring-medical-line/80 sm:grid-cols-2">
+            <button
+              type="button"
+              class="mode-toggle rounded-[1.3rem] px-4 py-4 text-left"
+              :class="mode === 'normal' ? 'bg-white text-medical-navy ring-1 ring-hev-500/20' : 'bg-transparent text-slate-500'"
+              :aria-pressed="mode === 'normal'"
+              @click="setMode('normal')"
+            >
+              <span class="block text-xs font-black uppercase tracking-[.18em]">通常UVカット</span>
+              <span class="mt-1 block text-sm font-black">HEVがすり抜ける比較</span>
+            </button>
+
+            <button
+              type="button"
+              class="mode-toggle rounded-[1.3rem] px-4 py-4 text-left"
+              :class="mode === 'advanced' ? 'bg-medical-navy text-white ring-1 ring-marigold-500/70' : 'bg-transparent text-slate-500'"
+              :aria-pressed="mode === 'advanced'"
+              @click="setMode('advanced')"
+            >
+              <span class="block text-xs font-black uppercase tracking-[.18em] text-marigold-400">次世代UVカット</span>
+              <span class="mt-1 block text-sm font-black">ルテイン保護イメージ</span>
+            </button>
+          </div>
+
+          <div
+            class="sim-stage p-4 sm:p-6"
+            :class="[
+              mode === 'normal' ? 'mode-normal' : 'mode-advanced',
+              'stage-' + selected
+            ]"
+            aria-label="有害光線カット比較シミュレーション"
+          >
+            <div class="visual-grid">
+              <div class="flex flex-col items-center gap-3">
+                <div class="source-orb" :class="'source-' + selected">
+                  <span x-text="scenario.sourceMark"></span>
+                </div>
+              </div>
+
+              <div class="flex justify-center">
+                <div class="lens-surface" :class="mode === 'advanced' ? 'advanced' : 'normal'">
+                  <span class="shield-spark"></span>
+                </div>
+              </div>
+
+              <div class="flex justify-center">
+                <div class="eye-shell">
+                  <span class="iris-disc"></span>
+                  <span class="retina-disc">
+                    <span x-show="mode === 'normal'" class="damage-ring"></span>
+                    <span x-show="mode === 'advanced'" class="safe-ring"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div x-show="mode === 'normal'" class="beams normal-beams" x-transition.opacity.duration.200ms>
+              <span class="beam beam-1"></span>
+              <span class="beam beam-2"></span>
+              <span class="beam beam-3"></span>
+            </div>
+
+            <div x-show="mode === 'advanced'" class="beams protect-beams" x-transition.opacity.duration.200ms>
+              <span class="beam incoming beam-1"></span>
+              <span class="beam incoming beam-2"></span>
+              <span class="beam incoming beam-3"></span>
+              <span class="beam reflect beam-1"></span>
+              <span class="beam reflect beam-2"></span>
+              <span class="beam reflect beam-3"></span>
+            </div>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-2">
+            <article
+              class="flex flex-col gap-2 rounded-[1.5rem] border p-4"
+              :class="mode === 'normal' ? 'border-hev-500/30 bg-hev-500/5' : 'border-slate-200 bg-white/70'"
+            >
+              <div class="flex items-center gap-2">
+                <span class="size-3 rounded-full bg-hev-500"></span>
+                <h3 class="font-black text-medical-navy">通常UVカットレンズの場合</h3>
+              </div>
+              <p class="text-sm leading-7 text-slate-600" x-text="scenario.normalText"></p>
+            </article>
+
+            <article
+              class="flex flex-col gap-2 rounded-[1.5rem] border p-4"
+              :class="mode === 'advanced' ? 'border-marigold-500/60 bg-marigold-500/10 shadow-glow' : 'border-slate-200 bg-white/70'"
+            >
+              <div class="flex items-center gap-2">
+                <span class="size-3 rounded-full bg-marigold-500"></span>
+                <h3 class="font-black text-medical-navy">次世代UVカットレンズの場合</h3>
+              </div>
+              <p class="text-sm leading-7 text-slate-600" x-text="scenario.advancedText"></p>
+            </article>
+          </div>
+
+          <div class="rounded-[1.4rem] border border-medical-line/80 bg-white/80 p-4">
+            <p class="text-xs font-black text-medical-blue">スタッフメモ</p>
+            <p class="mt-1 text-sm leading-7 text-slate-600">
+              この図は接客説明用の概念アニメーションです。病気の診断・治療を示すものではなく、光対策をわかりやすく伝えるための視覚化としてご案内してください。
+            </p>
+          </div>
+        </div>
+
+        <div class="script-card flex flex-col gap-5 rounded-[2.3rem] p-5 shadow-medical sm:p-8">
+          <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div class="flex flex-col gap-2">
+              <p class="text-xs font-black uppercase tracking-[.24em] text-medical-blue">Talk Script</p>
+              <h2 class="text-2xl font-black text-medical-navy">接客トークカンペ</h2>
+              <p class="text-sm leading-7 text-slate-600">
+                下の順番で読み上げれば、共感から健康投資の提案まで自然につながります。
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <template x-for="(_, index) in scenario.script" :key="index">
+                <span
+                  class="size-2.5 rounded-full transition"
+                  :class="index <= scriptIndex ? 'bg-marigold-500' : 'bg-slate-200'"
+                ></span>
+              </template>
+            </div>
+          </div>
+
+          <div class="grid gap-3">
+            <template x-for="(step, index) in visibleScriptSteps" :key="step.title">
+              <article class="script-quote rounded-[1.4rem] p-4">
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="grid size-8 shrink-0 place-items-center rounded-full bg-medical-navy text-xs font-black text-white" x-text="index + 1"></span>
+                    <p class="text-sm font-black text-medical-blue" x-text="step.title"></p>
+                  </div>
+                  <p class="text-base font-bold leading-8 text-slate-700" x-html="step.body"></p>
+                  <p class="rounded-2xl bg-medical-pale px-4 py-3 text-sm font-bold leading-7 text-medical-navy" x-text="step.intent"></p>
+                </div>
+              </article>
+            </template>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <button
+              type="button"
+              class="rounded-2xl bg-medical-navy px-5 py-4 text-sm font-black text-white shadow-lg shadow-medical-blue/20 transition hover:-translate-y-0.5 hover:bg-medical-blue focus:outline-none focus:ring-4 focus:ring-medical-line"
+              @click="nextScript()"
+            >
+              次の一言を表示する
+            </button>
+
+            <button
+              type="button"
+              class="rounded-2xl border border-medical-line bg-white px-5 py-4 text-sm font-black text-medical-navy transition hover:-translate-y-0.5 hover:border-marigold-500 focus:outline-none focus:ring-4 focus:ring-medical-line"
+              @click="copyScript()"
+            >
+              表示中のカンペをコピー
+            </button>
+          </div>
+        </div>
+      </section>
+    </template>
+  </main>
+
+  <div
+    x-show="toast"
+    x-transition.opacity.duration.200ms
+    class="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl bg-medical-navy px-5 py-4 text-center text-sm font-bold text-white shadow-2xl"
+    role="status"
+    aria-live="polite"
+    x-text="toast"
+  ></div>
+
+  <script>
+    const SCENARIOS = {
+      skin: {
+        icon: "☀️",
+        sourceMark: "☀️",
+        badge: "Beauty UV Care",
+        title: "美容意識の高いお客様には、目元の“見えない日焼け”から伝える",
+        lead: "肌のUVケアをしている方ほど、「目の奥も光の影響を受ける」という話に納得感があります。美容習慣の延長として、次世代UVカットレンズを健康投資に置き換えて提案します。",
+        pitch: "肌の日焼け止めと同じ感覚で、“眼の奥にかける日焼け対策”として案内する。",
+        normalText: "通常のUVカットでは、紫外線対策の説明だけで終わりがちです。シミ・シワ対策に敏感なお客様にも、青紫色のHEVが網膜側へ届くイメージを見せることで、目元ケアの必要性が伝わります。",
+        advancedText: "次世代UVカットなら、HEVなどの有害光線をレンズ表面で受け止めるイメージを示せます。マリーゴールド色の網膜エリアを守り、美容ケアから健康ケアへ自然に提案を広げられます。",
+        script: [
+          {
+            title: "共感から入る",
+            body: "「日焼け止めを毎日塗られているんですね。<strong>美容の予防意識がとても高い方</strong>ほど、実は目のケアも相性がいいんです。」",
+            intent: "最初に褒めることで売り込み感を下げ、既存の美容習慣に接続します。"
+          },
+          {
+            title: "気づきを作る",
+            body: "「肌には日焼け止めを塗れますが、<strong>眼の奥には日焼け止めを塗れません</strong>。だから、レンズで光を選んであげる考え方です。」",
+            intent: "“目には塗れない”という直感的な比較で、必要性を一瞬で理解してもらいます。"
+          },
+          {
+            title: "通常レンズとの差を見せる",
+            body: "「通常のUVカットは大切ですが、こちらの青紫色の光まで意識すると、<strong>目元美容から将来の目の健康</strong>まで守る提案になります。」",
+            intent: "価格差ではなく、守る範囲の違いとして比較します。"
+          },
+          {
+            title: "次世代レンズを提案する",
+            body: "「こちらは単なるメガネではなく、<strong>将来の眼の健康を守る“かけるサプリメント”</strong>のようなレンズです。」",
+            intent: "高単価商品を“贅沢品”ではなく“毎日の健康投資”として再定義します。"
+          },
+          {
+            title: "クロージング",
+            body: "「お肌のケアを毎日されている方なら、目も同じように毎日守る価値があります。<strong>美容意識の高い方にこそおすすめ</strong>です。」",
+            intent: "お客様の価値観に合わせて、納得感のある最後の一押しをします。"
+          }
+        ]
+      },
+
+      screen: {
+        icon: "💻",
+        sourceMark: "▣",
+        badge: "Digital Eye Fatigue",
+        title: "画面を見る時間が長いお客様には、HEVの“突き刺さる光”を見せる",
+        lead: "パソコンやスマホを長時間使うお客様には、疲れ目の実感があります。画面由来の青紫色の光がすり抜ける比較から、日常時間そのものをケアする提案へつなげます。",
+        pitch: "仕事・スマホ・移動中まで、浴び続ける光を“毎日カットする習慣”として伝える。",
+        normalText: "通常レンズでは、画面から届く青紫色のHEVがレンズを通り抜け、眼の奥へ向かうイメージを表現しています。疲れ目の実感があるお客様には、視覚的に違いを理解してもらいやすくなります。",
+        advancedText: "次世代UVカットでは、画面由来の鋭い光がレンズ表面でピタッと跳ね返るように可視化されます。網膜エリアのマリーゴールド色が穏やかに保たれ、毎日のデジタル生活のケアとして提案できます。",
+        script: [
+          {
+            title: "生活シーンに合わせる",
+            body: "「パソコンやスマホを見る時間が長いと、夕方に目の重さを感じやすいですよね。<strong>画面を見る時間そのものをケアする</strong>考え方があります。」",
+            intent: "お客様の実感に合わせて、レンズ提案を日常の困りごとに結びつけます。"
+          },
+          {
+            title: "見えない光を可視化する",
+            body: "「こちらの青紫色の光が、目に見えにくいHEVのイメージです。<strong>見えないからこそ、対策している実感が持ちにくい</strong>んです。」",
+            intent: "アニメーションを見ながら説明することで、抽象的な光対策を具体化します。"
+          },
+          {
+            title: "通常レンズの限界をやさしく伝える",
+            body: "「通常のUVカットももちろん大切です。ただ、画面時間が長い方には、<strong>紫外線だけでなく青紫色の光まで意識したレンズ</strong>がおすすめです。」",
+            intent: "既存商品を否定せず、上位レンズの必要性を自然に示します。"
+          },
+          {
+            title: "次世代レンズを提案する",
+            body: "「この次世代UVカットは、毎日の仕事中もスマホ時間も、<strong>眼の奥を守る“かけるサプリメント”</strong>として使っていただけます。」",
+            intent: "利用頻度の高さを価値に変え、価格の納得感を高めます。"
+          },
+          {
+            title: "クロージング",
+            body: "「画面を見る時間はなかなか減らせないので、<strong>見る時間を我慢するより、浴びる光を選ぶ</strong>のが現実的です。」",
+            intent: "行動制限ではなく、無理なく続く対策として購入理由を作ります。"
+          }
+        ]
+      },
+
+      future: {
+        icon: "🛡️",
+        sourceMark: "◌",
+        badge: "Preventive Health Investment",
+        title: "将来の眼病が気になるお客様には、“治療前の予防投資”として提案する",
+        lead: "白内障など将来の眼病を不安に感じ始めたお客様には、恐怖訴求ではなく、今からできる穏やかな予防習慣として伝えます。医療的な信頼感と安心感を重視します。",
+        pitch: "不安をあおらず、“今からできる目の健康投資”として次世代レンズの価値を示す。",
+        normalText: "通常UVカットでは、目の表面の対策だけに意識が向きやすくなります。長期的な光ストレスのイメージとして、青紫色の光が網膜側へじわじわ届く様子を表現しています。",
+        advancedText: "次世代UVカットでは、眼の奥に届く前に有害光線をレンズ面で弾き返すイメージを表示します。将来の不安を、今日から始められる予防行動へ変える説明がしやすくなります。",
+        script: [
+          {
+            title: "不安に寄り添う",
+            body: "「最近、将来の目の健康を気にされる方が本当に増えています。<strong>不安になってから考えるのではなく、今から守る</strong>という選択肢があります。」",
+            intent: "恐怖をあおらず、前向きな予防行動として会話を始めます。"
+          },
+          {
+            title: "肌との比較で理解させる",
+            body: "「肌に日焼け止めを塗るように、<strong>眼の奥にも日焼け対策が必要</strong>という考え方です。」",
+            intent: "難しい医療説明にせず、誰でもわかる美容習慣に置き換えます。"
+          },
+          {
+            title: "通常レンズとの差を説明する",
+            body: "「通常のUVカットは基本の対策です。そこに加えて、将来を考える方には、<strong>HEVやルテイン保護まで意識したレンズ</strong>をご案内しています。」",
+            intent: "通常レンズを否定せず、健康投資として上位提案へ進めます。"
+          },
+          {
+            title: "次世代レンズを提案する",
+            body: "「これは単なるメガネではなく、毎日かけることで目を守る、<strong>“かけるサプリメント”のような健康投資</strong>です。」",
+            intent: "高単価レンズを日割りの健康習慣として感じてもらいます。"
+          },
+          {
+            title: "クロージング",
+            body: "「目は一生使うものなので、見え方だけでなく、<strong>将来の健康を守るレンズ</strong>として選んでいただく方が増えています。」",
+            intent: "“今買う理由”を、将来の安心に接続して締めます。"
+          }
+        ]
+      }
+    };
+
+    function uvLensApp() {
+      return {
+        selected: null,
+        mode: "normal",
+        scriptIndex: 0,
+        toast: "",
+
+        get scenario() {
+          return SCENARIOS[this.selected] || SCENARIOS.skin;
+        },
+
+        get visibleScriptSteps() {
+          return this.scenario.script.slice(0, this.scriptIndex + 1);
+        },
+
+        selectScenario(key) {
+          if (!SCENARIOS[key]) {
+            this.showToast("選択肢を正しく選んでください。");
+            return;
+          }
+
+          this.selected = key;
+          this.mode = "normal";
+          this.scriptIndex = 0;
+
+          this.$nextTick(() => {
+            const target = document.getElementById("simulation-area");
+            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        },
+
+        setMode(nextMode) {
+          if (!["normal", "advanced"].includes(nextMode)) {
+            this.showToast("比較モードを正しく選択してください。");
+            return;
+          }
+
+          this.mode = nextMode;
+
+          if (nextMode === "advanced" && this.scriptIndex < 2) {
+            this.scriptIndex = 2;
+          }
+        },
+
+        nextScript() {
+          const lastIndex = this.scenario.script.length - 1;
+
+          if (this.scriptIndex < lastIndex) {
+            this.scriptIndex += 1;
+            return;
+          }
+
+          this.showToast("クロージングまで表示済みです。このまま読み上げられます。");
+        },
+
+        resetApp() {
+          this.selected = null;
+          this.mode = "normal";
+          this.scriptIndex = 0;
+          this.$nextTick(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+        },
+
+        async copyScript() {
+          const text = this.visibleScriptSteps
+            .map((step, index) => `${index + 1}. ${step.title}\n${this.stripHtml(step.body)}\n目的：${step.intent}`)
+            .join("\n\n");
+
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              const textarea = document.createElement("textarea");
+              textarea.value = text;
+              textarea.setAttribute("readonly", "");
+              textarea.style.position = "fixed";
+              textarea.style.left = "-9999px";
+              document.body.appendChild(textarea);
+              textarea.select();
+              document.execCommand("copy");
+              document.body.removeChild(textarea);
+            }
+
+            this.showToast("表示中のカンペをコピーしました。");
+          } catch (error) {
+            console.error(error);
+            this.showToast("コピーできませんでした。画面の文面を直接ご利用ください。");
+          }
+        },
+
+        stripHtml(html) {
+          const div = document.createElement("div");
+          div.innerHTML = html;
+          return div.textContent || div.innerText || "";
+        },
+
+        showToast(message) {
+          this.toast = message;
+          window.clearTimeout(this.toastTimer);
+          this.toastTimer = window.setTimeout(() => {
+            this.toast = "";
+          }, 2600);
+        }
+      };
+    }
+  </script>
+</body>
+</html>
