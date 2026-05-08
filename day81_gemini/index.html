@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>次世代UVカットレンズ 提案シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムテーマカラー・フォント */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #fcfcfc;
+            color: #1a202c;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 医療パンフレット風のカスタムカラー定義 */
+        :root {
+            --color-deep-blue: #0A1931; /* 医療・信頼 */
+            --color-lutein-yellow: #FFB703; /* マリーゴールドイエロー(ルテイン) */
+            --color-hev-light: #6C5CE7; /* 有害な青紫光線 */
+            --color-danger: #E63946; /* ダメージ */
+        }
+
+        .text-deep-blue { color: var(--color-deep-blue); }
+        .bg-deep-blue { background-color: var(--color-deep-blue); }
+        .border-deep-blue { border-color: var(--color-deep-blue); }
+        
+        .text-lutein { color: var(--color-lutein-yellow); }
+        .bg-lutein { background-color: var(--color-lutein-yellow); }
+        
+        /* トークスクリプトのハイライト */
+        mark.talk-highlight {
+            background: linear-gradient(transparent 60%, rgba(255, 183, 3, 0.4) 60%);
+            color: var(--color-deep-blue);
+            font-weight: 700;
+            padding: 0 0.2em;
+            border-radius: 2px;
+        }
+
+        /* ----- SVG アニメーション定義 ----- */
+        /* HEV光線のアニメーション (通常レンズ: 貫通) */
+        @keyframes shoot-through {
+            0% { transform: translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            40% { transform: translateX(180px); opacity: 1; } /* レンズ通過 */
+            80% { transform: translateX(330px); opacity: 1; } /* 網膜到達 */
+            85% { opacity: 0; }
+            100% { transform: translateX(330px); opacity: 0; }
+        }
+        /* HEV光線のアニメーション (次世代レンズ: 反射/ブロック) */
+        @keyframes shoot-block {
+            0% { transform: translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            40% { transform: translateX(170px); opacity: 1; } /* レンズ到達 */
+            50% { transform: translateX(160px) translateY(-20px); opacity: 0; } /* 弾き返される */
+            100% { opacity: 0; }
+        }
+
+        /* 網膜ダメージエフェクト */
+        @keyframes damage-pulse {
+            0%, 75% { r: 0; opacity: 0; fill: var(--color-danger); }
+            80% { r: 15; opacity: 0.8; }
+            95% { r: 30; opacity: 0; }
+            100% { r: 0; opacity: 0; }
+        }
+
+        /* レンズシールドエフェクト */
+        @keyframes shield-flash {
+            0%, 35% { opacity: 0; transform: scaleY(1); }
+            40% { opacity: 0.8; transform: scaleY(1.1); stroke: var(--color-lutein-yellow); }
+            50% { opacity: 0; transform: scaleY(1); }
+            100% { opacity: 0; }
+        }
+
+        /* 状態によるアニメーションの適用 */
+        .sim-state-normal .ray-1 { animation: shoot-through 2.5s infinite; }
+        .sim-state-normal .ray-2 { animation: shoot-through 2.5s infinite 0.2s; }
+        .sim-state-normal .ray-3 { animation: shoot-through 2.5s infinite 0.4s; }
+        .sim-state-normal .damage-ripple { animation: damage-pulse 2.5s infinite; }
+        .sim-state-normal .lens-shield { opacity: 0; }
+        
+        .sim-state-nextgen .ray-1 { animation: shoot-block 2.5s infinite; }
+        .sim-state-nextgen .ray-2 { animation: shoot-block 2.5s infinite 0.2s; }
+        .sim-state-nextgen .ray-3 { animation: shoot-block 2.5s infinite 0.4s; }
+        .sim-state-nextgen .lens-shield { animation: shield-flash 2.5s infinite; }
+        .sim-state-nextgen .damage-ripple { opacity: 0; }
+
+        /* フェードインアニメーション */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* UIの装飾脱却（ソリッド＆クリーン） */
+        .btn-outline {
+            border: 1px solid var(--color-deep-blue);
+            color: var(--color-deep-blue);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-outline:hover, .btn-outline.active {
+            background-color: var(--color-deep-blue);
+            color: white;
+        }
+        .section-line {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(10,25,49,0.1) 0%, rgba(10,25,49,0.3) 50%, rgba(10,25,49,0.1) 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8 px-4 sm:px-6">
+
+    <!-- アプリコンテナ（骨組みと幅の制御） -->
+    <main class="w-full max-w-2xl bg-white border border-gray-100 shadow-sm flex flex-col gap-8 p-6 sm:p-10 rounded-sm">
+        
+        <!-- Header -->
+        <header class="text-center flex flex-col gap-2 border-b border-gray-100 pb-6">
+            <p class="text-xs tracking-widest text-gray-400 uppercase">Preventive Eye Care Simulator</p>
+            <h1 class="text-2xl sm:text-3xl font-light text-deep-blue tracking-wide">
+                <span class="font-bold">次世代</span>UVカットレンズ提案
+            </h1>
+        </header>
+
+        <!-- STEP 1: ヒアリング（初期表示） -->
+        <section id="step1-container" class="flex flex-col gap-6">
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold tracking-widest text-white bg-deep-blue px-2 py-1">STEP 1</span>
+                <h2 class="text-sm font-bold text-gray-600">お客様の「健康・美容」に関する意識をお聞かせください</h2>
+            </div>
+            
+            <!-- 選択肢ボタングループ（flex-colで確実にレスポンシブ） -->
+            <div class="flex flex-col gap-3">
+                <button onclick="selectCustomerType('beauty')" id="btn-beauty" class="btn-outline w-full text-left px-5 py-4 rounded-sm text-sm sm:text-base flex items-center justify-between group">
+                    <span>「肌のシミやシワ予防に、日焼け止めを塗っている」</span>
+                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <button onclick="selectCustomerType('digital')" id="btn-digital" class="btn-outline w-full text-left px-5 py-4 rounded-sm text-sm sm:text-base flex items-center justify-between group">
+                    <span>「パソコンやスマホをよく使い、目が疲れやすい」</span>
+                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <button onclick="selectCustomerType('health')" id="btn-health" class="btn-outline w-full text-left px-5 py-4 rounded-sm text-sm sm:text-base flex items-center justify-between group">
+                    <span>「将来の眼病（白内障など）が少し不安になってきた」</span>
+                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: シミュレーション＆トーク（初期非表示。JSで展開） -->
+        <section id="step2-container" class="hidden flex-col gap-8 fade-in">
+            <div class="section-line"></div>
+            
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold tracking-widest text-white bg-deep-blue px-2 py-1">STEP 2</span>
+                <h2 class="text-sm font-bold text-gray-600">有害光線（HEV）カットシミュレーション</h2>
+            </div>
+
+            <!-- アプローチトーク表示エリア（選択肢により動的変化） -->
+            <div class="bg-gray-50 border-l-4 border-deep-blue p-4 text-sm sm:text-base leading-relaxed text-gray-700">
+                <span class="text-xs font-bold text-deep-blue mb-1 block">接客トーク（導入）</span>
+                <p id="approach-talk">ここに導入トークが表示されます。</p>
+            </div>
+
+            <!-- シミュレーション UI エリア -->
+            <div class="flex flex-col gap-4 border border-gray-200 p-4 sm:p-6 bg-white relative">
+                
+                <!-- レンズ切替タブ -->
+                <div class="flex bg-gray-100 p-1 rounded-sm">
+                    <button onclick="switchSimulation('normal')" id="tab-normal" class="flex-1 py-2 text-sm font-bold bg-white text-deep-blue shadow-sm transition-all rounded-sm">従来のUVカット</button>
+                    <button onclick="switchSimulation('nextgen')" id="tab-nextgen" class="flex-1 py-2 text-sm font-bold text-gray-500 hover:text-deep-blue transition-all rounded-sm">次世代UVカット</button>
+                </div>
+
+                <!-- SVGアニメーション領域（レスポンシブ対応・被り絶対回避） -->
+                <div class="w-full aspect-[2/1] relative flex items-center justify-center py-4">
+                    <svg id="simulator-svg" class="w-full h-full sim-state-normal" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <!-- レンズグラデーション -->
+                            <linearGradient id="lensGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#e2e8f0" stop-opacity="0.2"/>
+                                <stop offset="50%" stop-color="#94a3b8" stop-opacity="0.4"/>
+                                <stop offset="100%" stop-color="#e2e8f0" stop-opacity="0.2"/>
+                            </linearGradient>
+                            <!-- 光線グラデーション -->
+                            <linearGradient id="hevGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#a78bfa" stop-opacity="0"/>
+                                <stop offset="100%" stop-color="#6C5CE7" stop-opacity="1"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- 左側: 光源アイコン -->
+                        <g transform="translate(10, 100)">
+                            <circle cx="0" cy="0" r="15" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+                            <text x="0" y="4" font-size="10" text-anchor="middle" fill="#64748b" font-weight="bold">光</text>
+                            <text x="0" y="30" font-size="10" text-anchor="middle" fill="#6C5CE7" font-weight="bold">HEV</text>
+                        </g>
+
+                        <!-- HEV光線 (アニメーション対象) -->
+                        <g stroke="url(#hevGrad)" stroke-width="4" stroke-linecap="round">
+                            <line class="ray-1" x1="30" y1="90" x2="60" y2="90" />
+                            <line class="ray-2" x1="30" y1="100" x2="60" y2="100" />
+                            <line class="ray-3" x1="30" y1="110" x2="60" y2="110" />
+                        </g>
+
+                        <!-- 中央: レンズ -->
+                        <g transform="translate(200, 100)">
+                            <!-- レンズ本体 -->
+                            <path d="M 0 -70 Q 15 0 0 70 Q -10 0 0 -70" fill="url(#lensGrad)" stroke="#cbd5e1" stroke-width="1.5"/>
+                            <!-- 次世代レンズ時の反射シールド (アニメーション対象) -->
+                            <path class="lens-shield" d="M -5 -60 Q -20 0 -5 60" fill="none" stroke-width="4" stroke-linecap="round"/>
+                            <text x="0" y="-85" font-size="12" text-anchor="middle" fill="#475569" font-weight="bold" id="lens-label">従来UVカット</text>
+                        </g>
+
+                        <!-- 右側: 眼球モデル -->
+                        <g transform="translate(340, 100)">
+                            <!-- 強膜 (白目) -->
+                            <path d="M -30 -60 A 60 60 0 0 1 30 0 A 60 60 0 0 1 -30 60 L -30 -60" fill="#fcfcfc" stroke="#e2e8f0" stroke-width="2"/>
+                            <!-- 角膜・水晶体エリア -->
+                            <path d="M -30 -40 Q -50 0 -30 40" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+                            <!-- 網膜 (ルテインエリア: マリーゴールドイエロー) -->
+                            <path d="M 15 -45 A 50 50 0 0 1 25 0 A 50 50 0 0 1 15 45" fill="none" stroke="var(--color-lutein-yellow)" stroke-width="8" stroke-linecap="round"/>
+                            <!-- 黄斑部テキスト -->
+                            <text x="35" y="4" font-size="10" text-anchor="start" fill="var(--color-lutein-yellow)" font-weight="bold">網膜(ルテイン)</text>
+                            
+                            <!-- ダメージ波紋 (通常レンズ時アニメーション) -->
+                            <circle class="damage-ripple" cx="20" cy="0" r="0" fill="none" stroke-width="0"/>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- シミュレーション解説トーク -->
+                <div class="bg-gray-50 border-l-4 border-lutein p-4 text-sm sm:text-base leading-relaxed text-gray-700 mt-2">
+                    <span class="text-xs font-bold text-deep-blue mb-1 block">接客トーク（解説）</span>
+                    <p id="sim-talk" class="min-h-[4rem] flex items-center">
+                        従来のUVカットレンズでは、実は眼の奥（網膜）にダメージを与える<mark class="talk-highlight">強い青紫光（HEV）までは防ぎきれません。</mark>
+                    </p>
+                </div>
+            </div>
+
+            <!-- STEP 3: クロージングトーク -->
+            <div class="flex flex-col gap-4 mt-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold tracking-widest text-white bg-deep-blue px-2 py-1">STEP 3</span>
+                    <h2 class="text-sm font-bold text-gray-600">提案のクロージング</h2>
+                </div>
+                <div class="bg-deep-blue text-white p-5 sm:p-6 rounded-sm shadow-md">
+                    <span class="text-xs font-bold text-lutein mb-2 block tracking-wider">接客トーク（クロージング）</span>
+                    <p class="text-sm sm:text-base leading-loose font-light">
+                        肌に日焼け止めを塗るように、<span class="font-bold text-lutein border-b border-lutein pb-1">眼の奥にも日焼け対策が必要</span>です。<br>
+                        こちらのレンズは単なる見え方の補正ではありません。大切なルテインを守り、将来の眼の健康を維持するための<span class="font-bold text-xl ml-1 text-lutein">『かけるサプリメント』</span>として、自信を持っておすすめいたします。
+                    </p>
+                </div>
+            </div>
+            
+            <!-- リセットボタン -->
+            <div class="text-center mt-6 pt-6 border-t border-gray-100">
+                <button onclick="resetApp()" class="text-sm text-gray-400 hover:text-gray-600 underline">最初からやり直す</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ロジック部分 -->
+    <script>
+        // トークデータの定義（手抜きなし・的確な出し分け）
+        const talkData = {
+            beauty: "肌のシミやシワ予防、バッチリされていますね！実は、<mark class='talk-highlight'>眼から入る紫外線や強い光も、脳が反応して肌のシミの原因になる</mark>ことはご存知でしたか？",
+            digital: "日常的に画面を見ていると、眼の奥まで負担がかかりますよね。その深い疲れ、もしかすると<mark class='talk-highlight'>画面から発せられる強い青紫光（HEV）が原因</mark>かもしれません。",
+            health: "長く健康な眼でいたいですよね。白内障などの眼病リスクを下げるには、<mark class='talk-highlight'>今のうちから『眼の奥の網膜』を有害光線から守る</mark>ことが非常に重要なんです。"
+        };
+
+        const simTalkData = {
+            normal: "従来のUVカットレンズでは、紫外線は防げても、実は眼の奥（網膜）まで到達してジワジワとダメージを与える<mark class='talk-highlight'>強い青紫光（HEV）までは防ぎきれません。</mark>",
+            nextgen: "こちらの『次世代UVカットレンズ』をご覧ください。<mark class='talk-highlight'>眼の奥にある大切なルテインを守るため、有害な光をレンズ表面でピタッ！と弾き返します。</mark>眼球が穏やかに保たれているのがわかりますね。"
+        };
+
+        // 状態管理
+        let currentSimulation = 'normal';
+
+        // DOM要素の取得
+        const step2Container = document.getElementById('step2-container');
+        const approachTalkEl = document.getElementById('approach-talk');
+        const simTalkEl = document.getElementById('sim-talk');
+        const svgEl = document.getElementById('simulator-svg');
+        const lensLabel = document.getElementById('lens-label');
+        
+        const tabNormal = document.getElementById('tab-normal');
+        const tabNextgen = document.getElementById('tab-nextgen');
+
+        // STEP 1: お客様タイプ選択
+        function selectCustomerType(type) {
+            // ボタンのアクティブ状態リセット＆設定
+            document.querySelectorAll('#step1-container button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${type}`).classList.add('active');
+
+            // 導入トークのセット
+            approachTalkEl.innerHTML = talkData[type];
+
+            // STEP 2をプログレッシブ・ディクロージャーで表示
+            step2Container.classList.remove('hidden');
+            step2Container.classList.add('flex');
+            
+            // スクロールして見やすくする
+            setTimeout(() => {
+                step2Container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // STEP 2: シミュレーション切り替え
+        function switchSimulation(type) {
+            if (currentSimulation === type) return;
+            currentSimulation = type;
+
+            // タブのスタイリング切り替え
+            if (type === 'normal') {
+                tabNormal.classList.replace('text-gray-500', 'text-deep-blue');
+                tabNormal.classList.replace('bg-transparent', 'bg-white');
+                tabNormal.classList.add('shadow-sm');
+                
+                tabNextgen.classList.replace('text-deep-blue', 'text-gray-500');
+                tabNextgen.classList.replace('bg-white', 'transparent');
+                tabNextgen.classList.remove('shadow-sm');
+                
+                // SVGクラス・テキスト切り替え
+                svgEl.classList.remove('sim-state-nextgen');
+                svgEl.classList.add('sim-state-normal');
+                lensLabel.textContent = "従来UVカット";
+            } else {
+                tabNextgen.classList.replace('text-gray-500', 'text-deep-blue');
+                tabNextgen.classList.replace('bg-transparent', 'bg-white');
+                tabNextgen.classList.add('shadow-sm');
+                
+                tabNormal.classList.replace('text-deep-blue', 'text-gray-500');
+                tabNormal.classList.replace('bg-white', 'transparent');
+                tabNormal.classList.remove('shadow-sm');
+                
+                // SVGクラス・テキスト切り替え
+                svgEl.classList.remove('sim-state-normal');
+                svgEl.classList.add('sim-state-nextgen');
+                lensLabel.textContent = "次世代UV・HEVカット";
+            }
+
+            // シミュレーション解説トークの切り替え（フェードエフェクト付き）
+            simTalkEl.style.opacity = '0';
+            setTimeout(() => {
+                simTalkEl.innerHTML = simTalkData[type];
+                simTalkEl.style.opacity = '1';
+                simTalkEl.style.transition = 'opacity 0.3s ease';
+            }, 200);
+        }
+
+        // 最初からやり直す
+        function resetApp() {
+            step2Container.classList.add('hidden');
+            step2Container.classList.remove('flex');
+            document.querySelectorAll('#step1-container button').forEach(btn => btn.classList.remove('active'));
+            switchSimulation('normal'); // シミュレーション状態もリセット
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
