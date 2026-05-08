@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>近視進行抑制レンズ シミュレーター</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Zen Maru Gothic (丸ゴシックで優しさを演出) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind Custom Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            offwhite: '#FDFBF7',
+            pastelgreen: '#88D4AB',
+            babyblue: '#A0C4E2',
+            softtext: '#4A5568',
+            paper: '#FFFDF5',
+          },
+          fontFamily: {
+            sans: ['"Zen Maru Gothic"', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.6s ease-out forwards',
+            'bounce-soft': 'bounceSoft 2s infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            bounceSoft: {
+              '0%, 100%': { transform: 'translateY(-5%)' },
+              '50%': { transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* アプリ全体の世界観を補強するベーススタイル */
+    body {
+      background-color: #FDFBF7;
+      color: #4A5568;
+      /* スクロールバー非表示 (UIをすっきりさせるため) */
+      -ms-overflow-style: none; 
+      scrollbar-width: none;
+    }
+    body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ボタンの押し込みエフェクト用 */
+    .btn-pushable {
+      transition: all 0.15s ease;
+    }
+    .btn-pushable:active {
+      transform: translateY(6px);
+      box-shadow: 0 0px 0 0 transparent !important;
+    }
+
+    /* SVGアニメーション用カスタムCSS */
+    .eyeball-shape { 
+      transform-origin: 130px 80px; 
+      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    }
+    .is-standard .eyeball-shape { 
+      transform: scaleX(1.25) translateX(12px); 
+      stroke: #FCA5A5; /* 不安を煽りすぎないソフトな赤 */
+    }
+    .is-control .eyeball-shape { 
+      transform: scaleX(1) translateX(0); 
+      stroke: #88D4AB; /* 安心のグリーン */
+    }
+    
+    .ray-std { transition: opacity 0.5s ease; }
+    .is-standard .ray-std { opacity: 1; }
+    .is-control .ray-std { opacity: 0; pointer-events: none; }
+    
+    .ray-ctrl { transition: opacity 0.5s ease; }
+    .is-standard .ray-ctrl { opacity: 0; pointer-events: none; }
+    .is-control .ray-ctrl { opacity: 1; }
+
+    .shield-effect { 
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+      transform-origin: 190px 80px; 
+    }
+    .is-standard .shield-effect { opacity: 0; transform: scale(0.5); }
+    .is-control .shield-effect { opacity: 1; transform: scale(1); }
+
+    .lens-ctrl-zone { transition: opacity 0.5s ease; }
+    .is-standard .lens-ctrl-zone { opacity: 0; }
+    .is-control .lens-ctrl-zone { opacity: 1; }
+  </style>
+</head>
+<body class="antialiased font-sans pb-20">
+
+  <!-- Header -->
+  <header class="bg-white border-b-4 border-pastelgreen px-4 py-4 sticky top-0 z-50 shadow-sm flex items-center justify-center gap-2">
+    <svg class="w-6 h-6 text-pastelgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+    <h1 class="text-lg md:text-xl font-bold text-gray-700 tracking-wide">キッズ・アイケア シミュレーター</h1>
+  </header>
+
+  <main id="app-container" class="max-w-2xl mx-auto p-4 md:p-6 flex flex-col gap-8 mt-4">
+    
+    <!-- Step 1: 初期画面（情報過多を防ぐための選択肢のみ） -->
+    <section id="step1-section" class="flex flex-col gap-6 w-full animate-fade-in">
+      <div class="text-center">
+        <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-2">お子様の眼について、<br class="md:hidden">一番気がかりなことは？</h2>
+        <p class="text-sm text-gray-500">当てはまるものを1つお選びください</p>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <!-- 選択肢ボタン (知育アプリ風の触りたくなるUI) -->
+        <button data-worry="worryA" class="worry-btn btn-pushable w-full text-left bg-white p-4 md:p-5 rounded-2xl border-2 border-babyblue shadow-[0_6px_0_#A0C4E2] flex items-center gap-4 group">
+          <div class="bg-babyblue text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shrink-0 group-hover:scale-110 transition-transform">1</div>
+          <span class="font-bold text-gray-700 leading-snug md:text-lg">毎年、学校の視力検査で度が進んでしまう</span>
+        </button>
+
+        <button data-worry="worryB" class="worry-btn btn-pushable w-full text-left bg-white p-4 md:p-5 rounded-2xl border-2 border-pastelgreen shadow-[0_6px_0_#88D4AB] flex items-center gap-4 group">
+          <div class="bg-pastelgreen text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shrink-0 group-hover:scale-110 transition-transform">2</div>
+          <span class="font-bold text-gray-700 leading-snug md:text-lg">将来、強度の近視になって眼の病気にならないか心配</span>
+        </button>
+
+        <button data-worry="worryC" class="worry-btn btn-pushable w-full text-left bg-white p-4 md:p-5 rounded-2xl border-2 border-yellow-300 shadow-[0_6px_0_#FDE047] flex items-center gap-4 group">
+          <div class="bg-yellow-300 text-yellow-800 w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shrink-0 group-hover:scale-110 transition-transform">3</div>
+          <span class="font-bold text-gray-700 leading-snug md:text-lg">ゲームやタブレット学習が多くて、眼の負担が不安</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: シミュレーションと接客トーク（初期は完全に非表示・DOMから隠す） -->
+    <section id="step2-section" class="hidden flex-col gap-8 w-full">
+      
+      <!-- 動的共感トーク (スタッフカンペ) -->
+      <div class="relative bg-paper p-5 md:p-6 rounded-2xl shadow-sm border border-gray-200 mt-2">
+        <!-- マスキングテープ風あしらい -->
+        <div class="absolute -top-3 left-4 w-28 h-6 bg-babyblue/80 rotate-[-2deg] flex items-center justify-center shadow-sm">
+          <span class="text-white text-xs font-bold tracking-widest">TALK SCRIPT</span>
+        </div>
+        <div class="flex gap-3 items-start mt-2">
+          <div class="bg-gray-100 p-2 rounded-full shrink-0">
+            <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+          </div>
+          <p id="empathy-text" class="text-gray-700 leading-relaxed font-medium md:text-lg">
+            <!-- JSで動的に挿入 -->
+          </p>
+        </div>
+      </div>
+
+      <!-- シミュレーター本体 (骨組み死守エリア) -->
+      <div class="bg-white rounded-3xl p-4 md:p-8 shadow-sm border-2 border-gray-100 flex flex-col items-center gap-6">
+        <div class="text-center w-full">
+          <h3 class="text-xl md:text-2xl font-bold text-gray-800">眼の中では何が起きている？</h3>
+          <p class="text-sm text-gray-500 mt-1">ボタンを押して比較してみてください</p>
+        </div>
+
+        <!-- レンズ切り替えトグル (タップしやすいサイズ) -->
+        <div class="flex w-full bg-gray-100 rounded-full p-1 relative z-10">
+          <button id="btn-standard" class="flex-1 py-3 md:py-4 rounded-full font-bold text-sm md:text-base transition-all duration-300 bg-white text-gray-800 shadow border border-gray-200">
+            標準レンズ
+          </button>
+          <button id="btn-control" class="flex-1 py-3 md:py-4 rounded-full font-bold text-sm md:text-base transition-all duration-300 text-gray-400 hover:text-gray-600">
+            進行抑制レンズ
+          </button>
+        </div>
+
+        <!-- CSS/SVGハイブリッド眼球アニメーション (はみ出し絶対NG構造) -->
+        <div class="w-full max-w-sm mx-auto relative overflow-visible py-4">
+          <svg id="eyeball-svg" viewBox="0 0 350 160" class="w-full h-auto is-standard overflow-visible">
+            <!-- 1. 眼球本体 -->
+            <ellipse class="eyeball-shape" cx="130" cy="80" rx="60" ry="60" fill="#ffffff" stroke="#A0C4E2" stroke-width="4"/>
+            
+            <!-- 2. 基準となる網膜の位置（点線） -->
+            <path d="M 190 50 A 30 30 0 0 1 190 110" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4"/>
+            <text x="195" y="45" font-size="11" fill="#64748B" font-family="sans-serif">正常な網膜位置</text>
+
+            <!-- 3. 光線 -->
+            <!-- 標準レンズ時の光線 -->
+            <g class="ray-std">
+              <!-- 中心光 -->
+              <line x1="30" y1="80" x2="190" y2="80" stroke="#FBBF24" stroke-width="3"/>
+              <!-- 周辺光 (奥にズレる) -->
+              <line x1="30" y1="20" x2="230" y2="80" stroke="#FBBF24" stroke-width="2"/>
+              <line x1="30" y1="140" x2="230" y2="80" stroke="#FBBF24" stroke-width="2"/>
+              <!-- 後ろに引っ張られる表現 -->
+              <path d="M 235 75 L 245 80 L 235 85" fill="none" stroke="#EF4444" stroke-width="2"/>
+              <line x1="200" y1="80" x2="245" y2="80" stroke="#EF4444" stroke-width="2" stroke-dasharray="2"/>
+              <text x="250" y="84" font-size="14" fill="#EF4444" font-weight="bold" font-family="sans-serif">伸びる!</text>
+            </g>
+
+            <!-- 抑制レンズ時の光線 -->
+            <g class="ray-ctrl">
+              <!-- 中心光 -->
+              <line x1="30" y1="80" x2="190" y2="80" stroke="#10B981" stroke-width="3"/>
+              <!-- 周辺光 (手前で結像) -->
+              <line x1="30" y1="20" x2="150" y2="45" stroke="#10B981" stroke-width="2"/>
+              <line x1="30" y1="140" x2="150" y2="115" stroke="#10B981" stroke-width="2"/>
+              <!-- ピントが合っているドット -->
+              <circle cx="150" cy="45" r="3.5" fill="#10B981"/>
+              <circle cx="150" cy="115" r="3.5" fill="#10B981"/>
+            </g>
+
+            <!-- 4. 水晶体 -->
+            <ellipse cx="80" cy="80" rx="8" ry="25" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2"/>
+
+            <!-- 5. メガネレンズ -->
+            <path d="M 30 20 Q 40 80 30 140" fill="none" stroke="#A0C4E2" stroke-width="6" stroke-linecap="round"/>
+            <!-- 抑制レンズ特有の周辺設計ゾーン -->
+            <path class="lens-ctrl-zone" d="M 28 20 Q 38 45 35 55 M 28 140 Q 38 115 35 105" fill="none" stroke="#34D399" stroke-width="8" stroke-linecap="round"/>
+
+            <!-- 6. 伸びストップ！のシールドエフェクト (抑制時のみ) -->
+            <g class="shield-effect">
+              <path d="M 185 30 A 50 50 0 0 1 185 130" fill="none" stroke="#10B981" stroke-width="5" stroke-linecap="round"/>
+              <text x="200" y="85" font-size="14" fill="#10B981" font-weight="bold" font-family="sans-serif">STOP!</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- アニメーション連動テキスト -->
+        <div class="bg-gray-50 p-4 w-full rounded-xl border border-gray-100 min-h-[100px] flex items-center justify-center">
+          <p id="lens-explanation" class="text-center text-gray-700 leading-relaxed font-medium md:text-lg transition-opacity duration-300">
+            <!-- JSで動的に挿入 -->
+          </p>
+        </div>
+      </div>
+
+      <!-- クロージングトーク (接客カンペのハイライト) -->
+      <div class="relative bg-yellow-50/80 p-5 md:p-6 rounded-2xl border-l-8 border-yellow-400 mb-8 shadow-sm">
+        <div class="absolute -top-4 right-4 animate-bounce-soft">
+          <div class="bg-red-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+            クロージングで一押し！
+          </div>
+        </div>
+        <p class="text-gray-800 leading-loose md:text-lg">
+          <span id="closing-prefix" class="font-bold text-gray-600 block mb-2"></span>
+          <span class="bg-white/60 font-bold px-1 rounded">標準のレンズは『今』見えるようにするだけ</span>ですが、このレンズは<br class="hidden md:block">
+          <span class="bg-pastelgreen/30 font-bold px-1 rounded text-green-800">『未来』の眼を守るためのサポート</span>をします。<br><br>
+          これは、<span class="border-b-4 border-red-300 font-bold text-red-700 pb-0.5">お子様の成長期にしかできない、<br class="md:hidden">一生モノの眼の健康へのプレゼント</span>です。
+        </p>
+        
+        <!-- 最初に戻るボタン -->
+        <button id="btn-reset" class="mt-6 text-sm text-gray-400 underline hover:text-gray-600 w-full text-center">
+          最初の質問に戻る
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- データ定義 (手抜き禁止: 選択肢ごとの緻密なトーク設計) ---
+      const contentData = {
+        worryA: {
+          empathy: "「毎年、度が進んでしまう…」お子様がすくすく成長されている証拠でもあるのですが、実は身体と一緒に<strong class='text-red-500'>眼球も大きく成長（眼軸が伸びる）</strong>するため、この時期はどうしても近視が進みやすいんです。とてもご心配ですよね。",
+          closingPrefix: "毎年の度数進行を少しでもゆるやかにするために、"
+        },
+        worryB: {
+          empathy: "「将来の眼の病気が心配…」おっしゃる通りです。近視が強く進みすぎると、大人になってからの眼の健康リスクが高まることが分かっています。だからこそ、<strong class='text-pastelgreen'>今のうちから『進行を抑える』ケア</strong>がとても重要になります。",
+          closingPrefix: "将来のお子様の眼の健康リスクを減らすために、"
+        },
+        worryC: {
+          empathy: "「タブレット学習で眼の負担が…」今はデジタル端末が必須ですから避けられないですよね。近くを長時間見続けると、眼がその距離に合わせようと変形し、<strong class='text-red-500'>眼が後ろに伸びて近視が進行</strong>しやすくなります。",
+          closingPrefix: "デジタル環境からお子様の眼の負担を和らげるために、"
+        }
+      };
+
+      const lensData = {
+        standard: "標準レンズは中心のピントは合いますが、<strong class='text-red-500'>周辺の光が奥にズレる</strong>ため、眼がその光を追って<strong class='text-red-500'>後ろに伸びようとしてしまいます</strong>。（これが近視が進む原因の一つです）",
+        control: "進行抑制レンズは特殊な設計で、<strong class='text-green-600'>周辺の光も手前にピタッと合わせます</strong>。これにより眼が後ろに伸びようとするのをブロックし、正常な形を保ちます。"
+      };
+
+      // --- DOM要素の取得 ---
+      const step1Section = document.getElementById('step1-section');
+      const step2Section = document.getElementById('step2-section');
+      const worryBtns = document.querySelectorAll('.worry-btn');
+      
+      const empathyText = document.getElementById('empathy-text');
+      const closingPrefix = document.getElementById('closing-prefix');
+      
+      const btnStandard = document.getElementById('btn-standard');
+      const btnControl = document.getElementById('btn-control');
+      const eyeballSvg = document.getElementById('eyeball-svg');
+      const lensExplanation = document.getElementById('lens-explanation');
+      
+      const btnReset = document.getElementById('btn-reset');
+
+      // --- 状態管理 ---
+      let currentLens = 'standard';
+
+      // --- イベントリスナー: 悩み選択 (Step 1 -> Step 2) ---
+      worryBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const worryId = e.currentTarget.getAttribute('data-worry');
+          const data = contentData[worryId];
+
+          // テキストの流し込み
+          empathyText.innerHTML = data.empathy;
+          closingPrefix.textContent = data.closingPrefix;
+
+          // 画面切り替えアニメーション
+          step1Section.classList.add('hidden');
+          step1Section.classList.remove('animate-fade-in');
+          
+          step2Section.classList.remove('hidden');
+          step2Section.classList.add('flex', 'animate-fade-in');
+
+          // 初期レンズ状態のセット
+          setLens('standard');
+
+          // スムーズスクロールで上部へ
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+
+      // --- イベントリスナー: レンズ切り替え ---
+      btnStandard.addEventListener('click', () => setLens('standard'));
+      btnControl.addEventListener('click', () => setLens('control'));
+
+      function setLens(type) {
+        if (currentLens === type && lensExplanation.innerHTML !== "") return; // 同じならスキップ
+        currentLens = type;
+
+        // UIの切り替え
+        if (type === 'standard') {
+          // ボタン装飾
+          btnStandard.className = "flex-1 py-3 md:py-4 rounded-full font-bold text-sm md:text-base transition-all duration-300 bg-white text-gray-800 shadow border border-gray-200 transform scale-105 z-10";
+          btnControl.className = "flex-1 py-3 md:py-4 rounded-full font-bold text-sm md:text-base transition-all duration-300 bg-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-200/50";
+          
+          // SVGアニメーションクラス
+          eyeballSvg.classList.remove('is-control');
+          eyeballSvg.classList.add('is-standard');
+        } else {
+          // ボタン装飾
+          btnControl.className = "flex-1 py-3 md:py-4 rounded-full font-bold text-sm md:text-base transition-all duration-300 bg-pastelgreen text-white shadow-md border border-green-300 transform scale-105 z-10";
+          btnStandard.className = "flex-1 py-3 md:py-4 rounded-full font-bold text-sm md:text-base transition-all duration-300 bg-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-200/50";
+          
+          // SVGアニメーションクラス
+          eyeballSvg.classList.remove('is-standard');
+          eyeballSvg.classList.add('is-control');
+        }
+
+        // テキストのフェード切り替え
+        lensExplanation.style.opacity = 0;
+        setTimeout(() => {
+          lensExplanation.innerHTML = lensData[type];
+          lensExplanation.style.opacity = 1;
+        }, 300); // CSSのtransition時間と合わせる
+      }
+
+      // --- イベントリスナー: リセット ---
+      btnReset.addEventListener('click', () => {
+        step2Section.classList.add('hidden');
+        step2Section.classList.remove('animate-fade-in');
+        
+        step1Section.classList.remove('hidden');
+        step1Section.classList.add('animate-fade-in');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+    });
+  </script>
+</body>
+</html>
