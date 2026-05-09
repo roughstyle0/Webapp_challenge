@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErgoFit | 快適体験シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* * [DESIGN SYSTEM]
+         * テンプレの角丸・影を排除し、解析ツールとしてのソリッドな世界観を構築。
+         */
+        body {
+            background-color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 独自コンポーネント: ギアボタン */
+        .gear-button {
+            border: 1px solid #94a3b8;
+            background-color: #ffffff;
+            color: #334155;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding: 1rem 1rem 1rem 1.5rem;
+        }
+        .gear-button::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            background-color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+        .gear-button:not(.selected):hover {
+            background-color: #f8fafc;
+            border-color: #64748b;
+        }
+        .gear-button:not(.selected):hover::before {
+            background-color: #64748b;
+        }
+        /* 選択時状態 */
+        .gear-button.selected {
+            background-color: #f1f5f9;
+            border-color: #475569;
+            cursor: default;
+        }
+        .gear-button.selected::before {
+            background-color: #475569;
+        }
+
+        /* 解析グリッド背景 */
+        .analysis-grid {
+            background-image: 
+                linear-gradient(#cbd5e1 1px, transparent 1px), 
+                linear-gradient(90deg, #cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: center center;
+        }
+
+        /* * [ANIMATIONS] 
+         */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes stress-pulse {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(6px); opacity: 0.4; }
+        }
+        .stress-anim {
+            animation: stress-pulse 1.2s infinite ease-in-out;
+        }
+
+        @keyframes draw-line {
+            to { stroke-dashoffset: 0; }
+        }
+        .hold-line {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+        }
+        .draw-active {
+            animation: draw-line 1.5s ease-out forwards;
+        }
+
+        /* スクロールバー非表示 (アプリライクなUIのため) */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="flex justify-center items-start min-h-screen">
+
+    <!-- モバイルファーストコンテナ: スマホ幅を基準に中央配置、レスポンシブ崩れを徹底排除 -->
+    <div class="w-full max-w-md bg-white min-h-screen shadow-2xl flex flex-col relative no-scrollbar">
+        
+        <!-- ヘッダーエリア -->
+        <header class="bg-slate-800 text-white p-4 sticky top-0 z-10 flex justify-between items-center border-b-4 border-cyan-500">
+            <div>
+                <h1 class="text-lg font-bold tracking-widest flex items-center gap-2">
+                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                    ErgoFit SIMULATOR
+                </h1>
+                <p class="text-[10px] text-slate-400 font-mono mt-0.5">CENTER OF GRAVITY ANALYSIS TOOL</p>
+            </div>
+            <button id="reset-btn" class="hidden text-xs text-slate-300 hover:text-white border border-slate-600 px-2 py-1 transition-colors font-mono" onclick="app.reset()">RESET</button>
+        </header>
+
+        <!-- メインコンテンツ (Flexで縦積み、要素の重なりを防止) -->
+        <main class="flex-1 flex flex-col p-4 gap-6 overflow-y-auto">
+            
+            <!-- STEP 1: お悩み選択エリア -->
+            <section id="step1-area" class="flex flex-col gap-3">
+                <div class="bg-slate-100 p-3 border-l-4 border-slate-400">
+                    <p id="instruction-text" class="text-sm text-slate-700 font-bold">Q. お客様のお悩みに最も近いものをお選びください。</p>
+                </div>
+                <div id="buttons-container" class="flex flex-col gap-3">
+                    <!-- JSで動的にボタンを生成 -->
+                </div>
+            </section>
+
+            <!-- STEP 2/3: シミュレーターエリア (初期非表示) -->
+            <section id="simulator-area" class="hidden flex-col gap-4">
+                
+                <!-- 解析ビジュアル (SVGでレスポンシブ完全対応) -->
+                <div class="w-full aspect-[4/3] analysis-grid border-2 border-slate-300 relative overflow-hidden bg-slate-50">
+                    <div class="absolute top-2 left-2 bg-slate-800/80 text-white text-[10px] px-2 py-1 font-mono tracking-widest backdrop-blur-sm z-10" id="sim-status-label">
+                        STATUS: UNADJUSTED
+                    </div>
+                    
+                    <!-- SVG描画領域 (テキストと画像が絶対に被らない独立ブロック) -->
+                    <svg viewBox="0 0 240 180" class="w-full h-full p-2 block absolute inset-0" id="sim-svg">
+                        <!-- 人物シルエット -->
+                        <path d="M 150 20 C 110 20, 90 40, 80 60 C 80 70, 70 75, 60 85 C 65 90, 70 90, 70 95 C 65 100, 60 105, 65 115 C 75 115, 80 125, 80 130 C 80 140, 90 150, 100 150 C 110 150, 120 160, 120 180 L 190 180 L 190 20 Z" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+                        <!-- 耳 -->
+                        <path d="M 130 80 C 120 80, 115 95, 125 105 C 135 110, 140 90, 130 80 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+
+                        <!-- メガネフレーム -->
+                        <g id="glasses">
+                            <!-- フロント・レンズ -->
+                            <rect x="65" y="75" width="28" height="18" rx="3" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                            <!-- テンプル -->
+                            <path d="M 93 80 L 135 80 Q 142 80 142 100" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+                            <!-- 鼻パッド位置 -->
+                            <path d="M 70 85 L 70 90" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+                        </g>
+
+                        <!-- レイヤー1: 未調整（ストレス表現） -->
+                        <g id="layer-stress" class="transition-opacity duration-500">
+                            <g class="stress-anim">
+                                <line x1="70" y1="95" x2="70" y2="120" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+                                <polygon points="66,115 74,115 70,123" fill="#ef4444"/>
+                            </g>
+                            <text x="45" y="135" font-size="8" font-family="monospace" fill="#ef4444" font-weight="bold">LOAD STRESS</text>
+                        </g>
+
+                        <!-- レイヤー2: 最適化（コンフォート表現） -->
+                        <g id="layer-comfort" class="transition-opacity duration-500 opacity-0">
+                            <path d="M 130 80 C 145 80, 150 90, 140 115" fill="none" stroke="#06b6d4" stroke-width="5" stroke-linecap="round" class="hold-line" id="hold-line-path" opacity="0.8"/>
+                            <text x="145" y="125" font-size="8" font-family="monospace" fill="#06b6d4" font-weight="bold">PERFECT HOLD</text>
+                        </g>
+
+                        <!-- 重心(CG)ポイント: JSで座標移動させてアニメーション -->
+                        <g id="cg-group" class="transition-all duration-700 ease-in-out" style="transform: translate(85px, 85px);">
+                            <circle cx="0" cy="0" r="5" id="cg-point" fill="#ef4444" />
+                            <text x="7" y="3" font-size="8" font-family="monospace" id="cg-text" fill="#ef4444" font-weight="bold">CG</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- スクリプト＆解説エリア (情報過多を防ぎ、段階的に追加) -->
+                <div id="script-area" class="flex flex-col gap-4">
+                    <!-- 現状分析テキストがここに入る -->
+                </div>
+
+                <!-- アクションボタン -->
+                <button id="optimize-btn" class="w-full bg-slate-800 text-cyan-400 font-mono py-4 px-2 border-b-4 border-slate-900 hover:bg-slate-700 active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center gap-2 mt-2" onclick="app.runOptimization()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    EXECUTE FITTING OPTIMIZATION
+                </button>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        const app = {
+            state: {
+                selectedTrouble: null,
+                isOptimized: false
+            },
+            // 【手抜き禁止ルール遵守】 各悩みに対する専用のトークスクリプトを詳細に定義
+            data: {
+                trouble1: {
+                    id: 'trouble1',
+                    btnText: "夕方になると、鼻パッドの跡が赤く凹んで痛い",
+                    analyze: {
+                        title: "[ANALYSIS] なぜ鼻が痛くなるのか？",
+                        text: "実は、鼻が痛くなる最大の原因は「メガネ自体のグラム数」ではありません。安価なフレームや未調整の状態だと、レンズの重みに引っ張られて<span class='text-red-600 font-bold bg-red-50 px-1'>重心が顔の前方（鼻側）に集中</span>してしまいます。結果として、鼻の極めて狭い面積に全荷重がかかり、赤く跡が残るほどの圧力が生じている状態です。"
+                    },
+                    solve: {
+                        title: "[SOLUTION] 無重力フィッティング",
+                        text: "ここで「重心設計」と「プロのフィッティング」の出番です。耳の後ろでしっかりとバランスを取ることで、<span class='text-cyan-700 font-bold bg-cyan-50 px-1'>重心を後方へ移動</span>させます。すると鼻への負担が劇的に減り、まるでメガネが浮いているかのような<span class='text-cyan-700 font-bold border-b-2 border-cyan-400'>無重力感</span>を体感いただけます。重さを「点で支える」のではなく、「顔全体で分散して包み込む」のが正解です。"
+                    }
+                },
+                trouble2: {
+                    id: 'trouble2',
+                    btnText: "下を向くと、メガネがズルズルと滑り落ちる",
+                    analyze: {
+                        title: "[ANALYSIS] なぜ滑り落ちるのか？",
+                        text: "「鼻幅が合っていないから」と思うかもしれませんが、最大の原因は<span class='text-red-600 font-bold bg-red-50 px-1'>重心バランスの崩れ</span>です。フロント側に重心が偏っていると、少し下を向いただけで重力に負けて前に滑り出します。これでは常に手で押し戻すストレスがかかってしまいます。"
+                    },
+                    solve: {
+                        title: "[SOLUTION] アンカーホールド設計",
+                        text: "優れたフレーム設計とフィッティング技術により、<span class='text-cyan-700 font-bold bg-cyan-50 px-1'>重心を耳の付け根側に設定</span>します。これによりテンプル（つる）と耳がしっかりとアンカーの役割を果たし、下を向いても重心が前方に逃げません。スポーツギアのように、激しい動きでもズレない<span class='text-cyan-700 font-bold border-b-2 border-cyan-400'>確かなホールド感</span>が生まれます。"
+                    }
+                },
+                trouble3: {
+                    id: 'trouble3',
+                    btnText: "こめかみや耳の裏が締め付けられて頭痛がする",
+                    analyze: {
+                        title: "[ANALYSIS] なぜ締め付けられるのか？",
+                        text: "メガネがズレないようにと、安価なフレームで無理にこめかみや耳を挟み込もうとすると、局所的な圧迫による痛みや頭痛を引き起こします。これは<span class='text-red-600 font-bold bg-red-50 px-1'>力任せに固定しようとしている状態</span>で、人間工学的に非常に負担が大きいです。"
+                    },
+                    solve: {
+                        title: "[SOLUTION] 全方位包容フィッティング",
+                        text: "正しい重心設計のフレームは、頭を「挟み込む」のではなく、頭部全体を「優しく包み込む」ように設計されています。プロのフィッティングで耳の後ろのカーブに沿わせ、<span class='text-cyan-700 font-bold bg-cyan-50 px-1'>重心を適正化</span>することで局所的な締め付けを完全に無くします。シミュレーションのシアン色のラインのように、ストレスフリーな<span class='text-cyan-700 font-bold border-b-2 border-cyan-400'>極上のフィット感</span>を実現します。"
+                    }
+                }
+            },
+
+            init() {
+                this.renderButtons();
+            },
+
+            // Step 1: ボタン群の描画
+            renderButtons() {
+                const container = document.getElementById('buttons-container');
+                container.innerHTML = Object.values(this.data).map((item, index) => `
+                    <button class="gear-button group" data-id="${item.id}" onclick="app.selectTrouble('${item.id}')">
+                        <span class="text-[10px] text-slate-400 font-mono mb-1 group-hover:text-slate-500 transition-colors">CASE.0${index + 1}</span>
+                        <span class="text-sm font-bold leading-tight">${item.btnText}</span>
+                    </button>
+                `).join('');
+            },
+
+            // お悩み選択時の処理 (プログレッシブ・ディクロージャー)
+            selectTrouble(id) {
+                if (this.state.selectedTrouble) return; // 二重クリック防止
+                
+                this.state.selectedTrouble = id;
+                const selectedData = this.data[id];
+
+                // 選択されたボタンのみ残し、デザインを固定化
+                const buttons = document.querySelectorAll('.gear-button');
+                buttons.forEach(btn => {
+                    if (btn.dataset.id === id) {
+                        btn.classList.add('selected');
+                        btn.onclick = null;
+                    } else {
+                        btn.style.display = 'none'; // 他の選択肢は隠す（情報過多防止）
+                    }
+                });
+
+                document.getElementById('instruction-text').textContent = "SELECTED ISSUE";
+                document.getElementById('instruction-text').classList.replace('text-slate-700', 'text-slate-400');
+                document.getElementById('instruction-text').classList.add('font-mono', 'text-xs');
+                document.getElementById('reset-btn').classList.remove('hidden');
+
+                // 解析エリアの表示準備
+                this.renderAnalysis(selectedData);
+            },
+
+            // Step 2: 未調整状態の解析UI表示
+            renderAnalysis(data) {
+                const simArea = document.getElementById('simulator-area');
+                simArea.classList.remove('hidden');
+                simArea.classList.add('flex', 'animate-fade-in');
+
+                // トークスクリプト（カンペUI）の描画
+                const scriptArea = document.getElementById('script-area');
+                scriptArea.innerHTML = `
+                    <div class="border border-red-200 bg-white relative pt-5 pb-3 px-4 shadow-sm">
+                        <div class="absolute -top-3 left-3 bg-red-600 text-white text-[10px] px-2 py-0.5 font-mono tracking-wider">TALK SCRIPT : CURRENT</div>
+                        <h3 class="font-bold text-slate-800 text-sm mb-2">${data.analyze.title}</h3>
+                        <p class="text-sm leading-relaxed text-slate-600">${data.analyze.text}</p>
+                    </div>
+                `;
+
+                // SVGを未調整状態（ストレス）に設定
+                this.updateSVGState('stress');
+            },
+
+            // Step 3: 最適化処理の実行
+            runOptimization() {
+                if (this.state.isOptimized) return;
+                this.state.isOptimized = true;
+
+                const data = this.data[this.state.selectedTrouble];
+
+                // ボタンを消す
+                const btn = document.getElementById('optimize-btn');
+                btn.style.display = 'none';
+
+                // 解決トークスクリプトの追加表示
+                const scriptArea = document.getElementById('script-area');
+                scriptArea.insertAdjacentHTML('beforeend', `
+                    <div class="border border-cyan-300 bg-cyan-50 relative pt-5 pb-3 px-4 shadow-sm animate-fade-in mt-2">
+                        <div class="absolute -top-3 left-3 bg-cyan-600 text-white text-[10px] px-2 py-0.5 font-mono tracking-wider">TALK SCRIPT : OPTIMIZED</div>
+                        <h3 class="font-bold text-slate-800 text-sm mb-2">${data.solve.title}</h3>
+                        <p class="text-sm leading-relaxed text-slate-700">${data.solve.text}</p>
+                    </div>
+                `);
+
+                // SVGを最適化状態（コンフォート）に設定
+                this.updateSVGState('comfort');
+            },
+
+            // SVGのアニメーション・状態管理（絶対に文字と被らない独立処理）
+            updateSVGState(mode) {
+                const layerStress = document.getElementById('layer-stress');
+                const layerComfort = document.getElementById('layer-comfort');
+                const cgGroup = document.getElementById('cg-group');
+                const cgPoint = document.getElementById('cg-point');
+                const cgText = document.getElementById('cg-text');
+                const statusLabel = document.getElementById('sim-status-label');
+                const holdLine = document.getElementById('hold-line-path');
+
+                if (mode === 'stress') {
+                    // フロント重心（鼻側）
+                    cgGroup.style.transform = 'translate(85px, 85px)';
+                    cgPoint.setAttribute('fill', '#ef4444');
+                    cgText.setAttribute('fill', '#ef4444');
+                    cgText.textContent = 'CG';
+                    
+                    layerStress.classList.remove('opacity-0');
+                    layerComfort.classList.add('opacity-0');
+                    statusLabel.textContent = 'STATUS: UNADJUSTED';
+                    statusLabel.className = 'absolute top-2 left-2 bg-red-600 text-white text-[10px] px-2 py-1 font-mono tracking-widest z-10';
+                    holdLine.classList.remove('draw-active');
+
+                } else if (mode === 'comfort') {
+                    // 後方重心（耳側）へ移動するCSSアニメーション
+                    cgGroup.style.transform = 'translate(130px, 85px)';
+                    cgPoint.setAttribute('fill', '#06b6d4');
+                    cgText.setAttribute('fill', '#06b6d4');
+                    cgText.textContent = 'OPT-CG';
+                    
+                    layerStress.classList.add('opacity-0');
+                    layerComfort.classList.remove('opacity-0');
+                    statusLabel.textContent = 'STATUS: OPTIMIZED';
+                    statusLabel.className = 'absolute top-2 left-2 bg-cyan-600 text-white text-[10px] px-2 py-1 font-mono tracking-widest z-10';
+                    
+                    // ホールドラインの描画アニメーションを発火
+                    setTimeout(() => {
+                        holdLine.classList.add('draw-active');
+                    }, 400); // 重心移動が始まってから少し遅れて描画
+                }
+            },
+
+            // 初期状態にリセット
+            reset() {
+                this.state.selectedTrouble = null;
+                this.state.isOptimized = false;
+                
+                document.getElementById('simulator-area').classList.add('hidden');
+                document.getElementById('simulator-area').classList.remove('flex', 'animate-fade-in');
+                document.getElementById('optimize-btn').style.display = 'flex';
+                document.getElementById('reset-btn').classList.add('hidden');
+                
+                const instText = document.getElementById('instruction-text');
+                instText.textContent = "Q. お客様のお悩みに最も近いものをお選びください。";
+                instText.className = "text-sm text-slate-700 font-bold";
+
+                this.renderButtons();
+            }
+        };
+
+        // アプリ起動
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
