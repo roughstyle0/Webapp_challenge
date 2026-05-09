@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>重心バランス・フィッティング快適体験シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans JP', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            base: '#eef1f4',
+            ink: '#111827',
+            panel: '#f7f9fb',
+            redStress: '#ef233c',
+            cyanBalance: '#10d8ff',
+            graphite: '#27313d',
+          },
+          boxShadow: {
+            innerGlow: 'inset 0 0 32px rgba(16,216,255,.12)',
+            redGlow: '0 0 28px rgba(239,35,60,.35)',
+            cyanGlow: '0 0 32px rgba(16,216,255,.42)',
+          },
+          keyframes: {
+            pulseRed: {
+              '0%,100%': { transform: 'scale(1)', opacity: '.9' },
+              '50%': { transform: 'scale(1.18)', opacity: '1' },
+            },
+            stressDrop: {
+              '0%': { transform: 'translateY(-10px)', opacity: '0' },
+              '45%': { opacity: '1' },
+              '100%': { transform: 'translateY(26px)', opacity: '.15' },
+            },
+            cyanFlow: {
+              '0%': { strokeDashoffset: '160', opacity: '.1' },
+              '100%': { strokeDashoffset: '0', opacity: '1' },
+            },
+            scan: {
+              '0%': { transform: 'translateY(-100%)', opacity: '0' },
+              '12%,88%': { opacity: '.9' },
+              '100%': { transform: 'translateY(100%)', opacity: '0' },
+            },
+            floatGauge: {
+              '0%,100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-5px)' },
+            }
+          },
+          animation: {
+            pulseRed: 'pulseRed 1.2s infinite',
+            stressDrop: 'stressDrop 1.15s infinite',
+            scan: 'scan 3.6s linear infinite',
+            floatGauge: 'floatGauge 2.8s ease-in-out infinite',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --cyan: #10d8ff;
+      --red: #ef233c;
+      --ink: #111827;
+      --metal: #c7ced6;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(16,216,255,.18), transparent 34%),
+        radial-gradient(circle at 90% 20%, rgba(239,35,60,.08), transparent 30%),
+        linear-gradient(135deg, #eef1f4 0%, #d9dee4 48%, #f7f9fb 100%);
+    }
+
+    .tech-grid {
+      background-image:
+        linear-gradient(rgba(17,24,39,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(17,24,39,.055) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+
+    .glass-panel {
+      border: 1px solid rgba(17,24,39,.1);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.82), rgba(231,236,242,.78)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.14) 0 1px, transparent 1px 8px);
+      backdrop-filter: blur(16px);
+    }
+
+    .issue-button {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .issue-button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(16,216,255,.18), transparent);
+      transform: translateX(-120%);
+      transition: transform .5s ease;
+      z-index: -1;
+    }
+
+    .issue-button:hover::before,
+    .issue-button:focus-visible::before {
+      transform: translateX(120%);
+    }
+
+    .simulation-shell {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 25% 20%, rgba(16,216,255,.15), transparent 28%),
+        linear-gradient(145deg, #f8fafc 0%, #e5e9ee 100%);
+    }
+
+    .simulation-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent, rgba(16,216,255,.12), transparent);
+      animation: scan 4.2s linear infinite;
+      pointer-events: none;
+    }
+
+    .visual-zone {
+      position: relative;
+      min-height: 270px;
+      border-radius: 28px;
+      border: 1px solid rgba(17,24,39,.1);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.62), rgba(217,224,231,.55)),
+        linear-gradient(90deg, rgba(17,24,39,.04) 1px, transparent 1px),
+        linear-gradient(rgba(17,24,39,.04) 1px, transparent 1px);
+      background-size: auto, 22px 22px, 22px 22px;
+      overflow: hidden;
+    }
+
+    .face {
+      position: absolute;
+      left: 13%;
+      top: 20%;
+      width: 45%;
+      height: 58%;
+      border-radius: 58% 42% 42% 52%;
+      background: linear-gradient(135deg, #d9dee5, #f7f9fb 55%, #b9c1ca);
+      border: 2px solid rgba(17,24,39,.18);
+      box-shadow: inset -18px -12px 28px rgba(17,24,39,.08);
+    }
+
+    .face::before {
+      content: "";
+      position: absolute;
+      right: -9%;
+      top: 32%;
+      width: 26%;
+      height: 18%;
+      border-radius: 58% 42% 48% 52%;
+      background: linear-gradient(135deg, #cbd3dc, #f3f6f9);
+      border-right: 2px solid rgba(17,24,39,.22);
+      transform: rotate(-8deg);
+    }
+
+    .ear {
+      position: absolute;
+      right: 12%;
+      top: 36%;
+      width: 13%;
+      height: 22%;
+      border-radius: 50%;
+      border: 2px solid rgba(17,24,39,.2);
+      background: linear-gradient(135deg, #d6dde5, #f7f9fb);
+    }
+
+    .neck {
+      position: absolute;
+      left: 25%;
+      bottom: 2%;
+      width: 23%;
+      height: 27%;
+      border-radius: 18px 18px 0 0;
+      background: linear-gradient(120deg, #cfd6de, #f7f9fb);
+      border: 1px solid rgba(17,24,39,.12);
+    }
+
+    .glasses {
+      position: absolute;
+      left: 34%;
+      top: 33%;
+      width: 50%;
+      height: 25%;
+      transition: transform .7s ease;
+      transform-origin: 30% 45%;
+    }
+
+    .lens {
+      position: absolute;
+      width: 25%;
+      height: 42%;
+      border: 3px solid #27313d;
+      border-radius: 42% 44% 48% 40%;
+      background: rgba(255,255,255,.16);
+      box-shadow: inset 0 0 20px rgba(16,216,255,.1);
+    }
+
+    .lens.left { left: 0; top: 19%; }
+    .lens.right { left: 28%; top: 19%; }
+
+    .bridge {
+      position: absolute;
+      left: 22%;
+      top: 38%;
+      width: 14%;
+      height: 4px;
+      background: #27313d;
+      border-radius: 99px;
+    }
+
+    .temple {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      width: 47%;
+      height: 4px;
+      background: #27313d;
+      border-radius: 99px;
+      transform: rotate(-7deg);
+      transform-origin: left center;
+    }
+
+    .nose-pad {
+      position: absolute;
+      left: 18%;
+      top: 58%;
+      width: 5%;
+      height: 16%;
+      border-radius: 999px;
+      background: rgba(17,24,39,.2);
+    }
+
+    .center-dot {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      z-index: 4;
+      transition: left .75s cubic-bezier(.2,.8,.2,1), top .75s cubic-bezier(.2,.8,.2,1), background .45s ease, box-shadow .45s ease;
+    }
+
+    .center-dot::after {
+      content: "重心";
+      position: absolute;
+      left: 50%;
+      top: 120%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      color: #111827;
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(17,24,39,.12);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    .raw .center-dot {
+      left: 40%;
+      top: 35%;
+      background: var(--red);
+      box-shadow: 0 0 0 8px rgba(239,35,60,.14), 0 0 28px rgba(239,35,60,.5);
+      animation: pulseRed 1.2s infinite;
+    }
+
+    .fit .center-dot {
+      left: 69%;
+      top: 38%;
+      background: var(--cyan);
+      box-shadow: 0 0 0 8px rgba(16,216,255,.18), 0 0 34px rgba(16,216,255,.6);
+      animation: floatGauge 2.8s ease-in-out infinite;
+    }
+
+    .raw .glasses {
+      transform: rotate(4deg) translateY(4px);
+    }
+
+    .fit .glasses {
+      transform: rotate(-1deg) translateY(-2px);
+    }
+
+    .stress-arrow {
+      position: absolute;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity .45s ease, transform .55s ease;
+    }
+
+    .stress-arrow .shaft {
+      width: 7px;
+      height: 58px;
+      background: linear-gradient(to bottom, rgba(239,35,60,0), var(--red));
+      margin: 0 auto;
+      border-radius: 999px;
+      box-shadow: 0 0 18px rgba(239,35,60,.35);
+    }
+
+    .stress-arrow .head {
+      width: 0;
+      height: 0;
+      border-left: 13px solid transparent;
+      border-right: 13px solid transparent;
+      border-top: 18px solid var(--red);
+      filter: drop-shadow(0 0 10px rgba(239,35,60,.4));
+    }
+
+    .nose-stress {
+      left: 38%;
+      top: 43%;
+    }
+
+    .slide-stress {
+      left: 48%;
+      top: 48%;
+      transform: rotate(-16deg);
+    }
+
+    .squeeze-left,
+    .squeeze-right {
+      top: 40%;
+    }
+
+    .squeeze-left {
+      left: 27%;
+      transform: rotate(-90deg);
+    }
+
+    .squeeze-right {
+      right: 13%;
+      transform: rotate(90deg);
+    }
+
+    .raw.problem-nose .nose-stress,
+    .raw.problem-slide .slide-stress,
+    .raw.problem-headache .squeeze-left,
+    .raw.problem-headache .squeeze-right {
+      opacity: 1;
+      animation: stressDrop 1.1s infinite;
+    }
+
+    .fit .stress-arrow {
+      opacity: 0 !important;
+      animation: none !important;
+      transform: translateY(-8px) scale(.88);
+    }
+
+    .hold-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .55s ease;
+      z-index: 2;
+    }
+
+    .hold-svg path {
+      fill: none;
+      stroke: var(--cyan);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 160;
+      filter: drop-shadow(0 0 8px rgba(16,216,255,.5));
+    }
+
+    .fit .hold-svg {
+      opacity: 1;
+    }
+
+    .fit .hold-svg path {
+      animation: cyanFlow 1.1s ease forwards;
+    }
+
+    .metric-bar {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(17,24,39,.09);
+    }
+
+    .metric-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width .7s ease, background .45s ease;
+    }
+
+    .script-highlight {
+      background: linear-gradient(90deg, rgba(16,216,255,.18), rgba(255,255,255,.72));
+      border-left: 4px solid var(--cyan);
+    }
+
+    .danger-highlight {
+      background: linear-gradient(90deg, rgba(239,35,60,.12), rgba(255,255,255,.72));
+      border-left: 4px solid var(--red);
+    }
+
+    @media (min-width: 768px) {
+      .visual-zone {
+        min-height: 420px;
+      }
+
+      .center-dot {
+        width: 28px;
+        height: 28px;
+      }
+
+      .stress-arrow .shaft {
+        height: 82px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-sans text-ink">
+  <main class="min-h-screen tech-grid px-4 py-5 sm:px-6 lg:px-8">
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-5">
+
+      <header class="glass-panel rounded-[2rem] p-5 sm:p-7">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full border border-cyanBalance/40 bg-cyanBalance/10 px-3 py-1 text-xs font-black tracking-[.22em] text-slate-700">
+                ERGONOMIC FIT ANALYZER
+              </span>
+              <span class="rounded-full border border-redStress/30 bg-redStress/10 px-3 py-1 text-xs font-black tracking-[.18em] text-redStress">
+                鼻圧・ズレ・締め付け解析
+              </span>
+            </div>
+
+            <div>
+              <h1 class="text-2xl font-black leading-tight tracking-tight sm:text-4xl">
+                なぜ安いメガネは<br class="sm:hidden" />
+                鼻が痛いのか？
+              </h1>
+              <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+                グラム数だけでは説明できない「重心バランス」と「プロのフィッティング」を、接客中にそのまま見せて説明できる体験シミュレーターです。
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 rounded-3xl border border-slate-300/70 bg-white/55 p-2 text-center">
+            <div class="rounded-2xl bg-slate-100 px-3 py-3">
+              <p class="text-[10px] font-black tracking-widest text-slate-500">FRONT</p>
+              <p class="mt-1 text-lg font-black text-redStress">鼻圧</p>
+            </div>
+            <div class="rounded-2xl bg-slate-100 px-3 py-3">
+              <p class="text-[10px] font-black tracking-widest text-slate-500">BALANCE</p>
+              <p class="mt-1 text-lg font-black text-slate-800">重心</p>
+            </div>
+            <div class="rounded-2xl bg-cyanBalance/10 px-3 py-3 ring-1 ring-cyanBalance/30">
+              <p class="text-[10px] font-black tracking-widest text-slate-500">HOLD</p>
+              <p class="mt-1 text-lg font-black text-cyan-600">快適</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="startPanel" class="glass-panel rounded-[2rem] p-5 sm:p-7">
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-sm font-black text-white shadow-lg">
+              01
+            </div>
+            <div>
+              <h2 class="text-lg font-black sm:text-xl">お客様の悩みを1つ選んでください</h2>
+              <p class="text-sm text-slate-600">最初は選択だけ。選ぶと解析画面と接客カンペが展開されます。</p>
+            </div>
+          </div>
+
+          <div id="issueButtons" class="grid gap-3 sm:grid-cols-3">
+            <button type="button" data-issue="nose" class="issue-button rounded-3xl border border-slate-300 bg-white/70 p-5 text-left transition hover:-translate-y-0.5 hover:border-redStress/40 hover:shadow-redGlow focus:outline-none focus:ring-4 focus:ring-cyanBalance/25">
+              <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-redStress/10 text-xl">🔻</span>
+              <span class="block text-base font-black leading-7">夕方になると、鼻パッドの跡が赤く凹んで痛い</span>
+              <span class="mt-3 block text-xs font-bold tracking-widest text-slate-500">NOSE LOAD</span>
+            </button>
+
+            <button type="button" data-issue="slide" class="issue-button rounded-3xl border border-slate-300 bg-white/70 p-5 text-left transition hover:-translate-y-0.5 hover:border-redStress/40 hover:shadow-redGlow focus:outline-none focus:ring-4 focus:ring-cyanBalance/25">
+              <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-redStress/10 text-xl">↘</span>
+              <span class="block text-base font-black leading-7">下を向くと、メガネがズルズルと滑り落ちる</span>
+              <span class="mt-3 block text-xs font-bold tracking-widest text-slate-500">SLIP DOWN</span>
+            </button>
+
+            <button type="button" data-issue="headache" class="issue-button rounded-3xl border border-slate-300 bg-white/70 p-5 text-left transition hover:-translate-y-0.5 hover:border-redStress/40 hover:shadow-redGlow focus:outline-none focus:ring-4 focus:ring-cyanBalance/25">
+              <span class="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-redStress/10 text-xl">⇆</span>
+              <span class="block text-base font-black leading-7">こめかみや耳の裏が締め付けられて頭痛がする</span>
+              <span class="mt-3 block text-xs font-bold tracking-widest text-slate-500">SIDE PRESSURE</span>
+            </button>
+          </div>
+
+          <p id="startError" class="hidden rounded-2xl border border-redStress/30 bg-redStress/10 p-3 text-sm font-bold text-redStress">
+            悩みを選択してください。
+          </p>
+        </div>
+      </section>
+
+      <section id="simPanel" class="hidden grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
+        <div class="simulation-shell rounded-[2rem] p-4 shadow-innerGlow sm:p-5">
+          <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-xs font-black tracking-[.24em] text-slate-500">LOAD DISTRIBUTION SIMULATION</p>
+              <h2 id="issueTitle" class="mt-1 text-xl font-black sm:text-2xl">解析タイトル</h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 rounded-3xl border border-slate-300 bg-white/70 p-2">
+              <button id="rawBtn" type="button" class="rounded-2xl px-4 py-3 text-sm font-black transition">
+                未調整
+              </button>
+              <button id="fitBtn" type="button" class="rounded-2xl px-4 py-3 text-sm font-black transition">
+                最適化
+              </button>
+            </div>
+          </div>
+
+          <div id="visual" class="visual-zone raw problem-nose">
+            <div class="neck"></div>
+            <div class="face">
+              <div class="ear"></div>
+            </div>
+
+            <div class="glasses">
+              <div class="lens left"></div>
+              <div class="lens right"></div>
+              <div class="bridge"></div>
+              <div class="temple"></div>
+              <div class="nose-pad"></div>
+            </div>
+
+            <div class="center-dot" aria-hidden="true"></div>
+
+            <div class="stress-arrow nose-stress" aria-hidden="true">
+              <div class="shaft"></div>
+              <div class="head"></div>
+            </div>
+
+            <div class="stress-arrow slide-stress" aria-hidden="true">
+              <div class="shaft"></div>
+              <div class="head"></div>
+            </div>
+
+            <div class="stress-arrow squeeze-left" aria-hidden="true">
+              <div class="shaft"></div>
+              <div class="head"></div>
+            </div>
+
+            <div class="stress-arrow squeeze-right" aria-hidden="true">
+              <div class="shaft"></div>
+              <div class="head"></div>
+            </div>
+
+            <svg class="hold-svg" viewBox="0 0 500 320" aria-hidden="true">
+              <path d="M170 134 C220 92, 315 98, 405 142" />
+              <path d="M185 178 C240 226, 332 218, 413 166" />
+              <path d="M298 136 C338 124, 378 126, 424 145" />
+            </svg>
+          </div>
+
+          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-3xl border border-slate-300/80 bg-white/70 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-black tracking-widest text-slate-500">鼻への荷重</p>
+                <p id="noseValue" class="font-black text-redStress">82%</p>
+              </div>
+              <div class="metric-bar mt-3">
+                <div id="noseBar" class="metric-fill bg-redStress" style="width:82%"></div>
+              </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-300/80 bg-white/70 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-black tracking-widest text-slate-500">耳側への分散</p>
+                <p id="earValue" class="font-black text-slate-700">18%</p>
+              </div>
+              <div class="metric-bar mt-3">
+                <div id="earBar" class="metric-fill bg-slate-400" style="width:18%"></div>
+              </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-300/80 bg-white/70 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-black tracking-widest text-slate-500">安定感</p>
+                <p id="comfortValue" class="font-black text-slate-700">低</p>
+              </div>
+              <div class="metric-bar mt-3">
+                <div id="comfortBar" class="metric-fill bg-slate-400" style="width:28%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="physicsNote" class="danger-highlight mt-4 rounded-3xl p-4 text-sm font-bold leading-7 text-slate-700">
+            鼻先側に重心が寄ると、軽いフレームでも鼻パッドに荷重が集中します。
+          </div>
+        </div>
+
+        <aside class="glass-panel rounded-[2rem] p-5 sm:p-6">
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-black tracking-[.24em] text-slate-500">STAFF SCRIPT</p>
+                <h2 class="mt-1 text-xl font-black">接客トークカンペ</h2>
+              </div>
+              <button id="resetBtn" type="button" class="rounded-full border border-slate-300 bg-white/70 px-4 py-2 text-xs font-black text-slate-600 transition hover:bg-slate-900 hover:text-white">
+                選び直す
+              </button>
+            </div>
+
+            <div class="rounded-3xl bg-slate-900 p-4 text-white">
+              <p class="text-xs font-black tracking-widest text-cyanBalance">CUSTOMER VOICE</p>
+              <p id="customerVoice" class="mt-2 text-sm font-bold leading-7">
+                お客様の悩み
+              </p>
+            </div>
+
+            <div id="scriptBox" class="rounded-[1.7rem] border border-cyanBalance/30 bg-white/75 p-4 shadow-cyanGlow">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <span id="scriptStepLabel" class="rounded-full bg-cyanBalance/15 px-3 py-1 text-xs font-black tracking-widest text-cyan-700">
+                  STEP 1 / 3
+                </span>
+                <span id="modeBadge" class="rounded-full bg-redStress/10 px-3 py-1 text-xs font-black tracking-widest text-redStress">
+                  未調整の説明
+                </span>
+              </div>
+
+              <p id="scriptText" class="text-base font-black leading-8 text-slate-800">
+                スクリプトがここに表示されます。
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button id="prevScriptBtn" type="button" class="rounded-3xl border border-slate-300 bg-white/75 px-4 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40">
+                戻る
+              </button>
+              <button id="nextScriptBtn" type="button" class="rounded-3xl bg-slate-900 px-4 py-3 text-sm font-black text-white transition hover:bg-cyan-600">
+                次のトーク
+              </button>
+            </div>
+
+            <button id="copyBtn" type="button" class="rounded-3xl border border-cyanBalance/40 bg-cyanBalance/10 px-4 py-3 text-sm font-black text-cyan-700 transition hover:bg-cyanBalance hover:text-slate-900">
+              表示中のカンペをコピー
+            </button>
+
+            <p id="copyStatus" class="hidden rounded-2xl bg-slate-900 p-3 text-sm font-bold text-white" aria-live="polite">
+              コピーしました。
+            </p>
+
+            <div class="rounded-3xl border border-slate-300/80 bg-white/65 p-4">
+              <p class="text-xs font-black tracking-widest text-slate-500">CLOSING KEY</p>
+              <p id="closingKey" class="mt-2 text-sm font-bold leading-7 text-slate-700">
+                重心設計とフィッティングで、重さの感じ方は変えられます。
+              </p>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const issueData = {
+      nose: {
+        title: '鼻パッド跡の赤み・痛み解析',
+        voice: '「夕方になると鼻パッドの跡が赤く凹んで痛い」',
+        rawNote: '鼻先側に重心が寄ると、軽いフレームでも鼻パッドに荷重が集中します。',
+        fitNote: '耳側へ荷重を逃がすと、鼻だけで支える状態から、顔全体でやさしく支える状態に変わります。',
+        rawMetrics: { nose: 86, ear: 14, comfort: 24, label: '低' },
+        fitMetrics: { nose: 32, ear: 68, comfort: 88, label: '高' },
+        closing: '「軽いメガネ」ではなく「鼻に荷重を集めないメガネ」を選ぶ、という納得感を作れます。',
+        scripts: [
+          {
+            mode: '未調整の説明',
+            tone: 'danger',
+            text: '鼻が痛い原因は、単純にメガネが重いからとは限りません。重心が前に傾くと、鼻パッドだけで支える形になり、夕方に赤みや凹みが出やすくなります。'
+          },
+          {
+            mode: '物理の説明',
+            tone: 'danger',
+            text: '同じ重さでも、重心が鼻側にあるとテコのように前へ下がる力が強くなります。つまり問題はグラム数だけでなく、どこに重さが乗っているかなんです。'
+          },
+          {
+            mode: '最適化の提案',
+            tone: 'safe',
+            text: 'プロのフィッティングと重心設計が優れたフレームなら、重さを耳側へ逃がし、鼻だけに圧が集中しにくくできます。掛けた瞬間より、数時間後のラクさが変わります。'
+          }
+        ]
+      },
+      slide: {
+        title: '下向き時のズレ落ち解析',
+        voice: '「下を向くと、メガネがズルズルと滑り落ちる」',
+        rawNote: 'フロント重心のままだと、下を向いた瞬間に鼻方向へ滑る力が増幅します。',
+        fitNote: '耳まわりの角度と前後バランスが整うと、下向きでも支点が安定し、ズレを抑えられます。',
+        rawMetrics: { nose: 76, ear: 21, comfort: 30, label: '不安定' },
+        fitMetrics: { nose: 34, ear: 72, comfort: 91, label: '安定' },
+        closing: 'ズレる方には「締める」よりも「支点を整える」説明が効果的です。',
+        scripts: [
+          {
+            mode: '未調整の説明',
+            tone: 'danger',
+            text: '下を向くとズレるのは、サイズが大きいだけではありません。重心が前にあると、フレーム全体が鼻方向へ滑ろうとする力が強くなります。'
+          },
+          {
+            mode: '物理の説明',
+            tone: 'danger',
+            text: 'ここで強く締めるだけだと、ズレは一時的に止まっても、こめかみや耳の裏に負担が出ます。必要なのは、前へ落ちる力を耳側の支点で受け流すことです。'
+          },
+          {
+            mode: '最適化の提案',
+            tone: 'safe',
+            text: 'フィッティングで耳まわりの角度と鼻パッドの当たり方を整えると、メガネが顔に引っかかるのではなく、自然に支えられる状態になります。下を向いても安心感が出ます。'
+          }
+        ]
+      },
+      headache: {
+        title: 'こめかみ・耳裏の締め付け解析',
+        voice: '「こめかみや耳の裏が締め付けられて頭痛がする」',
+        rawNote: 'ズレを止めるために横幅を強く締めると、側頭部と耳裏へ局所的な圧が発生します。',
+        fitNote: '前後の重心とテンプル角を整えると、締め付けに頼らないホールド感を作れます。',
+        rawMetrics: { nose: 54, ear: 38, comfort: 22, label: '圧迫' },
+        fitMetrics: { nose: 29, ear: 70, comfort: 86, label: '快適' },
+        closing: '「きつく締めれば安定する」という誤解を解き、技術で支える価値を伝えられます。',
+        scripts: [
+          {
+            mode: '未調整の説明',
+            tone: 'danger',
+            text: '頭痛につながる締め付けは、ズレを止めるために横から強く押さえすぎているサインかもしれません。強く締めるほど快適になるわけではありません。'
+          },
+          {
+            mode: '物理の説明',
+            tone: 'danger',
+            text: '前に落ちようとする重心を横の圧で止めると、こめかみや耳の裏に負担が集中します。これは荷重バランスの崩れを、締め付けで無理に補っている状態です。'
+          },
+          {
+            mode: '最適化の提案',
+            tone: 'safe',
+            text: '重心設計の良いフレームを選び、プロがテンプルの角度と耳裏の掛かりを調整すると、締め付けずに支えられます。包み込まれるようなホールド感が目標です。'
+          }
+        ]
+      }
+    };
+
+    const state = {
+      selectedIssue: null,
+      mode: 'raw',
+      scriptIndex: 0
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    const elements = {
+      startPanel: $('startPanel'),
+      simPanel: $('simPanel'),
+      issueButtons: $('issueButtons'),
+      startError: $('startError'),
+      visual: $('visual'),
+      issueTitle: $('issueTitle'),
+      rawBtn: $('rawBtn'),
+      fitBtn: $('fitBtn'),
+      noseValue: $('noseValue'),
+      earValue: $('earValue'),
+      comfortValue: $('comfortValue'),
+      noseBar: $('noseBar'),
+      earBar: $('earBar'),
+      comfortBar: $('comfortBar'),
+      physicsNote: $('physicsNote'),
+      customerVoice: $('customerVoice'),
+      scriptStepLabel: $('scriptStepLabel'),
+      modeBadge: $('modeBadge'),
+      scriptText: $('scriptText'),
+      prevScriptBtn: $('prevScriptBtn'),
+      nextScriptBtn: $('nextScriptBtn'),
+      resetBtn: $('resetBtn'),
+      copyBtn: $('copyBtn'),
+      copyStatus: $('copyStatus'),
+      closingKey: $('closingKey')
+    };
+
+    function safeIssue(issueKey) {
+      return Object.prototype.hasOwnProperty.call(issueData, issueKey) ? issueKey : null;
+    }
+
+    function setMode(mode) {
+      state.mode = mode === 'fit' ? 'fit' : 'raw';
+      render();
+    }
+
+    function selectIssue(issueKey) {
+      const safeKey = safeIssue(issueKey);
+      if (!safeKey) {
+        elements.startError.classList.remove('hidden');
+        return;
+      }
+
+      state.selectedIssue = safeKey;
+      state.mode = 'raw';
+      state.scriptIndex = 0;
+
+      elements.startError.classList.add('hidden');
+      elements.simPanel.classList.remove('hidden');
+      render();
+
+      requestAnimationFrame(() => {
+        elements.simPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    function renderButtons() {
+      const rawActive = state.mode === 'raw';
+      elements.rawBtn.className = rawActive
+        ? 'rounded-2xl bg-redStress px-4 py-3 text-sm font-black text-white shadow-redGlow transition'
+        : 'rounded-2xl px-4 py-3 text-sm font-black text-slate-600 transition hover:bg-white';
+
+      elements.fitBtn.className = !rawActive
+        ? 'rounded-2xl bg-cyanBalance px-4 py-3 text-sm font-black text-slate-900 shadow-cyanGlow transition'
+        : 'rounded-2xl px-4 py-3 text-sm font-black text-slate-600 transition hover:bg-white';
+    }
+
+    function renderMetrics(data) {
+      const metrics = state.mode === 'fit' ? data.fitMetrics : data.rawMetrics;
+      const isFit = state.mode === 'fit';
+
+      elements.noseValue.textContent = `${metrics.nose}%`;
+      elements.earValue.textContent = `${metrics.ear}%`;
+      elements.comfortValue.textContent = metrics.label;
+
+      elements.noseBar.style.width = `${metrics.nose}%`;
+      elements.earBar.style.width = `${metrics.ear}%`;
+      elements.comfortBar.style.width = `${metrics.comfort}%`;
+
+      elements.noseBar.className = `metric-fill ${isFit ? 'bg-cyanBalance' : 'bg-redStress'}`;
+      elements.earBar.className = `metric-fill ${isFit ? 'bg-cyanBalance' : 'bg-slate-400'}`;
+      elements.comfortBar.className = `metric-fill ${isFit ? 'bg-cyanBalance' : 'bg-slate-400'}`;
+
+      elements.noseValue.className = `font-black ${isFit ? 'text-cyan-600' : 'text-redStress'}`;
+      elements.earValue.className = `font-black ${isFit ? 'text-cyan-600' : 'text-slate-700'}`;
+      elements.comfortValue.className = `font-black ${isFit ? 'text-cyan-600' : 'text-slate-700'}`;
+
+      elements.physicsNote.textContent = isFit ? data.fitNote : data.rawNote;
+      elements.physicsNote.className = `${isFit ? 'script-highlight' : 'danger-highlight'} mt-4 rounded-3xl p-4 text-sm font-bold leading-7 text-slate-700`;
+    }
+
+    function renderScript(data) {
+      const max = data.scripts.length;
+      const index = Math.max(0, Math.min(state.scriptIndex, max - 1));
+      state.scriptIndex = index;
+
+      const script = data.scripts[index];
+      const isSafe = script.tone === 'safe';
+
+      elements.scriptStepLabel.textContent = `STEP ${index + 1} / ${max}`;
+      elements.modeBadge.textContent = script.mode;
+      elements.modeBadge.className = isSafe
+        ? 'rounded-full bg-cyanBalance/15 px-3 py-1 text-xs font-black tracking-widest text-cyan-700'
+        : 'rounded-full bg-redStress/10 px-3 py-1 text-xs font-black tracking-widest text-redStress';
+
+      elements.scriptBox.className = isSafe
+        ? 'rounded-[1.7rem] border border-cyanBalance/30 bg-white/75 p-4 shadow-cyanGlow'
+        : 'rounded-[1.7rem] border border-redStress/25 bg-white/75 p-4 shadow-redGlow';
+
+      elements.scriptText.textContent = script.text;
+
+      elements.prevScriptBtn.disabled = index === 0;
+      elements.nextScriptBtn.textContent = index === max - 1 ? '最適化を見る' : '次のトーク';
+
+      if (index === max - 1) {
+        state.mode = 'fit';
+      }
+
+      elements.closingKey.textContent = data.closing;
+    }
+
+    function render() {
+      const issueKey = safeIssue(state.selectedIssue);
+      if (!issueKey) return;
+
+      const data = issueData[issueKey];
+
+      elements.issueTitle.textContent = data.title;
+      elements.customerVoice.textContent = data.voice;
+
+      elements.visual.className = `visual-zone ${state.mode} problem-${issueKey}`;
+
+      renderButtons();
+      renderMetrics(data);
+      renderScript(data);
+    }
+
+    elements.issueButtons.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-issue]');
+      if (!button) return;
+      selectIssue(button.dataset.issue);
+    });
+
+    elements.rawBtn.addEventListener('click', () => setMode('raw'));
+    elements.fitBtn.addEventListener('click', () => setMode('fit'));
+
+    elements.prevScriptBtn.addEventListener('click', () => {
+      state.scriptIndex = Math.max(0, state.scriptIndex - 1);
+      render();
+    });
+
+    elements.nextScriptBtn.addEventListener('click', () => {
+      const issueKey = safeIssue(state.selectedIssue);
+      if (!issueKey) return;
+
+      const max = issueData[issueKey].scripts.length;
+      if (state.scriptIndex < max - 1) {
+        state.scriptIndex += 1;
+      } else {
+        state.mode = 'fit';
+      }
+      render();
+    });
+
+    elements.resetBtn.addEventListener('click', () => {
+      state.selectedIssue = null;
+      state.mode = 'raw';
+      state.scriptIndex = 0;
+      elements.simPanel.classList.add('hidden');
+      elements.copyStatus.classList.add('hidden');
+      requestAnimationFrame(() => {
+        elements.startPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    elements.copyBtn.addEventListener('click', async () => {
+      const text = elements.scriptText.textContent.trim();
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopyStatus('コピーしました。');
+      } catch (error) {
+        fallbackCopy(text);
+      }
+    });
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        document.execCommand('copy');
+        showCopyStatus('コピーしました。');
+      } catch (error) {
+        showCopyStatus('コピーに失敗しました。文章を長押しして選択してください。');
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function showCopyStatus(message) {
+      elements.copyStatus.textContent = message;
+      elements.copyStatus.classList.remove('hidden');
+      window.setTimeout(() => elements.copyStatus.classList.add('hidden'), 2200);
+    }
+  </script>
+</body>
+</html>
