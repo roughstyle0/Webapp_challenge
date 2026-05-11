@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>メガネの正しい洗い方＆コーティング寿命シミュレーター</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              water: "#19B8FF",
+              waterDeep: "#0878B8",
+              acid: "#F6E84A",
+              ink: "#0F172A",
+              mist: "#F4FBFF"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --water: #19B8FF;
+      --water-soft: #DDF6FF;
+      --water-deep: #0878B8;
+      --acid: #F6E84A;
+      --danger: #F97316;
+      --ink: #0F172A;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(25, 184, 255, 0.18), transparent 34rem),
+        radial-gradient(circle at top right, rgba(246, 232, 74, 0.14), transparent 26rem),
+        linear-gradient(180deg, #ffffff 0%, #f4fbff 48%, #ffffff 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .aqua-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(25,184,255,.65), transparent);
+    }
+
+    .brand-panel {
+      border: 1px solid rgba(8,120,184,.14);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.95), rgba(244,251,255,.88)),
+        radial-gradient(circle at top right, rgba(25,184,255,.12), transparent 18rem);
+      box-shadow: 0 24px 70px rgba(8, 120, 184, .13);
+    }
+
+    .method-option {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(8, 120, 184, .16);
+      background: rgba(255,255,255,.88);
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+    }
+
+    .method-option::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(25,184,255,.16), transparent 42%, rgba(246,232,74,.22));
+      opacity: 0;
+      transition: opacity .22s ease;
+    }
+
+    .method-option:hover,
+    .method-option:focus-visible,
+    .method-option.is-active {
+      transform: translateY(-2px);
+      border-color: rgba(25,184,255,.62);
+      box-shadow: 0 18px 44px rgba(8,120,184,.16);
+      outline: none;
+    }
+
+    .method-option:hover::before,
+    .method-option:focus-visible::before,
+    .method-option.is-active::before {
+      opacity: 1;
+    }
+
+    .micro-label {
+      letter-spacing: .18em;
+      font-size: .68rem;
+      font-weight: 800;
+    }
+
+    .stage-scene {
+      display: grid;
+      place-items: center;
+      min-height: 19rem;
+      border-radius: 2rem;
+      border: 1px solid rgba(8,120,184,.12);
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255,255,255,.98), rgba(221,246,255,.72) 42%, rgba(244,251,255,.78) 72%),
+        linear-gradient(180deg, #ffffff, #edfaff);
+      overflow: hidden;
+    }
+
+    .lens-wrap {
+      width: min(72vw, 20rem);
+      display: grid;
+      gap: 1.1rem;
+      place-items: center;
+      padding: 1.25rem 0;
+    }
+
+    .lens-shell {
+      position: relative;
+      width: min(68vw, 17.5rem);
+      aspect-ratio: 1.85 / 1;
+      border-radius: 48% 48% 52% 52% / 56% 56% 44% 44%;
+      border: 2px solid rgba(8,120,184,.32);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.86), rgba(221,246,255,.78) 40%, rgba(25,184,255,.14)),
+        radial-gradient(circle at 28% 24%, rgba(255,255,255,.96), transparent 28%);
+      box-shadow:
+        inset 0 0 24px rgba(25,184,255,.18),
+        0 28px 55px rgba(8,120,184,.17);
+      overflow: hidden;
+      transform: translateZ(0);
+    }
+
+    .lens-bridge {
+      width: 3.3rem;
+      height: .5rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(8,120,184,.32), transparent);
+    }
+
+    .coating-layer,
+    .lens-shine,
+    .haze,
+    .heat-waves,
+    .clean-flow,
+    .sparkle,
+    .dirt,
+    .crack,
+    .peel {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .coating-layer {
+      inset: .55rem;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,.74);
+      background: linear-gradient(110deg, rgba(255,255,255,.4), transparent 35%, rgba(25,184,255,.1));
+    }
+
+    .lens-shine {
+      width: 34%;
+      height: 140%;
+      left: -48%;
+      top: -18%;
+      transform: rotate(18deg);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.96), transparent);
+      opacity: 0;
+    }
+
+    .dirt {
+      width: .55rem;
+      height: .55rem;
+      border-radius: 999px;
+      background: rgba(15,23,42,.24);
+      filter: blur(.2px);
+      opacity: 0;
+    }
+
+    .d1 { left: 22%; top: 34%; }
+    .d2 { left: 42%; top: 58%; width: .42rem; height: .42rem; }
+    .d3 { left: 63%; top: 38%; width: .48rem; height: .48rem; }
+    .d4 { left: 74%; top: 62%; width: .34rem; height: .34rem; }
+
+    .crack {
+      width: 3px;
+      height: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(15,23,42,.15));
+      opacity: 0;
+      transform-origin: top;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.35);
+    }
+
+    .crack::after {
+      content: "";
+      position: absolute;
+      top: 42%;
+      left: 1px;
+      width: 2px;
+      height: 34%;
+      border-radius: 999px;
+      background: rgba(15,23,42,.5);
+      transform: rotate(52deg);
+      transform-origin: top;
+    }
+
+    .c1 { left: 31%; top: 18%; transform: rotate(-16deg); }
+    .c2 { left: 49%; top: 12%; transform: rotate(10deg); }
+    .c3 { left: 65%; top: 28%; transform: rotate(-28deg); }
+    .c4 { left: 43%; top: 44%; transform: rotate(34deg); }
+
+    .haze {
+      inset: 0;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 38% 42%, rgba(255,255,255,.78), transparent 20%),
+        radial-gradient(circle at 68% 58%, rgba(255,255,255,.86), transparent 22%),
+        linear-gradient(135deg, rgba(255,255,255,.58), rgba(246,232,74,.28));
+      backdrop-filter: blur(1.5px);
+    }
+
+    .peel {
+      width: 3.5rem;
+      height: 2.1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(246,232,74,.74);
+      background: rgba(246,232,74,.34);
+      opacity: 0;
+      filter: blur(.1px);
+    }
+
+    .p1 { left: 18%; top: 30%; transform: rotate(-12deg); }
+    .p2 { right: 15%; bottom: 24%; transform: rotate(18deg); }
+    .p3 { left: 47%; top: 48%; width: 2.4rem; height: 1.5rem; transform: rotate(28deg); }
+
+    .heat-waves {
+      inset: -1.2rem;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+    }
+
+    .heat-waves span {
+      position: absolute;
+      width: 86%;
+      height: 58%;
+      border-radius: 999px;
+      border: 2px solid rgba(249,115,22,.22);
+      transform: scale(.86);
+    }
+
+    .heat-waves span:nth-child(2) {
+      width: 101%;
+      height: 74%;
+      animation-delay: .18s;
+    }
+
+    .heat-waves span:nth-child(3) {
+      width: 116%;
+      height: 88%;
+      animation-delay: .34s;
+    }
+
+    .clean-flow {
+      inset: 0;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 18% 24%, rgba(25,184,255,.22), transparent 18%),
+        linear-gradient(115deg, transparent 16%, rgba(25,184,255,.28) 42%, rgba(255,255,255,.76) 52%, transparent 68%);
+      transform: translateX(-55%);
+    }
+
+    .sparkle {
+      width: .5rem;
+      height: .5rem;
+      opacity: 0;
+      transform: rotate(45deg) scale(.4);
+      background: white;
+      box-shadow: 0 0 18px rgba(25,184,255,.95);
+    }
+
+    .s1 { left: 25%; top: 22%; }
+    .s2 { left: 73%; top: 38%; animation-delay: .22s; }
+    .s3 { left: 52%; top: 68%; animation-delay: .42s; }
+
+    .mode-hot .lens-shell {
+      animation: thermalSwell 1.55s ease-in-out both;
+      border-color: rgba(249,115,22,.55);
+    }
+
+    .mode-hot .heat-waves {
+      animation: heatReveal 1.8s ease both;
+    }
+
+    .mode-hot .heat-waves span {
+      animation: heatPulse 1.35s ease-out infinite;
+    }
+
+    .mode-hot .crack {
+      animation: crackGrow .72s cubic-bezier(.2,.9,.15,1.2) forwards;
+    }
+
+    .mode-hot .c1 { animation-delay: .45s; }
+    .mode-hot .c2 { animation-delay: .64s; }
+    .mode-hot .c3 { animation-delay: .78s; }
+    .mode-hot .c4 { animation-delay: .95s; }
+
+    .mode-soap .lens-shell {
+      border-color: rgba(246,232,74,.82);
+      animation: chemicalDull 1.6s ease both;
+    }
+
+    .mode-soap .haze {
+      animation: hazeIn 1.35s ease forwards;
+    }
+
+    .mode-soap .peel {
+      animation: peelIn .9s ease forwards;
+    }
+
+    .mode-soap .p1 { animation-delay: .42s; }
+    .mode-soap .p2 { animation-delay: .72s; }
+    .mode-soap .p3 { animation-delay: .95s; }
+
+    .mode-clean .dirt {
+      opacity: 1;
+      animation: liftAway 1.15s ease forwards;
+    }
+
+    .mode-clean .d1 { animation-delay: .1s; }
+    .mode-clean .d2 { animation-delay: .24s; }
+    .mode-clean .d3 { animation-delay: .34s; }
+    .mode-clean .d4 { animation-delay: .46s; }
+
+    .mode-clean .clean-flow {
+      animation: pureFlow 1.45s ease forwards;
+    }
+
+    .mode-clean .lens-shine {
+      animation: shineSweep 1.4s .58s ease forwards;
+    }
+
+    .mode-clean .sparkle {
+      animation: sparklePop .9s .95s ease both;
+    }
+
+    .reveal-block {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .38s ease, transform .38s ease;
+    }
+
+    .reveal-block.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .phrase {
+      background: linear-gradient(transparent 58%, rgba(246,232,74,.72) 58%);
+      font-weight: 800;
+    }
+
+    .toast {
+      transform: translateY(120%);
+      transition: transform .25s ease;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    @keyframes thermalSwell {
+      0% { transform: scale(1); filter: saturate(1); }
+      52% { transform: scale(1.045); filter: saturate(1.25); }
+      100% { transform: scale(1.012); filter: saturate(.8) contrast(.96); }
+    }
+
+    @keyframes heatReveal {
+      0% { opacity: 0; }
+      35% { opacity: 1; }
+      100% { opacity: .65; }
+    }
+
+    @keyframes heatPulse {
+      0% { transform: scale(.78); opacity: .08; }
+      55% { opacity: .58; }
+      100% { transform: scale(1.2); opacity: 0; }
+    }
+
+    @keyframes crackGrow {
+      0% { height: 0; opacity: 0; }
+      30% { opacity: 1; }
+      100% { height: 58%; opacity: .92; }
+    }
+
+    @keyframes chemicalDull {
+      0% { filter: saturate(1) brightness(1); }
+      100% { filter: saturate(.62) brightness(.94); }
+    }
+
+    @keyframes hazeIn {
+      0% { opacity: 0; transform: scale(.96); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes peelIn {
+      0% { opacity: 0; transform: translateY(8px) scale(.76) rotate(var(--r, 0deg)); }
+      100% { opacity: 1; transform: translateY(0) scale(1) rotate(var(--r, 0deg)); }
+    }
+
+    @keyframes liftAway {
+      0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      100% { opacity: 0; transform: translateY(-42px) scale(.65); filter: blur(3px); }
+    }
+
+    @keyframes pureFlow {
+      0% { opacity: 0; transform: translateX(-58%); }
+      18% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(72%); }
+    }
+
+    @keyframes shineSweep {
+      0% { opacity: 0; left: -48%; }
+      25% { opacity: .92; }
+      100% { opacity: 0; left: 112%; }
+    }
+
+    @keyframes sparklePop {
+      0% { opacity: 0; transform: rotate(45deg) scale(.35); }
+      40% { opacity: 1; transform: rotate(45deg) scale(1.2); }
+      100% { opacity: .92; transform: rotate(45deg) scale(.9); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="brand-panel rounded-[2rem] px-5 py-7 sm:px-8">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="inline-flex w-fit items-center gap-2 rounded-full border border-water/20 bg-white/80 px-3 py-1.5 text-xs font-bold text-waterDeep shadow-sm">
+            <span class="h-2 w-2 rounded-full bg-water shadow-[0_0_16px_rgba(25,184,255,.9)]"></span>
+            Day 84 / Lens Care Simulator
+          </div>
+          <div class="text-xs font-bold tracking-[.2em] text-slate-400">PURE WATER METHOD</div>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[1.1fr_.9fr] lg:items-end">
+          <div class="space-y-3">
+            <p class="micro-label text-waterDeep">AFTER CARE TALK TOOL</p>
+            <h1 class="text-3xl font-black leading-tight tracking-[-.05em] text-slate-950 sm:text-5xl">
+              お湯と石鹸は絶対NG。<br />
+              <span class="bg-gradient-to-r from-waterDeep via-water to-slate-900 bg-clip-text text-transparent">
+                コーティング寿命を守る洗い方
+              </span>
+            </h1>
+          </div>
+
+          <p class="text-sm leading-7 text-slate-600 sm:text-base">
+            新人スタッフでも、購入直後のお客様へ迷わず説明できるアフターケア接客ツール。
+            最初は下の3択だけを見せ、選択後にシミュレーションとトークを展開します。
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <section id="choiceArea" class="rounded-[2rem] border border-white/80 bg-white/70 p-4 shadow-[0_20px_70px_rgba(8,120,184,.08)] backdrop-blur sm:p-6">
+      <div class="mb-5 flex flex-col gap-2">
+        <p class="micro-label text-slate-400">SELECT CUSTOMER HABIT</p>
+        <h2 class="text-xl font-black tracking-[-.03em] text-slate-950 sm:text-2xl">
+          お客様の「普段やりがちな洗い方」を選んでください
+        </h2>
+        <p class="text-sm text-slate-500">
+          選ぶだけで、レンズ表面の変化・理由・接客カンペが順番に表示されます。
+        </p>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-3">
+        <button class="method-option rounded-[1.7rem] p-5 text-left" type="button" data-method="hot">
+          <div class="relative flex h-full flex-col gap-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="micro-label text-orange-500">CASE 01</span>
+              <span class="grid h-11 w-11 place-items-center rounded-2xl bg-orange-50 text-2xl">♨️</span>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-lg font-black leading-snug text-slate-950">
+                お風呂のついでに、シャワーのお湯でサッと洗う
+              </h3>
+              <p class="text-sm leading-6 text-slate-500">熱ダメージの説明に切り替えます</p>
+            </div>
+          </div>
+        </button>
+
+        <button class="method-option rounded-[1.7rem] p-5 text-left" type="button" data-method="soap">
+          <div class="relative flex h-full flex-col gap-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="micro-label text-yellow-600">CASE 02</span>
+              <span class="grid h-11 w-11 place-items-center rounded-2xl bg-yellow-50 text-2xl">🫧</span>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-lg font-black leading-snug text-slate-950">
+                洗面所で、ハンドソープや石鹸で泡立てて洗う
+              </h3>
+              <p class="text-sm leading-6 text-slate-500">成分ダメージの説明に切り替えます</p>
+            </div>
+          </div>
+        </button>
+
+        <button class="method-option rounded-[1.7rem] p-5 text-left" type="button" data-method="clean">
+          <div class="relative flex h-full flex-col gap-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="micro-label text-waterDeep">CASE 03</span>
+              <span class="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-50 text-2xl">💧</span>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-lg font-black leading-snug text-slate-950">
+                水洗いしたあと、専用クリーナー（中性）で優しく拭く
+              </h3>
+              <p class="text-sm leading-6 text-slate-500">保護ケアの説明に切り替えます</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <section id="resultArea" class="hidden rounded-[2rem] border border-water/15 bg-white p-4 shadow-[0_28px_90px_rgba(8,120,184,.14)] sm:p-6" aria-live="polite">
+      <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="space-y-2">
+          <p id="resultBadge" class="micro-label text-waterDeep">SIMULATION</p>
+          <h2 id="resultTitle" class="text-2xl font-black leading-tight tracking-[-.04em] text-slate-950 sm:text-4xl"></h2>
+          <p id="resultLead" class="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base"></p>
+        </div>
+
+        <button id="resetBtn" type="button" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-600 transition hover:border-water hover:text-waterDeep sm:w-auto">
+          もう一度選ぶ
+        </button>
+      </div>
+
+      <div class="grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
+        <div class="reveal-block rounded-[2rem] bg-gradient-to-b from-mist to-white p-3 sm:p-4" data-reveal>
+          <div id="lensStage" class="stage-scene">
+            <div class="lens-wrap" aria-hidden="true">
+              <div class="lens-shell">
+                <div class="heat-waves"><span></span><span></span><span></span></div>
+                <div class="coating-layer"></div>
+                <div class="clean-flow"></div>
+                <div class="lens-shine"></div>
+                <div class="haze"></div>
+
+                <span class="dirt d1"></span>
+                <span class="dirt d2"></span>
+                <span class="dirt d3"></span>
+                <span class="dirt d4"></span>
+
+                <span class="crack c1"></span>
+                <span class="crack c2"></span>
+                <span class="crack c3"></span>
+                <span class="crack c4"></span>
+
+                <span class="peel p1"></span>
+                <span class="peel p2"></span>
+                <span class="peel p3"></span>
+
+                <span class="sparkle s1"></span>
+                <span class="sparkle s2"></span>
+                <span class="sparkle s3"></span>
+              </div>
+              <div class="lens-bridge"></div>
+            </div>
+          </div>
+          <p id="stageCaption" class="mt-3 rounded-2xl bg-white/85 px-4 py-3 text-sm font-bold leading-6 text-slate-700"></p>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="reveal-block rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm" data-reveal>
+            <div class="mb-3 flex items-end justify-between gap-4">
+              <div>
+                <p class="micro-label text-slate-400">COATING LIFE</p>
+                <h3 class="text-lg font-black text-slate-950">コーティング寿命イメージ</h3>
+              </div>
+              <div id="lifeValue" class="text-3xl font-black text-waterDeep">--%</div>
+            </div>
+            <div class="h-4 overflow-hidden rounded-full bg-slate-100">
+              <div id="lifeMeter" class="h-full w-0 rounded-full bg-gradient-to-r from-waterDeep via-water to-acid transition-all duration-1000"></div>
+            </div>
+            <p id="lifeNote" class="mt-3 text-sm leading-6 text-slate-600"></p>
+          </div>
+
+          <div class="reveal-block rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm" data-reveal>
+            <p class="micro-label mb-3 text-slate-400">WHY IT HAPPENS</p>
+            <div id="mechanismList" class="grid gap-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="aqua-line my-6"></div>
+
+      <div class="grid gap-5 lg:grid-cols-[1fr_.82fr]">
+        <div class="reveal-block rounded-[2rem] border border-water/15 bg-gradient-to-br from-white via-mist to-white p-5 shadow-sm" data-reveal>
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p class="micro-label text-waterDeep">STAFF SCRIPT</p>
+              <h3 class="text-xl font-black tracking-[-.03em] text-slate-950">新人スタッフ用・接客トークカンペ</h3>
+            </div>
+            <button id="copyBtn" type="button" class="shrink-0 rounded-2xl bg-slate-950 px-4 py-3 text-xs font-black text-white transition hover:bg-waterDeep">
+              台本コピー
+            </button>
+          </div>
+          <div id="scriptList" class="grid gap-3"></div>
+        </div>
+
+        <div class="reveal-block rounded-[2rem] border border-acid/60 bg-gradient-to-br from-yellow-50 via-white to-cyan-50 p-5 shadow-sm" data-reveal>
+          <p class="micro-label text-yellow-700">CROSS SELL POINT</p>
+          <h3 id="ctaTitle" class="mt-2 text-xl font-black tracking-[-.03em] text-slate-950"></h3>
+          <p id="ctaText" class="mt-3 text-sm leading-7 text-slate-600"></p>
+
+          <div class="mt-5 rounded-2xl border border-white bg-white/78 p-4">
+            <p class="text-xs font-black tracking-[.16em] text-slate-400">最後の一言</p>
+            <p id="closingLine" class="mt-2 text-lg font-black leading-8 text-slate-950"></p>
+          </div>
+
+          <button id="ctaBtn" type="button" class="mt-5 w-full rounded-2xl bg-gradient-to-r from-waterDeep to-water px-5 py-4 text-sm font-black text-white shadow-[0_16px_36px_rgba(25,184,255,.28)] transition hover:scale-[1.01] active:scale-[.99]">
+            専用クリーナーをご案内する
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="pb-4 text-center text-xs leading-6 text-slate-400">
+      店頭説明用の補助ツールです。最終的なお手入れ方法は、各レンズ・フレームの取扱説明に合わせて案内してください。
+    </footer>
+  </main>
+
+  <div id="toast" class="toast fixed inset-x-4 bottom-4 z-50 mx-auto max-w-sm rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-bold text-white shadow-2xl">
+    コピーしました
+  </div>
+
+  <script>
+    const scenarios = {
+      hot: {
+        mode: "hot",
+        badge: "HEAT DAMAGE / お湯はNG",
+        title: "お湯は、レンズ表面に細かなクラックを入れる原因になります",
+        lead: "レンズ本体と表面コーティングは熱による伸び方が異なります。シャワーやお風呂の熱が加わると、表面膜に負荷がかかり、ひび割れのようなダメージにつながります。",
+        caption: "熱でレンズ本体が膨張 → 表面コーティングとの差が生まれ、細かなクラックが発生するイメージです。",
+        life: 32,
+        lifeNote: "毎日のようにお湯で洗うと、見た目は一瞬きれいでもコーティング寿命を大きく縮める恐れがあります。",
+        mechanisms: [
+          ["熱膨張", "レンズ基材が温まり、表面膜との伸縮差が発生します。"],
+          ["クラック", "薄いコーティング層に負荷が集中し、細かなひびの原因になります。"],
+          ["接客ポイント", "「お湯なら汚れが落ちそう」という思い込みを、やさしく水洗いへ誘導します。"]
+        ],
+        script: [
+          ["① 共感", "「お風呂のついでに洗うのは、たしかに楽ですよね。」"],
+          ["② 理由", "「ただ、レンズのコーティングは <span class='phrase'>熱にとても弱く</span>、お湯で表面に細かなひびが入ることがあります。」"],
+          ["③ 提案", "「長くきれいに使うなら、洗う時は <span class='phrase'>必ず水</span>。仕上げに中性の専用クリーナーを使うのが安心です。」"]
+        ],
+        ctaTitle: "“お湯をやめる理由”が伝わった直後が、クリーナー提案のベストタイミング",
+        ctaText: "熱ダメージを見せたあとに「水＋中性クリーナー」の代替手段を出すと、押し売りではなく“メガネを守るための自然な提案”になります。",
+        closing: "「お風呂ではなく、洗面所で水洗い。その後にこちらの中性クリーナーで仕上げると安心です。」"
+      },
+      soap: {
+        mode: "soap",
+        badge: "CHEMICAL DAMAGE / 石鹸はNG",
+        title: "ハンドソープや石鹸は、膜を白く濁らせる原因になります",
+        lead: "手肌用のソープはメガネレンズ用に設計されていません。アルカリ性・酸性の成分や保湿成分がコーティングに残ると、白濁や剥がれの原因になることがあります。",
+        caption: "ソープ成分が表面膜に残り、コーティングが白く濁る・部分的に剥がれるイメージです。",
+        life: 41,
+        lifeNote: "泡で洗うと清潔そうに見えますが、成分が残ると拭きムラや白い曇りを感じやすくなります。",
+        mechanisms: [
+          ["成分残り", "石鹸やハンドソープの成分が、レンズ表面に薄く残ることがあります。"],
+          ["白濁・剥がれ", "コーティング膜が傷み、白く曇ったように見える原因になります。"],
+          ["接客ポイント", "“手にやさしい＝レンズにやさしい”ではない、と短く伝えます。"]
+        ],
+        script: [
+          ["① 共感", "「泡で洗うと、すごく清潔に感じますよね。」"],
+          ["② 理由", "「ただ、石鹸やハンドソープはレンズ専用ではないので、成分によって <span class='phrase'>コーティングが白く濁る</span> ことがあります。」"],
+          ["③ 提案", "「メガネには、レンズ用に作られた <span class='phrase'>中性の専用クリーナー</span> を使っていただくのが一番安心です。」"]
+        ],
+        ctaTitle: "“手用ソープではなくレンズ用”という納得感で、専用クリーナーへ接続",
+        ctaText: "お客様は悪気なく石鹸を使っています。否定ではなく「用途が違う」と説明すると、専用クリーナーの必要性が自然に伝わります。",
+        closing: "「手にはハンドソープ、レンズには中性クリーナー。用途を分けるだけで、きれいな見え方が長持ちします。」"
+      },
+      clean: {
+        mode: "clean",
+        badge: "BEST CARE / 水＋中性クリーナー",
+        title: "水洗い＋専用クリーナーなら、コーティングを守りながらピカピカにできます",
+        lead: "まず水でホコリや砂粒を流し、専用クリーナーで皮脂汚れを浮かせます。最後にやわらかいクロスで優しく拭くことで、傷と成分ダメージを抑えられます。",
+        caption: "水で粒子汚れを流し、中性クリーナーで皮脂を浮かせて、輝きだけが戻るイメージです。",
+        life: 96,
+        lifeNote: "ダメージを増やさず、汚れだけを落とすケア。購入直後の習慣化が、クレーム防止に直結します。",
+        mechanisms: [
+          ["水で流す", "乾拭き前にホコリを落とすことで、細かな傷を防ぎます。"],
+          ["中性で浮かせる", "専用クリーナーが皮脂汚れをやさしく浮かせ、膜への負担を抑えます。"],
+          ["接客ポイント", "“買った日から同じ方法で続ける”ことをセットで伝えます。"]
+        ],
+        script: [
+          ["① 承認", "「この方法が、いちばんレンズにやさしいお手入れです。」"],
+          ["② 理由", "「先に水でホコリを流してから、中性クリーナーで皮脂を浮かせると、<span class='phrase'>コーティングを守りながら</span> きれいにできます。」"],
+          ["③ 提案", "「今日からこの方法で続けていただけるよう、レジ横の専用クリーナーも一緒にご用意できます。」"]
+        ],
+        ctaTitle: "正解を選んだお客様には、“今日から続けるセット”として提案",
+        ctaText: "すでに正しいケアへの納得がある状態なので、クロスセルは強く売り込まず、習慣化のための備品として案内します。",
+        closing: "「せっかくの新しいメガネなので、今日からこのクリーナーで同じケアを続けてください。」"
+      }
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const buttons = Array.from(document.querySelectorAll("[data-method]"));
+    const revealBlocks = Array.from(document.querySelectorAll("[data-reveal]"));
+    let currentScenario = null;
+
+    function stripHtml(html) {
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      return div.textContent || div.innerText || "";
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function buildMechanisms(items) {
+      return items.map(([label, text]) => `
+        <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+          <div class="mb-1 text-xs font-black tracking-[.16em] text-waterDeep">${label}</div>
+          <p class="text-sm leading-6 text-slate-600">${text}</p>
+        </div>
+      `).join("");
+    }
+
+    function buildScript(items) {
+      return items.map(([label, text]) => `
+        <div class="rounded-2xl border border-white bg-white/82 p-4 shadow-sm">
+          <div class="mb-1 text-xs font-black tracking-[.16em] text-slate-400">${label}</div>
+          <p class="text-base font-bold leading-8 text-slate-800">${text}</p>
+        </div>
+      `).join("");
+    }
+
+    function revealInSteps() {
+      revealBlocks.forEach((block) => block.classList.remove("is-visible"));
+      revealBlocks.forEach((block, index) => {
+        window.setTimeout(() => block.classList.add("is-visible"), 120 + index * 220);
+      });
+    }
+
+    function applyScenario(key) {
+      const data = scenarios[key];
+
+      if (!data) {
+        showToast("選択内容を読み込めませんでした。もう一度お試しください。");
+        return;
+      }
+
+      currentScenario = data;
+
+      buttons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.method === key);
+      });
+
+      $("resultArea").classList.remove("hidden");
+      $("resultBadge").textContent = data.badge;
+      $("resultTitle").textContent = data.title;
+      $("resultLead").textContent = data.lead;
+      $("stageCaption").textContent = data.caption;
+      $("lifeValue").textContent = `${data.life}%`;
+      $("lifeNote").textContent = data.lifeNote;
+      $("mechanismList").innerHTML = buildMechanisms(data.mechanisms);
+      $("scriptList").innerHTML = buildScript(data.script);
+      $("ctaTitle").textContent = data.ctaTitle;
+      $("ctaText").textContent = data.ctaText;
+      $("closingLine").textContent = data.closing;
+
+      const stage = $("lensStage");
+      stage.className = "stage-scene";
+      void stage.offsetWidth;
+      stage.classList.add(`mode-${data.mode}`);
+
+      const meter = $("lifeMeter");
+      meter.style.width = "0%";
+      window.setTimeout(() => {
+        meter.style.width = `${data.life}%`;
+      }, 160);
+
+      revealInSteps();
+
+      window.setTimeout(() => {
+        $("resultArea").scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
+
+    async function copyScript() {
+      if (!currentScenario) {
+        showToast("先に洗い方を選んでください。");
+        return;
+      }
+
+      const text = currentScenario.script
+        .map(([label, line]) => `${label}\n${stripHtml(line)}`)
+        .join("\n\n") + `\n\n最後の一言\n${currentScenario.closing}`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("接客トークをコピーしました");
+      } catch (error) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+          document.execCommand("copy");
+          showToast("接客トークをコピーしました");
+        } catch (fallbackError) {
+          showToast("コピーできませんでした。画面の台本をご利用ください。");
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => applyScenario(button.dataset.method));
+    });
+
+    $("resetBtn").addEventListener("click", () => {
+      buttons.forEach((button) => button.classList.remove("is-active"));
+      $("resultArea").classList.add("hidden");
+      currentScenario = null;
+      $("choiceArea").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    $("copyBtn").addEventListener("click", copyScript);
+
+    $("ctaBtn").addEventListener("click", () => {
+      showToast("提案トーク：専用クリーナーを一緒にご案内しましょう");
+    });
+  </script>
+</body>
+</html>
