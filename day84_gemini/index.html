@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LENS CARE PRO | コーティング寿命シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        clearBlue: '#00b4d8',
+                        acidYellow: '#eab308',
+                    },
+                    animation: {
+                        'draw-crack': 'drawCrack 0.8s ease-out forwards',
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'sweep-shine': 'sweepShine 1.5s ease-in-out forwards',
+                        'grow-blur': 'growBlur 1.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        drawCrack: {
+                            '0%': { strokeDashoffset: '150' },
+                            '100%': { strokeDashoffset: '0' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        sweepShine: {
+                            '0%': { left: '-100%' },
+                            '100%': { left: '200%' },
+                        },
+                        growBlur: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(15px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムハイライト（カンペ用マーカー） */
+        .marker-warning {
+            background: linear-gradient(transparent 50%, rgba(234, 179, 8, 0.3) 50%);
+            font-weight: 700;
+        }
+        .marker-success {
+            background: linear-gradient(transparent 50%, rgba(0, 180, 216, 0.3) 50%);
+            font-weight: 700;
+        }
+        /* スクロールバー非表示 */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans antialiased text-gray-800">
+
+    <!-- モバイルファースト・コンテナ（スマホ幅固定でレイアウトを絶対保護） -->
+    <div class="max-w-md mx-auto min-h-screen bg-white shadow-xl relative flex flex-col overflow-x-hidden">
+        
+        <!-- ヘッダー -->
+        <header class="py-5 px-6 border-b border-gray-100 flex items-center justify-between bg-white z-20">
+            <h1 class="text-lg font-light tracking-widest text-cyan-900">LENS CARE <span class="font-bold">PRO</span></h1>
+            <span class="px-2 py-1 bg-gray-100 text-gray-400 text-[10px] font-bold tracking-wider rounded">STAFF USE</span>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="flex-1 p-6 flex flex-col gap-8 relative z-10">
+
+            <!-- ================= STEP 1: ヒアリング・選択エリア ================= -->
+            <section id="step-1" class="flex flex-col gap-6 animate-fade-in">
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-cyan-700 tracking-wide">STEP 1</p>
+                    <h2 class="text-xl font-medium leading-tight">お客様の日常の<br>お手入れ方法を伺ってください。</h2>
+                    <p class="text-sm text-gray-500">お客様の回答に最も近いものをタップし、シミュレーションを開始します。</p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="simulate('hotwater')" class="w-full text-left p-4 border border-gray-200 hover:border-cyan-400 bg-white hover:bg-cyan-50 transition-colors group">
+                        <span class="block text-xs text-gray-400 mb-1 group-hover:text-cyan-600">NG行動 1</span>
+                        <span class="block font-medium text-gray-800">お風呂のついでに、シャワーのお湯で洗う</span>
+                    </button>
+                    
+                    <button onclick="simulate('soap')" class="w-full text-left p-4 border border-gray-200 hover:border-cyan-400 bg-white hover:bg-cyan-50 transition-colors group">
+                        <span class="block text-xs text-gray-400 mb-1 group-hover:text-cyan-600">NG行動 2</span>
+                        <span class="block font-medium text-gray-800">洗面所で、ハンドソープ（石鹸）で洗う</span>
+                    </button>
+
+                    <button onclick="simulate('cleaner')" class="w-full text-left p-4 border border-gray-200 hover:border-cyan-400 bg-white hover:bg-cyan-50 transition-colors group">
+                        <span class="block text-xs text-gray-400 mb-1 group-hover:text-cyan-600">正しいケア</span>
+                        <span class="block font-medium text-gray-800">水洗いしたあと、専用クリーナーで拭く</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ================= STEP 2: シミュレーション＆トークエリア ================= -->
+            <section id="step-2" class="hidden flex-col gap-6">
+                
+                <!-- シミュレーション・モニター（アスペクト比固定で絶対崩れない） -->
+                <div class="w-full aspect-[4/3] bg-[#f8fafc] border border-gray-100 flex flex-col justify-center items-center relative overflow-hidden">
+                    <!-- 背景のグリッド模様（高級感・科学的表現） -->
+                    <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 16px 16px;"></div>
+                    
+                    <p class="absolute top-3 left-4 text-[10px] font-bold text-gray-400 tracking-wider">LENS SURFACE STATUS</p>
+
+                    <!-- メガネの描画（Flexで配置し、文字との被りを絶対防止） -->
+                    <div class="flex items-center justify-center w-[85%] relative z-10 mt-4">
+                        <!-- 左レンズ -->
+                        <div class="lens-frame relative w-[42%] aspect-[5/4] border-[4px] border-gray-800 rounded-[35%] overflow-hidden bg-white shadow-inner transition-transform duration-700">
+                            <div class="dirt-layer absolute inset-0 bg-gray-500/15 backdrop-blur-[1px] transition-opacity duration-1000"></div>
+                            <div class="absolute inset-0">
+                                <!-- お湯：クラック（ひび割れ） -->
+                                <svg class="absolute inset-0 w-full h-full text-white drop-shadow-md opacity-0 crack-layer transition-opacity" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path d="M50,50 L20,10 M50,50 L85,15 M50,50 L10,65 M50,50 L80,85 M50,50 L35,95 M20,10 L30,5 M85,15 L95,30 M10,65 L5,50 M80,85 L95,75 M35,95 L20,85" stroke="currentColor" stroke-width="1.5" fill="none" class="stroke-crack" stroke-dasharray="150" stroke-dashoffset="150" />
+                                </svg>
+                                <!-- 石鹸：白濁と剥がれ -->
+                                <div class="absolute inset-0 bg-white/60 backdrop-blur-sm opacity-0 soap-layer">
+                                    <div class="absolute top-2 left-2 w-1/2 aspect-square bg-white/90 rounded-full blur-md soap-bubble origin-center"></div>
+                                    <div class="absolute bottom-2 right-1 w-2/3 aspect-square bg-white/80 rounded-full blur-md soap-bubble origin-center" style="animation-delay: 0.3s"></div>
+                                </div>
+                                <!-- クリーナー：輝き -->
+                                <div class="absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/90 to-transparent skew-x-[-25deg] shine-layer"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- ブリッジ -->
+                        <div class="w-[8%] h-[4px] bg-gray-800 -mt-6"></div>
+                        
+                        <!-- 右レンズ -->
+                        <div class="lens-frame relative w-[42%] aspect-[5/4] border-[4px] border-gray-800 rounded-[35%] overflow-hidden bg-white shadow-inner transition-transform duration-700">
+                            <div class="dirt-layer absolute inset-0 bg-gray-500/15 backdrop-blur-[1px] transition-opacity duration-1000"></div>
+                            <div class="absolute inset-0">
+                                <svg class="absolute inset-0 w-full h-full text-white drop-shadow-md opacity-0 crack-layer transition-opacity" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path d="M50,50 L15,15 M50,50 L90,20 M50,50 L20,70 M50,50 L75,90 M50,50 L45,95 M15,15 L10,5 M90,20 L95,10 M20,70 L5,80 M75,90 L90,95" stroke="currentColor" stroke-width="1.5" fill="none" class="stroke-crack" stroke-dasharray="150" stroke-dashoffset="150" />
+                                </svg>
+                                <div class="absolute inset-0 bg-white/60 backdrop-blur-sm opacity-0 soap-layer">
+                                    <div class="absolute top-1 right-2 w-1/2 aspect-square bg-white/90 rounded-full blur-md soap-bubble origin-center"></div>
+                                    <div class="absolute bottom-3 left-2 w-1/2 aspect-square bg-white/80 rounded-full blur-md soap-bubble origin-center" style="animation-delay: 0.2s"></div>
+                                </div>
+                                <div class="absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/90 to-transparent skew-x-[-25deg] shine-layer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 接客トークスクリプト（カンペ） -->
+                <div id="script-box" class="p-5 border-l-[3px] bg-gray-50 transition-colors duration-500">
+                    <div class="flex items-center gap-2 mb-3 opacity-70">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        <span class="text-[11px] font-bold tracking-wider">TALK SCRIPT（お客様へお伝えください）</span>
+                    </div>
+                    <h3 id="script-title" class="text-base font-bold mb-2"></h3>
+                    <p id="script-content" class="text-sm leading-loose text-gray-700"></p>
+                </div>
+
+                <!-- クロスセル（遅延表示） -->
+                <div id="cross-sell" class="hidden mt-2 border border-gray-100 bg-white shadow-sm p-4 animate-slide-up relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-cyan-400"></div>
+                    <p id="cross-sell-text" class="text-xs font-bold text-cyan-800 mb-3"></p>
+                    
+                    <div class="flex items-center gap-3 bg-gray-50 border border-gray-100 p-2">
+                        <div class="w-12 h-12 bg-white flex items-center justify-center border border-gray-100">
+                            <span class="text-xl">🧴</span>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[13px] font-bold text-gray-800">プロフェッショナル・レンズクリーナー</p>
+                            <p class="text-[10px] text-gray-500">中性 / 帯電防止配合</p>
+                        </div>
+                        <div class="text-right pr-2">
+                            <p class="text-sm font-bold text-cyan-700">¥1,200</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="resetApp()" class="mt-4 pb-8 text-xs text-gray-400 underline text-center w-full hover:text-gray-600">
+                    最初からやり直す
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <!-- ロジック -->
+    <script>
+        const appData = {
+            hotwater: {
+                theme: "warning",
+                title: "お風呂の「お湯」は、レンズの大敵です。",
+                script: "実はお風呂場など<strong>『お湯』でメガネを洗うのは非常に危険</strong>なんです。<br><span class='marker-warning'>レンズのプラスチックは熱で膨張しますが、表面のコーティングは伸びないため、引っ張られて『ひび割れ（クラック）』が起きてしまいます。</span>一度割れると直せません。",
+            },
+            soap: {
+                theme: "warning",
+                title: "石鹸・ハンドソープはコーティングを溶かします。",
+                script: "手洗いのついでに、<strong>ハンドソープや石鹸で洗うのもNG</strong>です。<br><span class='marker-warning'>多くの石鹸は『アルカリ性』や『弱酸性』。レンズのコーティングはこれらに非常に弱く、化学反応で膜が溶けて白く濁ったり、ボロボロに剥がれてしまいます。</span>",
+            },
+            cleaner: {
+                theme: "success",
+                title: "正解です！水洗いと中性クリーナーがベストです。",
+                script: "素晴らしいです！それが大正解のお手入れです。<br><span class='marker-success'>最初に水でホコリを流し、その後に『中性の専用クリーナー』を使うことで、コーティングを一切傷つけることなく、皮脂汚れだけを優しく浮かせることができます。</span>",
+            }
+        };
+
+        const crossSellTexts = {
+            warning: "💡 だからこそ、お気に入りのメガネを長く使うために、安全な専用クリーナーをご案内しましょう。",
+            success: "💡 お客様の素晴らしい習慣をサポートするために、より汚れが落ちやすい専用クリーナーをご案内しましょう。"
+        };
+
+        function simulate(type) {
+            // UIの切り替え（プログレッシブ・ディクロージャー）
+            document.getElementById('step-1').classList.add('hidden');
+            const step2 = document.getElementById('step-2');
+            step2.classList.remove('hidden');
+            step2.classList.add('flex', 'animate-fade-in');
+            
+            const data = appData[type];
+            
+            // スクリプトとテーマのセット
+            document.getElementById('script-title').textContent = data.title;
+            document.getElementById('script-content').innerHTML = data.script;
+            
+            const scriptBox = document.getElementById('script-box');
+            scriptBox.className = `p-5 border-l-[3px] transition-colors duration-500 ${data.theme === 'warning' ? 'bg-yellow-50/50 border-yellow-400' : 'bg-cyan-50 border-cyan-400'}`;
+            
+            document.getElementById('cross-sell-text').textContent = crossSellTexts[data.theme];
+            
+            // アニメーションのリセット
+            resetAnimations();
+            
+            // 少し遅延させてアニメーションを発火（視線誘導のため）
+            setTimeout(() => {
+                const lenses = document.querySelectorAll('.lens-frame');
+                lenses.forEach(lens => {
+                    if (type === 'hotwater') {
+                        // 熱で膨張し、ひび割れる
+                        lens.classList.add('scale-[1.04]');
+                        lens.querySelectorAll('.crack-layer').forEach(el => el.classList.replace('opacity-0', 'opacity-100'));
+                        lens.querySelectorAll('.stroke-crack').forEach(el => el.classList.add('animate-draw-crack'));
+                    } else if (type === 'soap') {
+                        // 白濁し、膜が浮く
+                        lens.querySelectorAll('.soap-layer').forEach(el => el.classList.add('animate-fade-in'));
+                        lens.querySelectorAll('.soap-bubble').forEach(el => el.classList.add('animate-grow-blur'));
+                    } else if (type === 'cleaner') {
+                        // 汚れが落ち、輝く
+                        lens.querySelectorAll('.dirt-layer').forEach(el => el.style.opacity = "0");
+                        lens.querySelectorAll('.shine-layer').forEach(el => el.classList.add('animate-sweep-shine'));
+                    }
+                });
+            }, 300);
+            
+            // クロスセル提案を時間差で表示（情報過多を防ぐ）
+            setTimeout(() => {
+                const crossSell = document.getElementById('cross-sell');
+                crossSell.classList.remove('hidden');
+                // DOMの更新を待ってからアニメーションクラスを付与
+                requestAnimationFrame(() => {
+                    crossSell.classList.add('animate-slide-up');
+                });
+            }, 3500); // カンペを読み終わる想定の約3.5秒後
+        }
+
+        function resetAnimations() {
+            const lenses = document.querySelectorAll('.lens-frame');
+            lenses.forEach(lens => {
+                lens.classList.remove('scale-[1.04]');
+                lens.querySelectorAll('.crack-layer').forEach(el => el.classList.replace('opacity-100', 'opacity-0'));
+                lens.querySelectorAll('.stroke-crack').forEach(el => el.classList.remove('animate-draw-crack'));
+                lens.querySelectorAll('.soap-layer').forEach(el => el.classList.remove('animate-fade-in'));
+                lens.querySelectorAll('.soap-bubble').forEach(el => el.classList.remove('animate-grow-blur'));
+                lens.querySelectorAll('.shine-layer').forEach(el => el.classList.remove('animate-sweep-shine'));
+                lens.querySelectorAll('.dirt-layer').forEach(el => el.style.opacity = "1");
+            });
+            
+            const crossSell = document.getElementById('cross-sell');
+            crossSell.classList.add('hidden');
+            crossSell.classList.remove('animate-slide-up');
+        }
+
+        function resetApp() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('flex', 'animate-fade-in');
+            document.getElementById('step-1').classList.remove('hidden');
+            resetAnimations();
+        }
+    </script>
+</body>
+</html>
