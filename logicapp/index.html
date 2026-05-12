@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ロジックパズル & 論理的思考 練習アプリ</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* カスタムフォントとベーススタイル */
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            color: #374151; /* Tailwind gray-700 */
+        }
+        
+        /* 改行を保持するためのスタイル */
+        .whitespace-pre-wrap {
+            white-space: pre-wrap;
+        }
+
+        /* アニメーション用クラス */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const problemsData = [
+            {
+                id: 1,
+                title: "3つの箱",
+                difficulty: "★☆☆",
+                category: "論理",
+                question: "A、B、Cの3つの箱があります。1つにはアタリが入っており、2つはハズレです。\n箱Aには「この箱はハズレ」、箱Bには「この箱はアタリ」、箱Cには「箱Aはハズレ」と書かれています。\nこのうち、本当のことが書かれている箱は1つだけです。アタリはどの箱でしょう？",
+                options: ["箱A", "箱B", "箱C", "アタリはない"],
+                correctOption: "箱A",
+                hint: "もしAがハズレだった場合、Aの箱とCの箱の言葉はどうなりますか？「本当のことが書かれているのは1つだけ」という条件に注目しましょう。",
+                explanation: "本当のことが書かれているのがどの箱か、それぞれ仮定して検証します。\n\nもし「Aがハズレ」だと仮定しましょう。すると、箱Aの「この箱はハズレ」という言葉は本当になります。同時に、箱Cの「箱Aはハズレ」という言葉も本当になります。\nこれでは「本当のことが書かれている箱は1つだけ」という条件に矛盾してしまいます。\n\nしたがって、最初の仮定が間違っていたことになり、「Aはハズレではない」、つまり「Aがアタリ」であることが確定します。"
+            },
+            {
+                id: 2,
+                title: "池の睡蓮",
+                difficulty: "★★☆",
+                category: "計算",
+                question: "池に睡蓮が浮かんでいます。睡蓮は毎日2倍に増えます。池全体が睡蓮で覆われるのに48日かかるとしたら、池の半分が覆われるのは何日目でしょうか？",
+                options: ["24日目", "47日目", "46日目", "96日目"],
+                correctOption: "47日目",
+                hint: "毎日2倍になるということは、1日遡るとどうなるかを考えてみましょう。",
+                explanation: "睡蓮は毎日「2倍」に増えます。\nこれを逆に考えると、1日前は「半分」だったということになります。\n\n池全体がいっぱいになるのが48日目であれば、その前日の47日目は、全体の半分の面積だったはずです。\nしたがって、答えは47日目です。"
+            },
+            {
+                id: 3,
+                title: "マラソン大会",
+                difficulty: "★★★",
+                category: "ひっかけ",
+                question: "あなたはマラソン大会に出場しています。必死に走って、ついに2位の人を追い抜きました。さて、あなたは今何位でしょうか？",
+                options: ["1位", "2位", "3位", "同着1位"],
+                correctOption: "2位",
+                hint: "2位の人を抜いた時、あなたは誰のポジションに入りましたか？",
+                explanation: "「2位の人を抜いた」から「1位になった」と錯覚しやすい問題です。\n\nあなたが2位の人を追い抜いたとき、あなたは元々2位だった人が走っていたポジションに入ったことになります。\nしたがって、あなたは2位になり、追い抜かれた人は3位になります。1位の人はまだあなたの前を走っています。"
+            },
+            {
+                id: 4,
+                title: "9枚の硬貨",
+                difficulty: "★★☆",
+                category: "論理",
+                question: "9枚の硬貨があります。そのうち8枚は本物で同じ重さですが、1枚だけ偽物で、本物よりも少し軽いことが分かっています。\n天秤を最低何回使えば、確実に偽物を見つけ出せるでしょうか？",
+                options: ["2回", "3回", "4回", "5回"],
+                correctOption: "2回",
+                hint: "硬貨を3つのグループに分けて考えてみましょう。",
+                explanation: "硬貨を3枚ずつ、3つのグループ（A, B, C）に分けます。\n\n【1回目】\nグループAとBを天秤に乗せます。\n・釣り合った場合：偽物はグループCにあります。\n・釣り合わなかった場合：軽い方に偽物があります。\n\nこれで偽物を含む3枚のグループが特定できました。\n\n【2回目】\n特定した3枚の中から、2枚を選んで天秤に乗せます。\n・釣り合った場合：残りの1枚が偽物です。\n・釣り合わなかった場合：軽い方が偽物です。\n\nしたがって、最低2回で確実に見つけ出すことができます。"
+            },
+            {
+                id: 5,
+                title: "明日の明後日",
+                difficulty: "★☆☆",
+                category: "ひっかけ",
+                question: "明日の明後日は木曜日です。では、昨日の前日は何曜日だったでしょうか？",
+                options: ["日曜日", "月曜日", "金曜日", "土曜日"],
+                correctOption: "土曜日",
+                hint: "まず「今日」が何曜日かを逆算してみましょう。",
+                explanation: "「明日の明後日」は、今日から数えて3日後です。\n3日後が「木曜日」なので、今日はその3日前、つまり「月曜日」になります。\n\n問題は「昨日の前日」なので、今日（月曜日）から数えて2日前です。\n月曜日の2日前は「土曜日」になります。\n\n今日＝月曜日\n昨日＝日曜日\n昨日の前日＝土曜日"
+            },
+            {
+                id: 6,
+                title: "兄弟の年齢",
+                difficulty: "★★☆",
+                category: "計算",
+                question: "太郎くんは12歳で、妹の年齢は太郎くんの半分です。\n太郎くんが100歳になったとき、妹は何歳でしょうか？",
+                options: ["50歳", "94歳", "96歳", "100歳"],
+                correctOption: "94歳",
+                hint: "「半分」という比率は年齢が上がるにつれてどうなるでしょうか？年齢の「差」に注目してください。",
+                explanation: "「100歳の半分で50歳」と答えてしまう引っかけ問題です。\n\n太郎くんが12歳のとき、妹はその半分なので6歳です。\nつまり、太郎くんと妹の年齢差は「12 - 6 = 6歳」です。\n\n年齢の差は一生変わらないので、太郎くんが100歳になったとき、妹は「100 - 6 = 94歳」になります。"
+            },
+            {
+                id: 7,
+                title: "嘘つき村と正直村",
+                difficulty: "★★★",
+                category: "論理",
+                question: "別れ道に人が立っています。一方は正直村（常に本当のことを言う）へ、もう一方は嘘つき村（常に嘘を言う）へ続いています。立っている人がどちらの村の住人かは分かりません。\n正直村へ行くための道を尋ねるには、1回だけなんと質問すればよいでしょうか？",
+                options: ["あなたは正直村の住人ですか？", "私が「正直村はどちらですか？」と聞いたら、どちらを指差しますか？", "あなたの村はどちらですか？", "嘘つき村はどちらですか？"],
+                correctOption: "私が「正直村はどちらですか？」と聞いたら、どちらを指差しますか？",
+                hint: "相手が嘘つきだった場合と正直者だった場合、両方で同じ答えになるような質問が必要です。",
+                explanation: "相手が正直村の住人の場合：正直村の方向を素直に指します。\n\n相手が嘘つき村の住人の場合：嘘つき村の住人は、もし普通に聞かれたら嘘つき村を指します（嘘をつくから）。しかし「どう指差すか」と聞かれているため、自分が嘘つき村を指すという事実に対してさらに嘘をつき、結果として「正直村」を指します。\n\nつまり、どちらの住人に聞いても必ず正直村への道を指差してくれます。"
+            },
+            {
+                id: 8,
+                title: "消えた100円",
+                difficulty: "★★☆",
+                category: "ひっかけ",
+                question: "3人でレストランに行き、合計3000円の食事をしました。1人1000円ずつ出しました。\nしかし店長が「割引で2500円でいいよ」と言い、ウェイターに500円を返すよう頼みました。\nウェイターは「500円は3人で割り切れない」と考え、こっそり200円をくすねて、3人に100円ずつ返しました。\n\nさて、3人が支払ったのは1人900円で合計2700円です。ウェイターがくすねた200円を足すと2900円。残りの100円はどこへ消えたのでしょうか？",
+                options: ["店長のポケットの中", "レジの中", "最初から存在しない", "ウェイターが落とした"],
+                correctOption: "最初から存在しない",
+                hint: "「支払った金額（2700円）＋くすねた金額（200円）」という計算式自体が間違っています。",
+                explanation: "計算式をすり替える引っかけ問題です。\n\n3人が最終的に支払った金額2700円の中に、すでにウェイターがくすねた200円が含まれています。\n（実際の食事代2500円 ＋ くすねた200円 ＝ 2700円）\n\nしたがって、2700円にさらに200円を足すという計算自体が無意味であり、消えた100円は最初から存在しません。"
+            },
+            {
+                id: 9,
+                title: "帽子の色",
+                difficulty: "★★★",
+                category: "論理",
+                question: "A、B、Cの3人が前を向いて縦一列に並んでいます。（Cが一番後ろ、Bが真ん中、Aが一番前）\n「赤の帽子が2つ、白の帽子が3つ」あり、3人にランダムに被せました。\n自分の帽子は見えません。後ろの人の帽子も見えません。\n\nCに「自分の帽子の色が分かるか？」と聞くと「分からない」と答えました。\n次にBに聞くと「分からない」と答えました。\n最後にAに聞くと、Aは「自分の帽子の色が分かった」と答えました。\n\nさて、Aの帽子の色は何色でしょう？",
+                options: ["赤色", "白色", "分からない", "黒色"],
+                correctOption: "白色",
+                hint: "Cが「分からない」と答えたことから、AとBの帽子の組み合わせについて何が言えるでしょうか。赤の帽子は2つしかありません。",
+                explanation: "1. CはAとBの帽子が見えます。赤は2つしかないので、もしAとBが両方「赤」なら、Cは自分が「白」だと分かります。しかしCは「分からない」と答えたので、「AとBが両方とも赤」ではありません。\n\n2. Bは、Cの答えを聞いて「AとBが両方赤ではない」ことを知っています。もしAが「赤」なら、Bは自分が「白」だと分かったはずです（両方赤ではないから）。しかしBも「分からない」と答えたので、Aは「赤」ではありません。\n\n3. したがって、Aの帽子は「白色」であると確定します。"
+            },
+            {
+                id: 10,
+                title: "重いボール",
+                difficulty: "★☆☆",
+                category: "論理",
+                question: "同じ大きさのボールが8個あります。そのうち1つだけが他のものより重いことが分かっています。\n天秤を最低何回使えば、確実に重いボールを見つけ出せるでしょうか？",
+                options: ["2回", "3回", "4回", "5回"],
+                correctOption: "2回",
+                hint: "8個を「3個、3個、2個」の3つのグループに分けて、まずは3個と3個を天秤に乗せてみましょう。",
+                explanation: "【1回目】3個ずつのグループを天秤に乗せます。（残りは2個）\n・釣り合った場合：重いボールは残りの2個のどちらかです。\n・釣り合わなかった場合：下がった方の3個の中に重いボールがあります。\n\n【2回目】\n・残りの2個の場合：それを天秤に乗せ、下がった方が正解。（計2回）\n・3個の中に重いボールがある場合：その中から2個を天秤に乗せます。\n　→釣り合った場合：乗せなかった1個が正解。\n　→釣り合わなかった場合：下がった方が正解。（計2回）\n\nしたがって、最低2回で見つけられます。"
+            },
+            {
+                id: 11,
+                title: "カエルの井戸脱出",
+                difficulty: "★★☆",
+                category: "計算",
+                question: "カエルが深さ30メートルの井戸の底にいます。カエルは昼間に3メートル登りますが、夜寝ている間に2メートルずり落ちてしまいます。\nカエルが井戸から完全に脱出できるのは何日目でしょうか？",
+                options: ["28日目", "29日目", "30日目", "31日目"],
+                correctOption: "28日目",
+                hint: "27日目が終わった時点で何メートル登っているでしょうか？最後の日だけは落ちないことに注意してください。",
+                explanation: "カエルは1日に実質1メートル（3m登って2m落ちる）登ります。\n\n27日目の終わりには、27メートル登った位置にいます。\n28日目の昼間、カエルはそこから3メートル登ります。すると「27m + 3m = 30m」となり、見事に井戸の頂上に到達して脱出できます。\n\n一度脱出すれば夜に落ちることはないので、答えは28日目です。"
+            },
+            {
+                id: 12,
+                title: "日本のコンビニの数",
+                difficulty: "★★★",
+                category: "フェルミ推定",
+                question: "【フェルミ推定】\n現在、日本全国にあるコンビニエンスストアの店舗数は、おおよそどれくらいでしょうか？\n正確な知識ではなく、日本の人口などの「知っている数字」から論理的に推測（フェルミ推定）して、最も近い桁（オーダー）の選択肢を選んでください。",
+                options: ["約5,000店舗", "約5.5万店舗", "約50万店舗", "約500万店舗"],
+                correctOption: "約5.5万店舗",
+                hint: "日本の人口（約1.2億人）をベースに考えます。都市部と地方で分け、1つのコンビニが「何人」の生活圏をカバーしているかを想像して割り算してみましょう。",
+                explanation: "フェルミ推定を用いた推論の一例です。\n\n1. 日本の人口を約1.2億人とします。\n2. 人口を都市部と地方で半分（6,000万人ずつ）と仮定します。\n3. 都市部では半径500m以内にコンビニがあり、おおよそ「2,000人に1店舗」が支えていると仮定します。\n　→ 6,000万 ÷ 2,000 = 3万店舗\n4. 地方では車社会でカバー範囲が広く、「4,000人に1店舗」と仮定します。\n　→ 6,000万 ÷ 4,000 = 1.5万店舗\n5. 合計すると 3万 + 1.5万 = 4.5万店舗 と推定できます。\n\n実際の日本のコンビニ数は約5.5万店舗なので、「約5.5万店舗」の桁感が正解となります。"
+            },
+            {
+                id: 13,
+                title: "日本の美容室の数",
+                difficulty: "★★★",
+                category: "フェルミ推定",
+                question: "【フェルミ推定】\n日本全国にある美容室（ヘアサロン）の数は、おおよそどれくらいでしょうか？\n※先ほどのコンビニの数（約5.5万店舗）なども参考に推測してみてください。",
+                options: ["約2.5万軒", "約25万軒", "約250万軒", "約2,500万軒"],
+                correctOption: "約25万軒",
+                hint: "需要（日本人が1年間に美容室に行く総回数）と、供給（1つの美容室が1年間で対応できる客数）から割り出してみましょう。",
+                explanation: "フェルミ推定を用いた推論の一例です。\n\n【需要（お客さん側）】\n日本の人口1.2億人が、平均して「2ヶ月に1回（年間6回）」美容室に行くと仮定します。\n1.2億人 × 6回 ＝ 年間 7.2億回 の来店需要があります。\n\n【供給（お店側）】\n1つの美容室には平均3人の美容師がいると仮定します。1人が1日に5人を担当し、年間300日営業するとします。\n3人 × 5人/日 × 300日 ＝ 1店舗あたり年間 4,500人 を対応できます。\n\n【計算】\n需要（7.2億回） ÷ 供給（4,500人/店舗） ＝ 160,000（16万店舗）。\n\n実際の日本の美容室の数は約26万軒（なんとコンビニの約5倍！）と言われています。推論から桁（オーダー）が外れていないため、選択肢の中では「約25万軒」が正解です。"
+            }
+        ];
+
+        // コラムデータの追加
+        const columnsData = [
+            {
+                id: 1,
+                title: "フェルミ推定とは？答えのない問題に挑む",
+                icon: "fa-solid fa-brain",
+                content: "「日本に電柱は何本ある？」「世界で1日に食べられるピザの枚数は？」\n\nこれらは一見すると「そんなの知るわけない」と諦めてしまうような問題です。しかし、**フェルミ推定**という思考法を使えば、知っている知識を組み合わせて「当たらずとも遠からず」な概算値を導き出すことができます。\n\nフェルミ推定の基本は**「分解」**です。いきなり答えを出すのではなく、計算可能な要素に分解し、数式を作ります。\n\n**【フェルミ推定の5ステップ】**\n1. **前提確認**: 何を求めるか定義する（例：ピザ＝宅配？冷凍も含む？）\n2. **アプローチ設定**: 数式を作る（例：人口 × 食べる頻度）\n3. **モデル化**: さらに分解する（例：年代別に食べる頻度を変える）\n4. **数値代入**: 自分の常識から数字を入れる\n5. **計算と検証**: 計算し、現実離れしていないか確認する\n\nこの力は、ビジネスで新規事業の市場規模を予測したり、未知のトラブルに対処したりする際の「仮説思考力」として非常に役立ちます。"
+            },
+            {
+                id: 2,
+                title: "思考を加速させる「アンカー数字」",
+                icon: "fa-solid fa-anchor",
+                content: "フェルミ推定を行う際、すべての数字をカンで決めるわけにはいきません。推論の起点となる「確かな数字」を知っておくことで、計算の精度が劇的に上がります。これを**アンカー（碇）数字**と呼びます。\n\n最低限覚えておきたい日本のアンカー数字をいくつか紹介します。\n\n**【覚えておきたいアンカー数字】**\n・**日本の人口**: 約1.2億人\n・**日本の世帯数**: 約5,000万世帯（1世帯あたり約2.4人）\n・**日本の面積**: 約38万平方キロメートル\n・**日本の市町村数**: 約1,700\n・**平均寿命**: 約80〜85歳（1学年あたりの人口は約100万人と概算できる）\n\n例えば「日本の犬の数は？」という問題が出た時、「人口1.2億人」を使うより「世帯数5,000万」を使い、「だいたい10世帯に1世帯（10%）が犬を飼っていて、1世帯1匹だろう」と推測すれば、**「5,000万 × 0.1 ＝ 500万匹」**という推論がスピーディに成り立ちます。（実際は約700万頭です）"
+            },
+            {
+                id: 3,
+                title: "MECE（モレなくダブリなく）な分解",
+                icon: "fa-solid fa-layer-group",
+                content: "論理的思考の基本概念の一つに**MECE（ミーシー）**があります。これは「Mutually Exclusive and Collectively Exhaustive」の略で、**「モレなく、ダブリなく」**という意味です。\n\n問題を分解する際、このMECEを意識しないと計算がおかしくなってしまいます。\n\n**【悪い分解の例】**\n日本の人口を「会社員」「学生」「主婦」で分ける。\n→ *ダブリ*: 「学生でありながら会社員（アルバイト等）」がいるかもしれない。\n→ *モレ*: 「無職」「年金受給者」「乳幼児」がすっぽり抜けている。\n\n**【良い分解の例（MECE）】**\n・**年齢別**: 0-19歳、20-39歳、40-59歳、60歳以上\n・**性別**: 男性、女性（生物学的な統計データとして）\n・**地域別**: 北海道、東北、関東、中部、近畿、中国、四国、九州沖縄\n\n迷った時は「対立概念（オン/オフ、国内/海外、法人/個人）」や「プロセスの順番（過去/現在/未来）」で分けると、綺麗にMECEな分解がしやすくなります。"
+            }
+        ];
+
+        // カテゴリに応じたバッジの色を返す関数
+        const getCategoryColor = (category) => {
+            switch (category) {
+                case '論理': return 'bg-blue-100 text-blue-800 border-blue-200';
+                case '計算': return 'bg-green-100 text-green-800 border-green-200';
+                case 'ひっかけ': return 'bg-orange-100 text-orange-800 border-orange-200';
+                case 'フェルミ推定': return 'bg-purple-100 text-purple-800 border-purple-200';
+                default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            }
+        };
+
+        // ローカルストレージを扱うカスタムフック
+        const useLocalStorage = (key, initialValue) => {
+            const [storedValue, setStoredValue] = React.useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error(error);
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+            return [storedValue, setValue];
+        };
+
+        const HomeView = ({ problems, clearedProblems, onSelectProblem }) => {
+            // クリア数と進捗率の計算
+            const clearCount = clearedProblems.length;
+            const totalCount = problems.length;
+            const progress = totalCount > 0 ? Math.round((clearCount / totalCount) * 100) : 0;
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 sm:p-6 fade-in">
+                    {/* 進捗表示エリア */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
+                        <div className="flex justify-between items-end mb-2">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800"><i className="fa-solid fa-trophy text-yellow-500 mr-2"></i>あなたの進捗</h2>
+                                <p className="text-sm text-gray-500 mt-1">全 {totalCount} 問中 {clearCount} 問クリア</p>
+                            </div>
+                            <div className="text-2xl font-bold text-blue-600">{progress}%</div>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                        </div>
+                    </div>
+
+                    <div className="mb-6 flex justify-between items-center">
+                        <h2 className="text-2xl font-bold text-gray-800">問題一覧</h2>
+                    </div>
+
+                    {/* 問題リスト グリッド */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {problems.map((problem) => {
+                            const isCleared = clearedProblems.includes(problem.id);
+                            
+                            return (
+                                <div 
+                                    key={problem.id} 
+                                    onClick={() => onSelectProblem(problem.id)}
+                                    className={`relative bg-white rounded-xl shadow-sm border overflow-hidden cursor-pointer transform transition-all duration-200 hover:-translate-y-1 hover:shadow-md
+                                        ${isCleared ? 'border-green-300' : 'border-gray-200'}`}
+                                >
+                                    {/* クリア済みマーク */}
+                                    {isCleared && (
+                                        <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg z-10 flex items-center shadow-sm">
+                                            <i className="fa-solid fa-check mr-1"></i> クリア済
+                                        </div>
+                                    )}
+
+                                    <div className="p-6">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${getCategoryColor(problem.category)}`}>
+                                                {problem.category}
+                                            </span>
+                                            <span className="text-sm font-medium text-amber-500 tracking-widest">
+                                                {problem.difficulty}
+                                            </span>
+                                        </div>
+                                        
+                                        <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2">{problem.title}</h3>
+                                        
+                                        <p className="text-sm text-gray-500 line-clamp-3 mb-4">
+                                            {problem.question}
+                                        </p>
+                                        
+                                        <div className="mt-4 flex justify-end">
+                                            <button className="text-blue-600 text-sm font-medium hover:text-blue-800 transition-colors flex items-center">
+                                                挑戦する <i className="fa-solid fa-arrow-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {/* 下部装飾線 */}
+                                    {isCleared && <div className="h-1 w-full bg-green-400"></div>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        const ProblemView = ({ problem, onBack, onClear }) => {
+            const [selectedOption, setSelectedOption] = React.useState(null);
+            const [status, setStatus] = React.useState('idle'); // idle, correct, incorrect
+            const [showHint, setShowHint] = React.useState(false);
+            const [showAnswer, setShowAnswer] = React.useState(false);
+
+            // リセット
+            React.useEffect(() => {
+                setSelectedOption(null);
+                setStatus('idle');
+                setShowHint(false);
+                setShowAnswer(false);
+            }, [problem]);
+
+            const handleSubmit = () => {
+                if (!selectedOption) return;
+
+                const isCorrect = selectedOption === problem.correctOption;
+                if (isCorrect) {
+                    setStatus('correct');
+                    onClear(problem.id);
+                } else {
+                    setStatus('incorrect');
+                }
+            };
+
+            const handleRetry = () => {
+                setStatus('idle');
+                setSelectedOption(null);
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto p-4 sm:p-6 fade-in">
+                    {/* ナビゲーションとヘッダー */}
+                    <button 
+                        onClick={onBack}
+                        className="mb-6 text-gray-500 hover:text-gray-800 transition-colors flex items-center text-sm font-medium"
+                    >
+                        <i className="fa-solid fa-arrow-left mr-2"></i> 問題一覧に戻る
+                    </button>
+
+                    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                        {/* 問題ヘッダー部分 */}
+                        <div className="bg-slate-50 border-b border-gray-100 p-6 sm:px-8">
+                            <div className="flex flex-wrap gap-2 items-center mb-3">
+                                <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${getCategoryColor(problem.category)}`}>
+                                    {problem.category}
+                                </span>
+                                <span className="text-sm font-medium text-amber-500 tracking-widest">
+                                    {problem.difficulty}
+                                </span>
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">{problem.title}</h2>
+                        </div>
+
+                        {/* 問題文 */}
+                        <div className="p-6 sm:p-8">
+                            <div className="prose max-w-none text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8 bg-blue-50/50 p-6 rounded-lg border border-blue-100">
+                                {problem.question}
+                            </div>
+
+                            {/* 解答選択エリア (未解答 または 不正解でリトライ前) */}
+                            {status === 'idle' && (
+                                <div className="mt-8 fade-in">
+                                    <p className="block text-sm font-medium text-gray-700 mb-3">
+                                        選択肢から解答を選んでください
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                        {problem.options.map((option, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => setSelectedOption(option)}
+                                                className={`p-4 text-left border-2 rounded-xl transition-all flex items-center ${
+                                                    selectedOption === option 
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold shadow-md' 
+                                                        : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50 text-gray-700'
+                                                }`}
+                                            >
+                                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full border-2 mr-3 font-bold text-sm ${
+                                                    selectedOption === option ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-400 text-gray-500'
+                                                }`}>
+                                                    {String.fromCharCode(65 + index)}
+                                                </span>
+                                                {option}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="text-center">
+                                        <button 
+                                            onClick={handleSubmit}
+                                            disabled={!selectedOption}
+                                            className="w-full sm:w-auto px-10 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center"
+                                        >
+                                            解答する <i className="fa-regular fa-paper-plane ml-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 不正解の表示 */}
+                            {status === 'incorrect' && (
+                                <div className="mt-6 p-6 bg-red-50 border border-red-200 rounded-lg text-center fade-in">
+                                    <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                                        <i className="fa-solid fa-xmark text-3xl text-red-500"></i>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-red-700 mb-2">不正解…</h3>
+                                    <p className="text-red-600 mb-6">残念！もう一度考えてみましょう。</p>
+                                    
+                                    <div className="flex flex-wrap justify-center gap-3">
+                                        <button 
+                                            onClick={handleRetry}
+                                            className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm flex items-center"
+                                        >
+                                            <i className="fa-solid fa-rotate-right mr-2"></i> もう一度考える
+                                        </button>
+                                        
+                                        {!showHint && (
+                                            <button 
+                                                onClick={() => setShowHint(true)}
+                                                className="px-5 py-2.5 bg-amber-100 border border-amber-200 text-amber-800 font-medium rounded-lg hover:bg-amber-200 transition-colors shadow-sm flex items-center"
+                                            >
+                                                <i className="fa-regular fa-lightbulb mr-2"></i> ヒントを見る
+                                            </button>
+                                        )}
+                                        
+                                        {!showAnswer && (
+                                            <button 
+                                                onClick={() => setShowAnswer(true)}
+                                                className="px-5 py-2.5 bg-white border border-red-200 text-red-600 font-medium rounded-lg hover:bg-red-50 transition-colors shadow-sm flex items-center"
+                                            >
+                                                <i className="fa-regular fa-eye mr-2"></i> 答えを見る
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ヒントの表示 */}
+                            {showHint && status === 'incorrect' && !showAnswer && (
+                                <div className="mt-6 p-5 bg-amber-50 border border-amber-200 rounded-lg fade-in">
+                                    <h4 className="font-bold text-amber-800 mb-2 flex items-center">
+                                        <i className="fa-solid fa-lightbulb text-amber-500 mr-2"></i> ヒント
+                                    </h4>
+                                    <p className="text-amber-900">{problem.hint}</p>
+                                </div>
+                            )}
+
+                            {/* 正解または「答えを見る」を選んだ時の表示 */}
+                            {(status === 'correct' || showAnswer) && (
+                                <div className="mt-8 fade-in">
+                                    {status === 'correct' && (
+                                        <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center mb-6 shadow-sm">
+                                            <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                                                <i className="fa-solid fa-check text-3xl text-green-500"></i>
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-green-700 mb-1">正解！</h3>
+                                            <p className="text-green-600 font-medium">素晴らしい論理力です。</p>
+                                        </div>
+                                    )}
+
+                                    <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                                        <div className="bg-gray-100 px-6 py-3 border-b border-gray-200">
+                                            <h4 className="font-bold text-gray-700 flex items-center">
+                                                <i className="fa-solid fa-book-open mr-2 text-gray-500"></i> 答えと解説
+                                            </h4>
+                                        </div>
+                                        <div className="p-6 sm:p-8">
+                                            <div className="mb-6">
+                                                <span className="text-sm text-gray-500 block mb-1">正解</span>
+                                                <p className="text-2xl font-bold text-gray-800">{problem.correctOption}</p>
+                                            </div>
+                                            
+                                            <div className="h-px w-full bg-gray-200 mb-6"></div>
+                                            
+                                            <div>
+                                                <span className="text-sm text-gray-500 block mb-3">解説</span>
+                                                <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                                    {problem.explanation}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mt-8 text-center">
+                                        <button 
+                                            onClick={onBack}
+                                            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none transition-colors"
+                                        >
+                                            <i className="fa-solid fa-list mr-2"></i> 別の問題に挑戦する
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 新規追加：コラム一覧ビュー
+        const ColumnsView = ({ columns, onSelectColumn }) => {
+            return (
+                <div className="max-w-4xl mx-auto p-4 sm:p-6 fade-in">
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">論理的思考コラム</h2>
+                        <p className="text-gray-500">フェルミ推定やロジカルシンキングのコツを学びましょう。</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {columns.map((column) => (
+                            <div 
+                                key={column.id} 
+                                onClick={() => onSelectColumn(column.id)}
+                                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden cursor-pointer transform transition-all duration-200 hover:-translate-y-1 hover:shadow-md flex flex-col h-full"
+                            >
+                                <div className="p-6 flex-grow">
+                                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 text-purple-600 text-xl">
+                                        <i className={column.icon}></i>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-800 mb-3">{column.title}</h3>
+                                    <p className="text-gray-500 text-sm line-clamp-3">
+                                        {column.content.substring(0, 100)}...
+                                    </p>
+                                </div>
+                                <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 mt-auto">
+                                    <span className="text-purple-600 text-sm font-medium flex items-center">
+                                        続きを読む <i className="fa-solid fa-arrow-right ml-1"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // 新規追加：コラム詳細ビュー
+        const ColumnDetailView = ({ column, onBack }) => {
+            return (
+                <div className="max-w-3xl mx-auto p-4 sm:p-6 fade-in">
+                    <button 
+                        onClick={onBack}
+                        className="mb-6 text-gray-500 hover:text-gray-800 transition-colors flex items-center text-sm font-medium"
+                    >
+                        <i className="fa-solid fa-arrow-left mr-2"></i> コラム一覧に戻る
+                    </button>
+
+                    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                        <div className="bg-purple-50 border-b border-purple-100 p-6 sm:px-8 flex items-center gap-4">
+                            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm text-purple-600 text-2xl shrink-0">
+                                <i className={column.icon}></i>
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">{column.title}</h2>
+                        </div>
+                        
+                        <div className="p-6 sm:p-8">
+                            <div className="prose max-w-none text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
+                                {/* Markdownの太字(**)を簡易的に処理して表示 */}
+                                {column.content.split('**').map((text, i) => 
+                                    i % 2 === 1 ? <strong key={i} className="text-gray-900">{text}</strong> : text
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            // タブの状態管理を追加
+            const [activeTab, setActiveTab] = React.useState('puzzles'); // 'puzzles' or 'columns'
+            const [currentView, setCurrentView] = React.useState('list'); // 'list' or 'detail'
+            const [selectedId, setSelectedId] = React.useState(null);
+            
+            // クリアした問題のIDリストをローカルストレージに保存
+            const [clearedProblems, setClearedProblems] = useLocalStorage('logicPuzzleCleared', []);
+
+            const handleSelectProblem = (id) => {
+                setSelectedId(id);
+                setCurrentView('detail');
+                window.scrollTo(0, 0);
+            };
+
+            const handleSelectColumn = (id) => {
+                setSelectedId(id);
+                setCurrentView('detail');
+                window.scrollTo(0, 0);
+            };
+
+            const handleBackToList = () => {
+                setCurrentView('list');
+                setSelectedId(null);
+                window.scrollTo(0, 0);
+            };
+
+            const handleTabChange = (tab) => {
+                setActiveTab(tab);
+                setCurrentView('list');
+                setSelectedId(null);
+                window.scrollTo(0, 0);
+            };
+
+            const handleClearProblem = (id) => {
+                if (!clearedProblems.includes(id)) {
+                    setClearedProblems([...clearedProblems, id]);
+                }
+            };
+
+            const selectedProblem = problemsData.find(p => p.id === selectedId);
+            const selectedColumn = columnsData.find(c => c.id === selectedId);
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* グローバルヘッダー */}
+                    <header className="bg-white shadow-sm sticky top-0 z-50">
+                        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleTabChange('puzzles')}>
+                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                                    <i className="fa-solid fa-brain text-white"></i>
+                                </div>
+                                <h1 className="text-xl font-bold text-gray-800 tracking-tight hidden sm:block">Logic Puzzle</h1>
+                            </div>
+                            
+                            {/* タブナビゲーション */}
+                            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                                <button
+                                    onClick={() => handleTabChange('puzzles')}
+                                    className={`px-3 sm:px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                        activeTab === 'puzzles' 
+                                            ? 'bg-white text-blue-700 shadow-sm' 
+                                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    <i className="fa-solid fa-puzzle-piece mr-1.5"></i>問題
+                                </button>
+                                <button
+                                    onClick={() => handleTabChange('columns')}
+                                    className={`px-3 sm:px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                                        activeTab === 'columns' 
+                                            ? 'bg-white text-purple-700 shadow-sm' 
+                                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    <i className="fa-solid fa-book-open mr-1.5"></i>コラム
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* メインコンテンツ */}
+                    <main className="flex-grow py-8">
+                        {/* パズルタブ */}
+                        {activeTab === 'puzzles' && currentView === 'list' && (
+                            <HomeView 
+                                problems={problemsData} 
+                                clearedProblems={clearedProblems}
+                                onSelectProblem={handleSelectProblem}
+                            />
+                        )}
+                        {activeTab === 'puzzles' && currentView === 'detail' && selectedProblem && (
+                            <ProblemView 
+                                problem={selectedProblem} 
+                                onBack={handleBackToList}
+                                onClear={handleClearProblem}
+                            />
+                        )}
+
+                        {/* コラムタブ */}
+                        {activeTab === 'columns' && currentView === 'list' && (
+                            <ColumnsView 
+                                columns={columnsData}
+                                onSelectColumn={handleSelectColumn}
+                            />
+                        )}
+                        {activeTab === 'columns' && currentView === 'detail' && selectedColumn && (
+                            <ColumnDetailView 
+                                column={selectedColumn} 
+                                onBack={handleBackToList}
+                            />
+                        )}
+                    </main>
+
+                    {/* グローバルフッター */}
+                    <footer className="bg-white border-t border-gray-200 py-6 mt-auto">
+                        <div className="max-w-5xl mx-auto px-4 text-center text-sm text-gray-500">
+                            &copy; {new Date().getFullYear()} Logic Puzzle Training. All rights reserved.
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
