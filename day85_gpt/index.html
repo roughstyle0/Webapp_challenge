@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>度付きスポーツゴーグル｜耐衝撃プロテクト体験シミュレーター</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            asphalt: "#24272c",
+            asphalt2: "#17191d",
+            carbon: "#08090b",
+            safety: "#facc15",
+            danger: "#ef4444",
+            metal: "#8b949e"
+          },
+          fontFamily: {
+            display: ['"Arial Black"', '"Hiragino Sans"', '"Yu Gothic"', "sans-serif"],
+            body: ['"Inter"', '"Hiragino Sans"', '"Yu Gothic"', "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --safety: #facc15;
+      --danger: #ef4444;
+      --carbon: #08090b;
+      --asphalt: #24272c;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: #f8fafc;
+      background:
+        radial-gradient(circle at top left, rgba(250, 204, 21, 0.18), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.08), transparent 30rem),
+        linear-gradient(135deg, #101114 0%, #24272c 48%, #0b0c0f 100%);
+      font-family: "Inter", "Hiragino Sans", "Yu Gothic", sans-serif;
+    }
+
+    .carbon-panel {
+      background-color: rgba(8, 9, 11, 0.86);
+      background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.035) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.035) 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+    }
+
+    .track-line {
+      background-image: repeating-linear-gradient(
+        90deg,
+        rgba(250, 204, 21, 0.85) 0 14px,
+        transparent 14px 28px
+      );
+    }
+
+    .scene-button {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .scene-button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent, rgba(250, 204, 21, 0.28), transparent);
+      transform: translateX(-120%);
+      transition: transform 0.45s ease;
+      z-index: -1;
+    }
+
+    .scene-button:hover::before,
+    .scene-button:focus-visible::before {
+      transform: translateX(120%);
+    }
+
+    .sim-stage {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)),
+        radial-gradient(circle at center, rgba(250,204,21,0.10), transparent 56%),
+        #111318;
+    }
+
+    .svg-wrap svg {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+    }
+
+    .ordinary,
+    .goggle,
+    .impact-ball,
+    .impact-contact,
+    .impact-motion,
+    .danger-effect,
+    .shield-effect,
+    .sweat-burst,
+    .motion-lines,
+    .normal-break,
+    .safe-bounce {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .goggle,
+    .impact-contact,
+    .impact-motion,
+    .danger-effect,
+    .shield-effect,
+    .sweat-burst,
+    .motion-lines,
+    .normal-break,
+    .safe-bounce {
+      opacity: 0;
+    }
+
+    .mode-goggle .ordinary {
+      opacity: 0;
+    }
+
+    .mode-goggle .goggle {
+      opacity: 1;
+    }
+
+    .mode-normal .ordinary {
+      opacity: 1;
+    }
+
+    .mode-normal .goggle {
+      opacity: 0;
+    }
+
+    .scene-ball .impact-ball { opacity: 1; }
+    .scene-contact .impact-contact { opacity: 1; }
+    .scene-motion .impact-motion { opacity: 1; }
+
+    .is-running.scene-ball .impact-ball {
+      animation: ballStrike 1.35s cubic-bezier(.18,.88,.26,1) forwards;
+    }
+
+    .is-running.scene-contact .impact-contact {
+      animation: contactStrike 1.35s cubic-bezier(.18,.88,.26,1) forwards;
+    }
+
+    .is-running.scene-motion .impact-motion {
+      animation: motionStrike 1.35s cubic-bezier(.18,.88,.26,1) forwards;
+    }
+
+    .is-running.mode-normal .ordinary {
+      animation: glassesBreak 1.35s ease-in forwards;
+    }
+
+    .is-running.mode-normal .danger-effect {
+      animation: dangerPulse 1.35s ease-out forwards;
+    }
+
+    .is-running.mode-normal .normal-break {
+      animation: shards 1.35s ease-out forwards;
+    }
+
+    .is-running.mode-goggle .goggle {
+      animation: goggleBrace 1.35s ease-out forwards;
+    }
+
+    .is-running.mode-goggle .shield-effect {
+      animation: shieldWall 1.35s ease-out forwards;
+    }
+
+    .is-running.mode-goggle .safe-bounce {
+      animation: safeSpark 1.35s ease-out forwards;
+    }
+
+    .is-running.scene-motion.mode-normal .sweat-burst,
+    .is-running.scene-motion .motion-lines {
+      animation: sweatFlash 1.35s ease-out forwards;
+    }
+
+    @keyframes ballStrike {
+      0% { transform: translate(88px, -32px) scale(0.92); }
+      58% { transform: translate(0, 0) scale(1.08); }
+      100% { transform: translate(-20px, -10px) scale(0.95); }
+    }
+
+    @keyframes contactStrike {
+      0% { transform: translate(-110px, 16px) rotate(-8deg); }
+      58% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-26px, 8px) rotate(-10deg); }
+    }
+
+    @keyframes motionStrike {
+      0% { transform: translate(68px, -58px) rotate(12deg); }
+      58% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(12px, 46px) rotate(20deg); }
+    }
+
+    @keyframes glassesBreak {
+      0%, 46% { transform: translate(0, 0) rotate(0deg) skewX(0deg); filter: none; }
+      62% { transform: translate(-4px, 4px) rotate(-7deg) skewX(-12deg); filter: drop-shadow(0 0 10px rgba(239,68,68,0.75)); }
+      100% { transform: translate(-10px, 16px) rotate(-18deg) skewX(-22deg); filter: drop-shadow(0 0 16px rgba(239,68,68,0.95)); }
+    }
+
+    @keyframes dangerPulse {
+      0%, 44% { opacity: 0; transform: scale(0.8); }
+      60% { opacity: 0.95; transform: scale(1.1); }
+      100% { opacity: 0.75; transform: scale(1.24); }
+    }
+
+    @keyframes shards {
+      0%, 50% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+      72% { opacity: 1; transform: translate(3px, 6px) scale(1); }
+      100% { opacity: 0.95; transform: translate(14px, 22px) scale(1.05); }
+    }
+
+    @keyframes goggleBrace {
+      0%, 48% { transform: scale(1); filter: none; }
+      58% { transform: scale(0.97); filter: drop-shadow(0 0 12px rgba(250,204,21,0.78)); }
+      72% { transform: scale(1.03); filter: drop-shadow(0 0 18px rgba(250,204,21,1)); }
+      100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(250,204,21,0.55)); }
+    }
+
+    @keyframes shieldWall {
+      0%, 42% { opacity: 0; transform: scale(0.82); }
+      56% { opacity: 0.95; transform: scale(1.08); }
+      100% { opacity: 0.72; transform: scale(1.2); }
+    }
+
+    @keyframes safeSpark {
+      0%, 45% { opacity: 0; transform: scale(0.7) rotate(0deg); }
+      62% { opacity: 1; transform: scale(1.04) rotate(4deg); }
+      100% { opacity: 0.86; transform: scale(1.14) rotate(-3deg); }
+    }
+
+    @keyframes sweatFlash {
+      0%, 42% { opacity: 0; transform: translateY(-8px) scale(0.8); }
+      65% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0.9; transform: translateY(8px) scale(1.05); }
+    }
+
+    .talk-current {
+      box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.8), 0 0 24px rgba(250, 204, 21, 0.20);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="carbon-panel rounded-[2rem] border border-white/10 p-5 sm:p-7">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full bg-safety px-3 py-1 text-xs font-black tracking-[0.2em] text-carbon">
+            RX SPORTS GOGGLE
+          </span>
+          <span class="rounded-full border border-white/15 px-3 py-1 text-xs font-bold text-slate-300">
+            新人スタッフ接客トレーナー
+          </span>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div class="flex flex-col gap-3">
+            <p class="font-display text-xs tracking-[0.35em] text-safety">IMPACT PROTECT SIMULATOR</p>
+            <h1 class="font-display text-3xl leading-tight text-white sm:text-5xl">
+              ボールが当たっても<br class="sm:hidden" />
+              <span class="text-safety">眼を守る。</span>
+            </h1>
+            <p class="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              普段のメガネでスポーツを始めるお子様へ。新人スタッフが、親御さんの不安に合わせて
+              「度付きスポーツゴーグル」を安全ギアとして提案するための体験シミュレーターです。
+            </p>
+          </div>
+
+          <div class="grid gap-2 rounded-3xl border border-safety/40 bg-black/35 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-xs font-black tracking-[0.22em] text-slate-400">SAFETY STATUS</span>
+              <span id="statusBadge" class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">
+                シーン未選択
+              </span>
+            </div>
+            <div class="h-2 overflow-hidden rounded-full bg-white/10">
+              <div id="progressBar" class="h-full w-[20%] rounded-full bg-safety transition-all duration-500"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="selector" class="rounded-[2rem] border border-white/10 bg-white/[0.045] p-5 sm:p-7">
+      <div class="grid gap-5">
+        <div class="grid gap-2">
+          <p class="font-display text-xs tracking-[0.3em] text-safety">STEP 01 / SELECT PARENT FEAR</p>
+          <h2 class="font-display text-2xl leading-tight sm:text-3xl">親御さんの不安シーンを選択</h2>
+          <p class="text-sm leading-6 text-slate-300">
+            初回接客では、いきなり商品説明に入らず「何が不安か」を1つ選んでから体験を見せます。
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-3">
+          <button
+            class="scene-button group grid gap-3 rounded-3xl border border-white/10 bg-carbon p-5 text-left transition hover:-translate-y-1 hover:border-safety/70 focus:outline-none focus:ring-2 focus:ring-safety"
+            data-scene="ball"
+          >
+            <span class="text-4xl">⚽</span>
+            <span class="font-display text-lg leading-tight text-white">球技</span>
+            <span class="text-sm leading-6 text-slate-300">ボールが顔にぶつかるのが怖い</span>
+            <span class="mt-2 inline-flex w-fit rounded-full bg-safety px-3 py-1 text-xs font-black text-carbon">
+              IMPACT
+            </span>
+          </button>
+
+          <button
+            class="scene-button group grid gap-3 rounded-3xl border border-white/10 bg-carbon p-5 text-left transition hover:-translate-y-1 hover:border-safety/70 focus:outline-none focus:ring-2 focus:ring-safety"
+            data-scene="contact"
+          >
+            <span class="text-4xl">🏀</span>
+            <span class="font-display text-lg leading-tight text-white">接触プレー</span>
+            <span class="text-sm leading-6 text-slate-300">友達とぶつかってメガネが壊れそう</span>
+            <span class="mt-2 inline-flex w-fit rounded-full bg-safety px-3 py-1 text-xs font-black text-carbon">
+              COLLISION
+            </span>
+          </button>
+
+          <button
+            class="scene-button group grid gap-3 rounded-3xl border border-white/10 bg-carbon p-5 text-left transition hover:-translate-y-1 hover:border-safety/70 focus:outline-none focus:ring-2 focus:ring-safety"
+            data-scene="motion"
+          >
+            <span class="text-4xl">🏃</span>
+            <span class="font-display text-lg leading-tight text-white">激しい動き</span>
+            <span class="text-sm leading-6 text-slate-300">汗でメガネが飛んでいきそう</span>
+            <span class="mt-2 inline-flex w-fit rounded-full bg-safety px-3 py-1 text-xs font-black text-carbon">
+              SLIP
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="experience" class="hidden grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+      <section class="sim-stage rounded-[2rem] border border-white/10 p-4 sm:p-6">
+        <div class="grid gap-4">
+          <div class="grid gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="grid gap-1">
+                <p class="font-display text-xs tracking-[0.28em] text-safety">STEP 02 / PROTECT TEST</p>
+                <h2 id="sceneTitle" class="font-display text-2xl leading-tight">耐衝撃テスト</h2>
+              </div>
+              <button
+                id="resetBtn"
+                class="rounded-full border border-white/15 px-4 py-2 text-xs font-bold text-slate-200 transition hover:border-safety hover:text-safety"
+              >
+                シーンを選び直す
+              </button>
+            </div>
+
+            <p id="sceneLead" class="rounded-3xl border border-white/10 bg-black/30 p-4 text-sm leading-7 text-slate-300"></p>
+          </div>
+
+          <div class="grid gap-3 rounded-[1.5rem] border border-white/10 bg-black/30 p-3">
+            <div class="grid grid-cols-2 gap-2 rounded-full bg-white/10 p-1">
+              <button id="normalModeBtn" class="rounded-full px-3 py-3 text-sm font-black transition">
+                普通のメガネ
+              </button>
+              <button id="goggleModeBtn" class="rounded-full px-3 py-3 text-sm font-black transition">
+                スポーツゴーグル
+              </button>
+            </div>
+
+            <div id="modeDescription" class="rounded-2xl border border-white/10 bg-carbon/80 p-4 text-sm leading-7 text-slate-300"></div>
+          </div>
+
+          <div id="simulator" class="mode-normal scene-ball rounded-[1.75rem] border border-white/10 bg-[#0b0d12] p-3">
+            <div class="svg-wrap rounded-[1.35rem] border border-white/10 bg-gradient-to-b from-[#20242c] to-[#0c0d10] p-2">
+              <svg viewBox="0 0 360 260" role="img" aria-labelledby="simTitle simDesc">
+                <title id="simTitle">眼を守る耐衝撃シミュレーション</title>
+                <desc id="simDesc">普通のメガネでは衝撃で歪み、スポーツゴーグルではシールドが衝撃を跳ね返す様子を示します。</desc>
+
+                <defs>
+                  <linearGradient id="faceGrad" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#f3c9a5" />
+                    <stop offset="100%" stop-color="#b98262" />
+                  </linearGradient>
+                  <linearGradient id="yellowShield" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#fde047" stop-opacity="0.86" />
+                    <stop offset="100%" stop-color="#facc15" stop-opacity="0.22" />
+                  </linearGradient>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                <rect x="18" y="20" width="324" height="220" rx="28" fill="#12151b" stroke="rgba(255,255,255,0.08)" />
+                <path d="M30 212 H330" stroke="#facc15" stroke-width="3" stroke-dasharray="10 10" opacity="0.45"/>
+
+                <g class="motion-lines" stroke="#facc15" stroke-width="5" stroke-linecap="round">
+                  <path d="M38 70 H96" />
+                  <path d="M44 108 H82" />
+                  <path d="M42 146 H104" />
+                </g>
+
+                <g class="face">
+                  <ellipse cx="184" cy="126" rx="66" ry="76" fill="url(#faceGrad)" />
+                  <path d="M136 105 Q184 62 232 105" fill="#201610" opacity="0.7"/>
+                  <circle cx="158" cy="126" r="5" fill="#111827"/>
+                  <circle cx="210" cy="126" r="5" fill="#111827"/>
+                  <path d="M181 128 Q174 150 190 151" fill="none" stroke="#7c4a35" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M162 169 Q184 181 207 169" fill="none" stroke="#7c4a35" stroke-width="4" stroke-linecap="round"/>
+                </g>
+
+                <g class="danger-effect" filter="url(#glow)">
+                  <ellipse cx="158" cy="126" rx="34" ry="28" fill="none" stroke="#ef4444" stroke-width="9"/>
+                  <ellipse cx="210" cy="126" rx="34" ry="28" fill="none" stroke="#ef4444" stroke-width="9"/>
+                  <path d="M120 96 L105 78 M118 154 L101 169 M242 96 L259 78 M244 154 L263 169" stroke="#ef4444" stroke-width="7" stroke-linecap="round"/>
+                </g>
+
+                <g class="shield-effect" filter="url(#glow)">
+                  <path d="M105 104 Q184 44 263 104 Q250 187 184 215 Q118 187 105 104Z" fill="url(#yellowShield)" stroke="#facc15" stroke-width="6"/>
+                  <path d="M128 118 Q184 85 240 118" fill="none" stroke="#fff7ad" stroke-width="4" opacity="0.85"/>
+                </g>
+
+                <g class="ordinary">
+                  <rect x="126" y="108" width="50" height="34" rx="9" fill="rgba(255,255,255,0.08)" stroke="#d1d5db" stroke-width="6"/>
+                  <rect x="192" y="108" width="50" height="34" rx="9" fill="rgba(255,255,255,0.08)" stroke="#d1d5db" stroke-width="6"/>
+                  <path d="M176 124 H192" stroke="#d1d5db" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M126 119 L86 102" stroke="#d1d5db" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M242 119 L284 102" stroke="#d1d5db" stroke-width="6" stroke-linecap="round"/>
+                </g>
+
+                <g class="goggle">
+                  <path d="M105 117 Q114 91 146 88 H222 Q253 91 263 117 V139 Q253 166 222 168 H146 Q114 166 105 139Z"
+                        fill="rgba(250,204,21,0.10)" stroke="#facc15" stroke-width="9" stroke-linejoin="round"/>
+                  <path d="M119 119 Q128 103 151 102 H217 Q240 103 249 119 V137 Q240 153 217 154 H151 Q128 153 119 137Z"
+                        fill="rgba(15,23,42,0.58)" stroke="#111827" stroke-width="8" stroke-linejoin="round"/>
+                  <path d="M105 128 H74 Q58 128 54 145" stroke="#111827" stroke-width="12" stroke-linecap="round"/>
+                  <path d="M263 128 H294 Q310 128 314 145" stroke="#111827" stroke-width="12" stroke-linecap="round"/>
+                  <path d="M146 94 Q184 112 222 94" stroke="rgba(255,255,255,0.6)" stroke-width="4" stroke-linecap="round"/>
+                </g>
+
+                <g class="normal-break" stroke="#ef4444" stroke-width="4" stroke-linecap="round">
+                  <path d="M137 104 L157 145" />
+                  <path d="M218 104 L201 146" />
+                  <path d="M244 122 L272 149" />
+                </g>
+
+                <g class="impact-ball">
+                  <circle cx="286" cy="80" r="31" fill="#f8fafc" stroke="#111827" stroke-width="5"/>
+                  <path d="M286 58 L302 73 L296 94 H276 L270 73Z" fill="#111827"/>
+                  <path d="M270 73 L252 70 M302 73 L321 68 M276 94 L263 109 M296 94 L309 110" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                </g>
+
+                <g class="impact-contact">
+                  <path d="M74 95 H119 L145 128 L119 161 H74 L51 128Z" fill="#334155" stroke="#facc15" stroke-width="6" stroke-linejoin="round"/>
+                  <path d="M84 112 H116 M84 128 H127 M84 144 H111" stroke="#facc15" stroke-width="5" stroke-linecap="round"/>
+                </g>
+
+                <g class="impact-motion">
+                  <path d="M265 58 C292 70 309 94 303 123 C297 151 269 165 243 154"
+                        fill="none" stroke="#facc15" stroke-width="8" stroke-linecap="round"/>
+                  <path d="M246 138 L243 154 L260 153" fill="none" stroke="#facc15" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="286" cy="78" r="8" fill="#facc15"/>
+                </g>
+
+                <g class="sweat-burst" fill="#38bdf8">
+                  <path d="M126 72 C118 86 119 98 130 101 C142 96 141 84 126 72Z"/>
+                  <path d="M236 76 C227 91 229 101 240 104 C251 98 249 88 236 76Z"/>
+                </g>
+
+                <g class="safe-bounce" filter="url(#glow)">
+                  <path d="M257 74 L275 55 M271 95 L300 88 M260 118 L285 139" stroke="#facc15" stroke-width="7" stroke-linecap="round"/>
+                  <circle cx="258" cy="96" r="9" fill="#facc15"/>
+                </g>
+              </svg>
+            </div>
+
+            <div class="grid gap-2 p-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-black tracking-[0.24em] text-slate-400">RESULT</span>
+                <span id="impactLabel" class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">
+                  テスト前
+                </span>
+              </div>
+              <p id="resultText" class="min-h-[3.5rem] rounded-2xl border border-white/10 bg-black/35 p-4 text-sm leading-7 text-slate-300">
+                「衝撃テスト開始」を押すと、選択したシーンに合わせて危険性と保護効果を比較できます。
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="runBtn"
+            class="grid place-items-center rounded-2xl bg-safety px-5 py-4 font-display text-base text-carbon transition hover:-translate-y-0.5 hover:bg-yellow-300 focus:outline-none focus:ring-4 focus:ring-safety/30"
+          >
+            衝撃テスト開始
+          </button>
+        </div>
+      </section>
+
+      <aside class="grid gap-5">
+        <section class="rounded-[2rem] border border-safety/25 bg-carbon/80 p-5 sm:p-6">
+          <div class="grid gap-4">
+            <div class="grid gap-2">
+              <p class="font-display text-xs tracking-[0.28em] text-safety">STEP 03 / TALK SCRIPT</p>
+              <h2 class="font-display text-2xl leading-tight">新人スタッフ用 接客カンペ</h2>
+              <p class="text-sm leading-7 text-slate-300">
+                親御さんの保護本能に届く順番で、共感 → 危険の可視化 → 安全装置として提案します。
+              </p>
+            </div>
+
+            <div class="grid gap-3">
+              <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <span class="text-xs font-black tracking-[0.18em] text-slate-400">SCRIPT STAGE</span>
+                <span id="talkStageBadge" class="rounded-full bg-safety px-3 py-1 text-xs font-black text-carbon">
+                  1 / 3
+                </span>
+              </div>
+
+              <div id="talkCards" class="grid gap-3"></div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button id="prevTalkBtn" class="rounded-2xl border border-white/15 px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-safety hover:text-safety">
+                  戻る
+                </button>
+                <button id="nextTalkBtn" class="rounded-2xl bg-safety px-4 py-3 text-sm font-black text-carbon transition hover:bg-yellow-300">
+                  次のトーク
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-[2rem] border border-white/10 bg-white/[0.045] p-5 sm:p-6">
+          <div class="grid gap-4">
+            <div class="grid gap-2">
+              <p class="font-display text-xs tracking-[0.28em] text-safety">SALES CLOSING</p>
+              <h2 class="font-display text-xl leading-tight">最後のひと押し</h2>
+            </div>
+
+            <div class="grid gap-3">
+              <div class="rounded-3xl border border-safety/35 bg-safety/10 p-4">
+                <p class="text-sm font-bold leading-7 text-yellow-100">
+                  「これは“もう1本のメガネ”ではなく、お子様の眼を守るためのスポーツ用安全装置です。」
+                </p>
+              </div>
+
+              <div class="grid gap-2 text-sm leading-7 text-slate-300">
+                <p class="rounded-2xl border border-white/10 bg-black/25 p-3">
+                  伝える順番：不安に共感 → 普通のメガネの危険 → ゴーグルの保護構造 → セカンドペア提案
+                </p>
+                <p class="rounded-2xl border border-white/10 bg-black/25 p-3">
+                  NG：いきなり価格説明。OK：先に「眼の安全」を体験で納得してもらう。
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const scenes = {
+      ball: {
+        badge: "球技の衝撃",
+        title: "球技：ボール直撃リスク",
+        lead: "サッカー、バスケ、ドッジボールなどでは、予測できない方向からボールが顔に飛んできます。普通のメガネは視力補正の道具であり、衝撃から眼を守る防具ではありません。",
+        normalDesc: "普通のメガネは鼻あてと細いフレームで支える構造。ボールが当たると、レンズ・フレーム・鼻あてが眼の近くで変形するリスクがあります。",
+        goggleDesc: "スポーツゴーグルは顔に密着する厚いパッドとワイドフレームで衝撃を面で受け止めます。眼の周囲に安全ゾーンを作る発想です。",
+        normalResult: "危険：ボールの衝撃でフレームがひしゃげ、眼の周りに赤いリスクゾーンが発生。普段のメガネは“当たった後”の安全を想定していません。",
+        goggleResult: "保護成功：セーフティイエローのシールドが衝撃を受け止め、顔に密着したゴーグルが眼の周囲を守ります。",
+        talks: [
+          {
+            label: "共感",
+            text: "「球技だと、ボールが急に顔へ飛んでくるのが一番ご心配ですよね。特にお子様は夢中になると避けきれない場面があります。」"
+          },
+          {
+            label: "危険の可視化",
+            text: "「普通のメガネでスポーツをするのは、ヘルメット無しで自転車に乗るのと同じくらい危険です。視力は補えますが、衝撃から眼を守る設計ではありません。」"
+          },
+          {
+            label: "提案",
+            text: "「度付きスポーツゴーグルは、見えるようにする道具であると同時に、お子様の眼を一生の怪我から守るための“安全装置”です。競技用のセカンドペアとして用意しておくと安心です。」"
+          }
+        ]
+      },
+      contact: {
+        badge: "接触プレー",
+        title: "接触プレー：フレーム破損リスク",
+        lead: "バスケのリバウンド、サッカーの競り合い、鬼ごっこのような体育活動では、友達の肩や手がメガネに当たることがあります。壊れるだけでなく、変形したパーツが眼元に近づくことが問題です。",
+        normalDesc: "普通のメガネは横からの衝撃に弱く、テンプルやブリッジに力が集中します。ぶつかった瞬間に歪み、顔からずれてしまう可能性があります。",
+        goggleDesc: "スポーツゴーグルはサイドまで包み込む形状とストラップで固定。接触時も顔から外れにくく、衝撃を広い範囲へ逃がします。",
+        normalResult: "危険：横方向の衝撃でフレームが曲がり、眼元に赤いリスクが広がります。壊れることより、壊れ方が危険です。",
+        goggleResult: "保護成功：厚いフレームとストラップが衝撃を受け止め、ゴーグルが顔に残って眼の周囲をガードします。",
+        talks: [
+          {
+            label: "共感",
+            text: "「接触プレーは、本人が気をつけていても相手の動きでぶつかることがあります。親御さんが不安に感じるのは自然です。」"
+          },
+          {
+            label: "危険の可視化",
+            text: "「普通のメガネは、ぶつかった時にフレームが曲がったり、鼻あてが眼元に近づいたりします。スポーツ中は“壊れないか”だけでなく、“眼を傷つけないか”が重要です。」"
+          },
+          {
+            label: "提案",
+            text: "「スポーツゴーグルは、衝撃時に顔から外れにくい固定力があります。お子様が思い切りプレーできて、親御さんも安心できるセカンドペアです。」"
+          }
+        ]
+      },
+      motion: {
+        badge: "ズレ・落下",
+        title: "激しい動き：汗とズレのリスク",
+        lead: "走る、跳ぶ、切り返す。汗をかくスポーツでは、普通のメガネがずれて視界が不安定になります。見えづらさは転倒や衝突の原因にもなります。",
+        normalDesc: "普通のメガネは耳と鼻で軽く支えるため、汗や急な方向転換でズレやすい構造です。視界が揺れるとプレーにも集中しにくくなります。",
+        goggleDesc: "スポーツゴーグルはストラップとシリコンパッドで密着。汗をかいても位置が安定し、視界と眼の安全を同時に守ります。",
+        normalResult: "危険：汗と急な動きでメガネがずれ、視界が不安定に。落下や踏みつけ、転倒につながるリスクがあります。",
+        goggleResult: "保護成功：ストラップとパッドで密着をキープ。激しい動きでも視界が安定し、眼の周りに安全ゾーンを保ちます。",
+        talks: [
+          {
+            label: "共感",
+            text: "「走ったり跳んだりすると、メガネがずれないか心配ですよね。お子様はプレー中に何度も直す余裕がありません。」"
+          },
+          {
+            label: "危険の可視化",
+            text: "「メガネがずれると、見えにくいまま走ることになります。これは、靴ひもがほどけたまま全力で走るのと同じで、転倒や接触のきっかけになります。」"
+          },
+          {
+            label: "提案",
+            text: "「度付きスポーツゴーグルなら、見えること、ずれにくいこと、眼を守ることをまとめて対策できます。普段用とは別に、運動専用の安全ギアとしておすすめです。」"
+          }
+        ]
+      }
+    };
+
+    const selector = document.getElementById("selector");
+    const experience = document.getElementById("experience");
+    const simulator = document.getElementById("simulator");
+    const sceneTitle = document.getElementById("sceneTitle");
+    const sceneLead = document.getElementById("sceneLead");
+    const statusBadge = document.getElementById("statusBadge");
+    const progressBar = document.getElementById("progressBar");
+    const modeDescription = document.getElementById("modeDescription");
+    const normalModeBtn = document.getElementById("normalModeBtn");
+    const goggleModeBtn = document.getElementById("goggleModeBtn");
+    const runBtn = document.getElementById("runBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const resultText = document.getElementById("resultText");
+    const impactLabel = document.getElementById("impactLabel");
+    const talkCards = document.getElementById("talkCards");
+    const talkStageBadge = document.getElementById("talkStageBadge");
+    const prevTalkBtn = document.getElementById("prevTalkBtn");
+    const nextTalkBtn = document.getElementById("nextTalkBtn");
+
+    let currentScene = "ball";
+    let currentMode = "normal";
+    let currentTalk = 0;
+    let isRunning = false;
+
+    function setMode(mode) {
+      currentMode = mode;
+      simulator.classList.toggle("mode-normal", mode === "normal");
+      simulator.classList.toggle("mode-goggle", mode === "goggle");
+
+      normalModeBtn.className = mode === "normal"
+        ? "rounded-full bg-danger px-3 py-3 text-sm font-black text-white transition"
+        : "rounded-full px-3 py-3 text-sm font-black text-slate-300 transition hover:text-white";
+
+      goggleModeBtn.className = mode === "goggle"
+        ? "rounded-full bg-safety px-3 py-3 text-sm font-black text-carbon transition"
+        : "rounded-full px-3 py-3 text-sm font-black text-slate-300 transition hover:text-white";
+
+      const data = scenes[currentScene];
+      modeDescription.textContent = mode === "normal" ? data.normalDesc : data.goggleDesc;
+      impactLabel.textContent = "テスト前";
+      resultText.textContent = "「衝撃テスト開始」を押すと、選択したシーンに合わせて危険性と保護効果を比較できます。";
+    }
+
+    function selectScene(sceneKey) {
+      const data = scenes[sceneKey];
+      currentScene = sceneKey;
+      currentTalk = 0;
+
+      selector.classList.add("hidden");
+      experience.classList.remove("hidden");
+
+      simulator.classList.remove("scene-ball", "scene-contact", "scene-motion", "is-running");
+      simulator.classList.add(`scene-${sceneKey}`);
+
+      sceneTitle.textContent = data.title;
+      sceneLead.textContent = data.lead;
+      statusBadge.textContent = data.badge;
+      progressBar.style.width = "66%";
+
+      renderTalks();
+      setMode("normal");
+
+      setTimeout(() => {
+        experience.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
+
+    function runSimulation() {
+      if (isRunning) return;
+
+      isRunning = true;
+      runBtn.disabled = true;
+      runBtn.textContent = "衝撃テスト中...";
+      impactLabel.textContent = currentMode === "normal" ? "危険判定中" : "保護判定中";
+      resultText.textContent = "衝撃が加わっています。フレームと眼の周囲の変化を確認してください。";
+
+      simulator.classList.remove("is-running");
+      void simulator.offsetWidth;
+      simulator.classList.add("is-running");
+
+      setTimeout(() => {
+        const data = scenes[currentScene];
+        resultText.textContent = currentMode === "normal" ? data.normalResult : data.goggleResult;
+        impactLabel.textContent = currentMode === "normal" ? "怪我リスクあり" : "眼を保護";
+        progressBar.style.width = currentMode === "normal" ? "74%" : "100%";
+        runBtn.disabled = false;
+        runBtn.textContent = "もう一度テストする";
+        isRunning = false;
+      }, 1450);
+    }
+
+    function renderTalks() {
+      const talks = scenes[currentScene].talks;
+      talkStageBadge.textContent = `${currentTalk + 1} / ${talks.length}`;
+
+      talkCards.innerHTML = talks.map((talk, index) => {
+        const isCurrent = index === currentTalk;
+        const isLocked = index > currentTalk;
+        return `
+          <article class="${isCurrent ? "talk-current border-safety/70 bg-safety/10" : "border-white/10 bg-black/25"} grid gap-2 rounded-3xl border p-4 transition">
+            <div class="flex items-center justify-between gap-3">
+              <span class="rounded-full ${isCurrent ? "bg-safety text-carbon" : "bg-white/10 text-slate-300"} px-3 py-1 text-xs font-black">
+                ${index + 1}. ${talk.label}
+              </span>
+              <span class="text-xs font-bold ${isLocked ? "text-slate-500" : "text-safety"}">
+                ${isLocked ? "次に表示" : "読み上げOK"}
+              </span>
+            </div>
+            <p class="${isLocked ? "text-slate-500" : "text-white"} text-sm font-bold leading-7">
+              ${isLocked ? "「次のトーク」を押すと、この段階のカンペが強調されます。" : talk.text}
+            </p>
+          </article>
+        `;
+      }).join("");
+
+      prevTalkBtn.disabled = currentTalk === 0;
+      nextTalkBtn.disabled = currentTalk === talks.length - 1;
+
+      prevTalkBtn.classList.toggle("opacity-40", currentTalk === 0);
+      nextTalkBtn.classList.toggle("opacity-40", currentTalk === talks.length - 1);
+    }
+
+    document.querySelectorAll("[data-scene]").forEach(button => {
+      button.addEventListener("click", () => selectScene(button.dataset.scene));
+    });
+
+    normalModeBtn.addEventListener("click", () => setMode("normal"));
+    goggleModeBtn.addEventListener("click", () => setMode("goggle"));
+    runBtn.addEventListener("click", runSimulation);
+
+    resetBtn.addEventListener("click", () => {
+      simulator.classList.remove("is-running");
+      selector.classList.remove("hidden");
+      experience.classList.add("hidden");
+      statusBadge.textContent = "シーン未選択";
+      progressBar.style.width = "20%";
+      runBtn.disabled = false;
+      runBtn.textContent = "衝撃テスト開始";
+      selector.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    prevTalkBtn.addEventListener("click", () => {
+      if (currentTalk > 0) {
+        currentTalk--;
+        renderTalks();
+      }
+    });
+
+    nextTalkBtn.addEventListener("click", () => {
+      if (currentTalk < scenes[currentScene].talks.length - 1) {
+        currentTalk++;
+        renderTalks();
+      }
+    });
+
+    setMode("normal");
+  </script>
+</body>
+</html>
