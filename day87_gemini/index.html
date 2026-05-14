@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ととのい＆安全シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hinoki': '#8B5A2B',
+                        'hinoki-light': '#D2B48C',
+                        'hinoki-dark': '#5C3A21',
+                        'sauna-orange': '#FF7A00',
+                        'sauna-hot': '#E63946',
+                        'aqua-blue': '#00B4D8',
+                        'aqua-deep': '#0077B6',
+                        'base-bg': '#F7F3ED',
+                        'text-main': '#3E2723',
+                        'text-muted': '#6D4C41'
+                    },
+                    fontFamily: {
+                        'sans': ['"Hiragino Kaku Gothic ProN"', '"Noto Sans JP"', 'sans-serif'],
+                        'serif': ['"Hiragino Mincho ProN"', '"Noto Serif JP"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムアニメーションとエフェクト */
+        @keyframes steam {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-20px) scale(1.1); opacity: 0.9; }
+            100% { transform: translateY(0) scale(1); opacity: 0.8; }
+        }
+        @keyframes heatwave {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes crack {
+            0% { stroke-dashoffset: 1000; opacity: 0; }
+            10% { opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+
+        .steam-effect {
+            background: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.4) 100%);
+            animation: steam 4s infinite ease-in-out;
+        }
+        
+        .heat-bg {
+            background: linear-gradient(45deg, #FF7A00, #E63946, #FF9500);
+            background-size: 200% 200%;
+            animation: heatwave 3s ease infinite;
+        }
+
+        .tile-bg {
+            background-color: #e0e0e0;
+            background-image: 
+                linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc),
+                linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+
+        /* 脱テンプレ：和紙・木目風の質感 */
+        .washi-texture {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+
+        /* 亀裂のアニメーション設定 */
+        .crack-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+        }
+        .crack-active .crack-path {
+            animation: crack 0.5s ease-out forwards;
+        }
+
+        /* 視界のトランジション */
+        .vision-transition {
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* スクロールバー非表示（UIの洗練） */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-base-bg text-text-main font-sans min-h-screen flex flex-col washi-texture overflow-x-hidden selection:bg-sauna-orange selection:text-white">
+
+    <!-- Header (暖簾風デザイン) -->
+    <header class="bg-hinoki-dark text-base-bg p-4 border-b-4 border-sauna-orange flex flex-col items-center justify-center shrink-0">
+        <h1 class="text-xl font-serif font-bold tracking-widest">ととのい＆安全<br><span class="text-sm tracking-normal opacity-80 text-center block mt-1">シミュレーター</span></h1>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col w-full max-w-md mx-auto relative no-scrollbar pb-8">
+        
+        <!-- STEP 1: シーン選択 (初期画面) -->
+        <section id="step-1" class="flex flex-col gap-6 p-6 mt-4">
+            <div class="text-center">
+                <p class="text-sm font-bold text-sauna-orange mb-1">【スタッフ用】</p>
+                <p class="font-serif text-lg leading-relaxed">お客様がサウナ・お風呂で<br>一番不便に感じる瞬間を<br>選んでください。</p>
+            </div>
+
+            <div class="flex flex-col gap-4 mt-2">
+                <button onclick="startSimulation('sauna')" class="group relative bg-white border-2 border-hinoki rounded-none p-5 flex flex-col items-center justify-center gap-2 transition-colors active:bg-hinoki-light">
+                    <span class="absolute top-0 left-0 w-full h-1 bg-sauna-orange scale-x-0 group-active:scale-x-100 transition-transform origin-left"></span>
+                    <span class="text-2xl">🧖‍♂️</span>
+                    <span class="font-bold text-hinoki-dark">サウナ室の時計が見えない</span>
+                    <span class="text-xs text-text-muted">12分計の針がぼやける</span>
+                </button>
+
+                <button onclick="startSimulation('floor')" class="group relative bg-white border-2 border-hinoki rounded-none p-5 flex flex-col items-center justify-center gap-2 transition-colors active:bg-hinoki-light">
+                    <span class="absolute top-0 left-0 w-full h-1 bg-aqua-blue scale-x-0 group-active:scale-x-100 transition-transform origin-left"></span>
+                    <span class="text-2xl">♨️</span>
+                    <span class="font-bold text-hinoki-dark">お風呂の床・段差が怖い</span>
+                    <span class="text-xs text-text-muted">湯気で足元が真っ白</span>
+                </button>
+
+                <button onclick="startSimulation('heat')" class="group relative bg-white border-2 border-hinoki rounded-none p-5 flex flex-col items-center justify-center gap-2 transition-colors active:bg-hinoki-light">
+                    <span class="absolute top-0 left-0 w-full h-1 bg-sauna-hot scale-x-0 group-active:scale-x-100 transition-transform origin-left"></span>
+                    <span class="text-2xl">👓</span>
+                    <span class="font-bold text-hinoki-dark">普通のメガネが熱で傷む</span>
+                    <span class="text-xs text-text-muted">コーティングがひび割れる</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- STEP 2: シミュレーター画面 (初期は非表示) -->
+        <section id="step-2" class="hidden flex-col h-full">
+            
+            <!-- 視覚的分離: ビジュアルエリア (文字と画像は絶対に重ねない) -->
+            <div id="visual-area" class="w-full aspect-[4/3] bg-gray-900 relative overflow-hidden border-b-4 border-hinoki shrink-0">
+                
+                <!-- シーン1: サウナ時計 -->
+                <div id="visual-sauna" class="hidden absolute inset-0 heat-bg flex items-center justify-center">
+                    <!-- サウナ時計（CSS描画） -->
+                    <div id="sauna-clock-blur" class="vision-transition w-40 h-40 bg-white rounded-full border-8 border-hinoki-dark relative flex items-center justify-center blur-md opacity-80">
+                        <!-- 目盛りと針 -->
+                        <div class="absolute w-2 h-2 bg-black rounded-full"></div>
+                        <div class="absolute w-1 h-16 bg-black bottom-1/2 origin-bottom rotate-45"></div>
+                        <div class="absolute w-1 h-12 bg-sauna-hot bottom-1/2 origin-bottom -rotate-12"></div>
+                    </div>
+                </div>
+
+                <!-- シーン2: お風呂の床 -->
+                <div id="visual-floor" class="hidden absolute inset-0 tile-bg flex flex-col items-center justify-end pb-8 relative">
+                    <!-- 段差の表現 -->
+                    <div class="w-3/4 h-12 bg-gray-400 border-t-4 border-gray-300 shadow-lg"></div>
+                    <!-- 湯気エフェクト -->
+                    <div id="floor-steam" class="vision-transition absolute inset-0 steam-effect"></div>
+                </div>
+
+                <!-- シーン3: 熱波とレンズ -->
+                <div id="visual-heat" class="hidden absolute inset-0 heat-bg flex items-center justify-center">
+                    <!-- メガネレンズ -->
+                    <div class="w-48 h-32 bg-blue-50/20 backdrop-blur-sm rounded-[40%] border-4 border-gray-800 relative overflow-hidden flex items-center justify-center shadow-2xl">
+                        <span class="text-white/50 text-xs font-bold absolute bottom-2">LENS</span>
+                        <!-- クラック(ひび割れ) SVG -->
+                        <svg id="lens-crack" class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path class="crack-path" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" d="M20,0 Q30,20 25,40 T40,60 T35,90 M40,60 Q60,50 80,70 M25,40 Q10,50 0,45 M60,50 Q70,30 90,20"/>
+                            <path class="crack-path" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1" d="M30,20 Q40,10 50,0 M80,70 Q90,80 100,90"/>
+                        </svg>
+                        <!-- 防御シールド(専用メガネ時) -->
+                        <div id="lens-shield" class="vision-transition absolute inset-0 bg-aqua-blue/0 opacity-0 rounded-[40%] border-2 border-aqua-blue"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 視覚的分離: 操作＆トークエリア -->
+            <div class="flex-1 flex flex-col p-5 gap-5 bg-base-bg overflow-y-auto">
+                
+                <!-- 状態切り替えボタン -->
+                <div class="w-full">
+                    <button id="toggle-btn" onclick="toggleGlasses()" class="w-full bg-hinoki text-white py-4 px-6 rounded-none font-bold text-lg shadow-[4px_4px_0_#5C3A21] active:translate-y-1 active:shadow-[0_0_0_#5C3A21] transition-all flex items-center justify-center gap-2">
+                        <span>👓</span>
+                        <span id="btn-text">サウナ専用メガネをかける</span>
+                    </button>
+                </div>
+
+                <!-- トークスクリプトエリア -->
+                <div class="bg-white border-2 border-hinoki-light p-4 relative">
+                    <div class="absolute -top-3 left-4 bg-hinoki-light text-text-main text-xs font-bold px-2 py-1 tracking-wider">接客トーク</div>
+                    
+                    <p id="talk-instruction" class="text-xs text-sauna-orange font-bold mb-2">※お客様に画面を見せながら読み上げてください</p>
+                    
+                    <div id="talk-script" class="font-serif text-[15px] leading-loose text-text-main">
+                        <!-- JSで動的に差し替え -->
+                    </div>
+                </div>
+
+                <!-- 戻るボタン -->
+                <button onclick="resetApp()" class="mt-auto text-text-muted text-sm underline text-center py-2">
+                    最初からやり直す
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- State Management ---
+        let currentScene = null;
+        let isGlassesOn = false;
+
+        // --- DOM Elements ---
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        
+        const visualSauna = document.getElementById('visual-sauna');
+        const visualFloor = document.getElementById('visual-floor');
+        const visualHeat = document.getElementById('visual-heat');
+        
+        const toggleBtn = document.getElementById('toggle-btn');
+        const btnText = document.getElementById('btn-text');
+        const talkScript = document.getElementById('talk-script');
+
+        // Scene Specific Elements
+        const saunaClock = document.getElementById('sauna-clock-blur');
+        const floorSteam = document.getElementById('floor-steam');
+        const lensCrack = document.getElementById('lens-crack');
+        const lensShield = document.getElementById('lens-shield');
+
+        // --- Content Data (ロジックとテキストの手抜き禁止) ---
+        const scripts = {
+            sauna: {
+                naked: "サウナ室に入った時、<span class='bg-red-200 font-bold px-1'>12分計の針が見えなくて不便</span>だと感じませんか？無理に目を凝らすとリラックスできませんよね。",
+                glasses: "専用メガネをかければ、この通り<span class='bg-yellow-200 font-bold px-1'>時計の針もテレビの文字もクッキリ</span>です！時間を気にせず、自分のペースで『ととのう』ことに集中できる<span class='bg-cyan-200 font-bold px-1'>ととのい専用ギア</span>です。"
+            },
+            floor: {
+                naked: "お風呂場は<span class='bg-red-200 font-bold px-1'>湯気で足元が白くぼやけて</span>、段差や滑りやすいタイルが非常に危険です。特に裸眼だと怖いですよね。",
+                glasses: "専用メガネは<span class='bg-yellow-200 font-bold px-1'>強力な防曇（くもり止め）加工</span>がされています。湯気の中でも足元が安全に確認できるので、安心して浴場を移動できます。"
+            },
+            heat: {
+                naked: "普通のメガネをサウナに持ち込むと、<span class='bg-red-200 font-bold px-1'>100度の熱でレンズのコーティングが一発でひび割れ（クラック）</span>してダメになってしまいます。",
+                glasses: "ですが、この専用メガネは<span class='bg-yellow-200 font-bold px-1'>120〜130度の耐熱ポリカーボネート素材</span>。熱波を受けても絶対に割れません！普段のメガネを守るためにも、サウナ用の2本目として最適です。"
+            }
+        };
+
+        // --- Logic ---
+        function startSimulation(scene) {
+            currentScene = scene;
+            isGlassesOn = false;
+
+            // UI切り替え (プログレッシブ・ディクロージャー)
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            step2.classList.add('flex');
+
+            // 全ビジュアルを隠す
+            visualSauna.classList.add('hidden');
+            visualFloor.classList.add('hidden');
+            visualHeat.classList.add('hidden');
+
+            // 選択されたビジュアルを表示し、初期状態(裸眼/通常)をセット
+            if (scene === 'sauna') {
+                visualSauna.classList.remove('hidden');
+                saunaClock.classList.replace('blur-none', 'blur-md');
+                saunaClock.classList.add('opacity-80');
+            } else if (scene === 'floor') {
+                visualFloor.classList.remove('hidden');
+                floorSteam.style.opacity = '1';
+                floorSteam.classList.add('steam-effect');
+            } else if (scene === 'heat') {
+                visualHeat.classList.remove('hidden');
+                lensCrack.classList.remove('hidden', 'crack-active');
+                lensShield.classList.replace('opacity-100', 'opacity-0');
+                
+                // 少し遅れてひび割れアニメーションを実行
+                setTimeout(() => {
+                    if(!isGlassesOn) lensCrack.classList.add('crack-active');
+                }, 800);
+            }
+
+            updateUI();
+        }
+
+        function toggleGlasses() {
+            isGlassesOn = !isGlassesOn;
+
+            // アニメーションによる視覚変化
+            if (currentScene === 'sauna') {
+                if (isGlassesOn) {
+                    saunaClock.classList.replace('blur-md', 'blur-none');
+                    saunaClock.classList.remove('opacity-80');
+                } else {
+                    saunaClock.classList.replace('blur-none', 'blur-md');
+                    saunaClock.classList.add('opacity-80');
+                }
+            } else if (currentScene === 'floor') {
+                if (isGlassesOn) {
+                    floorSteam.style.opacity = '0';
+                    setTimeout(() => floorSteam.classList.remove('steam-effect'), 1200); // トランジション後にアニメ停止
+                } else {
+                    floorSteam.classList.add('steam-effect');
+                    // setTimeoutで処理を分けないとopacityのtransitionが効かない
+                    setTimeout(() => floorSteam.style.opacity = '1', 10);
+                }
+            } else if (currentScene === 'heat') {
+                if (isGlassesOn) {
+                    lensCrack.classList.add('hidden');
+                    lensCrack.classList.remove('crack-active');
+                    lensShield.classList.replace('opacity-0', 'opacity-100');
+                    lensShield.classList.replace('bg-aqua-blue/0', 'bg-aqua-blue/20');
+                    lensShield.classList.add('shadow-[0_0_15px_#00B4D8]');
+                } else {
+                    lensShield.classList.replace('opacity-100', 'opacity-0');
+                    lensShield.classList.replace('bg-aqua-blue/20', 'bg-aqua-blue/0');
+                    lensShield.classList.remove('shadow-[0_0_15px_#00B4D8]');
+                    lensCrack.classList.remove('hidden');
+                    // クラスを付け直してアニメーション再トリガー
+                    lensCrack.classList.remove('crack-active');
+                    void lensCrack.offsetWidth; // リフロー強制
+                    lensCrack.classList.add('crack-active');
+                }
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            // ボタンの見た目とテキスト更新
+            if (isGlassesOn) {
+                toggleBtn.classList.replace('bg-hinoki', 'bg-aqua-deep');
+                toggleBtn.classList.replace('shadow-[4px_4px_0_#5C3A21]', 'shadow-[4px_4px_0_#005f8f]');
+                btnText.textContent = "メガネを外す（裸眼・通常に戻す）";
+                talkScript.innerHTML = scripts[currentScene].glasses;
+            } else {
+                toggleBtn.classList.replace('bg-aqua-deep', 'bg-hinoki');
+                toggleBtn.classList.replace('shadow-[4px_4px_0_#005f8f]', 'shadow-[4px_4px_0_#5C3A21]');
+                btnText.textContent = "サウナ専用メガネをかける";
+                talkScript.innerHTML = scripts[currentScene].naked;
+            }
+        }
+
+        function resetApp() {
+            step2.classList.add('hidden');
+            step2.classList.remove('flex');
+            step1.classList.remove('hidden');
+            currentScene = null;
+            isGlassesOn = false;
+        }
+    </script>
+</body>
+</html>
