@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ととのい＆安全シミュレーター | サウナ専用メガネ</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              wood: {
+                50: "#fff7ec",
+                100: "#f7dfbd",
+                300: "#d49b5d",
+                500: "#95602e",
+                700: "#563415",
+                900: "#24150a"
+              },
+              aqua: {
+                100: "#d9fbff",
+                300: "#7ee6f2",
+                500: "#16bdd2",
+                700: "#09778a"
+              },
+              sauna: {
+                100: "#fff0d8",
+                300: "#ffbd68",
+                500: "#f47a24",
+                700: "#b84413"
+              }
+            },
+            boxShadow: {
+              bath: "0 22px 55px rgba(50, 27, 8, .22)",
+              glow: "0 0 0 1px rgba(255,255,255,.35), 0 18px 40px rgba(22,189,210,.22)"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --wood-dark: #24150a;
+      --wood-mid: #95602e;
+      --wood-light: #f7dfbd;
+      --aqua: #16bdd2;
+      --orange: #f47a24;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      color: #2a180b;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(255, 189, 104, .35), transparent 25rem),
+        radial-gradient(circle at 84% 22%, rgba(126, 230, 242, .35), transparent 23rem),
+        linear-gradient(135deg, #fff7ec 0%, #f7dfbd 44%, #d49b5d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .18;
+      background-image:
+        linear-gradient(90deg, rgba(86, 52, 21, .18) 1px, transparent 1px),
+        repeating-linear-gradient(105deg, rgba(86, 52, 21, .13) 0 2px, transparent 2px 16px);
+      background-size: 38px 38px, 180px 180px;
+      mix-blend-mode: multiply;
+    }
+
+    .wood-panel {
+      border: 1px solid rgba(86, 52, 21, .20);
+      background:
+        linear-gradient(135deg, rgba(255, 247, 236, .88), rgba(247, 223, 189, .74)),
+        repeating-linear-gradient(92deg, rgba(149, 96, 46, .16) 0 7px, rgba(255, 247, 236, .12) 7px 19px);
+      box-shadow: 0 22px 55px rgba(50, 27, 8, .22);
+      backdrop-filter: blur(14px);
+    }
+
+    .onsen-divider {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, var(--orange), #ffd596 34%, var(--aqua) 68%, #d9fbff);
+      box-shadow: inset 0 1px 2px rgba(255,255,255,.55);
+    }
+
+    .scene-btn {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: .9rem;
+      width: 100%;
+      border: 1px solid rgba(86, 52, 21, .18);
+      border-radius: 1.55rem;
+      padding: 1rem;
+      text-align: left;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.62), rgba(255, 240, 216, .56)),
+        linear-gradient(90deg, rgba(244, 122, 36, .10), rgba(22, 189, 210, .10));
+      transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease;
+    }
+
+    .scene-btn::after {
+      content: "";
+      position: absolute;
+      inset: .45rem;
+      z-index: -1;
+      border-radius: 1.2rem;
+      background: linear-gradient(135deg, rgba(255,255,255,.24), rgba(255,255,255,0));
+    }
+
+    .scene-btn:active {
+      transform: scale(.985);
+    }
+
+    .scene-btn:hover,
+    .scene-btn.is-active {
+      border-color: rgba(244, 122, 36, .72);
+      box-shadow: 0 18px 38px rgba(86, 52, 21, .18);
+      background:
+        linear-gradient(135deg, rgba(255, 240, 216, .86), rgba(217, 251, 255, .64)),
+        linear-gradient(90deg, rgba(244, 122, 36, .14), rgba(22, 189, 210, .14));
+    }
+
+    .scene-icon {
+      display: grid;
+      place-items: center;
+      width: 3.2rem;
+      height: 3.2rem;
+      flex: 0 0 auto;
+      border-radius: 1.15rem;
+      background: linear-gradient(145deg, #563415, #95602e);
+      color: #fff7ec;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 14px 24px rgba(86, 52, 21, .18);
+      font-size: 1.45rem;
+    }
+
+    .mode-btn {
+      border: 1px solid rgba(86, 52, 21, .22);
+      background: rgba(255, 247, 236, .64);
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .mode-btn.is-selected {
+      border-color: rgba(22, 189, 210, .8);
+      background: linear-gradient(135deg, rgba(217, 251, 255, .92), rgba(255, 240, 216, .82));
+      box-shadow: 0 14px 30px rgba(22, 189, 210, .20);
+      transform: translateY(-1px);
+    }
+
+    .visual-frame {
+      position: relative;
+      overflow: hidden;
+      min-height: 330px;
+      border: 1px solid rgba(255, 255, 255, .44);
+      border-radius: 2rem;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(255,255,255,.54), transparent 13rem),
+        linear-gradient(160deg, #563415 0%, #95602e 48%, #f7dfbd 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 24px 45px rgba(50, 27, 8, .20);
+    }
+
+    .visual-stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 330px;
+      padding: 1.25rem;
+    }
+
+    .visual-grid {
+      position: absolute;
+      inset: 0;
+      opacity: .20;
+      background-image:
+        linear-gradient(rgba(255,255,255,.34) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.26) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    .steam-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 25%, rgba(255,255,255,.82), transparent 7rem),
+        radial-gradient(circle at 70% 40%, rgba(255,255,255,.72), transparent 8rem),
+        radial-gradient(circle at 42% 76%, rgba(255,255,255,.62), transparent 9rem);
+      filter: blur(10px);
+      transition: opacity .75s ease, transform .75s ease;
+      animation: steamDrift 5s ease-in-out infinite alternate;
+    }
+
+    .mode-normal .steam-layer {
+      opacity: .92;
+    }
+
+    .mode-dedicated .steam-layer {
+      opacity: .08;
+      transform: translateY(-14px);
+    }
+
+    .clock-face,
+    .bath-path,
+    .glasses-lens {
+      transition: filter .85s ease, opacity .85s ease, transform .85s ease;
+    }
+
+    .mode-normal .clock-face {
+      filter: blur(4.5px);
+      opacity: .62;
+      transform: scale(1.03);
+    }
+
+    .mode-dedicated .clock-face {
+      filter: blur(0);
+      opacity: 1;
+      transform: scale(1);
+      animation: clearPulse .85s ease;
+    }
+
+    .mode-normal .bath-path {
+      filter: blur(4px);
+      opacity: .58;
+    }
+
+    .mode-dedicated .bath-path {
+      filter: blur(0);
+      opacity: 1;
+      animation: clearPulse .85s ease;
+    }
+
+    .mode-normal .glasses-lens {
+      filter: blur(.8px) saturate(.72);
+      opacity: .72;
+    }
+
+    .mode-dedicated .glasses-lens {
+      filter: blur(0) saturate(1.12);
+      opacity: 1;
+      animation: clearPulse .85s ease;
+    }
+
+    .heat-wave {
+      animation: heatWave 1.6s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+
+    .heat-wave:nth-child(2) {
+      animation-delay: .22s;
+    }
+
+    .heat-wave:nth-child(3) {
+      animation-delay: .44s;
+    }
+
+    .crack-group {
+      transition: opacity .45s ease, stroke-dashoffset .85s ease;
+      stroke-dasharray: 80;
+    }
+
+    .mode-normal .crack-group {
+      opacity: 1;
+      stroke-dashoffset: 0;
+      animation: crackDraw .9s ease both;
+    }
+
+    .mode-dedicated .crack-group {
+      opacity: 0;
+      stroke-dashoffset: 80;
+    }
+
+    .shield-ring {
+      transition: opacity .45s ease, transform .45s ease;
+    }
+
+    .mode-normal .shield-ring {
+      opacity: .08;
+      transform: scale(.94);
+    }
+
+    .mode-dedicated .shield-ring {
+      opacity: .95;
+      transform: scale(1);
+      animation: shieldGlow 1.8s ease-in-out infinite alternate;
+    }
+
+    .script-mark {
+      border-radius: .7rem;
+      padding: .08rem .42rem;
+      background: linear-gradient(180deg, rgba(255, 213, 150, .85), rgba(255, 189, 104, .54));
+      color: #563415;
+      font-weight: 800;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .aqua-mark {
+      border-radius: .7rem;
+      padding: .08rem .42rem;
+      background: linear-gradient(180deg, rgba(217, 251, 255, .95), rgba(126, 230, 242, .64));
+      color: #075f6e;
+      font-weight: 800;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .progress-dot {
+      width: .62rem;
+      height: .62rem;
+      border-radius: 999px;
+      background: rgba(86, 52, 21, .22);
+      transition: width .25s ease, background .25s ease;
+    }
+
+    .progress-dot.is-current {
+      width: 1.65rem;
+      background: linear-gradient(90deg, #f47a24, #16bdd2);
+    }
+
+    @keyframes steamDrift {
+      from { transform: translate3d(-8px, 8px, 0) scale(1); }
+      to { transform: translate3d(10px, -10px, 0) scale(1.06); }
+    }
+
+    @keyframes clearPulse {
+      0% { transform: scale(.985); }
+      58% { transform: scale(1.025); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes heatWave {
+      from { transform: translateY(8px) scaleY(.96); opacity: .48; }
+      to { transform: translateY(-6px) scaleY(1.05); opacity: .88; }
+    }
+
+    @keyframes crackDraw {
+      from { stroke-dashoffset: 80; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes shieldGlow {
+      from { filter: drop-shadow(0 0 0 rgba(22,189,210,0)); }
+      to { filter: drop-shadow(0 0 16px rgba(22,189,210,.55)); }
+    }
+
+    @media (min-width: 768px) {
+      .visual-frame,
+      .visual-stage {
+        min-height: 410px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-5 px-4 py-5 sm:px-6 md:py-8">
+    <header class="wood-panel rounded-[2rem] p-5 sm:p-7">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full bg-wood-900 px-3 py-1 text-xs font-bold tracking-[.16em] text-wood-50">
+            SAUNA GLASSES
+          </span>
+          <span class="rounded-full bg-aqua-100 px-3 py-1 text-xs font-bold text-aqua-700">
+            ととのい＆安全シミュレーター
+          </span>
+        </div>
+
+        <div class="grid gap-3">
+          <h1 class="text-[clamp(2rem,9vw,4.4rem)] font-black leading-[.95] tracking-[-.06em] text-wood-900">
+            湯けむりでも、<br />
+            見える安心。
+          </h1>
+          <p class="max-w-2xl text-sm font-medium leading-7 text-wood-700 sm:text-base">
+            お客様の「見えない」「怖い」「壊れそう」を選ぶだけ。新人スタッフでも、サウナ専用メガネの価値を体感で伝えられます。
+          </p>
+        </div>
+
+        <div class="onsen-divider" aria-hidden="true"></div>
+      </div>
+    </header>
+
+    <section class="wood-panel rounded-[2rem] p-4 sm:p-6" aria-labelledby="chooserTitle">
+      <div class="mb-4 flex flex-col gap-2">
+        <p class="text-xs font-black tracking-[.22em] text-sauna-700">STEP 01</p>
+        <h2 id="chooserTitle" class="text-xl font-black tracking-[-.03em] text-wood-900 sm:text-2xl">
+          お客様が困っている瞬間を選んでください
+        </h2>
+      </div>
+
+      <div class="grid gap-3" id="sceneButtons">
+        <button class="scene-btn" type="button" data-scene="sauna" aria-pressed="false">
+          <span class="scene-icon" aria-hidden="true">♨</span>
+          <span class="grid gap-1">
+            <span class="text-base font-black text-wood-900">サウナ室</span>
+            <span class="text-sm font-semibold leading-6 text-wood-700">12分計の針やテレビの文字が見えない</span>
+          </span>
+          <span class="text-2xl font-black text-sauna-500" aria-hidden="true">›</span>
+        </button>
+
+        <button class="scene-btn" type="button" data-scene="bath" aria-pressed="false">
+          <span class="scene-icon" aria-hidden="true">𓊝</span>
+          <span class="grid gap-1">
+            <span class="text-base font-black text-wood-900">浴場への移動</span>
+            <span class="text-sm font-semibold leading-6 text-wood-700">床が滑りそうで、段差が怖い</span>
+          </span>
+          <span class="text-2xl font-black text-sauna-500" aria-hidden="true">›</span>
+        </button>
+
+        <button class="scene-btn" type="button" data-scene="heat" aria-pressed="false">
+          <span class="scene-icon" aria-hidden="true">⌐◨</span>
+          <span class="grid gap-1">
+            <span class="text-base font-black text-wood-900">普通のメガネを持ち込む</span>
+            <span class="text-sm font-semibold leading-6 text-wood-700">熱でレンズがバキバキに傷む</span>
+          </span>
+          <span class="text-2xl font-black text-sauna-500" aria-hidden="true">›</span>
+        </button>
+      </div>
+
+      <p id="statusMessage" class="mt-4 hidden rounded-2xl bg-sauna-100 px-4 py-3 text-sm font-bold text-sauna-700" role="status"></p>
+    </section>
+
+    <section id="simulator" class="hidden grid gap-5" aria-live="polite">
+      <section class="wood-panel rounded-[2rem] p-4 sm:p-6">
+        <div class="mb-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div class="grid gap-2">
+            <p class="text-xs font-black tracking-[.22em] text-aqua-700">STEP 02</p>
+            <h2 id="selectedTitle" class="text-2xl font-black tracking-[-.04em] text-wood-900"></h2>
+            <p id="selectedLead" class="text-sm font-semibold leading-7 text-wood-700"></p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 rounded-[1.35rem] bg-wood-900/10 p-1">
+            <button id="modeNormal" class="mode-btn rounded-[1.05rem] px-3 py-3 text-sm font-black text-wood-900" type="button" data-mode="normal">
+              裸眼・普通メガネ
+            </button>
+            <button id="modeDedicated" class="mode-btn rounded-[1.05rem] px-3 py-3 text-sm font-black text-wood-900" type="button" data-mode="dedicated">
+              専用メガネ
+            </button>
+          </div>
+        </div>
+
+        <div id="visualArea"></div>
+
+        <div class="mt-4 grid gap-3 md:grid-cols-3">
+          <div class="rounded-[1.5rem] border border-white/45 bg-white/42 p-4">
+            <p class="text-xs font-black tracking-[.18em] text-sauna-700">今の見え方</p>
+            <p id="modeMessage" class="mt-2 text-sm font-bold leading-7 text-wood-900"></p>
+          </div>
+          <div class="rounded-[1.5rem] border border-white/45 bg-white/42 p-4">
+            <p class="text-xs font-black tracking-[.18em] text-aqua-700">スタッフの一言</p>
+            <p id="staffOneLiner" class="mt-2 text-sm font-bold leading-7 text-wood-900"></p>
+          </div>
+          <div class="rounded-[1.5rem] border border-white/45 bg-white/42 p-4">
+            <p class="text-xs font-black tracking-[.18em] text-wood-700">提案ゴール</p>
+            <p id="proposalGoal" class="mt-2 text-sm font-bold leading-7 text-wood-900"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="wood-panel rounded-[2rem] p-4 sm:p-6" aria-labelledby="scriptTitle">
+        <div class="mb-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-xs font-black tracking-[.22em] text-sauna-700">STEP 03</p>
+              <h2 id="scriptTitle" class="text-xl font-black tracking-[-.03em] text-wood-900 sm:text-2xl">
+                読み上げ接客トーク
+              </h2>
+            </div>
+            <div id="scriptDots" class="flex items-center gap-2" aria-hidden="true"></div>
+          </div>
+          <p class="text-sm font-semibold leading-7 text-wood-700">
+            1枚ずつめくるカンペ形式です。お客様の反応に合わせて、次の一言を出してください。
+          </p>
+        </div>
+
+        <div class="grid gap-4 rounded-[1.75rem] border border-wood-900/10 bg-wood-900 p-4 text-wood-50 shadow-bath sm:p-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="talkStage" class="rounded-full bg-sauna-500 px-3 py-1 text-xs font-black tracking-[.16em] text-white"></span>
+            <span id="talkHint" class="rounded-full bg-aqua-100 px-3 py-1 text-xs font-black text-aqua-700"></span>
+          </div>
+
+          <p id="talkScript" class="text-lg font-black leading-9 tracking-[-.02em] sm:text-xl"></p>
+
+          <div class="grid gap-2 sm:grid-cols-3">
+            <button id="prevScript" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-black text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40" type="button">
+              戻る
+            </button>
+            <button id="copyScript" class="rounded-2xl border border-aqua-300/50 bg-aqua-500 px-4 py-3 text-sm font-black text-white shadow-glow transition hover:brightness-105" type="button">
+              このカンペをコピー
+            </button>
+            <button id="nextScript" class="rounded-2xl border border-sauna-300/50 bg-sauna-500 px-4 py-3 text-sm font-black text-white transition hover:brightness-105" type="button">
+              次のカンペ
+            </button>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const scenes = {
+      sauna: {
+        title: "サウナ室：12分計が見えない",
+        lead: "熱気と湯けむりの中で、時計の針やテレビ字幕がぼやける瞬間を再現します。",
+        normalMode: "裸眼・普通メガネ",
+        dedicatedMode: "サウナ専用メガネ",
+        normalMessage: "針も数字もぼやけて、出るタイミングを体感任せにしがち。無理な我慢につながります。",
+        dedicatedMessage: "湯けむりが晴れ、12分計の針までくっきり。自分のペースで安全に楽しめます。",
+        staffOneLinerNormal: "「見えない不便」は、サウナでは安全面の不安にも変わります。",
+        staffOneLinerDedicated: "視界が整うと、時間管理まで整います。",
+        proposalGoal: "趣味の満足度を上げる“ととのい専用ギア”として2本目を提案。",
+        scripts: [
+          {
+            stage: "共感",
+            hint: "まず悩みに寄り添う",
+            html: "「サウナ室で<span class='script-mark'>12分計が見えない</span>と、体感だけで我慢しすぎたり、出るタイミングが分からなくなりますよね。」"
+          },
+          {
+            stage: "危険の可視化",
+            hint: "普通のメガネは避ける",
+            html: "「ただ、普段のメガネをそのまま入れると、熱と湿気でコーティングが傷みやすいので、サウナ用とは分けた方が安心です。」"
+          },
+          {
+            stage: "解決提案",
+            hint: "性能を一言で伝える",
+            html: "「こちらは<span class='aqua-mark'>曇りにくく、熱に強い素材</span>なので、時計の針やテレビの文字まで見やすくなります。」"
+          },
+          {
+            stage: "クロージング",
+            hint: "趣味の充実に接続",
+            html: "「足元の危険を防ぎ、サウナの時間を100%楽しむための<span class='script-mark'>『ととのい専用ギア』</span>として、普段用とは別に1本あると快適です。」"
+          }
+        ]
+      },
+      bath: {
+        title: "浴場への移動：床と段差が怖い",
+        lead: "濡れた床、段差、湯けむりで足元が白く曇る不安を再現します。",
+        normalMode: "裸眼・普通メガネ",
+        dedicatedMode: "サウナ専用メガネ",
+        normalMessage: "足元の段差が白く曇り、濡れた床の境目も分かりにくい状態です。",
+        dedicatedMessage: "床のラインと段差が見えるので、浴場内の移動が落ち着いてできます。",
+        staffOneLinerNormal: "浴場では“少し見えない”が転倒リスクにつながります。",
+        staffOneLinerDedicated: "足元が見えるだけで、入浴の安心感が大きく変わります。",
+        proposalGoal: "安全対策として、ご本人用だけでなく家族用にも提案しやすいシーン。",
+        scripts: [
+          {
+            stage: "共感",
+            hint: "不安を言語化",
+            html: "「お風呂場って、床が濡れていて段差もあるので、<span class='script-mark'>見えにくいだけで怖い</span>ですよね。」"
+          },
+          {
+            stage: "危険の可視化",
+            hint: "転倒リスクに触れる",
+            html: "「裸眼だと床の境目がぼやけますし、普通のメガネも湯気で曇ると、足元確認が遅れやすくなります。」"
+          },
+          {
+            stage: "解決提案",
+            hint: "安全価値を強調",
+            html: "「サウナ専用メガネなら<span class='aqua-mark'>湯けむりの中でも足元が確認しやすい</span>ので、浴場への移動がかなり安心になります。」"
+          },
+          {
+            stage: "クロージング",
+            hint: "安全＋楽しさ",
+            html: "「これは視力矯正というより、<span class='script-mark'>お風呂時間を安全に楽しむための装備</span>です。普段のメガネを守る意味でも、2本目にぴったりです。」"
+          }
+        ]
+      },
+      heat: {
+        title: "普通のメガネ：熱でレンズが傷む",
+        lead: "高温サウナでレンズコーティングがヒビ割れる不安を、専用メガネと比較します。",
+        normalMode: "普通のメガネ",
+        dedicatedMode: "サウナ専用メガネ",
+        normalMessage: "熱波でレンズコーティングがダメージを受け、ヒビ割れのような傷みが出るイメージです。",
+        dedicatedMessage: "高温環境を想定した素材で、熱気の中でもレンズをクリアに保ちます。",
+        staffOneLinerNormal: "普段用をサウナに入れるほど、買い替えリスクが高まります。",
+        staffOneLinerDedicated: "サウナ用を分ければ、普段の大切なメガネも守れます。",
+        proposalGoal: "“壊れる前の予防”として、普段使いのメガネ保護を理由に提案。",
+        scripts: [
+          {
+            stage: "共感",
+            hint: "持ち込み経験を確認",
+            html: "「サウナでも見たいから、つい普段のメガネを持ち込みたくなりますよね。」"
+          },
+          {
+            stage: "危険の可視化",
+            hint: "強い一言で刺す",
+            html: "「ただ、普通のメガネをサウナに入れると、<span class='script-mark'>一回でダメになる</span>ことがあります。熱でレンズのコーティングが傷みやすいんです。」"
+          },
+          {
+            stage: "解決提案",
+            hint: "専用品の理由",
+            html: "「これは<span class='aqua-mark'>100度以上の熱でも使える特殊素材</span>を想定したサウナ専用タイプなので、普段のメガネを守りながら入れます。」"
+          },
+          {
+            stage: "クロージング",
+            hint: "2本目購入へ",
+            html: "「普段用を長持ちさせるためにも、サウナ・お風呂用を1本分けておくのが安心です。趣味用の<span class='script-mark'>専用ギア</span>としておすすめです。」"
+          }
+        ]
+      }
+    };
+
+    const state = {
+      scene: null,
+      mode: "normal",
+      step: 0
+    };
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    function setText(selector, value) {
+      const node = $(selector);
+      if (node) node.textContent = value || "";
+    }
+
+    function showStatus(message, isError = false) {
+      const status = $("#statusMessage");
+      if (!status) return;
+
+      status.textContent = message;
+      status.classList.remove("hidden");
+      status.classList.toggle("bg-sauna-100", !isError);
+      status.classList.toggle("text-sauna-700", !isError);
+      status.classList.toggle("bg-red-100", isError);
+      status.classList.toggle("text-red-700", isError);
+
+      window.clearTimeout(showStatus.timer);
+      showStatus.timer = window.setTimeout(() => {
+        status.classList.add("hidden");
+      }, 2800);
+    }
+
+    function selectScene(sceneId) {
+      if (!scenes[sceneId]) {
+        showStatus("このシーンは準備中です。別のボタンを選んでください。", true);
+        return;
+      }
+
+      state.scene = sceneId;
+      state.mode = "normal";
+      state.step = 0;
+
+      $$(".scene-btn").forEach((button) => {
+        const active = button.dataset.scene === sceneId;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+
+      const simulator = $("#simulator");
+      simulator.classList.remove("hidden");
+
+      render();
+      showStatus("シミュレーションを展開しました。見え方を切り替えて比較できます。");
+
+      window.setTimeout(() => {
+        simulator.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
+
+    function setMode(mode) {
+      if (!["normal", "dedicated"].includes(mode)) {
+        showStatus("表示モードを切り替えられませんでした。", true);
+        return;
+      }
+      state.mode = mode;
+      render();
+    }
+
+    function nextScript() {
+      const scene = scenes[state.scene];
+      if (!scene) return;
+      state.step = state.step >= scene.scripts.length - 1 ? 0 : state.step + 1;
+      renderTalk(scene);
+    }
+
+    function prevScript() {
+      const scene = scenes[state.scene];
+      if (!scene) return;
+      state.step = Math.max(0, state.step - 1);
+      renderTalk(scene);
+    }
+
+    async function copyScript() {
+      const scene = scenes[state.scene];
+      if (!scene) return;
+
+      const current = scene.scripts[state.step];
+      const temp = document.createElement("div");
+      temp.innerHTML = current.html;
+      const plainText = temp.textContent || "";
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(plainText);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = plainText;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+        showStatus("カンペをコピーしました。");
+      } catch (error) {
+        showStatus("コピーできませんでした。文章を長押しして選択してください。", true);
+      }
+    }
+
+    function render() {
+      const scene = scenes[state.scene];
+      if (!scene) return;
+
+      setText("#selectedTitle", scene.title);
+      setText("#selectedLead", scene.lead);
+      setText("#modeNormal", scene.normalMode);
+      setText("#modeDedicated", scene.dedicatedMode);
+      setText("#modeMessage", state.mode === "normal" ? scene.normalMessage : scene.dedicatedMessage);
+      setText("#staffOneLiner", state.mode === "normal" ? scene.staffOneLinerNormal : scene.staffOneLinerDedicated);
+      setText("#proposalGoal", scene.proposalGoal);
+
+      $$(".mode-btn").forEach((button) => {
+        const selected = button.dataset.mode === state.mode;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+
+      const visualArea = $("#visualArea");
+      if (visualArea) {
+        visualArea.innerHTML = renderVisual(state.scene, state.mode);
+      }
+
+      renderTalk(scene);
+    }
+
+    function renderTalk(scene) {
+      const script = scene.scripts[state.step] || scene.scripts[0];
+
+      setText("#talkStage", `STEP ${state.step + 1} / ${scene.scripts.length}　${script.stage}`);
+      setText("#talkHint", script.hint);
+
+      const talkScript = $("#talkScript");
+      if (talkScript) talkScript.innerHTML = script.html;
+
+      const dots = $("#scriptDots");
+      if (dots) {
+        dots.innerHTML = scene.scripts.map((_, index) => {
+          const current = index === state.step ? "is-current" : "";
+          return `<span class="progress-dot ${current}"></span>`;
+        }).join("");
+      }
+
+      const prev = $("#prevScript");
+      const next = $("#nextScript");
+
+      if (prev) prev.disabled = state.step === 0;
+      if (next) next.textContent = state.step === scene.scripts.length - 1 ? "最初に戻す" : "次のカンペ";
+    }
+
+    function renderVisual(sceneId, mode) {
+      const modeClass = mode === "dedicated" ? "mode-dedicated" : "mode-normal";
+
+      if (sceneId === "sauna") {
+        return `
+          <div class="visual-frame ${modeClass}">
+            <div class="visual-grid" aria-hidden="true"></div>
+            <div class="visual-stage">
+              <div class="grid w-full max-w-sm gap-5">
+                <div class="mx-auto rounded-[2rem] border border-white/40 bg-wood-900/50 p-5 shadow-bath">
+                  <svg class="clock-face h-56 w-56" viewBox="0 0 220 220" role="img" aria-label="サウナ室の12分計">
+                    <circle cx="110" cy="110" r="98" fill="#fff7ec" stroke="#563415" stroke-width="10"></circle>
+                    <circle cx="110" cy="110" r="82" fill="none" stroke="#d49b5d" stroke-width="3" stroke-dasharray="4 10"></circle>
+                    <text x="110" y="45" text-anchor="middle" font-size="28" font-weight="900" fill="#563415">12</text>
+                    <text x="178" y="119" text-anchor="middle" font-size="24" font-weight="900" fill="#563415">3</text>
+                    <text x="110" y="187" text-anchor="middle" font-size="24" font-weight="900" fill="#563415">6</text>
+                    <text x="42" y="119" text-anchor="middle" font-size="24" font-weight="900" fill="#563415">9</text>
+                    <line x1="110" y1="110" x2="110" y2="34" stroke="#f47a24" stroke-width="8" stroke-linecap="round"></line>
+                    <line x1="110" y1="110" x2="154" y2="145" stroke="#16bdd2" stroke-width="7" stroke-linecap="round"></line>
+                    <circle cx="110" cy="110" r="10" fill="#24150a"></circle>
+                  </svg>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2" aria-hidden="true">
+                  <span class="h-3 rounded-full bg-sauna-300/80"></span>
+                  <span class="h-3 rounded-full bg-aqua-300/80"></span>
+                  <span class="h-3 rounded-full bg-sauna-300/80"></span>
+                </div>
+              </div>
+              <div class="steam-layer"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (sceneId === "bath") {
+        const tiles = Array.from({ length: 18 }, (_, index) => {
+          const accent = index % 5 === 0 ? "bg-aqua-100/70" : "bg-white/36";
+          return `<span class="rounded-xl border border-white/35 ${accent}"></span>`;
+        }).join("");
+
+        return `
+          <div class="visual-frame ${modeClass}">
+            <div class="visual-grid" aria-hidden="true"></div>
+            <div class="visual-stage">
+              <div class="bath-path grid w-full max-w-md gap-4">
+                <div class="grid grid-cols-3 gap-2 rounded-[1.75rem] border border-white/40 bg-aqua-500/15 p-3">
+                  ${tiles}
+                </div>
+
+                <div class="grid gap-3 rounded-[1.75rem] border border-white/40 bg-wood-900/45 p-4">
+                  <div class="h-5 rounded-full bg-aqua-300/80"></div>
+                  <div class="grid grid-cols-[1fr_auto] items-end gap-3">
+                    <div class="grid gap-2">
+                      <span class="h-4 rounded-full bg-white/50"></span>
+                      <span class="h-4 rounded-full bg-white/35"></span>
+                    </div>
+                    <div class="grid h-24 w-28 content-end gap-2 rounded-2xl bg-sauna-500/80 p-3 shadow-bath">
+                      <span class="h-3 rounded-full bg-white/70"></span>
+                      <span class="h-3 rounded-full bg-white/55"></span>
+                      <span class="h-3 rounded-full bg-white/40"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="steam-layer"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (sceneId === "heat") {
+        return `
+          <div class="visual-frame ${modeClass}">
+            <div class="visual-grid" aria-hidden="true"></div>
+            <div class="visual-stage">
+              <div class="grid w-full max-w-md gap-5">
+                <svg class="h-60 w-full" viewBox="0 0 320 220" role="img" aria-label="高温下のメガネレンズ比較">
+                  <g class="heat-wave" fill="none" stroke="#f47a24" stroke-width="8" stroke-linecap="round" opacity=".75">
+                    <path d="M80 44 C60 70 104 82 80 112"></path>
+                  </g>
+                  <g class="heat-wave" fill="none" stroke="#ffbd68" stroke-width="8" stroke-linecap="round" opacity=".75">
+                    <path d="M160 28 C135 60 188 75 160 110"></path>
+                  </g>
+                  <g class="heat-wave" fill="none" stroke="#f47a24" stroke-width="8" stroke-linecap="round" opacity=".75">
+                    <path d="M238 44 C216 72 264 84 238 114"></path>
+                  </g>
+
+                  <ellipse class="shield-ring" cx="160" cy="139" rx="138" ry="58" fill="rgba(217,251,255,.32)" stroke="#16bdd2" stroke-width="5"></ellipse>
+
+                  <g class="glasses-lens">
+                    <path d="M72 122 C82 102 132 102 143 123 C154 151 133 176 101 175 C72 174 58 149 72 122Z" fill="#d9fbff" stroke="#24150a" stroke-width="8"></path>
+                    <path d="M178 123 C189 102 239 102 249 122 C263 150 248 174 219 175 C187 176 166 151 178 123Z" fill="#d9fbff" stroke="#24150a" stroke-width="8"></path>
+                    <path d="M143 130 C151 122 169 122 178 130" fill="none" stroke="#24150a" stroke-width="8" stroke-linecap="round"></path>
+                    <path d="M68 125 C48 121 38 114 30 102" fill="none" stroke="#24150a" stroke-width="8" stroke-linecap="round"></path>
+                    <path d="M252 125 C272 121 282 114 290 102" fill="none" stroke="#24150a" stroke-width="8" stroke-linecap="round"></path>
+                  </g>
+
+                  <g class="crack-group" fill="none" stroke="#b84413" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M98 115 L112 134 L101 150 L119 166"></path>
+                    <path d="M221 113 L207 132 L224 143 L211 164"></path>
+                    <path d="M88 146 L75 158"></path>
+                    <path d="M236 139 L252 153"></path>
+                  </g>
+                </svg>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl bg-sauna-100/80 p-3 text-center text-sm font-black text-sauna-700">
+                    熱波
+                  </div>
+                  <div class="rounded-2xl bg-aqua-100/80 p-3 text-center text-sm font-black text-aqua-700">
+                    レンズ保護
+                  </div>
+                </div>
+              </div>
+              <div class="steam-layer"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="visual-frame ${modeClass}">
+          <div class="visual-stage">
+            <p class="rounded-2xl bg-white/70 p-4 text-sm font-bold text-wood-900">
+              シミュレーションを表示できませんでした。別のシーンを選んでください。
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    $("#sceneButtons").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-scene]");
+      if (!button) return;
+      selectScene(button.dataset.scene);
+    });
+
+    $("#modeNormal").addEventListener("click", () => setMode("normal"));
+    $("#modeDedicated").addEventListener("click", () => setMode("dedicated"));
+    $("#nextScript").addEventListener("click", nextScript);
+    $("#prevScript").addEventListener("click", prevScript);
+    $("#copyScript").addEventListener("click", copyScript);
+  </script>
+</body>
+</html>
