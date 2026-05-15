@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PERFORMANCE BOOSTER | ゲーミングメガネ シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0a0c',
+                            panel: '#15151e',
+                            purple: '#b026ff',
+                            purpleDark: '#5a0a8c',
+                            green: '#00ffcc',
+                            greenDark: '#008066',
+                            text: '#e2e8f0',
+                            alert: '#ff2a5f'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans JP', 'sans-serif'],
+                        cyber: ['Rajdhani', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scanline': 'scanline 4s linear infinite',
+                        'glitch': 'glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite',
+                    },
+                    keyframes: {
+                        scanline: {
+                            '0%': { transform: 'translateY(-100%)' },
+                            '100%': { transform: 'translateY(1000%)' }
+                        },
+                        glitch: {
+                            '0%': { transform: 'translate(0)' },
+                            '20%': { transform: 'translate(-2px, 1px)' },
+                            '40%': { transform: 'translate(-1px, -1px)' },
+                            '60%': { transform: 'translate(2px, 1px)' },
+                            '80%': { transform: 'translate(1px, -1px)' },
+                            '100%': { transform: 'translate(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a0a0c;
+            /* サイバーなグリッド背景 */
+            background-image: 
+                linear-gradient(rgba(0, 255, 204, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 204, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: #e2e8f0;
+        }
+        
+        /* サイバー感のある斜めカット形状 */
+        .clip-cyber {
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        }
+        .clip-cyber-button {
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.3s ease;
+        }
+        
+        /* 発光エフェクト */
+        .glow-purple { box-shadow: 0 0 15px rgba(176, 38, 255, 0.4); border-color: #b026ff; }
+        .glow-green { box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); border-color: #00ffcc; }
+        
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0c; }
+        ::-webkit-scrollbar-thumb { background: #b026ff; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-cyber-green selection:text-cyber-bg">
+
+    <!-- Header -->
+    <header class="w-full p-4 md:p-6 border-b border-cyber-purple/30 bg-cyber-bg/90 backdrop-blur-sm z-10 sticky top-0">
+        <div class="max-w-4xl mx-auto flex flex-col items-start gap-1">
+            <h1 class="font-cyber font-bold text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyber-purple to-cyber-green tracking-wider">
+                GEAR UP: PERFORMANCE SIMULATOR
+            </h1>
+            <p class="text-xs md:text-sm text-gray-400">STAFF PORTAL - ゲーミングメガネ提案システム</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-full max-w-4xl mx-auto p-4 md:p-6 flex flex-col relative">
+
+        <!-- 装飾用スキャンライン -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+            <div class="w-full h-1 bg-cyber-green animate-scanline"></div>
+        </div>
+
+        <!-- ==========================================
+             STEP 1: 悩み選択画面 (プログレッシブ・ディクロージャー)
+        =========================================== -->
+        <section id="step1" class="flex flex-col gap-8 mt-4 md:mt-10 fade-in transition-opacity duration-500">
+            <div class="text-center space-y-3">
+                <h2 class="text-xl md:text-2xl font-bold">お客様の最大の<span class="text-cyber-alert">ストレス</span>は何ですか？</h2>
+                <p class="text-sm text-gray-400">ヒアリング結果に基づき、解決策をシミュレートします。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <!-- Button 1 -->
+                <button onclick="selectIssue('pressure')" class="clip-cyber-button bg-cyber-panel border border-cyber-purple/50 p-6 flex flex-col items-center justify-center gap-4 hover:glow-purple hover:bg-cyber-purple/10 group">
+                    <svg class="w-12 h-12 text-cyber-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path></svg>
+                    <span class="font-bold text-lg">ヘッドセットの圧迫</span>
+                    <span class="text-xs text-gray-400 text-center">こめかみが痛くて集中できない</span>
+                </button>
+
+                <!-- Button 2 -->
+                <button onclick="selectIssue('bluelight')" class="clip-cyber-button bg-cyber-panel border border-cyber-purple/50 p-6 flex flex-col items-center justify-center gap-4 hover:glow-purple hover:bg-cyber-purple/10 group">
+                    <svg class="w-12 h-12 text-cyber-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <span class="font-bold text-lg">ブルーライトと眩しさ</span>
+                    <span class="text-xs text-gray-400 text-center">長時間のプレイで目が疲れる</span>
+                </button>
+
+                <!-- Button 3 -->
+                <button onclick="selectIssue('contrast')" class="clip-cyber-button bg-cyber-panel border border-cyber-purple/50 p-6 flex flex-col items-center justify-center gap-4 hover:glow-purple hover:bg-cyber-purple/10 group">
+                    <svg class="w-12 h-12 text-cyber-purple group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span class="font-bold text-lg">画面のチラつき</span>
+                    <span class="text-xs text-gray-400 text-center">コントラストが低く発見が遅れる</span>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             STEP 2: シミュレーター＆トークスクリプト画面
+        =========================================== -->
+        <section id="step2" class="hidden flex-col gap-6 w-full fade-in transition-opacity duration-500 pb-20">
+            
+            <!-- 上部: ヘッダーと戻るボタン -->
+            <div class="flex items-center justify-between border-b border-cyber-purple/30 pb-4">
+                <button onclick="resetApp()" class="text-sm text-gray-400 hover:text-cyber-green flex items-center gap-1 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    BACK
+                </button>
+                <h2 id="sim-title" class="text-lg md:text-xl font-bold text-cyber-green tracking-wider uppercase font-cyber">--</h2>
+            </div>
+
+            <!-- トグルスイッチ (Normal vs Gaming) -->
+            <div class="flex bg-cyber-panel rounded-full p-1 border border-gray-800 w-full max-w-sm mx-auto relative">
+                <div id="toggle-bg" class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-gray-700 rounded-full transition-all duration-300 ease-out z-0"></div>
+                <button onclick="switchMode('normal')" id="btn-normal" class="flex-1 py-2 text-sm font-bold z-10 transition-colors text-white">普通のメガネ</button>
+                <button onclick="switchMode('gaming')" id="btn-gaming" class="flex-1 py-2 text-sm font-bold z-10 transition-colors text-gray-400">専用フレーム</button>
+            </div>
+
+            <!-- アニメーション・ビューア (完全分離レイアウトで被り防止) -->
+            <div class="clip-cyber bg-cyber-panel border-2 border-gray-700 w-full aspect-video md:aspect-[21/9] relative overflow-hidden transition-colors duration-500 flex justify-center items-center" id="viewer-container">
+                <!-- SVGコンテナ (JSで中身を入れ替える) -->
+                <div id="svg-container" class="w-full h-full p-4 flex justify-center items-center">
+                    <!-- SVG Inject Here -->
+                </div>
+                
+                <!-- 状態ラベル -->
+                <div class="absolute top-4 left-4 bg-black/60 px-3 py-1 rounded font-cyber text-sm font-bold tracking-widest border" id="status-label">
+                    NORMAL STATE
+                </div>
+            </div>
+
+            <!-- 接客トークスクリプト (カンペ領域) -->
+            <div class="mt-2 flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-cyber-green animate-pulse"></span>
+                    <span class="font-cyber text-cyber-green text-sm tracking-widest">TALK SCRIPT</span>
+                </div>
+                <div class="clip-cyber bg-[#111118] border-l-4 border-cyber-green p-5 md:p-6 shadow-lg relative">
+                    <!-- 装飾 -->
+                    <div class="absolute top-0 right-0 w-10 h-10 border-t-2 border-r-2 border-cyber-green/30 opacity-50 m-2"></div>
+                    <p id="talk-text" class="text-base md:text-lg leading-relaxed text-gray-200">
+                        <!-- Text Inject Here -->
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // === データ定義 ===
+        const simData = {
+            pressure: {
+                title: "ヘッドセットの圧迫",
+                normal: {
+                    theme: "alert", // 赤系
+                    label: "NORMAL GLASSES",
+                    talk: "お客様、現在お使いのメガネですと、<alert>太いフレーム</alert>の厚みがヘッドセットのイヤーパッドに押し付けられてしまいます。これが<alert>こめかみの激痛</alert>の根本原因です。長時間のプレイで痛みが限界に達し、集中力が途切れてしまいますよね。",
+                    svg: `
+                        <svg viewBox="0 0 400 300" class="w-full h-full max-w-md drop-shadow-xl">
+                            <!-- 顔ベース -->
+                            <path d="M150,50 Q280,50 280,200 Q280,280 200,280" fill="none" stroke="#333" stroke-width="4"/>
+                            <!-- 耳 -->
+                            <path d="M260,140 C280,130 290,160 270,180" fill="none" stroke="#444" stroke-width="3"/>
+                            
+                            <!-- 普通の太いメガネテンプル -->
+                            <rect x="100" y="145" width="170" height="12" fill="#888" rx="2" class="transform origin-right -rotate-2"/>
+                            <rect x="80" y="130" width="20" height="40" fill="#666" rx="4"/> <!-- レンズ横 -->
+
+                            <!-- ヘッドセット イヤーパッド (圧迫して動く) -->
+                            <rect x="230" y="110" width="60" height="100" rx="30" fill="#15151e" stroke="#b026ff" stroke-width="4" class="animate-pulse"/>
+                            <path d="M260,110 L260,50 Q260,30 200,30" fill="none" stroke="#222" stroke-width="15"/>
+                            
+                            <!-- 激痛エフェクト (赤) -->
+                            <path d="M230,135 L200,145 L220,155 L190,165" fill="none" stroke="#ff2a5f" stroke-width="4" class="animate-ping" style="animation-duration: 0.8s;"/>
+                            <circle cx="230" cy="150" r="25" fill="#ff2a5f" opacity="0.3" class="animate-pulse-fast"/>
+                        </svg>
+                    `
+                },
+                gaming: {
+                    theme: "success", // 緑系
+                    label: "GAMING FRAMES",
+                    talk: "しかし、こちらの<highlight>ゲーミング専用フレーム</highlight>をご覧ください。極薄・軽量の特殊素材テンプルが、ヘッドセットとこめかみの隙間にスッと収まります。<highlight>圧迫感が完全に消失</highlight>し、何時間でも<highlight>無痛でプレイに没入</highlight>できます。",
+                    svg: `
+                        <svg viewBox="0 0 400 300" class="w-full h-full max-w-md drop-shadow-xl">
+                            <!-- 顔ベース -->
+                            <path d="M150,50 Q280,50 280,200 Q280,280 200,280" fill="none" stroke="#333" stroke-width="4"/>
+                            <!-- 耳 -->
+                            <path d="M260,140 C280,130 290,160 270,180" fill="none" stroke="#444" stroke-width="3"/>
+                            
+                            <!-- ゲーミング専用 極薄テンプル -->
+                            <rect x="100" y="148" width="170" height="3" fill="#00ffcc" class="transform origin-right -rotate-2" style="box-shadow: 0 0 10px #00ffcc;"/>
+                            <rect x="80" y="130" width="20" height="40" fill="#111" stroke="#00ffcc" stroke-width="2" rx="4"/>
+                            
+                            <!-- ヘッドセット イヤーパッド (干渉しない) -->
+                            <rect x="235" y="110" width="60" height="100" rx="30" fill="#15151e" stroke="#333" stroke-width="4"/>
+                            <path d="M265,110 L265,50 Q265,30 205,30" fill="none" stroke="#222" stroke-width="15"/>
+
+                            <!-- 快適エフェクト (緑) -->
+                            <path d="M220,130 Q240,110 260,130" fill="none" stroke="#00ffcc" stroke-width="2" opacity="0.6" class="animate-pulse"/>
+                            <path d="M220,170 Q240,190 260,170" fill="none" stroke="#00ffcc" stroke-width="2" opacity="0.6" class="animate-pulse"/>
+                        </svg>
+                    `
+                }
+            },
+            bluelight: {
+                title: "ブルーライトと眩しさ",
+                normal: {
+                    theme: "alert",
+                    label: "NORMAL LENSES",
+                    talk: "モニターからの強烈なブルーライトや眩しさを直接浴び続けると、目は急速に疲労します。<alert>目がシパシパ</alert>してくると無意識に瞬きが増え、<alert>その一瞬の視界のブレが命取り</alert>になります。",
+                    svg: `
+                        <svg viewBox="0 0 400 300" class="w-full h-full max-w-md drop-shadow-xl">
+                            <!-- モニター -->
+                            <rect x="20" y="60" width="100" height="180" rx="10" fill="#111" stroke="#222" stroke-width="4"/>
+                            <rect x="30" y="70" width="80" height="160" fill="#e0f7fa" class="animate-pulse" style="animation-duration: 2s;"/>
+                            
+                            <!-- 普通のメガネ -->
+                            <path d="M180,120 Q200,100 230,120 Q230,180 200,180 Q180,180 180,120 Z" fill="rgba(255,255,255,0.1)" stroke="#888" stroke-width="3"/>
+                            
+                            <!-- 目 (充血) -->
+                            <path d="M280,150 Q310,130 340,150 Q310,170 280,150" fill="none" stroke="#ff2a5f" stroke-width="3"/>
+                            <circle cx="310" cy="150" r="10" fill="#222"/>
+                            <circle cx="310" cy="150" r="4" fill="#ff2a5f"/>
+
+                            <!-- 有害光線 (青) 直撃 -->
+                            <path d="M120,150 L270,150" fill="none" stroke="#00bfff" stroke-width="4" stroke-dasharray="10,10" class="animate-scanline"/>
+                            <path d="M120,120 L270,140" fill="none" stroke="#00bfff" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
+                            <path d="M120,180 L270,160" fill="none" stroke="#00bfff" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
+                        </svg>
+                    `
+                },
+                gaming: {
+                    theme: "success",
+                    label: "GAMING LENSES",
+                    talk: "こちらの<highlight>専用レンズ</highlight>は、単なるブルーライトカットではありません。ゲーマー特有の眼精疲労を防ぐよう波長を調整しつつ、画面の色彩を損なわないよう設計されています。<highlight>眩しさを抑え、クリアで安定した視界</highlight>を長時間キープします。",
+                    svg: `
+                        <svg viewBox="0 0 400 300" class="w-full h-full max-w-md drop-shadow-xl">
+                            <!-- モニター -->
+                            <rect x="20" y="60" width="100" height="180" rx="10" fill="#111" stroke="#222" stroke-width="4"/>
+                            <rect x="30" y="70" width="80" height="160" fill="#e0f7fa"/>
+                            
+                            <!-- ゲーミングメガネレンズ (光を反射) -->
+                            <path d="M180,120 Q200,100 230,120 Q230,180 200,180 Q180,180 180,120 Z" fill="rgba(0, 255, 204, 0.15)" stroke="#00ffcc" stroke-width="3" style="filter: drop-shadow(0 0 10px rgba(0,255,204,0.5));"/>
+                            
+                            <!-- 目 (パッチリ・緑ハイライト) -->
+                            <path d="M280,150 Q310,120 340,150 Q310,180 280,150" fill="none" stroke="#00ffcc" stroke-width="3"/>
+                            <circle cx="310" cy="150" r="12" fill="#222"/>
+                            <circle cx="310" cy="150" r="5" fill="#00ffcc"/>
+
+                            <!-- 有害光線ブロック＆変換 -->
+                            <path d="M120,150 L180,150" fill="none" stroke="#00bfff" stroke-width="4"/>
+                            <path d="M180,150 L140,120" fill="none" stroke="#00bfff" stroke-width="2" opacity="0.5"/> <!-- 反射 -->
+                            
+                            <!-- 優しい光 -->
+                            <path d="M230,150 L270,150" fill="none" stroke="#00ffcc" stroke-width="2" stroke-dasharray="8,4" class="animate-pulse"/>
+                        </svg>
+                    `
+                }
+            },
+            contrast: {
+                title: "画面のチラつき",
+                normal: {
+                    theme: "alert",
+                    label: "NORMAL VISION",
+                    talk: "FPS等の暗いシーンや動きの激しい場面では、画面のチラつきやコントラストの低さが原因で、<alert>敵（ターゲット）の発見がコンマ数秒遅れて</alert>しまいます。このロスはプレイスキルではなく、デバイス環境の差によるものです。",
+                    svg: `
+                        <svg viewBox="0 0 400 300" class="w-full h-full max-w-md drop-shadow-xl">
+                            <!-- 画面枠 -->
+                            <rect x="50" y="50" width="300" height="200" fill="#1a1a24" stroke="#444" stroke-width="4"/>
+                            
+                            <!-- ノイズエフェクト -->
+                            <g class="animate-glitch" opacity="0.7">
+                                <rect x="50" y="80" width="300" height="10" fill="rgba(255,255,255,0.1)"/>
+                                <rect x="50" y="150" width="300" height="20" fill="rgba(255,255,255,0.05)"/>
+                                <rect x="50" y="220" width="300" height="5" fill="rgba(255,255,255,0.15)"/>
+                            </g>
+
+                            <!-- ターゲット (ぼやけている) -->
+                            <g style="filter: blur(4px);" opacity="0.6">
+                                <circle cx="200" cy="150" r="30" fill="none" stroke="#ff2a5f" stroke-width="4"/>
+                                <path d="M170,150 L230,150 M200,120 L200,180" stroke="#ff2a5f" stroke-width="4"/>
+                            </g>
+                        </svg>
+                    `
+                },
+                gaming: {
+                    theme: "success",
+                    label: "HIGH CONTRAST",
+                    talk: "この<highlight>ハイコントラストレンズ</highlight>を装着すれば、背景とターゲットの境界がくっきりと浮かび上がります。情報処理のノイズを排除し、あなたの<highlight>エイム力を物理的な視覚面から極限まで引き上げる</highlight>最強のデバイスです。",
+                    svg: `
+                        <svg viewBox="0 0 400 300" class="w-full h-full max-w-md drop-shadow-xl">
+                            <!-- 画面枠 -->
+                            <rect x="50" y="50" width="300" height="200" fill="#0a0a0c" stroke="#00ffcc" stroke-width="2"/>
+                            
+                            <!-- グリッド背景 (シャープ) -->
+                            <path d="M100,50 L100,250 M150,50 L150,250 M200,50 L200,250 M250,50 L250,250 M300,50 L300,250" stroke="#112222" stroke-width="1"/>
+                            <path d="M50,100 L350,100 M50,150 L350,150 M50,200 L350,200" stroke="#112222" stroke-width="1"/>
+
+                            <!-- ターゲット (くっきり、ロックオン) -->
+                            <g>
+                                <circle cx="200" cy="150" r="25" fill="none" stroke="#00ffcc" stroke-width="3" class="animate-pulse" style="filter: drop-shadow(0 0 5px #00ffcc);"/>
+                                <path d="M165,150 L185,150 M215,150 L235,150 M200,115 L200,135 M200,165 L200,185" stroke="#00ffcc" stroke-width="3"/>
+                                <!-- ロックオンの角 -->
+                                <path d="M170,120 L160,120 L160,130" fill="none" stroke="#00ffcc" stroke-width="2"/>
+                                <path d="M230,120 L240,120 L240,130" fill="none" stroke="#00ffcc" stroke-width="2"/>
+                                <path d="M170,180 L160,180 L160,170" fill="none" stroke="#00ffcc" stroke-width="2"/>
+                                <path d="M230,180 L240,180 L240,170" fill="none" stroke="#00ffcc" stroke-width="2"/>
+                            </g>
+                        </svg>
+                    `
+                }
+            }
+        };
+
+        // === 状態管理 ===
+        let currentIssue = '';
+        let currentMode = 'normal'; // 'normal' | 'gaming'
+
+        // === 要素の取得 ===
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const simTitle = document.getElementById('sim-title');
+        const viewerContainer = document.getElementById('viewer-container');
+        const svgContainer = document.getElementById('svg-container');
+        const statusLabel = document.getElementById('status-label');
+        const talkText = document.getElementById('talk-text');
+        
+        const btnNormal = document.getElementById('btn-normal');
+        const btnGaming = document.getElementById('btn-gaming');
+        const toggleBg = document.getElementById('toggle-bg');
+
+        // === 関数 ===
+
+        // 悩みを選択してStep2へ
+        function selectIssue(issueKey) {
+            currentIssue = issueKey;
+            currentMode = 'normal'; // 初期状態は普通のメガネ
+            
+            // UI更新
+            simTitle.textContent = simData[issueKey].title;
+            updateSimulation();
+            updateToggleUI();
+
+            // 画面切り替え
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 戻るボタン
+        function resetApp() {
+            step2.classList.add('hidden');
+            step1.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // トグルスイッチ切り替え
+        function switchMode(mode) {
+            if(currentMode === mode) return;
+            currentMode = mode;
+            updateToggleUI();
+            updateSimulation();
+        }
+
+        // トグルUIの見た目更新
+        function updateToggleUI() {
+            if(currentMode === 'normal') {
+                toggleBg.style.transform = 'translateX(0)';
+                toggleBg.className = 'absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-gray-700 rounded-full transition-all duration-300 ease-out z-0';
+                btnNormal.classList.replace('text-gray-400', 'text-white');
+                btnGaming.classList.replace('text-white', 'text-gray-400');
+            } else {
+                toggleBg.style.transform = 'translateX(100%)';
+                toggleBg.className = 'absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-cyber-green rounded-full transition-all duration-300 ease-out z-0 shadow-[0_0_15px_rgba(0,255,204,0.4)]';
+                btnNormal.classList.replace('text-white', 'text-gray-400');
+                btnGaming.classList.replace('text-gray-400', 'text-cyber-bg');
+            }
+        }
+
+        // シミュレーション（SVG＆テキスト）の描画更新
+        function updateSimulation() {
+            const data = simData[currentIssue][currentMode];
+            
+            // SVG挿入
+            svgContainer.innerHTML = data.svg;
+            
+            // ラベル更新
+            statusLabel.textContent = data.label;
+            
+            // コンテナの枠線・ラベル色をテーマに合わせて変更
+            if(data.theme === 'alert') {
+                viewerContainer.className = "clip-cyber bg-cyber-panel border-2 border-cyber-purple w-full aspect-video md:aspect-[21/9] relative overflow-hidden transition-colors duration-500 flex justify-center items-center shadow-[inset_0_0_50px_rgba(176,38,255,0.05)]";
+                statusLabel.className = "absolute top-4 left-4 bg-cyber-purple/20 text-cyber-purple border border-cyber-purple px-3 py-1 rounded font-cyber text-xs md:text-sm font-bold tracking-widest backdrop-blur-md";
+            } else {
+                viewerContainer.className = "clip-cyber bg-cyber-panel border-2 border-cyber-green w-full aspect-video md:aspect-[21/9] relative overflow-hidden transition-colors duration-500 flex justify-center items-center shadow-[inset_0_0_50px_rgba(0,255,204,0.1)] glow-green";
+                statusLabel.className = "absolute top-4 left-4 bg-cyber-green/20 text-cyber-green border border-cyber-green px-3 py-1 rounded font-cyber text-xs md:text-sm font-bold tracking-widest backdrop-blur-md";
+            }
+
+            // トークスクリプトのパース（カスタムタグをTailwindクラス付きのHTMLに変換）
+            let parsedTalk = data.talk
+                .replace(/<alert>(.*?)<\/alert>/g, '<span class="text-cyber-alert font-bold bg-cyber-alert/10 px-1 rounded">$1</span>')
+                .replace(/<highlight>(.*?)<\/highlight>/g, '<strong class="text-cyber-green font-bold bg-cyber-green/10 px-1 rounded shadow-[0_0_8px_rgba(0,255,204,0.3)]">$1</strong>');
+            
+            // フェードイン効果のため一度透明にしてからテキストを入れる
+            talkText.style.opacity = 0;
+            setTimeout(() => {
+                talkText.innerHTML = parsedTalk;
+                talkText.style.opacity = 1;
+                talkText.style.transition = "opacity 0.5s ease-in";
+            }, 50);
+        }
+
+    </script>
+</body>
+</html>
