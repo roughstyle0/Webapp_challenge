@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gaming Glasses Performance Simulator</title>
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              void: "#07070d",
+              panel: "#10101a",
+              purpleNeon: "#a855f7",
+              greenEnergy: "#39ff88",
+              dangerRed: "#ff315a",
+              cyanBeam: "#67e8f9"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --void: #07070d;
+      --panel: #10101a;
+      --purple: #a855f7;
+      --green: #39ff88;
+      --cyan: #67e8f9;
+      --red: #ff315a;
+      --ink: #e8ecff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family:
+        "Rajdhani",
+        "Noto Sans JP",
+        "Hiragino Kaku Gothic ProN",
+        system-ui,
+        sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(168, 85, 247, 0.24), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(57, 255, 136, 0.18), transparent 30rem),
+        linear-gradient(135deg, #05050a 0%, #0b0b14 48%, #07070d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 88%);
+    }
+
+    .cyber-shell {
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)),
+        rgba(10, 10, 18, 0.84);
+      box-shadow:
+        0 0 0 1px rgba(57, 255, 136, 0.08) inset,
+        0 24px 80px rgba(0,0,0,0.42),
+        0 0 36px rgba(168, 85, 247, 0.14);
+      backdrop-filter: blur(16px);
+    }
+
+    .cyber-cut {
+      clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+    }
+
+    .section-title {
+      letter-spacing: 0.16em;
+      color: rgba(232, 236, 255, 0.72);
+    }
+
+    .glow-text {
+      text-shadow:
+        0 0 14px rgba(168, 85, 247, 0.72),
+        0 0 28px rgba(57, 255, 136, 0.22);
+    }
+
+    .stress-btn {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid rgba(232, 236, 255, 0.12);
+      background:
+        linear-gradient(135deg, rgba(168, 85, 247, 0.12), transparent 44%),
+        linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025));
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .stress-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(57, 255, 136, 0.14), transparent);
+      transform: translateX(-110%);
+      transition: transform 420ms ease;
+    }
+
+    .stress-btn:hover,
+    .stress-btn:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(57, 255, 136, 0.72);
+      outline: none;
+    }
+
+    .stress-btn:hover::after,
+    .stress-btn:focus-visible::after {
+      transform: translateX(110%);
+    }
+
+    .mode-btn {
+      border: 1px solid rgba(232, 236, 255, 0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgba(232, 236, 255, 0.74);
+      transition: 180ms ease;
+    }
+
+    .mode-btn.is-active-normal {
+      border-color: rgba(255, 49, 90, 0.72);
+      color: white;
+      box-shadow: 0 0 28px rgba(255, 49, 90, 0.18);
+      background: linear-gradient(135deg, rgba(255,49,90,0.24), rgba(255,255,255,0.04));
+    }
+
+    .mode-btn.is-active-gaming {
+      border-color: rgba(57, 255, 136, 0.78);
+      color: white;
+      box-shadow: 0 0 30px rgba(57, 255, 136, 0.18);
+      background: linear-gradient(135deg, rgba(57,255,136,0.20), rgba(168,85,247,0.12));
+    }
+
+    .sim-stage {
+      position: relative;
+      min-height: 330px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(168, 85, 247, 0.32);
+      background:
+        radial-gradient(circle at center, rgba(168, 85, 247, 0.18), transparent 15rem),
+        linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    }
+
+    .sim-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, transparent 0 48%, rgba(57,255,136,0.15) 50%, transparent 52% 100%),
+        repeating-linear-gradient(0deg, transparent 0 10px, rgba(255,255,255,0.035) 11px, transparent 12px);
+      opacity: 0.42;
+    }
+
+    .sim-graphic {
+      position: relative;
+      width: min(100%, 370px);
+      height: 280px;
+      z-index: 1;
+    }
+
+    .graphic-piece {
+      position: absolute;
+    }
+
+    .metric-track {
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .metric-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 520ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    .talk-card {
+      border-left: 3px solid rgba(57, 255, 136, 0.82);
+      background:
+        linear-gradient(90deg, rgba(57,255,136,0.10), transparent 36%),
+        rgba(255,255,255,0.04);
+    }
+
+    mark {
+      padding: 0.08em 0.32em;
+      border-radius: 0.45em;
+      color: #06110b;
+      background: linear-gradient(90deg, var(--green), #b8ffd2);
+      font-weight: 900;
+    }
+
+    .toast {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: 200ms ease;
+    }
+
+    .toast.is-show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Pressure simulation */
+    .pressure-head {
+      left: 164px;
+      top: 58px;
+      width: 112px;
+      height: 150px;
+      border-radius: 48% 42% 44% 48%;
+      background: linear-gradient(145deg, rgba(232,236,255,0.18), rgba(232,236,255,0.04));
+      border: 1px solid rgba(232,236,255,0.22);
+      box-shadow: inset 0 0 28px rgba(255,255,255,0.04);
+    }
+
+    .pressure-eye {
+      left: 206px;
+      top: 106px;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--cyan);
+      box-shadow: 0 0 18px rgba(103,232,249,0.85);
+    }
+
+    .pressure-nose {
+      left: 268px;
+      top: 112px;
+      width: 28px;
+      height: 36px;
+      border-radius: 50%;
+      border-right: 2px solid rgba(232,236,255,0.35);
+    }
+
+    .headset-band {
+      left: 116px;
+      top: 22px;
+      width: 160px;
+      height: 118px;
+      border-top: 14px solid rgba(168,85,247,0.66);
+      border-left: 8px solid rgba(168,85,247,0.46);
+      border-right: 8px solid rgba(168,85,247,0.46);
+      border-radius: 120px 120px 26px 26px;
+      filter: drop-shadow(0 0 18px rgba(168,85,247,0.42));
+    }
+
+    .ear-pad {
+      left: 120px;
+      top: 98px;
+      width: 68px;
+      height: 92px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #1e1e30, #090912);
+      border: 1px solid rgba(168,85,247,0.54);
+      box-shadow: inset 0 0 24px rgba(168,85,247,0.16), 0 0 24px rgba(168,85,247,0.16);
+    }
+
+    .lens-side {
+      left: 198px;
+      top: 102px;
+      width: 62px;
+      height: 36px;
+      border: 2px solid rgba(103,232,249,0.72);
+      border-radius: 16px;
+      box-shadow: 0 0 14px rgba(103,232,249,0.38);
+    }
+
+    .temple {
+      left: 142px;
+      top: 124px;
+      width: 82px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #d8d8df, #70707f);
+      box-shadow: 0 0 18px rgba(255,255,255,0.22);
+      transition: height 420ms ease, top 420ms ease, background 420ms ease, box-shadow 420ms ease;
+    }
+
+    .mode-gaming .temple {
+      top: 132px;
+      height: 5px;
+      background: linear-gradient(90deg, var(--green), rgba(57,255,136,0.35));
+      box-shadow: 0 0 20px rgba(57,255,136,0.68);
+    }
+
+    .pain-bolt {
+      background: var(--red);
+      filter: drop-shadow(0 0 10px rgba(255,49,90,0.9));
+      clip-path: polygon(48% 0, 100% 0, 62% 38%, 100% 38%, 35% 100%, 48% 54%, 0 54%);
+      animation: painPulse 820ms infinite steps(2);
+    }
+
+    .bolt-a { left: 104px; top: 100px; width: 30px; height: 58px; }
+    .bolt-b { left: 164px; top: 82px; width: 22px; height: 44px; transform: rotate(22deg); }
+    .bolt-c { left: 126px; top: 180px; width: 22px; height: 42px; transform: rotate(-18deg); }
+
+    .mode-gaming .pain-bolt {
+      opacity: 0;
+      animation: none;
+    }
+
+    .relief-ring {
+      left: 104px;
+      top: 80px;
+      width: 106px;
+      height: 126px;
+      border-radius: 999px;
+      border: 2px solid rgba(57,255,136,0.0);
+      opacity: 0;
+      transition: 500ms ease;
+    }
+
+    .mode-gaming .relief-ring {
+      opacity: 1;
+      border-color: rgba(57,255,136,0.65);
+      box-shadow: 0 0 32px rgba(57,255,136,0.42), inset 0 0 24px rgba(57,255,136,0.10);
+      animation: reliefPulse 1400ms infinite ease-in-out;
+    }
+
+    @keyframes painPulse {
+      0%, 100% { opacity: 0.35; transform: scale(0.92); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    @keyframes reliefPulse {
+      0%, 100% { transform: scale(0.96); opacity: 0.58; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    /* Blue light simulation */
+    .monitor {
+      left: 8px;
+      top: 52px;
+      width: 138px;
+      height: 112px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 72% 30%, rgba(103,232,249,0.75), transparent 34%),
+        linear-gradient(145deg, #102034, #050910);
+      border: 1px solid rgba(103,232,249,0.45);
+      box-shadow: 0 0 28px rgba(103,232,249,0.24);
+    }
+
+    .beam {
+      left: 116px;
+      width: 190px;
+      height: 24px;
+      background: linear-gradient(90deg, rgba(103,232,249,0.75), rgba(103,232,249,0.02));
+      clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 80%);
+      filter: blur(0.5px);
+      animation: beamHit 950ms infinite alternate ease-in-out;
+    }
+
+    .beam-one { top: 78px; transform: rotate(3deg); }
+    .beam-two { top: 116px; transform: rotate(-5deg); opacity: 0.82; }
+    .beam-three { top: 150px; transform: rotate(8deg); opacity: 0.52; }
+
+    .blue-face {
+      left: 256px;
+      top: 72px;
+      width: 86px;
+      height: 126px;
+      border-radius: 42% 46% 46% 42%;
+      background: linear-gradient(145deg, rgba(232,236,255,0.16), rgba(232,236,255,0.04));
+      border: 1px solid rgba(232,236,255,0.20);
+    }
+
+    .blue-eye {
+      left: 274px;
+      top: 118px;
+      width: 42px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid rgba(103,232,249,0.76);
+      box-shadow: 0 0 18px rgba(103,232,249,0.5);
+    }
+
+    .eye-sting {
+      left: 268px;
+      top: 104px;
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255,49,90,0.44), transparent 62%);
+      animation: sting 780ms infinite alternate;
+    }
+
+    .lens-filter {
+      left: 242px;
+      top: 96px;
+      width: 94px;
+      height: 70px;
+      border-radius: 22px;
+      border: 2px solid rgba(57,255,136,0);
+      opacity: 0;
+      transition: 420ms ease;
+    }
+
+    .mode-gaming .beam {
+      background: linear-gradient(90deg, rgba(103,232,249,0.18), rgba(57,255,136,0.04));
+      animation: none;
+      opacity: 0.24;
+    }
+
+    .mode-gaming .eye-sting {
+      opacity: 0;
+      animation: none;
+    }
+
+    .mode-gaming .lens-filter {
+      opacity: 1;
+      border-color: rgba(57,255,136,0.78);
+      background: radial-gradient(circle, rgba(57,255,136,0.20), rgba(57,255,136,0.04));
+      box-shadow: 0 0 34px rgba(57,255,136,0.48);
+      animation: filterGlow 1500ms infinite ease-in-out;
+    }
+
+    @keyframes beamHit {
+      from { opacity: 0.56; transform: translateX(-4px) scaleX(0.96); }
+      to { opacity: 1; transform: translateX(4px) scaleX(1.04); }
+    }
+
+    @keyframes sting {
+      from { opacity: 0.25; transform: scale(0.9); }
+      to { opacity: 0.78; transform: scale(1.08); }
+    }
+
+    @keyframes filterGlow {
+      0%, 100% { transform: scale(0.98); opacity: 0.78; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+
+    /* Flicker simulation */
+    .game-screen {
+      left: 34px;
+      top: 42px;
+      width: 300px;
+      height: 188px;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(168,85,247,0.42);
+      background:
+        linear-gradient(120deg, rgba(103,232,249,0.08), transparent 45%),
+        radial-gradient(circle at 70% 35%, rgba(168,85,247,0.14), transparent 30%),
+        #080913;
+      box-shadow: 0 0 34px rgba(168,85,247,0.16);
+      transition: 420ms ease;
+    }
+
+    .game-screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,0.04) 9px, transparent 10px),
+        linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      animation: flickerNoise 480ms infinite steps(2);
+      opacity: 0.9;
+    }
+
+    .enemy-shape {
+      left: 196px;
+      top: 82px;
+      width: 38px;
+      height: 70px;
+      border-radius: 20px 20px 10px 10px;
+      background: rgba(232,236,255,0.14);
+      filter: blur(0.4px);
+      transition: 420ms ease;
+    }
+
+    .enemy-shape::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: -19px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: inherit;
+    }
+
+    .reticle {
+      left: 176px;
+      top: 92px;
+      width: 80px;
+      height: 80px;
+      border-radius: 999px;
+      border: 1px solid rgba(232,236,255,0.18);
+      transition: 420ms ease;
+    }
+
+    .reticle::before,
+    .reticle::after {
+      content: "";
+      position: absolute;
+      background: rgba(232,236,255,0.22);
+      transition: 420ms ease;
+    }
+
+    .reticle::before {
+      left: 38px;
+      top: 8px;
+      width: 2px;
+      height: 64px;
+    }
+
+    .reticle::after {
+      left: 8px;
+      top: 38px;
+      width: 64px;
+      height: 2px;
+    }
+
+    .contrast-wave {
+      left: 34px;
+      top: 42px;
+      width: 300px;
+      height: 188px;
+      border-radius: 22px;
+      border: 2px solid rgba(57,255,136,0);
+      opacity: 0;
+      transition: 420ms ease;
+    }
+
+    .mode-gaming .game-screen {
+      border-color: rgba(57,255,136,0.72);
+      background:
+        radial-gradient(circle at 70% 35%, rgba(57,255,136,0.26), transparent 24%),
+        linear-gradient(145deg, #07150d, #05080b);
+      box-shadow: 0 0 42px rgba(57,255,136,0.20);
+    }
+
+    .mode-gaming .game-screen::before {
+      animation: none;
+      opacity: 0.18;
+    }
+
+    .mode-gaming .enemy-shape {
+      background: rgba(57,255,136,0.82);
+      filter: none;
+      box-shadow: 0 0 18px rgba(57,255,136,0.56);
+    }
+
+    .mode-gaming .reticle {
+      border-color: rgba(57,255,136,0.92);
+      box-shadow: 0 0 20px rgba(57,255,136,0.36);
+    }
+
+    .mode-gaming .reticle::before,
+    .mode-gaming .reticle::after {
+      background: rgba(57,255,136,0.94);
+    }
+
+    .mode-gaming .contrast-wave {
+      opacity: 1;
+      border-color: rgba(57,255,136,0.72);
+      box-shadow: inset 0 0 34px rgba(57,255,136,0.10), 0 0 28px rgba(57,255,136,0.24);
+      animation: contrastPulse 1300ms infinite ease-in-out;
+    }
+
+    @keyframes flickerNoise {
+      0%, 100% { opacity: 0.28; transform: translateY(0); }
+      50% { opacity: 0.92; transform: translateY(2px); }
+    }
+
+    @keyframes contrastPulse {
+      0%, 100% { transform: scale(0.985); }
+      50% { transform: scale(1.015); }
+    }
+
+    @media (max-width: 430px) {
+      .sim-stage {
+        min-height: 300px;
+      }
+
+      .sim-graphic {
+        transform: scale(0.88);
+        transform-origin: center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="flex flex-col gap-4 py-4 sm:py-7">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full border border-purpleNeon/50 bg-purpleNeon/10 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-purple-100">
+          EYE GEAR OPS
+        </span>
+        <span class="rounded-full border border-greenEnergy/40 bg-greenEnergy/10 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-green-100">
+          STAFF SIMULATOR
+        </span>
+      </div>
+
+      <div class="grid gap-3">
+        <h1 class="glow-text text-3xl font-black leading-tight sm:text-5xl">
+          ヘッドセットの激痛から解放。<br class="hidden sm:block" />
+          ゲーミング専用メガネ提案シミュレーター
+        </h1>
+        <p class="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
+          新人スタッフが、ゲーマーの「痛み」「目の疲れ」「発見遅れ」を一瞬で可視化し、
+          そのまま接客で読めるトークまで引き出せるモバイルファーストWebアプリです。
+        </p>
+      </div>
+    </header>
+
+    <section id="stressPanel" class="cyber-shell cyber-cut grid gap-4 p-4 sm:p-6">
+      <div class="grid gap-2">
+        <p class="section-title text-xs font-black uppercase">Step 01 / Select customer stress</p>
+        <h2 class="text-xl font-black sm:text-2xl">お客様の最大ストレスを1つ選択</h2>
+        <p class="text-sm leading-6 text-slate-400">
+          まずは悩みだけを選びます。選択後に、比較シミュレーションと接客カンペが展開されます。
+        </p>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-3">
+        <button class="stress-btn cyber-cut grid gap-2 p-4 text-left" data-stress="pressure" type="button">
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-dangerRed">Pain Point 01</span>
+          <span class="text-lg font-black">ヘッドセットの圧迫</span>
+          <span class="text-sm leading-6 text-slate-300">こめかみが痛くて集中できない</span>
+        </button>
+
+        <button class="stress-btn cyber-cut grid gap-2 p-4 text-left" data-stress="light" type="button">
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-cyanBeam">Pain Point 02</span>
+          <span class="text-lg font-black">ブルーライトと眩しさ</span>
+          <span class="text-sm leading-6 text-slate-300">長時間のプレイで目がシパシパする</span>
+        </button>
+
+        <button class="stress-btn cyber-cut grid gap-2 p-4 text-left" data-stress="flicker" type="button">
+          <span class="text-xs font-black uppercase tracking-[0.18em] text-greenEnergy">Pain Point 03</span>
+          <span class="text-lg font-black">画面のチラつき</span>
+          <span class="text-sm leading-6 text-slate-300">コントラストが低く、敵の発見が遅れる</span>
+        </button>
+      </div>
+
+      <div id="errorBox" class="hidden rounded-2xl border border-dangerRed/50 bg-dangerRed/10 p-3 text-sm text-red-100" role="alert"></div>
+    </section>
+
+    <section id="simulator" class="hidden grid gap-4 pb-10">
+      <div class="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+        <section class="cyber-shell cyber-cut grid gap-4 p-4 sm:p-6">
+          <div class="grid gap-3">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div class="grid gap-1">
+                <p class="section-title text-xs font-black uppercase">Step 02 / Visual simulation</p>
+                <h2 id="scenarioTitle" class="text-2xl font-black"></h2>
+                <p id="scenarioLead" class="text-sm leading-6 text-slate-400"></p>
+              </div>
+              <button id="resetBtn" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-purpleNeon/70 sm:w-auto" type="button">
+                悩みを選び直す
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 rounded-[1.5rem] border border-white/10 bg-black/20 p-2">
+              <button id="normalBtn" class="mode-btn rounded-2xl px-3 py-3 text-sm font-black" type="button">
+                普通のメガネ
+              </button>
+              <button id="gamingBtn" class="mode-btn rounded-2xl px-3 py-3 text-sm font-black" type="button">
+                ゲーミング専用
+              </button>
+            </div>
+          </div>
+
+          <div id="visualStage" class="sim-stage cyber-cut"></div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Stress</span>
+                <span id="stressValue" class="text-lg font-black"></span>
+              </div>
+              <div class="metric-track mt-3 h-2 rounded-full">
+                <div id="stressBar" class="metric-bar bg-dangerRed"></div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Eye Load</span>
+                <span id="loadValue" class="text-lg font-black"></span>
+              </div>
+              <div class="metric-track mt-3 h-2 rounded-full">
+                <div id="loadBar" class="metric-bar bg-cyanBeam"></div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Performance</span>
+                <span id="performanceValue" class="text-lg font-black"></span>
+              </div>
+              <div class="metric-track mt-3 h-2 rounded-full">
+                <div id="performanceBar" class="metric-bar bg-greenEnergy"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="modeInsight" class="rounded-3xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-slate-300"></div>
+        </section>
+
+        <aside class="cyber-shell cyber-cut grid content-start gap-4 p-4 sm:p-6">
+          <div class="grid gap-2">
+            <p class="section-title text-xs font-black uppercase">Step 03 / Talk script</p>
+            <h2 class="text-2xl font-black">接客トーク・カンペ</h2>
+            <p class="text-sm leading-6 text-slate-400">
+              新人スタッフがそのまま読み上げられるよう、共感 → 理由 → クロージングの順に表示します。
+            </p>
+          </div>
+
+          <div id="talkList" class="grid gap-3"></div>
+
+          <div class="grid gap-2 sm:grid-cols-2">
+            <button id="nextTalkBtn" class="rounded-2xl bg-greenEnergy px-4 py-3 text-sm font-black text-black transition hover:brightness-110" type="button">
+              次のトークを表示
+            </button>
+            <button id="copyTalkBtn" class="rounded-2xl border border-purpleNeon/60 bg-purpleNeon/10 px-4 py-3 text-sm font-black text-purple-100 transition hover:bg-purpleNeon/20" type="button">
+              表示中のカンペをコピー
+            </button>
+          </div>
+
+          <div class="rounded-3xl border border-greenEnergy/30 bg-greenEnergy/10 p-4">
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-green-200">Staff closing key</p>
+            <p id="closingKey" class="mt-2 text-sm font-bold leading-7 text-green-50"></p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-greenEnergy/40 bg-black/85 p-4 text-sm font-bold text-green-50 shadow-2xl sm:left-auto sm:w-[360px]"></div>
+
+  <script>
+    const scenarios = {
+      pressure: {
+        title: "こめかみ圧迫リリース",
+        lead: "厚いテンプルがヘッドセットに挟まる痛みを、極薄フレームで物理的に逃がす提案です。",
+        normalInsight: "普通のメガネはテンプルが厚く、イヤーパッドと頭部の間で圧点になりやすい状態です。痛みが続くと、索敵や判断よりも不快感に意識が奪われます。",
+        gamingInsight: "ゲーミング専用フレームはテンプルを極薄にし、イヤーパッドとの干渉を抑えます。痛みの原因を精神論ではなく、構造で取り除く提案ができます。",
+        closing: "“痛みを我慢する道具”ではなく、“集中を守るゲーミングデバイス”として提案するのが勝ち筋です。",
+        stats: {
+          normal: { stress: 94, load: 58, performance: 38 },
+          gaming: { stress: 8, load: 28, performance: 91 }
+        },
+        scripts: [
+          {
+            title: "1. まず痛みを言語化する",
+            body: "「ヘッドセットを着けた瞬間にこめかみだけ痛いなら、締め付けの問題だけではなく、<mark>メガネのつるが圧点になっている</mark>可能性が高いです。」"
+          },
+          {
+            title: "2. 構造で解決できると伝える",
+            body: "「このゲーミング専用フレームはテンプルが極薄に設計されているため、ヘッドセットと干渉しづらく、こめかみに刺さるような圧迫を減らせます。」"
+          },
+          {
+            title: "3. ゲーマーの価値に置き換える",
+            body: "「これは単なるメガネではなく、<mark>集中を削る痛みを消して、プレイの質を上げるためのデバイス</mark>です。長時間のランクや大会練習ほど差が出ます。」"
+          }
+        ]
+      },
+      light: {
+        title: "ブルーライト＆眩しさガード",
+        lead: "画面から刺さる青白い光を抑え、長時間プレイ時の目の負担を説明しやすくする提案です。",
+        normalInsight: "普通のレンズでは眩しさがそのまま目に入り、まばたきの増加や目の乾きにつながります。終盤ほど画面を見る力が落ち、エイムの安定感にも影響します。",
+        gamingInsight: "ゲーミング専用レンズは青白い光と眩しさをコントロールし、視界のノイズを抑えます。目の疲れを減らし、長時間でも画面を追いやすい状態へ導きます。",
+        closing: "“目が疲れにくい”だけでなく、“終盤までエイムを落としにくい”と翻訳して伝えるのがポイントです。",
+        stats: {
+          normal: { stress: 72, load: 91, performance: 46 },
+          gaming: { stress: 16, load: 18, performance: 88 }
+        },
+        scripts: [
+          {
+            title: "1. 目の疲れをプレイ低下に接続する",
+            body: "「長時間プレイで目がシパシパする場合、疲れているのは気合いではなく、<mark>画面からの光を処理し続けている目</mark>です。」"
+          },
+          {
+            title: "2. レンズの役割を具体化する",
+            body: "「ゲーミング専用レンズは、ブルーライトや眩しさを抑えて、画面を見るときの刺激をやわらげます。結果として、終盤でも視線を置きやすくなります。」"
+          },
+          {
+            title: "3. エイム維持のデバイスとして提案する",
+            body: "「このレンズは“疲れ対策”だけではありません。<mark>エイムを支える視界を長く保つための装備</mark>として考えていただくと、かなり相性が良いです。」"
+          }
+        ]
+      },
+      flicker: {
+        title: "コントラスト強化・敵発見サポート",
+        lead: "チラつきや低コントラストで敵を見失う悩みに、視界のクリアさと発見スピードで提案します。",
+        normalInsight: "普通の視界では暗所とハイライトの差が曖昧になり、敵の輪郭が背景に沈みます。見えた瞬間が遅れるほど、撃ち合いの初動で不利になります。",
+        gamingInsight: "ゲーミング専用レンズは眩しさを抑えつつコントラストを整え、輪郭の認識をサポートします。敵影を探す負担が軽くなり、初弾までの迷いを減らします。",
+        closing: "“よく見える”では弱いので、“敵の発見が早くなる視界設計”として表現します。",
+        stats: {
+          normal: { stress: 68, load: 74, performance: 41 },
+          gaming: { stress: 14, load: 24, performance: 93 }
+        },
+        scripts: [
+          {
+            title: "1. 発見遅れを勝敗に直結させる",
+            body: "「敵が背景に溶けて一瞬見つけにくいと、その一瞬で撃ち負けます。つまりこれは視力だけでなく、<mark>反応速度に関わる視界の問題</mark>です。」"
+          },
+          {
+            title: "2. コントラスト設計を説明する",
+            body: "「ゲーミング専用レンズは、眩しさを抑えながら画面のコントラストを整えることで、敵の輪郭や照準の位置を追いやすくします。」"
+          },
+          {
+            title: "3. デバイス投資として背中を押す",
+            body: "「マウスやモニターにこだわる方ほど、視界にも投資する価値があります。<mark>見る力を安定させることは、エイム環境を整えること</mark>です。」"
+          }
+        ]
+      }
+    };
+
+    const visuals = {
+      pressure: `
+        <div class="sim-graphic pressure-visual">
+          <div class="graphic-piece headset-band"></div>
+          <div class="graphic-piece pressure-head"></div>
+          <div class="graphic-piece pressure-eye"></div>
+          <div class="graphic-piece pressure-nose"></div>
+          <div class="graphic-piece ear-pad"></div>
+          <div class="graphic-piece lens-side"></div>
+          <div class="graphic-piece temple"></div>
+          <div class="graphic-piece pain-bolt bolt-a"></div>
+          <div class="graphic-piece pain-bolt bolt-b"></div>
+          <div class="graphic-piece pain-bolt bolt-c"></div>
+          <div class="graphic-piece relief-ring"></div>
+        </div>
+      `,
+      light: `
+        <div class="sim-graphic light-visual">
+          <div class="graphic-piece monitor"></div>
+          <div class="graphic-piece beam beam-one"></div>
+          <div class="graphic-piece beam beam-two"></div>
+          <div class="graphic-piece beam beam-three"></div>
+          <div class="graphic-piece blue-face"></div>
+          <div class="graphic-piece eye-sting"></div>
+          <div class="graphic-piece blue-eye"></div>
+          <div class="graphic-piece lens-filter"></div>
+        </div>
+      `,
+      flicker: `
+        <div class="sim-graphic flicker-visual">
+          <div class="graphic-piece game-screen"></div>
+          <div class="graphic-piece enemy-shape"></div>
+          <div class="graphic-piece reticle"></div>
+          <div class="graphic-piece contrast-wave"></div>
+        </div>
+      `
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    const state = {
+      stress: null,
+      mode: "normal",
+      talkStep: 1
+    };
+
+    const els = {
+      stressPanel: $("#stressPanel"),
+      simulator: $("#simulator"),
+      errorBox: $("#errorBox"),
+      title: $("#scenarioTitle"),
+      lead: $("#scenarioLead"),
+      normalBtn: $("#normalBtn"),
+      gamingBtn: $("#gamingBtn"),
+      visualStage: $("#visualStage"),
+      stressValue: $("#stressValue"),
+      loadValue: $("#loadValue"),
+      performanceValue: $("#performanceValue"),
+      stressBar: $("#stressBar"),
+      loadBar: $("#loadBar"),
+      performanceBar: $("#performanceBar"),
+      insight: $("#modeInsight"),
+      talkList: $("#talkList"),
+      nextTalkBtn: $("#nextTalkBtn"),
+      copyTalkBtn: $("#copyTalkBtn"),
+      resetBtn: $("#resetBtn"),
+      closingKey: $("#closingKey"),
+      toast: $("#toast")
+    };
+
+    function showError(message) {
+      els.errorBox.textContent = message;
+      els.errorBox.classList.remove("hidden");
+    }
+
+    function hideError() {
+      els.errorBox.textContent = "";
+      els.errorBox.classList.add("hidden");
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("is-show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        els.toast.classList.remove("is-show");
+      }, 2200);
+    }
+
+    function selectStress(key) {
+      if (!scenarios[key]) {
+        showError("選択データを読み込めませんでした。別の悩みを選択してください。");
+        return;
+      }
+
+      hideError();
+      state.stress = key;
+      state.mode = "normal";
+      state.talkStep = 1;
+
+      els.simulator.classList.remove("hidden");
+      render();
+      els.simulator.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function setMode(mode) {
+      if (!["normal", "gaming"].includes(mode)) {
+        showToast("表示モードを切り替えられませんでした。");
+        return;
+      }
+
+      state.mode = mode;
+      render();
+    }
+
+    function render() {
+      const scenario = scenarios[state.stress];
+      if (!scenario) {
+        showError("シミュレーションデータが見つかりませんでした。");
+        return;
+      }
+
+      const mode = state.mode;
+      const stats = scenario.stats[mode];
+
+      els.title.textContent = scenario.title;
+      els.lead.textContent = scenario.lead;
+      els.closingKey.textContent = scenario.closing;
+
+      els.normalBtn.classList.toggle("is-active-normal", mode === "normal");
+      els.gamingBtn.classList.toggle("is-active-gaming", mode === "gaming");
+
+      els.visualStage.className = `sim-stage cyber-cut mode-${mode}`;
+      els.visualStage.innerHTML = visuals[state.stress] || "";
+
+      els.stressValue.textContent = `${stats.stress}%`;
+      els.loadValue.textContent = `${stats.load}%`;
+      els.performanceValue.textContent = `${stats.performance}%`;
+
+      els.stressBar.style.width = `${stats.stress}%`;
+      els.loadBar.style.width = `${stats.load}%`;
+      els.performanceBar.style.width = `${stats.performance}%`;
+
+      els.insight.innerHTML = mode === "normal"
+        ? `<span class="font-black text-dangerRed">普通のメガネ：</span>${scenario.normalInsight}`
+        : `<span class="font-black text-greenEnergy">ゲーミング専用：</span>${scenario.gamingInsight}`;
+
+      renderTalk();
+    }
+
+    function renderTalk() {
+      const scenario = scenarios[state.stress];
+      const visibleScripts = scenario.scripts.slice(0, state.talkStep);
+
+      els.talkList.innerHTML = visibleScripts.map((script) => `
+        <article class="talk-card rounded-3xl p-4">
+          <h3 class="text-sm font-black text-green-100">${script.title}</h3>
+          <p class="mt-2 text-sm leading-7 text-slate-100">${script.body}</p>
+        </article>
+      `).join("");
+
+      const isComplete = state.talkStep >= scenario.scripts.length;
+      els.nextTalkBtn.textContent = isComplete ? "全トーク表示済み" : "次のトークを表示";
+      els.nextTalkBtn.disabled = isComplete;
+      els.nextTalkBtn.classList.toggle("opacity-45", isComplete);
+      els.nextTalkBtn.classList.toggle("cursor-not-allowed", isComplete);
+    }
+
+    function showNextTalk() {
+      const scenario = scenarios[state.stress];
+      if (!scenario) {
+        showToast("先にお客様の悩みを選択してください。");
+        return;
+      }
+
+      state.talkStep = Math.min(state.talkStep + 1, scenario.scripts.length);
+      renderTalk();
+    }
+
+    async function copyTalk() {
+      const scenario = scenarios[state.stress];
+      if (!scenario) {
+        showToast("コピーするカンペがありません。");
+        return;
+      }
+
+      const text = scenario.scripts
+        .slice(0, state.talkStep)
+        .map((script) => `${script.title}\n${script.body.replace(/<[^>]+>/g, "")}`)
+        .join("\n\n");
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+        showToast("表示中の接客カンペをコピーしました。");
+      } catch (error) {
+        showToast("コピーできませんでした。表示中の文面を手動で選択してください。");
+      }
+    }
+
+    function resetSelection() {
+      state.stress = null;
+      state.mode = "normal";
+      state.talkStep = 1;
+      els.simulator.classList.add("hidden");
+      els.stressPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    $$(".stress-btn").forEach((button) => {
+      button.addEventListener("click", () => selectStress(button.dataset.stress));
+    });
+
+    els.normalBtn.addEventListener("click", () => setMode("normal"));
+    els.gamingBtn.addEventListener("click", () => setMode("gaming"));
+    els.nextTalkBtn.addEventListener("click", showNextTalk);
+    els.copyTalkBtn.addEventListener("click", copyTalk);
+    els.resetBtn.addEventListener("click", resetSelection);
+  </script>
+</body>
+</html>
