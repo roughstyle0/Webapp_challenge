@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遮光レンズ提案シミュレーター | Staff Assist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sage-50': '#F5F7F5',  /* オフホワイト（背景） */
+                        'sage-100': '#E8EFEA', /* 薄いセージ（エリア背景） */
+                        'sage-300': '#A3B8AD', /* 中間のセージ（ボーダー） */
+                        'sage-600': '#5A7A6B', /* 濃いセージ（メインカラー・文字） */
+                        'sage-800': '#3D5449', /* 最暗のセージ（見出し） */
+                        'amber-soft': '#F3E8D6', /* アンバー背景 */
+                        'amber-accent': '#C08A53', /* アンバーアクセント */
+                        'amber-text': '#8B5A2B', /* アンバー文字 */
+                        'glare-blue': '#E0F2FE', /* 眩しい青白い光 */
+                    },
+                    fontFamily: {
+                        sans: ['"Hiragino Kaku Gothic ProN"', '"Noto Sans JP"', 'Meiryo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F5F7F5;
+            color: #3D5449;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* テンプレ的な影を排除し、ボタニカル/医療的なフラットデザインを徹底 */
+        .panel {
+            background-color: #ffffff;
+            border: 1px solid #A3B8AD;
+            border-radius: 16px;
+        }
+        
+        .panel-sage {
+            background-color: #E8EFEA;
+            border-radius: 16px;
+        }
+
+        /* --- 光のシミュレーション表現 --- */
+        .sim-container {
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* オフィスLEDの眩しさ（裸眼） */
+        .glare-led {
+            background: radial-gradient(circle at top, #ffffff 0%, #E0F2FE 30%, transparent 80%);
+            box-shadow: inset 0 20px 50px rgba(224, 242, 254, 0.8);
+        }
+        
+        /* 白い紙の反射（裸眼） */
+        .glare-paper {
+            box-shadow: 0 0 40px 20px rgba(255, 255, 255, 0.9), 0 0 80px rgba(224, 242, 254, 0.8);
+            filter: blur(2px);
+        }
+
+        /* 普通のサングラス（全体が暗くなるだけ） */
+        .sunglass-filter {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            transition: background-color 0.5s ease;
+            z-index: 10;
+        }
+
+        /* 遮光レンズ（青白い光を吸収し、アンバーの安心感） */
+        .medical-filter {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(192, 138, 83, 0.15); /* アンバー系のフィルター */
+            mix-blend-mode: multiply;
+            pointer-events: none;
+            transition: background-color 0.5s ease;
+            z-index: 10;
+        }
+
+        /* 遮光レンズ時の輪郭強調 */
+        .medical-contrast {
+            filter: contrast(1.1) brightness(0.95);
+        }
+
+        /* アニメーション用クラス */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ハイライト装飾 */
+        .highlight {
+            background: linear-gradient(transparent 60%, #E8EFEA 40%);
+            font-weight: bold;
+            color: #5A7A6B;
+        }
+        .highlight-amber {
+            background: linear-gradient(transparent 60%, #F3E8D6 40%);
+            font-weight: bold;
+            color: #8B5A2B;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-6 lg:p-8 flex justify-center">
+
+    <!-- スマホ幅（max-w-md）を基準とし、中央配置でレイアウト崩れを防ぐ -->
+    <main class="w-full max-w-md flex flex-col gap-6">
+        
+        <!-- Header -->
+        <header class="text-center pt-4 pb-2 border-b border-sage-300">
+            <h1 class="text-xl font-bold text-sage-800 tracking-wide">視覚過敏レスキュー</h1>
+            <p class="text-xs text-sage-600 mt-1">遮光レンズ提案シミュレーター</p>
+        </header>
+
+        <!-- STEP 1: 悩み選択 (初期画面) -->
+        <section id="step1-area" class="flex flex-col gap-4 fade-in">
+            <div class="panel p-5 text-center">
+                <p class="text-sm text-sage-600 font-medium mb-4">お客様が一番辛いと感じるシーンはどちらですか？</p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="app.selectScene('led')" class="w-full py-4 px-4 bg-sage-600 text-white rounded-xl font-bold active:bg-sage-800 transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        オフィスのLED・蛍光灯
+                    </button>
+                    <button onclick="app.selectScene('paper')" class="w-full py-4 px-4 bg-sage-600 text-white rounded-xl font-bold active:bg-sage-800 transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        白い紙やPC画面の反射
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: シミュレーションと接客トーク (選択後に表示) -->
+        <section id="step2-area" class="hidden flex-col gap-6 fade-in pb-10">
+            
+            <!-- 戻るボタン -->
+            <button onclick="app.reset()" class="text-sage-600 text-sm flex items-center gap-1 self-start hover:opacity-70">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                シーン選択に戻る
+            </button>
+
+            <!-- 【重要】ビジュアルコンテナ：テキストと絶対に被らないよう独立させる -->
+            <div class="panel overflow-hidden relative">
+                <!-- シミュレーション画面 (CSSで状態を表現) -->
+                <div id="visual-canvas" class="w-full aspect-video bg-gray-100 relative flex flex-col items-center justify-center sim-container">
+                    
+                    <!-- シーン: LEDの場合のDOM -->
+                    <div id="scene-led-dom" class="hidden absolute inset-0 flex flex-col items-center pt-4">
+                        <div class="w-3/4 h-6 bg-white rounded-sm border border-gray-200 z-0 relative">
+                            <!-- 光源のエフェクト -->
+                            <div id="led-glare" class="absolute inset-0 transition-all duration-500"></div>
+                        </div>
+                        <div class="mt-auto mb-4 z-0 text-gray-400 text-xs font-bold tracking-widest">OFFICE ENVIRONMENT</div>
+                    </div>
+
+                    <!-- シーン: 紙・PCの場合のDOM -->
+                    <div id="scene-paper-dom" class="hidden absolute inset-0 flex items-center justify-center">
+                        <div id="paper-element" class="w-2/3 aspect-[3/4] bg-white rounded shadow-sm border border-gray-200 p-3 flex flex-col gap-2 transition-all duration-500 z-0 relative">
+                            <!-- ダミーテキスト線 -->
+                            <div class="w-full h-2 bg-gray-300 rounded-full"></div>
+                            <div class="w-5/6 h-2 bg-gray-300 rounded-full"></div>
+                            <div class="w-4/6 h-2 bg-gray-300 rounded-full"></div>
+                            <div class="w-full h-2 bg-gray-300 rounded-full mt-2"></div>
+                            <div class="w-3/4 h-2 bg-gray-300 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <!-- フィルター層 (サングラス / 遮光レンズ) -->
+                    <div id="lens-filter" class=""></div>
+                </div>
+
+                <!-- レンズ切り替えタブ -->
+                <div class="flex border-t border-sage-300 bg-sage-50">
+                    <button onclick="app.selectLens('none')" id="tab-none" class="flex-1 py-3 text-xs font-bold text-center border-r border-sage-300 bg-white text-sage-800 transition-colors">
+                        裸眼
+                    </button>
+                    <button onclick="app.selectLens('normal')" id="tab-normal" class="flex-1 py-3 text-xs font-bold text-center border-r border-sage-300 text-sage-600 hover:bg-white transition-colors">
+                        一般サングラス
+                    </button>
+                    <button onclick="app.selectLens('medical')" id="tab-medical" class="flex-1 py-3 text-xs font-bold text-center text-sage-600 hover:bg-white transition-colors">
+                        遮光レンズ
+                    </button>
+                </div>
+            </div>
+
+            <!-- 【重要】テキストコンテナ：接客トークスクリプト -->
+            <div class="flex flex-col gap-2">
+                <!-- スタッフへの指示（アドバイス） -->
+                <div class="flex items-start gap-2">
+                    <span class="bg-sage-600 text-white text-[10px] font-bold px-2 py-1 rounded-sm mt-0.5">Staff</span>
+                    <p id="staff-advice" class="text-xs text-sage-600 font-medium leading-relaxed"></p>
+                </div>
+                
+                <!-- 読み上げるセリフ（カンペ） -->
+                <div class="panel-sage p-4 relative">
+                    <!-- 吹き出しのしっぽ -->
+                    <div class="absolute -top-2 left-6 w-4 h-4 bg-[#E8EFEA] transform rotate-45"></div>
+                    <p id="talk-script" class="text-sm text-sage-800 leading-loose relative z-10"></p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // --- データの定義 (手抜き禁止: 全パターン網羅) ---
+        const scriptData = {
+            led: {
+                none: {
+                    advice: "まずは現状の辛さに共感し、原因が「光の性質」にあることを伝えます。",
+                    talk: "「オフィスの照明、上から<span class='highlight'>刺さるように眩しい</span>ですよね。<br>実は、蛍光灯やLEDからは『青白い光（短波長）』が多く出ており、これが目の中で散乱して<span class='highlight'>頭痛や眼精疲労の引き金</span>になりやすいんです。」"
+                },
+                normal: {
+                    advice: "一般的な対策の「限界」を視覚的に示し、気づきを与えます。",
+                    talk: "「眩しいからと普通の色の濃いサングラスをかけると…<span class='highlight'>全体が暗く沈んで</span>しまい、室内では書類もパソコンも見えづらくなってしまいますよね。<br>しかも、痛みの原因である青白い光の『芯』は完全に防げていません。」"
+                },
+                medical: {
+                    advice: "遮光レンズの圧倒的なメリット（明るいのに痛くない）を強調します。",
+                    talk: "「そこで、この<span class='highlight-amber'>『遮光レンズ』</span>です。<br>ご覧ください。暗くするのではなく、<span class='highlight-amber'>目に突き刺さる青白い光だけを特殊なフィルターで吸収</span>します。<br>視界の明るさは保たれたまま、光のストレスだけをフワッと解きほぐしてくれる、まさに『屋内用レスキューグラス』なんです。」"
+                }
+            },
+            paper: {
+                none: {
+                    advice: "白い紙やモニター特有の「乱反射による見えづらさ」にフォーカスします。",
+                    talk: "「真っ白な紙やPC画面を見ていると、<span class='highlight'>光が強く反射して文字がぼやけたり、チカチカ</span>したりしませんか？<br>この乱反射した光が、気づかないうちに目の筋肉を極度に緊張させています。」"
+                },
+                normal: {
+                    advice: "暗くするだけでは「見えやすさ」は改善しないことを伝えます。",
+                    talk: "「普通のサングラスをかけると、確かに眩しさは減りますが、<span class='highlight'>文字のコントラストまで落ちてしまい</span>、逆に目を凝らして疲れてしまう原因になります。<br>お仕事用としては少し使いづらいですよね。」"
+                },
+                medical: {
+                    advice: "コントラストが向上し、文字がくっきり見える驚きを伝えます。",
+                    talk: "「この<span class='highlight-amber'>『遮光レンズ』</span>を通すとどうでしょう。<br>乱反射する不快な光だけをカットするので、<span class='highlight-amber'>白飛びが消え、文字の輪郭がクッキリと浮かび上がります</span>。<br>まるで目に優しいセピア色のベールをかけたように、長時間のデスクワークでも驚くほど目が楽になりますよ。」"
+                }
+            }
+        };
+
+        // --- アプリケーションの状態とロジック ---
+        const app = {
+            currentScene: null,
+            currentLens: 'none',
+
+            // 要素の取得
+            els: {
+                step1: document.getElementById('step1-area'),
+                step2: document.getElementById('step2-area'),
+                canvas: document.getElementById('visual-canvas'),
+                ledDom: document.getElementById('scene-led-dom'),
+                paperDom: document.getElementById('scene-paper-dom'),
+                ledGlare: document.getElementById('led-glare'),
+                paperElement: document.getElementById('paper-element'),
+                lensFilter: document.getElementById('lens-filter'),
+                tabs: {
+                    none: document.getElementById('tab-none'),
+                    normal: document.getElementById('tab-normal'),
+                    medical: document.getElementById('tab-medical')
+                },
+                staffAdvice: document.getElementById('staff-advice'),
+                talkScript: document.getElementById('talk-script')
+            },
+
+            // シーンの選択
+            selectScene: function(scene) {
+                this.currentScene = scene;
+                this.currentLens = 'none'; // 初期状態に戻す
+                
+                // UI切り替え (Progressive Disclosure)
+                this.els.step1.classList.add('hidden');
+                this.els.step2.classList.remove('hidden');
+
+                // DOMの出し分け
+                this.els.ledDom.classList.toggle('hidden', scene !== 'led');
+                this.els.paperDom.classList.toggle('hidden', scene !== 'paper');
+
+                this.updateUI();
+            },
+
+            // レンズの選択
+            selectLens: function(lens) {
+                this.currentLens = lens;
+                this.updateUI();
+            },
+
+            // 初期化・戻る
+            reset: function() {
+                this.els.step2.classList.add('hidden');
+                this.els.step1.classList.remove('hidden');
+            },
+
+            // UIとビジュアルの更新
+            updateUI: function() {
+                const scene = this.currentScene;
+                const lens = this.currentLens;
+
+                // 1. タブのスタイル更新
+                Object.keys(this.els.tabs).forEach(key => {
+                    const tab = this.els.tabs[key];
+                    if (key === lens) {
+                        tab.className = "flex-1 py-3 text-xs font-bold text-center border-r border-sage-300 bg-white text-sage-800 transition-colors";
+                        if(key === 'medical') tab.classList.add('text-amber-text', 'bg-amber-soft'); // 医療用は特別感
+                    } else {
+                        tab.className = "flex-1 py-3 text-xs font-bold text-center border-r border-sage-300 bg-sage-50 text-sage-600 hover:bg-white transition-colors";
+                    }
+                });
+
+                // 2. ビジュアルの更新 (CSSクラスの制御)
+                // リセット
+                this.els.lensFilter.className = "";
+                this.els.ledGlare.className = "absolute inset-0 transition-all duration-500";
+                this.els.paperElement.className = "w-2/3 aspect-[3/4] bg-white rounded shadow-sm border border-gray-200 p-3 flex flex-col gap-2 transition-all duration-500 z-0 relative";
+                this.els.canvas.classList.remove('medical-contrast');
+
+                if (lens === 'none') {
+                    // 裸眼：眩しさを最大化
+                    if (scene === 'led') this.els.ledGlare.classList.add('glare-led');
+                    if (scene === 'paper') this.els.paperElement.classList.add('glare-paper');
+                } 
+                else if (lens === 'normal') {
+                    // 普通のサングラス：全体が暗くなる（眩しさの芯は残る）
+                    this.els.lensFilter.className = "sunglass-filter";
+                    if (scene === 'led') this.els.ledGlare.classList.add('glare-led'); // 芯は残る
+                    if (scene === 'paper') this.els.paperElement.classList.add('glare-paper'); // 反射は残る
+                } 
+                else if (lens === 'medical') {
+                    // 遮光レンズ：青白い眩しさが消え、アンバーになり、コントラストが上がる
+                    this.els.lensFilter.className = "medical-filter";
+                    this.els.canvas.classList.add('medical-contrast');
+                    if (scene === 'paper') {
+                        // 紙の背景を少しアンバーにする（反射が消える）
+                        this.els.paperElement.classList.replace('bg-white', 'bg-[#FFF8F0]');
+                    }
+                }
+
+                // 3. テキストの更新（フェードイン効果をつける）
+                const data = scriptData[scene][lens];
+                
+                // 一瞬透明にしてから内容を入れて不透明にする
+                this.els.staffAdvice.style.opacity = 0;
+                this.els.talkScript.style.opacity = 0;
+                
+                setTimeout(() => {
+                    this.els.staffAdvice.innerHTML = data.advice;
+                    this.els.talkScript.innerHTML = data.talk;
+                    
+                    this.els.staffAdvice.style.transition = "opacity 0.3s ease";
+                    this.els.talkScript.style.transition = "opacity 0.3s ease";
+                    this.els.staffAdvice.style.opacity = 1;
+                    this.els.talkScript.style.opacity = 1;
+                }, 150);
+            }
+        };
+    </script>
+</body>
+</html>
