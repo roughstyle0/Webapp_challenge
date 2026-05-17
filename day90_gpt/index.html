@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>両眼視機能チェック｜隠れ疲労発見シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --deep: #061327;
+      --deep2: #0a1f3f;
+      --panel: rgba(12, 31, 60, 0.82);
+      --line: rgba(147, 197, 253, 0.24);
+      --alert: #ff3b57;
+      --focus: #3cff9a;
+      --ice: #bde7ff;
+      --lx: -18px;
+      --ly: -4px;
+      --rx: 18px;
+      --ry: 6px;
+      --load: 82%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      color: #eaf6ff;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(60, 255, 154, 0.12), transparent 30%),
+        radial-gradient(circle at 85% 10%, rgba(255, 59, 87, 0.14), transparent 32%),
+        linear-gradient(145deg, #030712 0%, var(--deep) 45%, #020617 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .science-grid {
+      background-image:
+        linear-gradient(rgba(125, 211, 252, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125, 211, 252, 0.08) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+
+    .glass-panel {
+      background:
+        linear-gradient(160deg, rgba(15, 38, 76, 0.94), rgba(4, 14, 32, 0.9)),
+        radial-gradient(circle at top right, rgba(60, 255, 154, 0.08), transparent 35%);
+      border: 1px solid rgba(186, 230, 253, 0.18);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+    }
+
+    .choice-button {
+      background:
+        linear-gradient(135deg, rgba(18, 43, 82, 0.95), rgba(5, 18, 40, 0.98));
+      border: 1px solid rgba(125, 211, 252, 0.24);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .choice-button:hover,
+    .choice-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(60, 255, 154, 0.72);
+      outline: none;
+      background:
+        linear-gradient(135deg, rgba(16, 61, 92, 0.95), rgba(8, 28, 54, 0.98));
+    }
+
+    .mode-button {
+      border: 1px solid rgba(186, 230, 253, 0.18);
+      background: rgba(15, 23, 42, 0.72);
+      transition: transform 160ms ease, border-color 160ms ease, color 160ms ease, background 160ms ease;
+    }
+
+    .mode-button:hover,
+    .mode-button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+      border-color: rgba(189, 231, 255, 0.7);
+    }
+
+    .mode-button.is-alert {
+      color: #ffd8de;
+      border-color: rgba(255, 59, 87, 0.7);
+      background: linear-gradient(135deg, rgba(255, 59, 87, 0.18), rgba(15, 23, 42, 0.76));
+    }
+
+    .mode-button.is-focus {
+      color: #d7ffe9;
+      border-color: rgba(60, 255, 154, 0.72);
+      background: linear-gradient(135deg, rgba(60, 255, 154, 0.18), rgba(15, 23, 42, 0.76));
+    }
+
+    .visual-stage {
+      background:
+        radial-gradient(circle at center, rgba(189, 231, 255, 0.13), transparent 42%),
+        linear-gradient(180deg, rgba(8, 25, 50, 0.94), rgba(2, 6, 23, 0.96));
+      border: 1px solid rgba(125, 211, 252, 0.22);
+    }
+
+    .scan-panel {
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(125, 211, 252, 0.05) 0px,
+          rgba(125, 211, 252, 0.05) 1px,
+          transparent 1px,
+          transparent 8px
+        );
+    }
+
+    .target-left,
+    .target-right {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 760ms cubic-bezier(.2, .9, .2, 1), opacity 420ms ease, filter 420ms ease;
+    }
+
+    .visual-uncorrected .target-left {
+      animation: jitterLeft 170ms infinite alternate;
+      opacity: 0.78;
+      filter: drop-shadow(0 0 10px rgba(255, 59, 87, 0.95));
+    }
+
+    .visual-uncorrected .target-right {
+      animation: jitterRight 150ms infinite alternate;
+      opacity: 0.72;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.9));
+    }
+
+    .visual-corrected .target-left,
+    .visual-corrected .target-right {
+      transform: translate(0px, 0px);
+      opacity: 0.94;
+      animation: none;
+      filter: drop-shadow(0 0 16px rgba(60, 255, 154, 0.82));
+    }
+
+    @keyframes jitterLeft {
+      from { transform: translate(calc(var(--lx) - 2px), calc(var(--ly) + 1px)) rotate(-0.5deg); }
+      to { transform: translate(calc(var(--lx) + 3px), calc(var(--ly) - 2px)) rotate(0.4deg); }
+    }
+
+    @keyframes jitterRight {
+      from { transform: translate(calc(var(--rx) + 2px), calc(var(--ry) - 1px)) rotate(0.5deg); }
+      to { transform: translate(calc(var(--rx) - 3px), calc(var(--ry) + 2px)) rotate(-0.4deg); }
+    }
+
+    .spark-lines {
+      opacity: 0;
+      transition: opacity 360ms ease;
+    }
+
+    .visual-uncorrected .spark-lines {
+      opacity: 1;
+      animation: sparkPulse 560ms infinite alternate;
+    }
+
+    @keyframes sparkPulse {
+      from { stroke-opacity: 0.25; }
+      to { stroke-opacity: 0.95; }
+    }
+
+    .focus-halo {
+      opacity: 0;
+      transition: opacity 520ms ease;
+    }
+
+    .visual-corrected .focus-halo {
+      opacity: 1;
+      animation: calmGlow 1800ms infinite ease-in-out;
+    }
+
+    @keyframes calmGlow {
+      0%, 100% { transform: scale(0.97); opacity: 0.55; }
+      50% { transform: scale(1.02); opacity: 0.95; }
+    }
+
+    .load-bar {
+      width: var(--load);
+      transition: width 720ms ease, background 360ms ease, box-shadow 360ms ease;
+    }
+
+    .talk-highlight {
+      background:
+        linear-gradient(90deg, rgba(60, 255, 154, 0.17), rgba(125, 211, 252, 0.08));
+      border-left: 4px solid var(--focus);
+    }
+
+    .alert-chip {
+      background: rgba(255, 59, 87, 0.13);
+      border: 1px solid rgba(255, 59, 87, 0.34);
+      color: #ffd5dc;
+    }
+
+    .focus-chip {
+      background: rgba(60, 255, 154, 0.12);
+      border: 1px solid rgba(60, 255, 154, 0.34);
+      color: #d7ffe9;
+    }
+
+    .hidden-view {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="min-h-screen science-grid px-4 py-5 sm:px-6 lg:px-8">
+    <div class="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <header class="flex flex-col gap-3 rounded-[2rem] border border-sky-200/10 bg-slate-950/40 p-5">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-bold tracking-[0.24em] text-emerald-100">
+            BINOCULAR VISION LAB
+          </span>
+          <span class="rounded-full border border-red-300/30 bg-red-400/10 px-3 py-1 text-xs font-bold tracking-[0.18em] text-red-100">
+            隠れ疲労チェック
+          </span>
+        </div>
+        <div class="grid gap-2">
+          <h1 class="text-2xl font-black leading-tight text-white sm:text-4xl">
+            視力1.0でも、目が疲れる理由。
+          </h1>
+          <p class="max-w-2xl text-sm leading-7 text-sky-100/78 sm:text-base">
+            右目と左目の「チームワークのズレ」を、スタッフがその場で説明できる両眼視シミュレーターです。
+          </p>
+        </div>
+      </header>
+
+      <section id="introView" class="glass-panel rounded-[2rem] p-5 sm:p-7">
+        <div class="grid gap-5">
+          <div class="grid gap-2">
+            <p class="text-xs font-bold tracking-[0.26em] text-sky-200/80">
+              STEP 01 / お客様の悩みを選択
+            </p>
+            <h2 class="text-xl font-black text-white sm:text-2xl">
+              まず、近い症状を1つ選んでください
+            </h2>
+            <p class="text-sm leading-7 text-sky-100/72">
+              選択後に、視線ズレと脳の疲労イメージ、補正後の変化、接客トークが順番に表示されます。
+            </p>
+          </div>
+
+          <div class="grid gap-3" role="group" aria-label="見え方に関する隠れた悩み">
+            <button class="choice-button rounded-3xl p-4 text-left" data-symptom="double">
+              <span class="block text-sm font-bold text-red-100">読書・資料タイプ</span>
+              <span class="mt-1 block text-base font-black leading-7 text-white">
+                本や資料を読んでいると、文字がダブって見える時がある
+              </span>
+            </button>
+
+            <button class="choice-button rounded-3xl p-4 text-left" data-symptom="oneeye">
+              <span class="block text-sm font-bold text-red-100">PC・片目つぶりタイプ</span>
+              <span class="mt-1 block text-base font-black leading-7 text-white">
+                パソコン画面を見ていると、無意識に片目をつぶってしまう
+              </span>
+            </button>
+
+            <button class="choice-button rounded-3xl p-4 text-left" data-symptom="fatigue">
+              <span class="block text-sm font-bold text-red-100">視力1.0・疲労タイプ</span>
+              <span class="mt-1 block text-base font-black leading-7 text-white">
+                視力検査では1.0見えるのに、なぜか目が異常に疲れる
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="simulatorView" class="hidden-view grid gap-5">
+        <div class="glass-panel rounded-[2rem] p-5 sm:p-7">
+          <div class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+            <div class="grid gap-4">
+              <div class="grid gap-2">
+                <p class="text-xs font-bold tracking-[0.26em] text-sky-200/80">
+                  STEP 02 / 視線ズレの可視化
+                </p>
+                <h2 id="scenarioTitle" class="text-xl font-black text-white sm:text-3xl"></h2>
+                <p id="scenarioLead" class="text-sm leading-7 text-sky-100/72"></p>
+              </div>
+
+              <div class="visual-stage rounded-[2rem] p-4">
+                <div class="grid gap-4">
+                  <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap gap-2 text-xs font-bold">
+                      <span class="rounded-full border border-sky-300/25 bg-sky-300/10 px-3 py-1 text-sky-100">左目の映像</span>
+                      <span class="rounded-full border border-red-300/25 bg-red-300/10 px-3 py-1 text-red-100">右目の映像</span>
+                    </div>
+                    <p id="modeLabel" class="rounded-full px-3 py-1 text-xs font-black"></p>
+                  </div>
+
+                  <div id="visionGraphic" class="visual-uncorrected rounded-[1.5rem] border border-sky-200/10 bg-slate-950/50 p-2 scan-panel">
+                    <svg viewBox="0 0 300 190" class="h-auto w-full" role="img" aria-label="右目と左目の映像がズレて脳が重ねようとしているシミュレーション">
+                      <defs>
+                        <radialGradient id="greenGlow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stop-color="#3cff9a" stop-opacity="0.45"/>
+                          <stop offset="70%" stop-color="#3cff9a" stop-opacity="0.08"/>
+                          <stop offset="100%" stop-color="#3cff9a" stop-opacity="0"/>
+                        </radialGradient>
+                        <filter id="softBlur">
+                          <feGaussianBlur stdDeviation="1.2"/>
+                        </filter>
+                      </defs>
+
+                      <rect x="8" y="8" width="284" height="174" rx="22" fill="rgba(2, 6, 23, 0.54)" stroke="rgba(125, 211, 252, 0.12)" />
+
+                      <g class="focus-halo" style="transform-origin: 150px 95px;">
+                        <circle cx="150" cy="95" r="62" fill="url(#greenGlow)" filter="url(#softBlur)" />
+                        <circle cx="150" cy="95" r="42" fill="none" stroke="#3cff9a" stroke-width="1.5" stroke-dasharray="4 5" />
+                      </g>
+
+                      <g class="spark-lines" stroke="#ff3b57" stroke-width="3" stroke-linecap="round">
+                        <path d="M72 48 L91 63" />
+                        <path d="M218 41 L203 62" />
+                        <path d="M62 134 L87 121" />
+                        <path d="M229 139 L210 122" />
+                        <path d="M145 28 L153 50" />
+                        <path d="M147 162 L157 139" />
+                      </g>
+
+                      <g class="target-left">
+                        <circle cx="150" cy="95" r="42" fill="rgba(14, 165, 233, 0.08)" stroke="#7dd3fc" stroke-width="3"/>
+                        <circle cx="150" cy="95" r="18" fill="none" stroke="#7dd3fc" stroke-width="2"/>
+                        <path d="M150 44 V146 M99 95 H201" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="150" cy="95" r="5" fill="#7dd3fc"/>
+                      </g>
+
+                      <g class="target-right">
+                        <circle cx="150" cy="95" r="42" fill="rgba(255, 59, 87, 0.08)" stroke="#ff3b57" stroke-width="3"/>
+                        <circle cx="150" cy="95" r="18" fill="none" stroke="#ff3b57" stroke-width="2"/>
+                        <path d="M150 44 V146 M99 95 H201" stroke="#ff3b57" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="150" cy="95" r="5" fill="#ff3b57"/>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div class="grid gap-2">
+                    <div class="flex items-center justify-between gap-3 text-xs font-bold">
+                      <span class="text-sky-100/70">脳の重ね合わせ負荷</span>
+                      <span id="loadText" class="text-red-100"></span>
+                    </div>
+                    <div class="h-3 overflow-hidden rounded-full bg-slate-950/80 ring-1 ring-sky-200/10">
+                      <div id="loadBar" class="load-bar h-full rounded-full bg-red-400 shadow-[0_0_18px_rgba(255,59,87,0.75)]"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button id="uncorrectedBtn" class="mode-button is-alert rounded-2xl px-4 py-3 text-sm font-black">
+                  未補正を見る
+                </button>
+                <button id="correctedBtn" class="mode-button rounded-2xl px-4 py-3 text-sm font-black">
+                  両眼視補正を体験
+                </button>
+              </div>
+            </div>
+
+            <aside class="grid gap-4">
+              <div class="rounded-[2rem] border border-sky-200/14 bg-slate-950/45 p-4">
+                <p class="text-xs font-bold tracking-[0.22em] text-sky-200/70">ANALYSIS</p>
+                <h3 id="analysisTitle" class="mt-2 text-lg font-black text-white"></h3>
+                <p id="analysisBody" class="mt-2 text-sm leading-7 text-sky-100/72"></p>
+                <div id="symptomTags" class="mt-4 flex flex-wrap gap-2"></div>
+              </div>
+
+              <div class="rounded-[2rem] border border-emerald-200/14 bg-emerald-300/5 p-4">
+                <p class="text-xs font-bold tracking-[0.22em] text-emerald-100/80">NEXT STEP</p>
+                <h3 class="mt-2 text-lg font-black text-white">提案する検査</h3>
+                <p class="mt-2 text-sm leading-7 text-sky-100/72">
+                  通常の視力検査だけでなく、左右の目がどの位置で協力しているかを見る
+                  <span class="font-black text-emerald-100">両眼視検査</span>
+                  へ自然に誘導します。
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-[2rem] p-5 sm:p-7">
+          <div class="grid gap-5 md:grid-cols-[0.82fr_1.18fr] md:items-start">
+            <div class="grid gap-3">
+              <p class="text-xs font-bold tracking-[0.26em] text-sky-200/80">
+                STEP 03 / 新人スタッフ用カンペ
+              </p>
+              <h2 class="text-xl font-black text-white sm:text-2xl">
+                そのまま読み上げられる接客トーク
+              </h2>
+              <p class="text-sm leading-7 text-sky-100/72">
+                選んだ悩みに合わせて、説明の順番と表現を変えています。
+              </p>
+
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <button id="nextTalkBtn" class="rounded-2xl border border-emerald-300/35 bg-emerald-300/12 px-4 py-3 text-sm font-black text-emerald-50">
+                  トークを進める
+                </button>
+                <button id="copyTalkBtn" class="rounded-2xl border border-sky-300/25 bg-sky-300/10 px-4 py-3 text-sm font-black text-sky-50">
+                  カンペをコピー
+                </button>
+              </div>
+
+              <p id="copyStatus" class="min-h-6 text-sm font-bold text-emerald-100" aria-live="polite"></p>
+            </div>
+
+            <div class="talk-highlight rounded-[1.5rem] p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="talkStep" class="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-100"></span>
+                <span id="talkModeChip" class="rounded-full px-3 py-1 text-xs font-black"></span>
+              </div>
+              <p id="talkScript" class="mt-4 text-base font-bold leading-8 text-white sm:text-lg"></p>
+              <p id="talkTip" class="mt-4 rounded-2xl border border-sky-200/14 bg-slate-950/35 p-3 text-sm leading-7 text-sky-100/76"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <button id="resetBtn" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-sky-50">
+            悩み選択に戻る
+          </button>
+          <p class="text-xs leading-6 text-sky-100/50">
+            ※この画面は説明用シミュレーションです。実際の状態は店頭での測定結果に基づいてご案内します。
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const scenarios = {
+      double: {
+        title: "文字がダブる時は、左右の映像が少し横にズレている可能性があります",
+        lead: "読書中は細かな文字を長時間追うため、わずかな視線ズレでも脳の補正負担が表面化しやすくなります。",
+        analysisTitle: "横方向のズレを脳が常に合成",
+        analysisBody: "左右の目から入る映像の位置が微妙に違うと、脳は文字を1つに見せるために休まず合成作業を続けます。これが夕方の重さや、行飛ばし感につながることがあります。",
+        tags: ["文字のダブり", "行飛ばし", "読書疲労"],
+        vars: { lx: "-22px", ly: "-3px", rx: "20px", ry: "5px", load: "86%" },
+        loadText: "高負荷 86%",
+        correctedLoad: "安定 18%",
+        correctedLoadWidth: "18%",
+        talks: [
+          {
+            mode: "導入",
+            script: "「視力が1.0見えることと、長時間ラクに見続けられることは、実は別の問題なんです。」",
+            tip: "まず否定せず、お客様の悩みを“見え方の質”として受け止めます。"
+          },
+          {
+            mode: "未補正",
+            script: "「右目と左目の映像が少しズレて入ってくると、脳がそれを無理やり1つの文字に重ね合わせます。この頑張りが続くと、文字がダブったり、行を飛ばしたように感じることがあります。」",
+            tip: "画面の赤い振動を指しながら、“脳が休めていない状態”と説明します。"
+          },
+          {
+            mode: "補正提案",
+            script: "「当店では、両眼視検査で左右の目のチームワークを確認し、必要に応じてプリズムレンズなどで視線の負担を軽くするご提案ができます。」",
+            tip: "検査名を出すことで、通常の視力検査との違いを自然に伝えます。"
+          },
+          {
+            mode: "クロージング",
+            script: "「本を読む時間が長い方ほど、この小さなズレが疲れとして出やすいので、今日は視力だけでなく“両目で見る力”まで一緒に確認してみましょう。」",
+            tip: "“売る”ではなく“確認してみましょう”で心理的ハードルを下げます。"
+          }
+        ]
+      },
+      oneeye: {
+        title: "片目をつぶる行動は、脳が疲労を避けるためのサインかもしれません",
+        lead: "PC作業では近くを見続けるため、左右の目線を内側へ寄せる力が必要です。負担が増えると片目を休ませたくなることがあります。",
+        analysisTitle: "近方作業でチームワークが乱れる",
+        analysisBody: "片目をつぶると映像は1つになりやすい一方、両眼で見る立体感や距離感は落ちやすくなります。根本的には、両目でラクに見られる状態を探すことが大切です。",
+        tags: ["PC疲労", "片目つぶり", "近方作業"],
+        vars: { lx: "-14px", ly: "-14px", rx: "18px", ry: "15px", load: "91%" },
+        loadText: "危険域 91%",
+        correctedLoad: "安定 15%",
+        correctedLoadWidth: "15%",
+        talks: [
+          {
+            mode: "導入",
+            script: "「無意識に片目をつぶるのは、サボっているのではなく、脳が“これ以上ズレを合わせるのは大変”と感じているサインかもしれません。」",
+            tip: "お客様の癖を責めず、身体の自然な反応として説明します。"
+          },
+          {
+            mode: "未補正",
+            script: "「パソコンの距離では、右目と左目が同じポイントを見続ける必要があります。ここがズレると、脳が映像を1つにするために強く働き続けます。」",
+            tip: "近くを見る作業は、遠くを見る視力検査より疲れが出やすいと補足します。"
+          },
+          {
+            mode: "補正提案",
+            script: "「両眼視補正では、左右の映像が自然に重なる位置を探します。プリズムレンズなどでその負担を軽くできる場合、片目に頼らず見やすくなることが期待できます。」",
+            tip: "“期待できます”と表現し、測定前に断定しないのが信頼につながります。"
+          },
+          {
+            mode: "クロージング",
+            script: "「PC時間が長い方は、視力だけでは分からない疲れが隠れていることがあります。今日は近くを見る時の両目の動きまで、少し詳しく測ってみましょう。」",
+            tip: "仕事・生活の困りごとに直結させると検査の必要性が伝わります。"
+          }
+        ]
+      },
+      fatigue: {
+        title: "視力1.0でも疲れる原因は、“見える”ではなく“合わせ続ける負担”かもしれません",
+        lead: "視力表は一瞬はっきり見えても、日常では長時間見続ける力が必要です。小さなズレほど気づきにくく、疲労として現れます。",
+        analysisTitle: "小さなズレが長時間で蓄積",
+        analysisBody: "大きくダブらなくても、脳が常に微調整していれば疲労は蓄積します。視力が良い方ほど原因が見落とされやすいため、両眼視機能の確認が重要です。",
+        tags: ["視力1.0", "夕方の疲れ", "原因不明の重さ"],
+        vars: { lx: "-10px", ly: "7px", rx: "12px", ry: "-8px", load: "74%" },
+        loadText: "慢性負荷 74%",
+        correctedLoad: "安定 20%",
+        correctedLoadWidth: "20%",
+        talks: [
+          {
+            mode: "導入",
+            script: "「視力検査で1.0見えているのに疲れる方は、“見えていない”のではなく、“合わせ続けるのに力を使っている”可能性があります。」",
+            tip: "視力が良いお客様ほど納得しやすい言い換えです。"
+          },
+          {
+            mode: "未補正",
+            script: "「左右の目のチームワークが少し乱れていると、脳が無意識に映像を補正し続けます。最初は平気でも、夕方になると疲れとして出やすくなります。」",
+            tip: "“夕方”という具体的な時間帯を入れると共感が生まれます。"
+          },
+          {
+            mode: "補正提案",
+            script: "「当店の両眼視検査では、視力表だけでは分からない視線のズレを確認します。結果に合わせて、プリズムレンズなど快適さを重視した設計をご提案します。」",
+            tip: "“高度な測定技術”を、難しい言葉ではなく価値で伝えます。"
+          },
+          {
+            mode: "クロージング",
+            script: "「今のメガネで見えているからこそ、次は“どれだけラクに見られるか”を確認する段階です。目と脳の負担まで一緒に見ていきましょう。」",
+            tip: "検査をアップセルではなく、快適性の確認として提示します。"
+          }
+        ]
+      }
+    };
+
+    const introView = document.getElementById("introView");
+    const simulatorView = document.getElementById("simulatorView");
+    const scenarioTitle = document.getElementById("scenarioTitle");
+    const scenarioLead = document.getElementById("scenarioLead");
+    const analysisTitle = document.getElementById("analysisTitle");
+    const analysisBody = document.getElementById("analysisBody");
+    const symptomTags = document.getElementById("symptomTags");
+    const visionGraphic = document.getElementById("visionGraphic");
+    const modeLabel = document.getElementById("modeLabel");
+    const loadText = document.getElementById("loadText");
+    const loadBar = document.getElementById("loadBar");
+    const uncorrectedBtn = document.getElementById("uncorrectedBtn");
+    const correctedBtn = document.getElementById("correctedBtn");
+    const nextTalkBtn = document.getElementById("nextTalkBtn");
+    const copyTalkBtn = document.getElementById("copyTalkBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const talkStep = document.getElementById("talkStep");
+    const talkModeChip = document.getElementById("talkModeChip");
+    const talkScript = document.getElementById("talkScript");
+    const talkTip = document.getElementById("talkTip");
+    const copyStatus = document.getElementById("copyStatus");
+
+    let currentKey = null;
+    let isCorrected = false;
+    let talkIndex = 0;
+
+    function safeScenario(key) {
+      return scenarios[key] || scenarios.fatigue;
+    }
+
+    function selectScenario(key) {
+      currentKey = key;
+      isCorrected = false;
+      talkIndex = 0;
+
+      const data = safeScenario(key);
+
+      scenarioTitle.textContent = data.title;
+      scenarioLead.textContent = data.lead;
+      analysisTitle.textContent = data.analysisTitle;
+      analysisBody.textContent = data.analysisBody;
+
+      symptomTags.innerHTML = "";
+      data.tags.forEach((tag) => {
+        const chip = document.createElement("span");
+        chip.className = "alert-chip rounded-full px-3 py-1 text-xs font-black";
+        chip.textContent = tag;
+        symptomTags.appendChild(chip);
+      });
+
+      document.documentElement.style.setProperty("--lx", data.vars.lx);
+      document.documentElement.style.setProperty("--ly", data.vars.ly);
+      document.documentElement.style.setProperty("--rx", data.vars.rx);
+      document.documentElement.style.setProperty("--ry", data.vars.ry);
+      document.documentElement.style.setProperty("--load", data.vars.load);
+
+      introView.classList.add("hidden-view");
+      simulatorView.classList.remove("hidden-view");
+
+      setMode(false);
+      renderTalk();
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setMode(corrected) {
+      if (!currentKey) return;
+
+      isCorrected = corrected;
+      const data = safeScenario(currentKey);
+
+      visionGraphic.classList.toggle("visual-corrected", corrected);
+      visionGraphic.classList.toggle("visual-uncorrected", !corrected);
+
+      correctedBtn.classList.toggle("is-focus", corrected);
+      uncorrectedBtn.classList.toggle("is-alert", !corrected);
+      correctedBtn.classList.toggle("is-focus", corrected);
+      uncorrectedBtn.classList.toggle("is-alert", !corrected);
+
+      if (corrected) {
+        document.documentElement.style.setProperty("--load", data.correctedLoadWidth);
+        loadText.textContent = data.correctedLoad;
+        loadText.className = "text-emerald-100";
+        loadBar.className = "load-bar h-full rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(60,255,154,0.75)]";
+        modeLabel.textContent = "補正後：脳がリラックス";
+        modeLabel.className = "focus-chip rounded-full px-3 py-1 text-xs font-black";
+        if (talkIndex < 2) talkIndex = 2;
+      } else {
+        document.documentElement.style.setProperty("--load", data.vars.load);
+        loadText.textContent = data.loadText;
+        loadText.className = "text-red-100";
+        loadBar.className = "load-bar h-full rounded-full bg-red-400 shadow-[0_0_18px_rgba(255,59,87,0.75)]";
+        modeLabel.textContent = "未補正：脳が無理に合成";
+        modeLabel.className = "alert-chip rounded-full px-3 py-1 text-xs font-black";
+        if (talkIndex > 1) talkIndex = 1;
+      }
+
+      renderTalk();
+    }
+
+    function renderTalk() {
+      if (!currentKey) return;
+
+      const data = safeScenario(currentKey);
+      const talk = data.talks[talkIndex] || data.talks[0];
+
+      talkStep.textContent = `SCRIPT ${talkIndex + 1} / ${data.talks.length}`;
+      talkModeChip.textContent = talk.mode;
+      talkModeChip.className = isCorrected
+        ? "focus-chip rounded-full px-3 py-1 text-xs font-black"
+        : "alert-chip rounded-full px-3 py-1 text-xs font-black";
+      talkScript.textContent = talk.script;
+      talkTip.textContent = `読み上げポイント：${talk.tip}`;
+    }
+
+    document.querySelectorAll("[data-symptom]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.getAttribute("data-symptom");
+        selectScenario(key);
+      });
+    });
+
+    uncorrectedBtn.addEventListener("click", () => setMode(false));
+    correctedBtn.addEventListener("click", () => setMode(true));
+
+    nextTalkBtn.addEventListener("click", () => {
+      if (!currentKey) return;
+      const data = safeScenario(currentKey);
+      talkIndex = (talkIndex + 1) % data.talks.length;
+      if (talkIndex >= 2) {
+        isCorrected = true;
+        visionGraphic.classList.add("visual-corrected");
+        visionGraphic.classList.remove("visual-uncorrected");
+        const data = safeScenario(currentKey);
+        document.documentElement.style.setProperty("--load", data.correctedLoadWidth);
+        loadText.textContent = data.correctedLoad;
+        loadText.className = "text-emerald-100";
+        loadBar.className = "load-bar h-full rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(60,255,154,0.75)]";
+        modeLabel.textContent = "補正後：脳がリラックス";
+        modeLabel.className = "focus-chip rounded-full px-3 py-1 text-xs font-black";
+        correctedBtn.classList.add("is-focus");
+        uncorrectedBtn.classList.remove("is-alert");
+      }
+      renderTalk();
+    });
+
+    copyTalkBtn.addEventListener("click", async () => {
+      if (!currentKey) {
+        copyStatus.textContent = "先に悩みを選択してください。";
+        return;
+      }
+
+      const data = safeScenario(currentKey);
+      const fullText = data.talks
+        .map((item, index) => `${index + 1}. 【${item.mode}】${item.script}\n読み上げポイント：${item.tip}`)
+        .join("\n\n");
+
+      try {
+        await navigator.clipboard.writeText(fullText);
+        copyStatus.textContent = "接客カンペをコピーしました。";
+      } catch (error) {
+        copyStatus.textContent = "コピーできませんでした。画面の文章を長押しして選択してください。";
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      currentKey = null;
+      isCorrected = false;
+      talkIndex = 0;
+      simulatorView.classList.add("hidden-view");
+      introView.classList.remove("hidden-view");
+      copyStatus.textContent = "";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>
