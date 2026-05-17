@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binocular Vision Simulator - 両眼視機能チェック</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        mono: ['"Share Tech Mono"', 'monospace'],
+                    },
+                    colors: {
+                        hud: {
+                            bg: '#050b14',
+                            panel: '#0a1526',
+                            border: '#1e3a5f',
+                            cyan: '#00f0ff',
+                            red: '#ff003c',
+                            green: '#00ff66',
+                        }
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 10px theme("colors.hud.cyan"), inset 0 0 10px theme("colors.hud.cyan")',
+                        'neon-red': '0 0 15px theme("colors.hud.red"), inset 0 0 15px theme("colors.hud.red")',
+                        'neon-green': '0 0 15px theme("colors.hud.green"), inset 0 0 15px theme("colors.hud.green")',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050b14;
+            color: #e2e8f0;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+        }
+
+        /* スキャンラインエフェクト */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.3;
+        }
+
+        /* HUD風のクリップパス */
+        .clip-hud {
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        }
+        
+        .clip-button {
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.3s ease;
+        }
+
+        .clip-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+        }
+
+        /* 視線ズレ（激しい振動）アニメーション */
+        @keyframes severe-vibration {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-3px, 2px); }
+            20% { transform: translate(4px, -3px); }
+            30% { transform: translate(-5px, -2px); }
+            40% { transform: translate(3px, 4px); }
+            50% { transform: translate(-2px, -4px); }
+            60% { transform: translate(5px, 2px); }
+            70% { transform: translate(-4px, -3px); }
+            80% { transform: translate(3px, 5px); }
+            90% { transform: translate(-2px, 1px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* 脳疲労のアラート点滅 */
+        @keyframes alert-pulse {
+            0% { background-color: rgba(255, 0, 60, 0.05); border-color: rgba(255, 0, 60, 0.3); }
+            50% { background-color: rgba(255, 0, 60, 0.2); border-color: rgba(255, 0, 60, 0.8); }
+            100% { background-color: rgba(255, 0, 60, 0.05); border-color: rgba(255, 0, 60, 0.3); }
+        }
+
+        /* リラックス状態の緑点滅 */
+        @keyframes relax-pulse {
+            0% { background-color: rgba(0, 255, 102, 0.05); border-color: rgba(0, 255, 102, 0.3); }
+            50% { background-color: rgba(0, 255, 102, 0.15); border-color: rgba(0, 255, 102, 0.6); }
+            100% { background-color: rgba(0, 255, 102, 0.05); border-color: rgba(0, 255, 102, 0.3); }
+        }
+
+        /* アニメーションクラスの定義 */
+        .sim-target-left, .sim-target-right {
+            transition: all 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .state-uncorrected .sim-target-left {
+            transform: translateX(-15px) translateY(-10px);
+            animation: severe-vibration 0.1s infinite;
+        }
+        
+        .state-uncorrected .sim-target-right {
+            transform: translateX(15px) translateY(10px);
+            animation: severe-vibration 0.15s infinite reverse;
+        }
+
+        .state-uncorrected .brain-status-bg {
+            animation: alert-pulse 1s infinite;
+        }
+
+        .state-corrected .sim-target-left, .state-corrected .sim-target-right {
+            transform: translate(0, 0);
+            animation: none;
+        }
+
+        .state-corrected .brain-status-bg {
+            animation: relax-pulse 2s infinite;
+            box-shadow: inset 0 0 30px rgba(0, 255, 102, 0.2);
+        }
+
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050b14; }
+        ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+        
+        /* 非表示クラス */
+        .hidden-fade {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            transition: opacity 0.3s ease;
+        }
+        .visible-fade {
+            opacity: 1;
+            pointer-events: auto;
+            position: relative;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col overflow-hidden font-sans">
+    <div class="scanlines"></div>
+
+    <header class="w-full bg-hud-panel border-b border-hud-border p-4 flex justify-between items-center z-10 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full border-2 border-hud-cyan flex items-center justify-center animate-pulse">
+                <div class="w-3 h-3 bg-hud-cyan rounded-full"></div>
+            </div>
+            <div>
+                <h1 class="text-hud-cyan font-mono text-lg md:text-xl tracking-wider font-bold">NEURO-VISION SYSTEM</h1>
+                <p class="text-xs text-gray-400 font-mono">Binocular Function Analyzer v3.0</p>
+            </div>
+        </div>
+        <div class="hidden md:flex gap-2">
+            <span class="px-2 py-1 bg-hud-bg border border-hud-border text-xs font-mono text-gray-500">SYS_OK</span>
+            <span class="px-2 py-1 bg-hud-bg border border-hud-border text-xs font-mono text-gray-500">NET_SYNC</span>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto w-full p-4 md:p-6 lg:p-8 flex flex-col z-10 relative">
+        
+        <!-- ========================================== -->
+        <!-- VIEW 1: 初期画面（ヒアリング）プログレッシブ・ディクロージャー -->
+        <!-- ========================================== -->
+        <section id="view-selection" class="visible-fade w-full max-w-4xl mx-auto flex flex-col gap-6 md:gap-8 mt-4 md:mt-10">
+            <div class="text-center mb-4">
+                <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">お客様の「見え方」の悩みを解析</h2>
+                <p class="text-gray-400 text-sm md:text-base">該当する症状を選択して、シミュレーターを起動してください。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <!-- 選択肢 1 -->
+                <button onclick="startSimulation('double')" class="clip-button group relative bg-hud-panel border border-hud-border p-6 flex flex-col items-center text-center gap-4 hover:border-hud-cyan focus:outline-none focus:ring-2 focus:ring-hud-cyan">
+                    <div class="w-16 h-16 bg-hud-bg rounded-full flex items-center justify-center border border-gray-700 group-hover:border-hud-cyan group-hover:shadow-neon-cyan transition-all">
+                        <svg class="w-8 h-8 text-gray-300 group-hover:text-hud-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">文字がダブる</h3>
+                        <p class="text-xs text-gray-400 text-left">本や資料を読んでいると、文字がダブって見える時がある。行を読み飛ばしてしまう。</p>
+                    </div>
+                </button>
+
+                <!-- 選択肢 2 -->
+                <button onclick="startSimulation('wink')" class="clip-button group relative bg-hud-panel border border-hud-border p-6 flex flex-col items-center text-center gap-4 hover:border-hud-cyan focus:outline-none focus:ring-2 focus:ring-hud-cyan">
+                    <div class="w-16 h-16 bg-hud-bg rounded-full flex items-center justify-center border border-gray-700 group-hover:border-hud-cyan group-hover:shadow-neon-cyan transition-all">
+                        <svg class="w-8 h-8 text-gray-300 group-hover:text-hud-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">片目をつぶる</h3>
+                        <p class="text-xs text-gray-400 text-left">パソコン画面を見ていると、無意識に片目をつぶってしまっていることがある。</p>
+                    </div>
+                </button>
+
+                <!-- 選択肢 3 -->
+                <button onclick="startSimulation('fatigue')" class="clip-button group relative bg-hud-panel border border-hud-border p-6 flex flex-col items-center text-center gap-4 hover:border-hud-cyan focus:outline-none focus:ring-2 focus:ring-hud-cyan">
+                    <div class="w-16 h-16 bg-hud-bg rounded-full flex items-center justify-center border border-gray-700 group-hover:border-hud-cyan group-hover:shadow-neon-cyan transition-all">
+                        <svg class="w-8 h-8 text-gray-300 group-hover:text-hud-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">異常に疲れる</h3>
+                        <p class="text-xs text-gray-400 text-left">視力検査では1.0見えるのに、なぜか夕方になると目が異常に疲れて頭痛がする。</p>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <section id="view-loading" class="hidden-fade flex-1 flex flex-col items-center justify-center">
+            <div class="text-hud-cyan font-mono text-2xl mb-4 animate-pulse">ANALYZING VISUAL DATA...</div>
+            <div class="w-64 h-2 bg-hud-panel border border-hud-border rounded overflow-hidden">
+                <div class="h-full bg-hud-cyan animate-[loading_1.5s_ease-in-out_forwards]" style="width: 0%;" id="loading-bar"></div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: シミュレーター本体 -->
+        <!-- ========================================== -->
+        <section id="view-simulator" class="hidden-fade w-full max-w-5xl mx-auto flex flex-col lg:flex-row gap-6 pb-20 lg:pb-0">
+            
+            <!-- 【左/上エリア】接客トークスクリプト（文字エリア・画像と絶対に被らない） -->
+            <div class="w-full lg:w-1/3 flex flex-col gap-4">
+                
+                <!-- カンペUIデザイン -->
+                <div class="bg-gray-900 border-l-4 border-yellow-500 rounded-r shadow-lg relative overflow-hidden flex-1 flex flex-col">
+                    <div class="bg-yellow-500/10 px-3 py-1 flex items-center gap-2 border-b border-gray-800">
+                        <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+                        <span class="text-xs font-bold text-yellow-500 tracking-wide">STAFF SCRIPT - 接客カンペ</span>
+                    </div>
+                    
+                    <div class="p-4 md:p-5 flex-1 overflow-y-auto">
+                        <h4 class="text-sm text-gray-400 mb-2 font-mono border-b border-gray-800 pb-1" id="script-title">フェーズ1: 現状の説明</h4>
+                        
+                        <!-- ここにJSで動的にスクリプトが挿入される -->
+                        <div id="script-content" class="text-gray-100 text-[15px] md:text-base leading-relaxed space-y-3 font-medium">
+                            <!-- テキスト挿入エリア -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- アクションボタンエリア -->
+                <div class="flex flex-col gap-3 mt-auto">
+                    <button id="btn-correct" onclick="toggleCorrection()" class="clip-hud w-full py-4 px-6 bg-hud-cyan/10 border-2 border-hud-cyan text-hud-cyan font-bold text-lg hover:bg-hud-cyan/20 hover:shadow-neon-cyan transition-all flex items-center justify-center gap-2">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        両眼視補正（プリズム）を試す
+                    </button>
+                    
+                    <button onclick="resetApp()" class="w-full py-3 px-6 bg-transparent border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 transition-colors text-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        最初に戻る
+                    </button>
+                </div>
+            </div>
+
+            <!-- 【右/下エリア】視覚シミュレーター -->
+            <div class="w-full lg:w-2/3 flex flex-col gap-4">
+                
+                <!-- 脳のステータスモニター -->
+                <div class="bg-hud-panel border border-hud-border p-3 flex justify-between items-center rounded">
+                    <div class="flex items-center gap-3">
+                        <div id="status-indicator" class="w-3 h-3 rounded-full bg-hud-red shadow-neon-red"></div>
+                        <span class="font-mono text-sm text-gray-300">BRAIN LOAD STATUS:</span>
+                        <span id="status-text" class="font-mono font-bold text-hud-red">CRITICAL (疲労限界)</span>
+                    </div>
+                    <div class="text-xs font-mono text-gray-500 hidden sm:block">BINOCULAR_VISION_SYS</div>
+                </div>
+
+                <!-- メイン視覚シミュレーション画面 -->
+                <div id="simulation-container" class="clip-hud relative w-full h-[40vh] min-h-[300px] md:h-[500px] bg-hud-bg border-2 border-hud-border overflow-hidden flex items-center justify-center state-uncorrected brain-status-bg transition-colors duration-500">
+                    
+                    <!-- 背景のグリッド -->
+                    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                    
+                    <!-- 中央の基準線 -->
+                    <div class="absolute left-1/2 top-0 bottom-0 w-px bg-hud-cyan/20"></div>
+                    <div class="absolute top-1/2 left-0 right-0 h-px bg-hud-cyan/20"></div>
+
+                    <!-- ターゲットのラッパー（絶対位置で中央配置） -->
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        
+                        <!-- 左目の視覚イメージ (シアン系) -->
+                        <div class="sim-target-left absolute flex flex-col items-center justify-center opacity-80 mix-blend-screen">
+                            <svg class="w-24 h-24 md:w-32 md:h-32 text-[#00f0ff]" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="6" fill="none" />
+                                <line x1="50" y1="0" x2="50" y2="100" stroke="currentColor" stroke-width="4" />
+                                <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" stroke-width="4" />
+                            </svg>
+                            <span class="mt-2 font-mono text-xs text-[#00f0ff] bg-black/50 px-1">LEFT_EYE_IMG</span>
+                        </div>
+
+                        <!-- 右目の視覚イメージ (レッド系) -->
+                        <div class="sim-target-right absolute flex flex-col items-center justify-center opacity-80 mix-blend-screen">
+                            <svg class="w-24 h-24 md:w-32 md:h-32 text-[#ff003c]" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="6" fill="none" />
+                                <line x1="50" y1="0" x2="50" y2="100" stroke="currentColor" stroke-width="4" />
+                                <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" stroke-width="4" />
+                            </svg>
+                            <span class="mt-2 font-mono text-xs text-[#ff003c] bg-black/50 px-1">RIGHT_EYE_IMG</span>
+                        </div>
+
+                        <!-- フォーカス完了時の緑の輝き（初期非表示） -->
+                        <div id="focus-glow" class="absolute w-32 h-32 rounded-full bg-hud-green/0 blur-2xl transition-all duration-1000"></div>
+                    </div>
+                    
+                    <!-- HUD情報オーバーレイ -->
+                    <div class="absolute top-4 left-4 font-mono text-xs text-gray-400">
+                        <div>DEV: ON</div>
+                        <div>TGT_DIST: 40cm</div>
+                    </div>
+                    <div class="absolute bottom-4 right-4 font-mono text-xs text-gray-400 text-right">
+                        <div>PRISM_V: <span id="prism-v">0.00</span></div>
+                        <div>PRISM_H: <span id="prism-h">0.00</span></div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- 接客トークのデータベース（手抜き禁止：詳細なトークを用意） ---
+        const scriptData = {
+            double: {
+                uncorrected: `
+                    <p>実はお客様、視力は良くても、右目と左目の見ている位置が微妙にズレている<span class="text-hud-red font-bold">『斜位（しゃい）』</span>の可能性があります。</p>
+                    <p>右の画面をご覧ください。視線がズレていると、<span class="text-yellow-300 font-bold">脳がこの2つの映像を『無理やり1つに重ねよう』と常に目の筋肉を緊張</span>させています。</p>
+                    <p>そのため、夕方になって筋肉が疲労するとピントを合わせきれず、文字がダブって見えてしまうんです。</p>
+                `,
+                corrected: `
+                    <p>当店では<span class="text-hud-green font-bold">『両眼視検査』</span>という特別な測定を行い、このズレを自然に補正するレンズをご提案できます。</p>
+                    <p>右の画面のように、<span class="text-yellow-300 font-bold">プリズムレンズが視線をアシストし、脳が無理をしなくてもピタッとピントが合う</span>ようになります。</p>
+                    <p>これで、長時間の読書やデスクワークでも、驚くほど目が疲れにくくなりますよ。ぜひ一度、詳しい検査をさせていただけませんか？</p>
+                `
+            },
+            wink: {
+                uncorrected: `
+                    <p>パソコン作業中に片目をつぶってしまうのは、実は<span class="text-hud-red font-bold">脳からの『SOSサイン』</span>なんです。</p>
+                    <p>右の画面のように、両眼の視線がズレていると、脳内で情報が処理しきれずパニックを起こします。</p>
+                    <p>そのため、<span class="text-yellow-300 font-bold">無意識に片方の情報を遮断して、無理やり1つの映像だけで見て楽になろうとしている状態</span>です。これが非常に強い疲労を生みます。</p>
+                `,
+                corrected: `
+                    <p>当店の高度な<span class="text-hud-green font-bold">『両眼視検査』</span>で見つけ出したズレを補正すると、両目でしっかりと画面を捉えられるようになります。</p>
+                    <p>右の画面のように、左右の視界が自然に1つに融合します。<span class="text-yellow-300 font-bold">もう片目をつぶってごまかす必要がなくなり</span>、自然で快適なデスクワークを取り戻せますよ。</p>
+                `
+            },
+            fatigue: {
+                uncorrected: `
+                    <p>お客様、実は<span class="text-hud-red font-bold">『視力が良い＝目が疲れない』ではない</span>んです。</p>
+                    <p>視力が良くても、右の画面のように両眼のチームワークが乱れていると、映像を1つにまとめるために<span class="text-yellow-300 font-bold">脳が常にフルマラソンをしているような状態</span>になります。</p>
+                    <p>これが、視力検査では見逃されてしまう『原因不明の眼精疲労や頭痛』の正体です。</p>
+                `,
+                corrected: `
+                    <p>当店こだわりの<span class="text-hud-green font-bold">『両眼視検査』</span>で、お客様の目のクセを正確に測定します。</p>
+                    <p>プリズムレンズ等で視線をアシストすることで、<span class="text-yellow-300 font-bold">脳が完全にリラックスした状態で『1.0の視力』を快適に使いこなせる</span>ようになります。</p>
+                    <p>右の画面のような、脳にストレスのない本来の楽な見え方を、ぜひ当店の検査室でご体験ください。</p>
+                `
+            }
+        };
+
+        // --- 状態管理 ---
+        let currentProblem = '';
+        let isCorrected = false;
+
+        // DOM要素の取得
+        const viewSelection = document.getElementById('view-selection');
+        const viewLoading = document.getElementById('view-loading');
+        const viewSimulator = document.getElementById('view-simulator');
+        
+        const scriptTitle = document.getElementById('script-title');
+        const scriptContent = document.getElementById('script-content');
+        const btnCorrect = document.getElementById('btn-correct');
+        
+        const simContainer = document.getElementById('simulation-container');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const focusGlow = document.getElementById('focus-glow');
+        const prismV = document.getElementById('prism-v');
+        const prismH = document.getElementById('prism-h');
+
+        // シミュレーション開始（プログレッシブ・ディクロージャーの展開）
+        function startSimulation(problemType) {
+            currentProblem = problemType;
+            isCorrected = false;
+
+            // 1. 選択画面を隠す
+            viewSelection.classList.remove('visible-fade');
+            viewSelection.classList.add('hidden-fade');
+
+            // 2. ローディング演出
+            setTimeout(() => {
+                viewLoading.classList.remove('hidden-fade');
+                viewLoading.classList.add('visible-fade');
+                
+                // CSSアニメーション(width)の実行をJSでトリガー
+                document.getElementById('loading-bar').animate([
+                    { width: '0%' },
+                    { width: '100%' }
+                ], { duration: 1200, easing: 'ease-in-out' });
+
+                // 3. シミュレーター画面の表示
+                setTimeout(() => {
+                    viewLoading.classList.remove('visible-fade');
+                    viewLoading.classList.add('hidden-fade');
+                    
+                    setTimeout(() => {
+                        viewSimulator.classList.remove('hidden-fade');
+                        viewSimulator.classList.add('visible-fade');
+                        updateUI();
+                    }, 100);
+                }, 1200);
+            }, 300);
+        }
+
+        // 補正のON/OFF切り替え
+        function toggleCorrection() {
+            isCorrected = !isCorrected;
+            updateUI();
+        }
+
+        // 最初に戻る
+        function resetApp() {
+            // シミュレーターを隠す
+            viewSimulator.classList.remove('visible-fade');
+            viewSimulator.classList.add('hidden-fade');
+            
+            setTimeout(() => {
+                // 選択画面を表示
+                viewSelection.classList.remove('hidden-fade');
+                viewSelection.classList.add('visible-fade');
+                // 状態リセット
+                currentProblem = '';
+                isCorrected = false;
+                simContainer.className = 'clip-hud relative w-full h-[40vh] min-h-[300px] md:h-[500px] bg-hud-bg border-2 border-hud-border overflow-hidden flex items-center justify-center state-uncorrected brain-status-bg transition-colors duration-500';
+            }, 300);
+        }
+
+        // UI状態の更新（テキスト、アニメーション、ボタンの書き換え）
+        function updateUI() {
+            if (!currentProblem) return;
+
+            if (!isCorrected) {
+                // 【未補正状態】
+                scriptTitle.textContent = "フェーズ1: 隠れ疲労（視線ズレ）の解説";
+                scriptTitle.className = "text-sm text-hud-red mb-2 font-mono border-b border-gray-800 pb-1 font-bold";
+                scriptContent.innerHTML = scriptData[currentProblem].uncorrected;
+                
+                // ボタンの更新
+                btnCorrect.innerHTML = `
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    両眼視補正（プリズム）を試す
+                `;
+                btnCorrect.className = "clip-hud w-full py-4 px-6 bg-hud-cyan/10 border-2 border-hud-cyan text-hud-cyan font-bold text-lg hover:bg-hud-cyan/20 hover:shadow-neon-cyan transition-all flex items-center justify-center gap-2";
+
+                // シミュレーターの更新（CSSクラス切り替えでアニメーション発火）
+                simContainer.classList.remove('state-corrected');
+                simContainer.classList.add('state-uncorrected');
+                
+                // ステータス表示
+                statusIndicator.className = "w-3 h-3 rounded-full bg-hud-red shadow-neon-red";
+                statusText.className = "font-mono font-bold text-hud-red";
+                statusText.textContent = "CRITICAL (脳疲労 MAX)";
+                focusGlow.classList.replace('bg-hud-green/30', 'bg-hud-green/0');
+                
+                // HUD数値リセット
+                prismV.textContent = "0.00";
+                prismH.textContent = "0.00";
+
+            } else {
+                // 【補正済み状態】
+                scriptTitle.textContent = "フェーズ2: 解決策（両眼視検査）の提案";
+                scriptTitle.className = "text-sm text-hud-green mb-2 font-mono border-b border-gray-800 pb-1 font-bold";
+                scriptContent.innerHTML = scriptData[currentProblem].corrected;
+                
+                // ボタンの更新
+                btnCorrect.innerHTML = `
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    未補正の状態に戻す
+                `;
+                btnCorrect.className = "clip-hud w-full py-4 px-6 bg-transparent border border-gray-500 text-gray-400 hover:text-white hover:border-gray-300 transition-all flex items-center justify-center gap-2";
+
+                // シミュレーターの更新
+                simContainer.classList.remove('state-uncorrected');
+                simContainer.classList.add('state-corrected');
+                
+                // ステータス表示
+                statusIndicator.className = "w-3 h-3 rounded-full bg-hud-green shadow-neon-green";
+                statusText.className = "font-mono font-bold text-hud-green";
+                statusText.textContent = "OPTIMAL (脳リラックス)";
+                focusGlow.classList.replace('bg-hud-green/0', 'bg-hud-green/30');
+
+                // HUD数値アニメーション風
+                prismV.textContent = "2.50";
+                prismH.textContent = "1.25";
+            }
+        }
+    </script>
+</body>
+</html>
