@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>レンズ経年劣化 気づかせシミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --crystal: #44d7ff;
+      --crystal-deep: #0369a1;
+      --amber: #c9862b;
+      --ink: #050505;
+      --ivory: #fbfbf8;
+      --clarity: 0;
+      --age-sepia: .6;
+      --age-blur: 1.1;
+      --age-noise: .22;
+      --age-scratch: .18;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ivory);
+      background:
+        radial-gradient(circle at 50% -10%, rgba(68, 215, 255, .18), transparent 38%),
+        radial-gradient(circle at 10% 20%, rgba(201, 134, 43, .13), transparent 32%),
+        linear-gradient(145deg, #050505 0%, #101010 44%, #030303 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: .02em;
+    }
+
+    .premium-shell {
+      border: 1px solid rgba(255,255,255,.12);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.025)),
+        rgba(0,0,0,.34);
+      backdrop-filter: blur(22px);
+    }
+
+    .choice-button {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.18);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.03));
+      transition: transform .25s ease, border-color .25s ease, background .25s ease;
+    }
+
+    .choice-button::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--crystal), rgba(255,255,255,.8), var(--amber));
+    }
+
+    .choice-button:hover,
+    .choice-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(68, 215, 255, .7);
+      background:
+        linear-gradient(135deg, rgba(68,215,255,.15), rgba(255,255,255,.04));
+      outline: none;
+    }
+
+    .reveal {
+      animation: revealUp .55s cubic-bezier(.2,.85,.2,1) both;
+    }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .vision-stage {
+      --aged-amount: calc(1 - var(--clarity));
+      display: grid;
+      gap: 1rem;
+    }
+
+    .world-panel {
+      display: grid;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 2rem;
+      color: #050505;
+      background:
+        repeating-linear-gradient(
+          112deg,
+          rgba(255,255,255, calc(var(--aged-amount) * var(--age-scratch))) 0 1px,
+          transparent 1px 17px
+        ),
+        radial-gradient(
+          circle at 30% 20%,
+          rgba(255,255,255, calc(.08 + var(--clarity) * .18)),
+          transparent 34%
+        ),
+        radial-gradient(
+          circle at 72% 34%,
+          rgba(201,134,43, calc(var(--aged-amount) * var(--age-noise))),
+          transparent 28%
+        ),
+        linear-gradient(
+          135deg,
+          rgba(255,245,210, calc(var(--aged-amount) * .75)),
+          rgba(255,255,255, .94) 40%,
+          rgba(218,248,255, calc(.45 + var(--clarity) * .35))
+        );
+      filter:
+        sepia(calc(var(--aged-amount) * var(--age-sepia)))
+        blur(calc(var(--aged-amount) * var(--age-blur) * 1px))
+        contrast(calc(.82 + var(--clarity) * .36))
+        saturate(calc(.72 + var(--clarity) * .52))
+        brightness(calc(.91 + var(--clarity) * .12));
+      transition: filter .65s cubic-bezier(.2,.85,.2,1), background .65s ease;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.7),
+        inset 0 0 40px rgba(68,215,255, calc(var(--clarity) * .22)),
+        0 24px 70px rgba(0,0,0,.42);
+    }
+
+    .scenery {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .85rem;
+    }
+
+    .sky-museum {
+      display: grid;
+      gap: .6rem;
+      padding: 1rem;
+      border-radius: 1.5rem;
+      background:
+        linear-gradient(180deg, rgba(219,246,255,.96), rgba(255,255,255,.86));
+      border: 1px solid rgba(0,0,0,.08);
+    }
+
+    .art-row {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: .75rem;
+      align-items: stretch;
+    }
+
+    .art-frame {
+      min-height: 92px;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(0,0,0,.12);
+      background:
+        linear-gradient(135deg, #f9fafb 0 18%, #dff8ff 18% 48%, #ffffff 48% 100%);
+      display: grid;
+      place-items: center;
+      padding: .8rem;
+    }
+
+    .art-line {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #07111f, #44d7ff, #07111f);
+      opacity: calc(.45 + var(--clarity) * .45);
+    }
+
+    .contrast-board {
+      display: grid;
+      align-content: center;
+      gap: .55rem;
+      padding: .9rem;
+      border-radius: 1.25rem;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(0,0,0,.1);
+    }
+
+    .read-text {
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -.04em;
+      font-size: clamp(2.4rem, 13vw, 5rem);
+      color: #050505;
+      text-shadow:
+        calc(var(--aged-amount) * 1.5px) calc(var(--aged-amount) * 1.5px) 0 rgba(201,134,43,.28),
+        calc(var(--aged-amount) * -1.2px) calc(var(--aged-amount) * .8px) 0 rgba(255,255,255,.38);
+    }
+
+    .small-read {
+      color: rgba(0,0,0,.8);
+      font-weight: 800;
+      letter-spacing: .12em;
+      font-size: .75rem;
+    }
+
+    .range-track {
+      appearance: none;
+      width: 100%;
+      height: 18px;
+      border-radius: 999px;
+      background:
+        linear-gradient(
+          90deg,
+          rgba(201,134,43,.95) 0%,
+          rgba(201,134,43,.82) calc(var(--clarity) * 100%),
+          rgba(68,215,255,.34) calc(var(--clarity) * 100%),
+          rgba(68,215,255,.95) 100%
+        );
+      border: 1px solid rgba(255,255,255,.2);
+      outline: none;
+    }
+
+    .range-track::-webkit-slider-thumb {
+      appearance: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 5px solid var(--crystal);
+      box-shadow: 0 0 0 6px rgba(68,215,255,.18), 0 8px 22px rgba(0,0,0,.35);
+      cursor: pointer;
+    }
+
+    .range-track::-moz-range-thumb {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 5px solid var(--crystal);
+      box-shadow: 0 0 0 6px rgba(68,215,255,.18), 0 8px 22px rgba(0,0,0,.35);
+      cursor: pointer;
+    }
+
+    .meter-fill {
+      width: var(--value);
+      background: linear-gradient(90deg, rgba(201,134,43,.95), rgba(68,215,255,.9));
+    }
+
+    .script-card {
+      border: 1px solid rgba(255,255,255,.13);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.095), rgba(255,255,255,.025));
+    }
+
+    .script-highlight {
+      background: linear-gradient(90deg, rgba(68,215,255,.18), rgba(201,134,43,.18));
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: #050505;
+      background: linear-gradient(135deg, #ffffff, #d8f7ff);
+      border-color: rgba(68,215,255,.75);
+    }
+
+    @media (min-width: 768px) {
+      .app-grid {
+        grid-template-columns: .92fr 1.08fr;
+      }
+
+      .world-panel {
+        padding: 1.25rem;
+      }
+
+      .scenery {
+        grid-template-columns: 1.2fr .8fr;
+        align-items: stretch;
+      }
+
+      .sky-museum {
+        min-height: 340px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="mx-auto grid min-h-screen w-full max-w-6xl content-start gap-6 px-4 py-5 sm:px-6 md:py-8">
+    <section id="startPanel" class="premium-shell grid gap-6 rounded-[2rem] p-5 shadow-2xl sm:p-7 md:p-9">
+      <div class="grid gap-4">
+        <p class="w-fit rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-[.22em] text-cyan-200">
+          Lens Aging Simulator
+        </p>
+
+        <div class="grid gap-3">
+          <h1 class="text-balance text-3xl font-black leading-tight tracking-[-.05em] sm:text-5xl">
+            慣れって怖い。<br />
+            <span class="bg-gradient-to-r from-cyan-200 via-white to-amber-200 bg-clip-text text-transparent">
+              レンズの黄ばみ・小傷
+            </span>
+            気づかせシミュレーター
+          </h1>
+          <p class="max-w-2xl text-sm leading-7 text-white/66 sm:text-base">
+            お客様の使用年数を選ぶだけで、今の視界と新品レンズの差を新人スタッフでも自然に伝えられます。
+          </p>
+        </div>
+      </div>
+
+      <div class="grid gap-3" aria-label="メガネの使用年数を選択">
+        <button type="button" class="choice-button grid gap-4 rounded-[1.6rem] text-left" data-age="two">
+          <span class="grid gap-2 px-5 pb-5 pt-4">
+            <span class="text-xl font-black tracking-[-.03em]">約2年</span>
+            <span class="text-sm leading-6 text-white/66">少しずつコーティングが剥がれ始める時期</span>
+            <span class="text-xs font-bold text-cyan-200">まずは「気づき」を作る接客向け</span>
+          </span>
+        </button>
+
+        <button type="button" class="choice-button grid gap-4 rounded-[1.6rem] text-left" data-age="three">
+          <span class="grid gap-2 px-5 pb-5 pt-4">
+            <span class="text-xl font-black tracking-[-.03em]">3年以上</span>
+            <span class="text-sm leading-6 text-white/66">プラスチックの黄変と小傷が蓄積している時期</span>
+            <span class="text-xs font-bold text-amber-200">買い替え提案まで背中を押す接客向け</span>
+          </span>
+        </button>
+      </div>
+
+      <p id="startError" class="hidden rounded-2xl border border-amber-300/30 bg-amber-400/10 p-3 text-sm text-amber-100" role="alert">
+        使用年数を選択してください。
+      </p>
+    </section>
+
+    <section id="resultPanel" class="hidden grid gap-5">
+      <div class="grid gap-5 md:grid-cols-[.8fr_1.2fr]">
+        <aside class="premium-shell grid content-start gap-4 rounded-[2rem] p-5 sm:p-6">
+          <button id="resetButton" type="button" class="w-fit rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white/72 transition hover:border-cyan-200/70 hover:text-white">
+            ← 使用年数を選び直す
+          </button>
+
+          <div class="grid gap-2">
+            <p id="ageBadge" class="w-fit rounded-full px-3 py-1 text-xs font-black tracking-[.18em]"></p>
+            <h2 id="ageTitle" class="text-2xl font-black tracking-[-.04em]"></h2>
+            <p id="ageLead" class="text-sm leading-7 text-white/65"></p>
+          </div>
+
+          <div class="grid gap-3">
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-white/58">
+                <span>黄ばみ体感</span>
+                <span id="yellowScore"></span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10">
+                <div id="yellowMeter" class="meter-fill h-2 rounded-full" style="--value: 0%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-white/58">
+                <span>小傷・乱反射</span>
+                <span id="scratchScore"></span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10">
+                <div id="scratchMeter" class="meter-fill h-2 rounded-full" style="--value: 0%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-white/58">
+                <span>買い替え提案度</span>
+                <span id="proposalScore"></span>
+              </div>
+              <div class="h-2 rounded-full bg-white/10">
+                <div id="proposalMeter" class="meter-fill h-2 rounded-full" style="--value: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-[1.5rem] border border-white/12 bg-black/35 p-4">
+            <p class="mb-2 text-xs font-black uppercase tracking-[.2em] text-cyan-200">Staff Cue</p>
+            <p id="staffCue" class="text-sm leading-7 text-white/76"></p>
+          </div>
+        </aside>
+
+        <section class="premium-shell grid gap-5 rounded-[2rem] p-4 sm:p-5 md:p-6">
+          <div class="grid gap-2">
+            <p class="text-xs font-black uppercase tracking-[.22em] text-cyan-200">Before / After</p>
+            <h2 class="text-2xl font-black tracking-[-.04em]">見え方の差を、言葉ではなく体験で伝える</h2>
+            <p class="text-sm leading-7 text-white/62">
+              スライダーを右へ動かすと、新品レンズの「透明感・白さ・輪郭の強さ」が一気に戻ります。
+            </p>
+          </div>
+
+          <div id="visionStage" class="vision-stage rounded-[2rem] bg-white/5 p-2">
+            <div class="world-panel">
+              <div class="scenery">
+                <div class="sky-museum">
+                  <p class="small-read">RESTORED VIEW SAMPLE</p>
+
+                  <div class="art-row">
+                    <div class="art-frame">
+                      <div class="grid w-full gap-2">
+                        <div class="art-line"></div>
+                        <div class="h-3 w-3/4 rounded-full bg-black/80"></div>
+                        <div class="h-3 w-1/2 rounded-full bg-cyan-600/80"></div>
+                      </div>
+                    </div>
+
+                    <div class="contrast-board">
+                      <p class="text-xs font-black tracking-[.18em] text-black/50">CONTRAST TEST</p>
+                      <p class="read-text">透明</p>
+                      <p class="text-sm font-black leading-5 text-black/70">
+                        白が白く、黒が黒く見える。<br />
+                        それだけで視界は若返ります。
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="grid gap-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                    <p class="text-xs font-black tracking-[.18em] text-black/48">DAILY VIEW</p>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div class="h-14 rounded-2xl bg-cyan-100"></div>
+                      <div class="h-14 rounded-2xl bg-white"></div>
+                      <div class="h-14 rounded-2xl bg-slate-900"></div>
+                    </div>
+                    <p class="text-sm font-bold leading-6 text-black/70">
+                      信号・白い壁・スマホ文字の輪郭まで、コントラストが変わります。
+                    </p>
+                  </div>
+                </div>
+
+                <div class="grid gap-3">
+                  <div class="rounded-[1.5rem] border border-black/10 bg-white/75 p-4">
+                    <p class="mb-2 text-xs font-black tracking-[.18em] text-black/44">READABILITY</p>
+                    <p class="text-3xl font-black tracking-[-.05em] text-black sm:text-4xl">夜の光、にじんでいませんか？</p>
+                  </div>
+
+                  <div class="rounded-[1.5rem] border border-black/10 bg-white/70 p-4">
+                    <p class="mb-2 text-xs font-black tracking-[.18em] text-black/44">COLOR CHECK</p>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="grid place-items-center rounded-2xl bg-white p-5 text-sm font-black text-black">PURE<br />WHITE</div>
+                      <div class="grid place-items-center rounded-2xl bg-amber-100 p-5 text-sm font-black text-black">AGED<br />AMBER</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-4 rounded-[1.5rem] border border-white/12 bg-black/35 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-xs font-black text-amber-200">現在の視界</span>
+              <span id="clarityLabel" class="rounded-full border border-cyan-200/30 bg-cyan-300/10 px-3 py-1 text-xs font-black text-cyan-100">劣化状態</span>
+              <span class="text-xs font-black text-cyan-200">新品の視界</span>
+            </div>
+
+            <input id="clarityRange" class="range-track" type="range" min="0" max="100" value="0" aria-label="新品レンズの見え方へ切り替えるスライダー" />
+
+            <div class="grid grid-cols-2 gap-3">
+              <button id="agedButton" type="button" class="rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-100 transition hover:bg-amber-400/16">
+                劣化状態に戻す
+              </button>
+              <button id="clearButton" type="button" class="rounded-2xl border border-cyan-200/40 bg-cyan-300/12 px-4 py-3 text-sm font-black text-cyan-100 transition hover:bg-cyan-300/20">
+                新品を体験
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="premium-shell grid gap-5 rounded-[2rem] p-5 sm:p-6">
+        <div class="grid gap-2">
+          <p class="text-xs font-black uppercase tracking-[.22em] text-amber-200">Talk Script</p>
+          <h2 class="text-2xl font-black tracking-[-.04em]">新人スタッフ用・そのまま読める接客カンペ</h2>
+          <p class="text-sm leading-7 text-white/62">
+            お客様を否定せず、「慣れていただけかも」と気づいていただくための段階式トークです。
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 rounded-[1.4rem] border border-white/10 bg-black/35 p-2" role="tablist" aria-label="接客トークの段階">
+          <button class="tab-button rounded-2xl border border-white/10 px-3 py-3 text-xs font-black text-white/68 transition" type="button" data-step="0" role="tab" aria-selected="true">
+            ① 気づき
+          </button>
+          <button class="tab-button rounded-2xl border border-white/10 px-3 py-3 text-xs font-black text-white/68 transition" type="button" data-step="1" role="tab" aria-selected="false">
+            ② 体験
+          </button>
+          <button class="tab-button rounded-2xl border border-white/10 px-3 py-3 text-xs font-black text-white/68 transition" type="button" data-step="2" role="tab" aria-selected="false">
+            ③ 提案
+          </button>
+        </div>
+
+        <article class="script-card grid gap-4 rounded-[1.7rem] p-4 sm:p-5">
+          <div class="grid gap-1">
+            <p id="scriptStep" class="text-xs font-black tracking-[.18em] text-cyan-200"></p>
+            <h3 id="scriptTitle" class="text-xl font-black tracking-[-.03em]"></h3>
+          </div>
+
+          <p id="scriptHighlight" class="script-highlight rounded-[1.3rem] p-4 text-base font-black leading-8 text-white"></p>
+          <p id="scriptBody" class="text-sm leading-8 text-white/72"></p>
+
+          <button id="copyButton" type="button" class="w-full rounded-2xl border border-white/14 bg-white px-4 py-3 text-sm font-black text-black transition hover:bg-cyan-50">
+            このトークをコピー
+          </button>
+
+          <p id="copyStatus" class="hidden rounded-2xl border border-cyan-200/25 bg-cyan-300/10 p-3 text-sm font-bold text-cyan-100" role="status">
+            コピーしました。接客前の練習に使えます。
+          </p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const scenarios = {
+      two: {
+        badge: "約2年使用",
+        title: "見えています。ただ、透明感は少しずつ落ち始めています。",
+        lead: "まだ強い黄変ではありませんが、コーティングの微細な劣化で、夜間の光やスマホ文字に“にじみ”が出やすい時期です。",
+        cue: "否定ではなく確認から入るのがコツです。「見えない」ではなく「新品と比べると差が出始める時期」と伝えます。",
+        values: { yellow: 44, scratch: 52, proposal: 58 },
+        css: { sepia: .42, blur: .8, noise: .16, scratch: .13 },
+        scripts: [
+          {
+            step: "STEP 1 / 気づき",
+            title: "まずは“脳が慣れる”話で、押し売り感を消す",
+            highlight: "人間の脳はとても優秀なので、ゆっくり進むレンズの黄ばみや小傷には、意外と慣れてしまうんです。",
+            body: "今のメガネが急に悪くなったというより、毎日少しずつ変化するので気づきにくい状態です。2年ほど使うと、コーティング表面の細かな劣化で光がにじんだり、白いものが少しだけ暖色に寄って見えることがあります。"
+          },
+          {
+            step: "STEP 2 / 体験",
+            title: "比較体験で“なんとなく見える”を“差がある”に変える",
+            highlight: "こちらの新品側に切り替えると、白の抜け感と文字の輪郭が少し戻るのが分かると思います。",
+            body: "今の見え方は、薄い膜を一枚通しているような状態に近いです。視力表では読めても、夜のライトやスマホの小さな文字、白い壁の見え方では差が出やすいんですよ。"
+          },
+          {
+            step: "STEP 3 / 提案",
+            title: "調整だけで終わらせず、次回購入の理由を残す",
+            highlight: "今日すぐでなくても、次の一本は“視力”だけでなく“レンズの透明感”も基準に選ぶと満足度が高いです。",
+            body: "今回は調整で掛け心地を整えますね。ただ、レンズは毎日見ている分、劣化に慣れやすい部品です。新しいレンズにすると、世界がワントーン明るく感じる方も多いので、次回はぜひ比較してみてください。"
+          }
+        ]
+      },
+      three: {
+        badge: "3年以上使用",
+        title: "見えているつもりでも、黄ばみと小傷が視界を濁らせています。",
+        lead: "プラスチックレンズの黄変、小傷、コーティング剥がれが重なり、常に薄いサングラスとすりガラスを通しているような見え方になりやすい時期です。",
+        cue: "ここは買い替え提案まで踏み込めます。「調整はできます。ただ、視界の質はレンズ交換でしか戻りません」と分けて伝えます。",
+        values: { yellow: 78, scratch: 84, proposal: 92 },
+        css: { sepia: .78, blur: 1.55, noise: .28, scratch: .24 },
+        scripts: [
+          {
+            step: "STEP 1 / 気づき",
+            title: "“まだ見える”を尊重しながら、視界の質へ話題を移す",
+            highlight: "おっしゃる通り、度数としてはまだ見えていると思います。ただ、3年以上使うと“見える・見えない”とは別に、レンズ自体の透明感がかなり落ちてきます。",
+            body: "人間の脳は優秀なので、ゆっくり進行するレンズの黄ばみや小傷に慣れてしまいます。つまり、悪くなった瞬間が分からないまま、少し暗く、少しにじむ視界を普通だと思ってしまうんです。"
+          },
+          {
+            step: "STEP 2 / 体験",
+            title: "新品との落差を強く見せ、納得を作る",
+            highlight: "今の見え方は、常に薄いサングラスとすりガラスを通しているような状態です。新品に変えると、世界がワントーン明るくなりますよ。",
+            body: "こちらの新品側に切り替えると、黄ばみが抜けて、黒い文字の輪郭が締まります。夜のヘッドライト、白い壁、スマホ画面など、毎日見るものほど違いを感じやすいです。"
+          },
+          {
+            step: "STEP 3 / 提案",
+            title: "調整と買い替えを対立させず、自然に提案する",
+            highlight: "掛け具合の調整はもちろんできます。ただ、レンズの黄ばみや小傷による視界の濁りは、調整では戻せない部分です。",
+            body: "せっかく今のフレームを大切に使っていただいているので、今日は掛け心地を整えます。そのうえで、視界の明るさを戻すなら新しいメガネ、またはレンズ交換をおすすめします。今のメガネと新品を見比べるだけでも、違いがかなり分かると思います。"
+          }
+        ]
+      }
+    };
+
+    const elements = {
+      startPanel: document.getElementById("startPanel"),
+      resultPanel: document.getElementById("resultPanel"),
+      startError: document.getElementById("startError"),
+      ageBadge: document.getElementById("ageBadge"),
+      ageTitle: document.getElementById("ageTitle"),
+      ageLead: document.getElementById("ageLead"),
+      staffCue: document.getElementById("staffCue"),
+      yellowScore: document.getElementById("yellowScore"),
+      scratchScore: document.getElementById("scratchScore"),
+      proposalScore: document.getElementById("proposalScore"),
+      yellowMeter: document.getElementById("yellowMeter"),
+      scratchMeter: document.getElementById("scratchMeter"),
+      proposalMeter: document.getElementById("proposalMeter"),
+      visionStage: document.getElementById("visionStage"),
+      clarityRange: document.getElementById("clarityRange"),
+      clarityLabel: document.getElementById("clarityLabel"),
+      scriptStep: document.getElementById("scriptStep"),
+      scriptTitle: document.getElementById("scriptTitle"),
+      scriptHighlight: document.getElementById("scriptHighlight"),
+      scriptBody: document.getElementById("scriptBody"),
+      copyButton: document.getElementById("copyButton"),
+      copyStatus: document.getElementById("copyStatus")
+    };
+
+    let currentScenario = null;
+    let currentStep = 0;
+
+    function safeScenario(key) {
+      return Object.prototype.hasOwnProperty.call(scenarios, key) ? scenarios[key] : null;
+    }
+
+    function setClarity(value) {
+      const safeValue = Number.isFinite(Number(value)) ? Math.min(100, Math.max(0, Number(value))) : 0;
+      const clarity = safeValue / 100;
+      elements.clarityRange.value = String(safeValue);
+      elements.visionStage.style.setProperty("--clarity", clarity.toFixed(2));
+
+      if (safeValue < 35) {
+        elements.clarityLabel.textContent = "劣化状態";
+      } else if (safeValue < 75) {
+        elements.clarityLabel.textContent = "差を比較中";
+      } else {
+        elements.clarityLabel.textContent = "新品の視界";
+      }
+    }
+
+    function setMeter(element, scoreElement, value) {
+      const safeValue = Math.min(100, Math.max(0, Number(value) || 0));
+      element.style.setProperty("--value", safeValue + "%");
+      scoreElement.textContent = safeValue + "%";
+    }
+
+    function renderScript(stepIndex) {
+      if (!currentScenario) return;
+
+      const safeIndex = Math.min(2, Math.max(0, Number(stepIndex) || 0));
+      currentStep = safeIndex;
+
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        const isSelected = Number(button.dataset.step) === safeIndex;
+        button.setAttribute("aria-selected", String(isSelected));
+      });
+
+      const script = currentScenario.scripts[safeIndex];
+      elements.scriptStep.textContent = script.step;
+      elements.scriptTitle.textContent = script.title;
+      elements.scriptHighlight.textContent = script.highlight;
+      elements.scriptBody.textContent = script.body;
+      elements.copyStatus.classList.add("hidden");
+    }
+
+    function renderScenario(key) {
+      const scenario = safeScenario(key);
+
+      if (!scenario) {
+        elements.startError.classList.remove("hidden");
+        return;
+      }
+
+      currentScenario = scenario;
+      currentStep = 0;
+
+      elements.startError.classList.add("hidden");
+      elements.startPanel.classList.add("hidden");
+      elements.resultPanel.classList.remove("hidden");
+      elements.resultPanel.classList.add("reveal");
+
+      elements.ageBadge.textContent = scenario.badge;
+      elements.ageBadge.className = "w-fit rounded-full border border-cyan-200/30 bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[.18em] text-cyan-100";
+      elements.ageTitle.textContent = scenario.title;
+      elements.ageLead.textContent = scenario.lead;
+      elements.staffCue.textContent = scenario.cue;
+
+      setMeter(elements.yellowMeter, elements.yellowScore, scenario.values.yellow);
+      setMeter(elements.scratchMeter, elements.scratchScore, scenario.values.scratch);
+      setMeter(elements.proposalMeter, elements.proposalScore, scenario.values.proposal);
+
+      elements.visionStage.style.setProperty("--age-sepia", scenario.css.sepia);
+      elements.visionStage.style.setProperty("--age-blur", scenario.css.blur);
+      elements.visionStage.style.setProperty("--age-noise", scenario.css.noise);
+      elements.visionStage.style.setProperty("--age-scratch", scenario.css.scratch);
+
+      setClarity(0);
+      renderScript(0);
+
+      requestAnimationFrame(() => {
+        elements.resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+
+    document.querySelectorAll("[data-age]").forEach((button) => {
+      button.addEventListener("click", () => renderScenario(button.dataset.age));
+    });
+
+    document.querySelectorAll(".tab-button").forEach((button) => {
+      button.addEventListener("click", () => renderScript(button.dataset.step));
+    });
+
+    elements.clarityRange.addEventListener("input", (event) => {
+      setClarity(event.target.value);
+    });
+
+    elements.clearButton.addEventListener("click", () => {
+      setClarity(100);
+      renderScript(1);
+    });
+
+    elements.agedButton.addEventListener("click", () => {
+      setClarity(0);
+      renderScript(0);
+    });
+
+    document.getElementById("resetButton").addEventListener("click", () => {
+      currentScenario = null;
+      elements.resultPanel.classList.add("hidden");
+      elements.resultPanel.classList.remove("reveal");
+      elements.startPanel.classList.remove("hidden");
+      elements.copyStatus.classList.add("hidden");
+      setClarity(0);
+      elements.startPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    elements.copyButton.addEventListener("click", async () => {
+      if (!currentScenario) return;
+
+      const script = currentScenario.scripts[currentStep];
+      const text = `${script.step}\n${script.title}\n\n${script.highlight}\n\n${script.body}`;
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+
+        elements.copyStatus.textContent = "コピーしました。接客前の練習に使えます。";
+        elements.copyStatus.classList.remove("hidden");
+      } catch (error) {
+        elements.copyStatus.textContent = "コピーに失敗しました。画面のトーク文を長押ししてコピーしてください。";
+        elements.copyStatus.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
