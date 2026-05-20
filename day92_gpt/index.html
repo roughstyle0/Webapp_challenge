@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>遠近両用レンズ グレード比較シミュレーター</title>
+
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              charcoal: "#11151C",
+              carbon: "#1B2029",
+              silver: "#D7DEE8",
+              platinum: "#EEF3F8",
+              sapphire: "#1DA1FF",
+              sapphireDeep: "#075EA8",
+              warning: "#FF3B47"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --edge: 1.18fr;
+      --center: .82fr;
+      --foot: 1.18fr;
+      --distort-opacity: 1;
+      --distort-blur: 4.5px;
+      --distort-skew: -9deg;
+      --clear-strength: .54;
+      --clear-saturation: 1.05;
+      --clear-glow: 0 0 26px rgba(29, 161, 255, .28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      color: #EEF3F8;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(29, 161, 255, .18), transparent 30rem),
+        radial-gradient(circle at 10% 30%, rgba(215, 222, 232, .08), transparent 24rem),
+        linear-gradient(140deg, #07090D 0%, #11151C 44%, #1B2029 100%);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .catalog-surface {
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, .105), rgba(255, 255, 255, .035)),
+        linear-gradient(180deg, rgba(29, 161, 255, .07), rgba(255, 255, 255, 0));
+      border: 1px solid rgba(215, 222, 232, .18);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .35);
+      backdrop-filter: blur(18px);
+    }
+
+    .metal-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(215, 222, 232, .72), transparent);
+    }
+
+    .choice-button {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.035)),
+        linear-gradient(180deg, rgba(29,161,255,.06), rgba(0,0,0,.05));
+      border: 1px solid rgba(215,222,232,.22);
+      transition: transform .22s ease, border-color .22s ease, background .22s ease;
+    }
+
+    .choice-button:hover,
+    .choice-button:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(29, 161, 255, .82);
+      background:
+        linear-gradient(135deg, rgba(29,161,255,.18), rgba(255,255,255,.05)),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.05));
+      outline: none;
+    }
+
+    .grade-button {
+      border: 1px solid rgba(215,222,232,.18);
+      background: rgba(255,255,255,.055);
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .grade-button:hover,
+    .grade-button:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+      border-color: rgba(29, 161, 255, .7);
+    }
+
+    .grade-button.is-active-standard {
+      background: linear-gradient(135deg, rgba(255,59,71,.22), rgba(255,255,255,.05));
+      border-color: rgba(255,59,71,.62);
+    }
+
+    .grade-button.is-active-premium {
+      background: linear-gradient(135deg, rgba(29,161,255,.35), rgba(255,255,255,.07));
+      border-color: rgba(29,161,255,.82);
+      box-shadow: 0 0 30px rgba(29,161,255,.16);
+    }
+
+    .lens-grid {
+      display: grid;
+      grid-template-columns: var(--edge) var(--center) var(--edge);
+      grid-template-rows: 1fr 1.15fr var(--foot);
+      gap: .45rem;
+      min-height: 360px;
+      padding: .55rem;
+      border-radius: 2rem;
+      background:
+        linear-gradient(135deg, rgba(215,222,232,.11), rgba(255,255,255,.03)),
+        radial-gradient(circle at 50% 40%, rgba(29,161,255,.13), transparent 20rem);
+      border: 1px solid rgba(215,222,232,.16);
+      transition:
+        grid-template-columns .95s cubic-bezier(.2,.9,.16,1),
+        grid-template-rows .95s cubic-bezier(.2,.9,.16,1);
+      overflow: hidden;
+    }
+
+    .lens-grid.mode-premium {
+      --edge: .16fr;
+      --center: 4.6fr;
+      --foot: .22fr;
+      --distort-opacity: .08;
+      --distort-blur: .8px;
+      --distort-skew: 0deg;
+      --clear-strength: 1;
+      --clear-saturation: 1.18;
+      --clear-glow: 0 0 44px rgba(29, 161, 255, .46);
+    }
+
+    .zone {
+      min-width: 0;
+      min-height: 0;
+      border-radius: 1.35rem;
+      display: grid;
+      align-items: stretch;
+      transition:
+        filter .95s cubic-bezier(.2,.9,.16,1),
+        opacity .95s cubic-bezier(.2,.9,.16,1),
+        transform .95s cubic-bezier(.2,.9,.16,1),
+        background .95s cubic-bezier(.2,.9,.16,1),
+        box-shadow .95s cubic-bezier(.2,.9,.16,1);
+      overflow: hidden;
+    }
+
+    .zone-left {
+      grid-column: 1;
+      grid-row: 1 / 3;
+    }
+
+    .zone-clear {
+      grid-column: 2;
+      grid-row: 1 / 3;
+    }
+
+    .zone-right {
+      grid-column: 3;
+      grid-row: 1 / 3;
+    }
+
+    .zone-foot-left {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .zone-foot-center {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    .zone-foot-right {
+      grid-column: 3;
+      grid-row: 3;
+    }
+
+    .distort-zone {
+      opacity: var(--distort-opacity);
+      filter: blur(var(--distort-blur)) saturate(1.45);
+      transform: skewX(var(--distort-skew)) scale(1.035);
+      background:
+        repeating-linear-gradient(115deg, rgba(255,255,255,.08) 0 8px, rgba(255,255,255,0) 8px 16px),
+        linear-gradient(145deg, rgba(255,59,71,.72), rgba(120,12,22,.82));
+      border: 1px solid rgba(255,59,71,.35);
+    }
+
+    .clear-zone {
+      opacity: var(--clear-strength);
+      filter: saturate(var(--clear-saturation)) contrast(1.08);
+      background:
+        linear-gradient(135deg, rgba(29,161,255,.38), rgba(255,255,255,.12)),
+        linear-gradient(180deg, rgba(12,45,77,.52), rgba(5,15,24,.72));
+      border: 1px solid rgba(29,161,255,.42);
+      box-shadow: var(--clear-glow);
+    }
+
+    .zone-foot-center {
+      filter: blur(calc(var(--distort-blur) * .65)) saturate(1.3);
+      opacity: max(.28, var(--distort-opacity));
+      transform: skewX(calc(var(--distort-skew) * .45));
+      background:
+        linear-gradient(135deg, rgba(255,59,71,.48), rgba(29,161,255,.16)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 1px, transparent 1px 16px);
+      border: 1px solid rgba(255,59,71,.28);
+    }
+
+    .mode-premium .zone-foot-center {
+      filter: saturate(1.18) contrast(1.05);
+      opacity: 1;
+      transform: skewX(0);
+      background:
+        linear-gradient(135deg, rgba(29,161,255,.44), rgba(255,255,255,.14)),
+        linear-gradient(180deg, rgba(12,45,77,.42), rgba(5,15,24,.66));
+      border-color: rgba(29,161,255,.4);
+      box-shadow: var(--clear-glow);
+    }
+
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .55rem;
+      padding: .75rem;
+      align-content: center;
+    }
+
+    .pattern-tile {
+      display: grid;
+      gap: .35rem;
+      min-height: 3.8rem;
+      padding: .65rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.15);
+    }
+
+    .pattern-tile span {
+      font-size: .76rem;
+      line-height: 1.2;
+      color: rgba(238,243,248,.92);
+      letter-spacing: .04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pattern-tile b {
+      display: block;
+      height: .42rem;
+      border-radius: 999px;
+      background: rgba(238,243,248,.56);
+    }
+
+    .pattern-tile b:last-child {
+      width: 68%;
+      background: rgba(238,243,248,.34);
+    }
+
+    .distort-zone .pattern-tile {
+      background: rgba(30,0,5,.18);
+      border-color: rgba(255,255,255,.08);
+    }
+
+    .metric-bar {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+
+    .metric-fill {
+      height: 100%;
+      width: var(--value);
+      transition: width .75s ease;
+      background: linear-gradient(90deg, rgba(215,222,232,.5), rgba(29,161,255,.95));
+    }
+
+    .metric-fill.danger {
+      background: linear-gradient(90deg, rgba(255,59,71,.92), rgba(255,142,149,.62));
+    }
+
+    .script-highlight {
+      color: #FFFFFF;
+      background: linear-gradient(180deg, rgba(29,161,255,.18), rgba(29,161,255,.34));
+      border: 1px solid rgba(29,161,255,.38);
+      border-radius: .65rem;
+      padding: .08rem .42rem;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .danger-highlight {
+      color: #FFFFFF;
+      background: linear-gradient(180deg, rgba(255,59,71,.18), rgba(255,59,71,.34));
+      border: 1px solid rgba(255,59,71,.35);
+      border-radius: .65rem;
+      padding: .08rem .42rem;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    .fade-in {
+      animation: fadeIn .36s ease both;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (min-width: 768px) {
+      .lens-grid {
+        min-height: 460px;
+        padding: .7rem;
+        gap: .6rem;
+      }
+
+      .pattern-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 1rem;
+      }
+
+      .zone-clear .pattern-grid,
+      .zone-foot-center .pattern-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in,
+      .choice-button,
+      .grade-button,
+      .lens-grid,
+      .zone,
+      .metric-fill {
+        animation: none;
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>
+    <div style="padding: 24px; color: white; background: #11151C;">
+      このアプリを使用するにはJavaScriptを有効にしてください。
+    </div>
+  </noscript>
+
+  <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
+    <header class="catalog-surface rounded-[2rem] p-5 sm:p-7">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="rounded-full border border-silver/20 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[.26em] text-silver/80">
+            Progressive Lens Grade
+          </span>
+          <span class="rounded-full border border-sapphire/30 bg-sapphire/10 px-3 py-1 text-[11px] font-semibold tracking-[.18em] text-sapphire">
+            視野の広さを体験
+          </span>
+        </div>
+
+        <div class="grid gap-3">
+          <h1 class="text-2xl font-semibold tracking-tight text-platinum sm:text-4xl">
+            値段の違いは「視野の広さ」。
+          </h1>
+          <p class="max-w-3xl text-sm leading-7 text-silver/78 sm:text-base">
+            遠近両用レンズのグレード差を、歪み・足元の見え方・接客トークまで一気に確認できる新人スタッフ向けシミュレーター。
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <section id="startPanel" class="catalog-surface rounded-[2rem] p-5 sm:p-7">
+      <div class="grid gap-5">
+        <div class="grid gap-2">
+          <p class="text-xs font-semibold uppercase tracking-[.24em] text-sapphire">
+            Step 01 / お客様の不安を選択
+          </p>
+          <h2 class="text-xl font-semibold text-platinum sm:text-2xl">
+            まず、お客様の一言を選んでください。
+          </h2>
+          <p class="text-sm leading-7 text-silver/72">
+            初期画面では情報を増やしすぎず、接客現場で最初に聞こえやすい不安だけを表示しています。
+          </p>
+        </div>
+
+        <div id="errorBox" class="hidden rounded-2xl border border-warning/40 bg-warning/10 p-4 text-sm leading-6 text-red-100" role="alert"></div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <button type="button" class="choice-button rounded-3xl p-5 text-left" data-scenario="dizzy">
+            <span class="mb-4 inline-flex rounded-full bg-warning/12 px-3 py-1 text-xs font-semibold tracking-[.14em] text-red-200">
+              不安タイプ
+            </span>
+            <span class="block text-lg font-semibold leading-8 text-platinum">
+              遠近両用は足元がフワフワして酔うって聞いた
+            </span>
+            <span class="mt-4 block text-sm leading-6 text-silver/68">
+              「慣れにくさ」「足元の違和感」を、視野の広さで説明する接客へ。
+            </span>
+          </button>
+
+          <button type="button" class="choice-button rounded-3xl p-5 text-left" data-scenario="price">
+            <span class="mb-4 inline-flex rounded-full bg-sapphire/12 px-3 py-1 text-xs font-semibold tracking-[.14em] text-blue-100">
+              価格タイプ
+            </span>
+            <span class="block text-lg font-semibold leading-8 text-platinum">
+              どうせどれも同じでしょ？一番安いのでいいよ
+            </span>
+            <span class="mt-4 block text-sm leading-6 text-silver/68">
+              「安さ」ではなく「安全性と快適さ」で価格差を伝える接客へ。
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="experiencePanel" class="hidden grid gap-5">
+      <div class="catalog-surface rounded-[2rem] p-5 sm:p-7">
+        <div class="grid gap-5 lg:grid-cols-[.92fr_1.08fr] lg:items-start">
+          <div class="grid gap-5">
+            <div class="grid gap-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-full border border-sapphire/30 bg-sapphire/10 px-3 py-1 text-xs font-semibold text-sapphire">
+                  選択中の不安
+                </span>
+                <span id="scenarioLabel" class="rounded-full border border-silver/20 bg-white/5 px-3 py-1 text-xs text-silver/84"></span>
+              </div>
+
+              <h2 id="demoHeadline" class="text-2xl font-semibold leading-tight text-platinum sm:text-3xl"></h2>
+              <p id="demoLead" class="text-sm leading-7 text-silver/72"></p>
+            </div>
+
+            <div class="grid gap-3 rounded-[1.7rem] border border-silver/15 bg-black/18 p-4">
+              <p class="text-xs font-semibold uppercase tracking-[.22em] text-silver/58">
+                Grade Selector
+              </p>
+
+              <div class="grid gap-3 sm:grid-cols-3">
+                <button id="standardBtn" type="button" class="grade-button rounded-2xl p-4 text-left">
+                  <span class="block text-xs font-semibold tracking-[.18em] text-red-200">STANDARD</span>
+                  <span class="mt-2 block text-lg font-semibold text-platinum">廉価版</span>
+                  <span class="mt-2 block text-xs leading-5 text-silver/66">中心は見えるが、横・足元に歪みが残りやすい</span>
+                </button>
+
+                <button id="premiumBtn" type="button" class="grade-button rounded-2xl p-4 text-left">
+                  <span class="block text-xs font-semibold tracking-[.18em] text-sapphire">PREMIUM</span>
+                  <span class="mt-2 block text-lg font-semibold text-platinum">高級版</span>
+                  <span class="mt-2 block text-xs leading-5 text-silver/66">歪みを端へ逃がし、広い視野で快適に</span>
+                </button>
+
+                <button id="compareBtn" type="button" class="grade-button rounded-2xl p-4 text-left">
+                  <span class="block text-xs font-semibold tracking-[.18em] text-silver/70">ANIMATION</span>
+                  <span class="mt-2 block text-lg font-semibold text-platinum">比較再生</span>
+                  <span class="mt-2 block text-xs leading-5 text-silver/66">赤い歪みが端へ退く変化を確認</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="gradeNote" class="rounded-[1.7rem] border border-silver/15 bg-white/[.045] p-4 text-sm leading-7 text-silver/78"></div>
+          </div>
+
+          <div class="grid gap-4">
+            <div class="rounded-[2rem] border border-silver/15 bg-black/22 p-3">
+              <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-2">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[.22em] text-silver/54">
+                    Visual Field Simulation
+                  </p>
+                  <p id="visualCaption" class="mt-1 text-sm font-semibold text-platinum"></p>
+                </div>
+                <span id="gradeBadge" class="rounded-full px-3 py-1 text-xs font-semibold"></span>
+              </div>
+
+              <div id="lensGrid" class="lens-grid mode-standard" aria-label="グレード別の視野と歪みのシミュレーション">
+                <div id="zoneLeft" class="zone zone-left distort-zone"></div>
+                <div id="zoneClear" class="zone zone-clear clear-zone"></div>
+                <div id="zoneRight" class="zone zone-right distort-zone"></div>
+                <div id="zoneFootLeft" class="zone zone-foot-left distort-zone"></div>
+                <div id="zoneFootCenter" class="zone zone-foot-center"></div>
+                <div id="zoneFootRight" class="zone zone-foot-right distort-zone"></div>
+              </div>
+            </div>
+
+            <div id="metrics" class="grid gap-3 sm:grid-cols-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="catalog-surface rounded-[2rem] p-5 sm:p-7">
+        <div class="grid gap-5 lg:grid-cols-[.75fr_1.25fr] lg:items-start">
+          <div class="grid gap-3">
+            <p class="text-xs font-semibold uppercase tracking-[.24em] text-sapphire">
+              Staff Talk Script
+            </p>
+            <h2 class="text-2xl font-semibold text-platinum">
+              そのまま読める接客カンペ
+            </h2>
+            <p class="text-sm leading-7 text-silver/72">
+              価格差を「安全性と快適さ」に置き換えるため、段階ごとにトークを表示します。
+            </p>
+
+            <div class="metal-line my-1"></div>
+
+            <div class="flex flex-wrap gap-2">
+              <button id="prevTalkBtn" type="button" class="grade-button rounded-full px-4 py-2 text-sm font-semibold text-silver">
+                前へ
+              </button>
+              <button id="nextTalkBtn" type="button" class="grade-button rounded-full px-4 py-2 text-sm font-semibold text-silver">
+                次のトーク
+              </button>
+              <button id="resetBtn" type="button" class="grade-button rounded-full px-4 py-2 text-sm font-semibold text-silver">
+                最初に戻る
+              </button>
+            </div>
+          </div>
+
+          <article class="rounded-[2rem] border border-sapphire/22 bg-sapphire/8 p-5">
+            <div class="mb-4 flex flex-wrap items-center gap-2">
+              <span id="talkStepBadge" class="rounded-full bg-sapphire/16 px-3 py-1 text-xs font-semibold tracking-[.16em] text-sapphire"></span>
+              <span id="talkPurpose" class="rounded-full border border-silver/15 bg-white/5 px-3 py-1 text-xs text-silver/72"></span>
+            </div>
+
+            <h3 id="talkTitle" class="text-xl font-semibold text-platinum"></h3>
+            <p id="talkBody" class="mt-4 text-base leading-8 text-silver/90" aria-live="polite"></p>
+
+            <div class="mt-5 rounded-2xl border border-silver/15 bg-black/20 p-4">
+              <p class="text-xs font-semibold uppercase tracking-[.2em] text-silver/52">
+                Closing Cue
+              </p>
+              <p id="closingCue" class="mt-2 text-sm leading-7 text-silver/74"></p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const scenarios = {
+      dizzy: {
+        label: "足元がフワフワして酔う不安",
+        headline: "“酔う”の正体は、横と足元の歪みです。",
+        lead: "スタンダードでは中心だけがクリアに残り、横・足元の赤い歪みが強く残ります。プレミアムに切り替えると、歪みが端へ退き、歩行時の安心感が伝わります。",
+        visualStandard: "足元と横が揺れやすい状態",
+        visualPremium: "歪みを抑えた広い安定視野",
+        standardNote: "スタンダードは中心視野だけで見れば問題ありません。ただし、歩く・階段を見る・横目で確認するときに赤いエリアのような歪みを感じやすく、初めての方ほど違和感が出やすくなります。",
+        premiumNote: "プレミアムは、歪みを周辺へ逃がす設計でクリアな視野が大きく広がります。視線を動かしても足元や横の揺れが少なく、初めての遠近両用でも慣れやすい提案ができます。",
+        patterns: {
+          side: ["横の棚", "階段の端", "標識"],
+          center: ["床ライン", "段差", "改札表示", "時計", "足元タイル", "手元メモ"],
+          foot: ["足元", "階段", "床タイル"]
+        },
+        metrics: {
+          standard: [
+            { label: "クリア視野", value: 28, text: "狭い", type: "safe" },
+            { label: "歪みストレス", value: 82, text: "強い", type: "danger" },
+            { label: "慣れやすさ", value: 38, text: "時間が必要", type: "safe" }
+          ],
+          premium: [
+            { label: "クリア視野", value: 86, text: "広い", type: "safe" },
+            { label: "歪みストレス", value: 16, text: "少ない", type: "danger" },
+            { label: "慣れやすさ", value: 84, text: "早い", type: "safe" }
+          ]
+        },
+        talks: [
+          {
+            purpose: "共感",
+            title: "まず不安を否定しない",
+            body: "「遠近両用で酔うと聞くと、不安になりますよね。実はその違和感は、度数だけではなく <span class='danger-highlight'>横や足元に出る歪みの量</span> が大きく関係します。」",
+            cue: "いきなり高い商品を勧めず、お客様の不安を“原因が説明できるもの”に変換します。"
+          },
+          {
+            purpose: "視覚化",
+            title: "赤い歪みを見せながら説明",
+            body: "「こちらの赤い部分が、歩くときにフワッと感じやすいエリアです。安いレンズほど中心以外に歪みが残りやすいので、階段や足元で違和感が出ることがあります。」",
+            cue: "画面のスタンダード表示を見せ、足元の赤いエリアを指しながら話します。"
+          },
+          {
+            purpose: "価格差の翻訳",
+            title: "値段ではなく“安心の広さ”に変える",
+            body: "「遠近両用レンズのお値段の違いは、ズバリ <span class='script-highlight'>『スッキリ見える視野の広さ』</span> です。プレミアムほど、歪みを端へ逃がして自然に見える範囲を広くできます。」",
+            cue: "ここでプレミアム表示に切り替え、赤い歪みが端へ退くアニメーションを見せます。"
+          },
+          {
+            purpose: "クロージング",
+            title: "初めての方ほどプレミアムが合理的",
+            body: "「安いレンズは足元や横が歪みやすく酔いやすいですが、<span class='script-highlight'>プレミアムレンズなら視線を動かしても歪みが少なく、初めての方でもすぐに慣れます</span>。毎日使うものなので、安心して歩けるグレードがおすすめです。」",
+            cue: "“高いから良い”ではなく、“初めてだから慣れやすい方が安全”という論理で提案します。"
+          }
+        ]
+      },
+
+      price: {
+        label: "一番安いのでいいという価格不安",
+        headline: "“どれも同じ”ではなく、見える面積が違います。",
+        lead: "同じ遠近両用でも、設計グレードによってスッキリ使える視野の広さが変わります。価格差をレンズ名ではなく、毎日の快適さとして伝えられます。",
+        visualStandard: "中心だけで頑張って見る状態",
+        visualPremium: "広い範囲で自然に使える状態",
+        standardNote: "スタンダードは価格を抑えられる一方で、横目・足元・視線移動時の歪みが残りやすい設計です。“見える”けれど“ラクに使える範囲”は限定されます。",
+        premiumNote: "プレミアムはクリアな範囲が広く、新聞・スマホ・買い物・運転など、日常の視線移動が自然になります。価格差を“毎日のラクさ”として説明できます。",
+        patterns: {
+          side: ["棚札", "横の文字", "レシート"],
+          center: ["新聞文字", "スマホ", "価格表", "テレビ字幕", "道路標識", "メニュー"],
+          foot: ["レジ前", "足元", "階段"]
+        },
+        metrics: {
+          standard: [
+            { label: "使える視野", value: 31, text: "限定的", type: "safe" },
+            { label: "視線移動の負担", value: 76, text: "大きい", type: "danger" },
+            { label: "納得感", value: 42, text: "価格優先", type: "safe" }
+          ],
+          premium: [
+            { label: "使える視野", value: 88, text: "広い", type: "safe" },
+            { label: "視線移動の負担", value: 18, text: "小さい", type: "danger" },
+            { label: "納得感", value: 86, text: "快適重視", type: "safe" }
+          ]
+        },
+        talks: [
+          {
+            purpose: "受け止め",
+            title: "安さを否定せず、比較軸を変える",
+            body: "「もちろん価格は大切です。遠近両用はどれも同じに見えますが、実は違いが出るのは度数ではなく <span class='script-highlight'>スッキリ使える視野の広さ</span> なんです。」",
+            cue: "“安いものは悪い”と言わず、比較ポイントを自然に視野へ移します。"
+          },
+          {
+            purpose: "体験",
+            title: "中心だけ見える状態を見せる",
+            body: "「スタンダードでも正面は見えます。ただ、横の文字や足元を見ると赤い歪みが残りやすく、目線を動かすたびに探す感じが出やすいです。」",
+            cue: "スタンダード表示の中心と周辺の差を見せ、価格差を視覚的に理解してもらいます。"
+          },
+          {
+            purpose: "価値訴求",
+            title: "価格差を“毎日のラクさ”に翻訳",
+            body: "「遠近両用レンズのお値段の違いは、ズバリ <span class='script-highlight'>『スッキリ見える視野の広さ』</span> です。毎日、新聞・スマホ・買い物・階段で使うので、視野が広いほどラクに使えます。」",
+            cue: "プレミアムへ切り替え、青いクリア領域が広がる変化を見せます。"
+          },
+          {
+            purpose: "提案",
+            title: "安全性と快適さで背中を押す",
+            body: "「安いレンズは足元や横が歪みやすく酔いやすいですが、<span class='script-highlight'>プレミアムレンズなら視線を動かしても歪みが少なく、初めての方でもすぐに慣れます</span>。長く使うなら、見え方のストレスが少ない方をおすすめします。」",
+            cue: "“高単価”ではなく、“失敗しにくい選択”としてプレミアムを提案します。"
+          }
+        ]
+      }
+    };
+
+    const state = {
+      scenario: null,
+      grade: "standard",
+      talkStep: 0
+    };
+
+    const els = {
+      startPanel: document.getElementById("startPanel"),
+      experiencePanel: document.getElementById("experiencePanel"),
+      errorBox: document.getElementById("errorBox"),
+      scenarioLabel: document.getElementById("scenarioLabel"),
+      demoHeadline: document.getElementById("demoHeadline"),
+      demoLead: document.getElementById("demoLead"),
+      gradeNote: document.getElementById("gradeNote"),
+      visualCaption: document.getElementById("visualCaption"),
+      gradeBadge: document.getElementById("gradeBadge"),
+      lensGrid: document.getElementById("lensGrid"),
+      metrics: document.getElementById("metrics"),
+      standardBtn: document.getElementById("standardBtn"),
+      premiumBtn: document.getElementById("premiumBtn"),
+      compareBtn: document.getElementById("compareBtn"),
+      prevTalkBtn: document.getElementById("prevTalkBtn"),
+      nextTalkBtn: document.getElementById("nextTalkBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      talkStepBadge: document.getElementById("talkStepBadge"),
+      talkPurpose: document.getElementById("talkPurpose"),
+      talkTitle: document.getElementById("talkTitle"),
+      talkBody: document.getElementById("talkBody"),
+      closingCue: document.getElementById("closingCue"),
+      zoneLeft: document.getElementById("zoneLeft"),
+      zoneClear: document.getElementById("zoneClear"),
+      zoneRight: document.getElementById("zoneRight"),
+      zoneFootLeft: document.getElementById("zoneFootLeft"),
+      zoneFootCenter: document.getElementById("zoneFootCenter"),
+      zoneFootRight: document.getElementById("zoneFootRight")
+    };
+
+    function showError(message) {
+      els.errorBox.textContent = message || "予期しないエラーが発生しました。最初から選び直してください。";
+      els.errorBox.classList.remove("hidden");
+    }
+
+    function hideError() {
+      els.errorBox.textContent = "";
+      els.errorBox.classList.add("hidden");
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function patternHTML(items) {
+      const safeItems = Array.isArray(items) && items.length ? items : ["視界", "文字", "足元"];
+      return `
+        <div class="pattern-grid">
+          ${safeItems.map(item => `
+            <div class="pattern-tile">
+              <span>${escapeHTML(item)}</span>
+              <b></b>
+              <b></b>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function chooseScenario(key) {
+      if (!scenarios[key]) {
+        showError("選択内容を読み込めませんでした。もう一度選択してください。");
+        return;
+      }
+
+      hideError();
+      state.scenario = key;
+      state.grade = "standard";
+      state.talkStep = 0;
+
+      els.startPanel.classList.add("hidden");
+      els.experiencePanel.classList.remove("hidden");
+      els.experiencePanel.classList.add("fade-in");
+
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setGrade(grade) {
+      if (!["standard", "premium"].includes(grade)) {
+        showError("グレードの指定が正しくありません。");
+        return;
+      }
+
+      if (!state.scenario) {
+        showError("先にお客様の不安を選択してください。");
+        return;
+      }
+
+      hideError();
+      state.grade = grade;
+      render();
+    }
+
+    function runComparison() {
+      if (!state.scenario) {
+        showError("先にお客様の不安を選択してください。");
+        return;
+      }
+
+      state.grade = "standard";
+      render();
+
+      window.setTimeout(() => {
+        state.grade = "premium";
+        render();
+      }, 650);
+    }
+
+    function moveTalk(direction) {
+      const scenario = scenarios[state.scenario];
+      if (!scenario) return;
+
+      const max = scenario.talks.length - 1;
+      state.talkStep = Math.min(max, Math.max(0, state.talkStep + direction));
+      renderTalk();
+    }
+
+    function resetApp() {
+      state.scenario = null;
+      state.grade = "standard";
+      state.talkStep = 0;
+      hideError();
+
+      els.experiencePanel.classList.add("hidden");
+      els.startPanel.classList.remove("hidden");
+      els.startPanel.classList.add("fade-in");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function render() {
+      const scenario = scenarios[state.scenario];
+      if (!scenario) {
+        showError("表示するシナリオが見つかりません。最初から選び直してください。");
+        return;
+      }
+
+      const isPremium = state.grade === "premium";
+
+      els.scenarioLabel.textContent = scenario.label;
+      els.demoHeadline.textContent = scenario.headline;
+      els.demoLead.textContent = scenario.lead;
+      els.gradeNote.textContent = isPremium ? scenario.premiumNote : scenario.standardNote;
+      els.visualCaption.textContent = isPremium ? scenario.visualPremium : scenario.visualStandard;
+
+      els.gradeBadge.textContent = isPremium ? "PREMIUM / 広い視野" : "STANDARD / 歪みが強い";
+      els.gradeBadge.className = isPremium
+        ? "rounded-full bg-sapphire/16 px-3 py-1 text-xs font-semibold text-sapphire"
+        : "rounded-full bg-warning/16 px-3 py-1 text-xs font-semibold text-red-200";
+
+      els.lensGrid.className = isPremium ? "lens-grid mode-premium" : "lens-grid mode-standard";
+
+      els.standardBtn.classList.toggle("is-active-standard", !isPremium);
+      els.premiumBtn.classList.toggle("is-active-premium", isPremium);
+      els.standardBtn.setAttribute("aria-pressed", String(!isPremium));
+      els.premiumBtn.setAttribute("aria-pressed", String(isPremium));
+
+      renderVisualPatterns(scenario);
+      renderMetrics(scenario);
+      renderTalk();
+    }
+
+    function renderVisualPatterns(scenario) {
+      const p = scenario.patterns;
+
+      els.zoneLeft.innerHTML = patternHTML(p.side);
+      els.zoneRight.innerHTML = patternHTML([...p.side].reverse());
+      els.zoneClear.innerHTML = patternHTML(p.center);
+      els.zoneFootLeft.innerHTML = patternHTML(p.foot);
+      els.zoneFootRight.innerHTML = patternHTML([...p.foot].reverse());
+      els.zoneFootCenter.innerHTML = patternHTML(p.foot);
+    }
+
+    function renderMetrics(scenario) {
+      const data = scenario.metrics[state.grade] || [];
+
+      els.metrics.innerHTML = data.map(metric => {
+        const isDanger = metric.type === "danger";
+        return `
+          <div class="rounded-[1.4rem] border border-silver/15 bg-white/[.045] p-4">
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-xs font-semibold tracking-[.16em] text-silver/58">${escapeHTML(metric.label)}</p>
+              <p class="${isDanger ? "text-red-200" : "text-sapphire"} text-sm font-semibold">${escapeHTML(metric.text)}</p>
+            </div>
+            <div class="metric-bar mt-4 h-3 rounded-full">
+              <div class="metric-fill ${isDanger ? "danger" : ""}" style="--value:${Number(metric.value) || 0}%"></div>
+            </div>
+            <p class="mt-3 text-2xl font-semibold text-platinum">${Number(metric.value) || 0}<span class="text-sm text-silver/55"> / 100</span></p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderTalk() {
+      const scenario = scenarios[state.scenario];
+      if (!scenario) return;
+
+      const talk = scenario.talks[state.talkStep] || scenario.talks[0];
+      const current = state.talkStep + 1;
+      const total = scenario.talks.length;
+
+      els.talkStepBadge.textContent = `SCRIPT ${current} / ${total}`;
+      els.talkPurpose.textContent = talk.purpose;
+      els.talkTitle.textContent = talk.title;
+      els.talkBody.innerHTML = talk.body;
+      els.closingCue.textContent = talk.cue;
+
+      els.prevTalkBtn.disabled = state.talkStep === 0;
+      els.nextTalkBtn.disabled = state.talkStep === total - 1;
+
+      els.prevTalkBtn.classList.toggle("opacity-40", state.talkStep === 0);
+      els.nextTalkBtn.classList.toggle("opacity-40", state.talkStep === total - 1);
+    }
+
+    document.querySelectorAll("[data-scenario]").forEach(button => {
+      button.addEventListener("click", () => chooseScenario(button.dataset.scenario));
+    });
+
+    els.standardBtn.addEventListener("click", () => setGrade("standard"));
+    els.premiumBtn.addEventListener("click", () => setGrade("premium"));
+    els.compareBtn.addEventListener("click", runComparison);
+    els.prevTalkBtn.addEventListener("click", () => moveTalk(-1));
+    els.nextTalkBtn.addEventListener("click", () => moveTalk(1));
+    els.resetBtn.addEventListener("click", resetApp);
+  </script>
+</body>
+</html>
