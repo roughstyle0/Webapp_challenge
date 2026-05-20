@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionGrade Simulator | 遠近両用レンズ 歪み体験シミュレーター</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- カスタムカラーパレットとフォント設定 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            900: '#111111',
+                            800: '#1c1c1c',
+                            700: '#2a2a2a',
+                        },
+                        silver: {
+                            light: '#f8fafc',
+                            DEFAULT: '#cbd5e1',
+                            dark: '#94a3b8',
+                        },
+                        sapphire: {
+                            DEFAULT: '#0f52ba',
+                            glow: 'rgba(15, 82, 186, 0.4)',
+                        },
+                        alert: {
+                            DEFAULT: '#dc2626',
+                            glow: 'rgba(220, 38, 38, 0.4)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Helvetica Neue"', 'Arial', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif'],
+                        serif: ['"Yu Mincho"', '"Hiragino Mincho ProN"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* ベース設定：高級カタログを意識したタイポグラフィと背景 */
+        body {
+            background-color: #111111;
+            color: #cbd5e1;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* テンプレを脱却する、削り出された金属のようなUIパーツ */
+        .glass-panel {
+            background: linear-gradient(145deg, #1c1c1c, #111111);
+            border: 1px solid #2a2a2a;
+            box-shadow: 8px 8px 16px #070707, -8px -8px 16px #1b1b1b;
+            border-radius: 12px;
+        }
+
+        .btn-luxury {
+            background: linear-gradient(to right, #2a2a2a, #1c1c1c);
+            border: 1px solid #3f3f46;
+            color: #f8fafc;
+            transition: all 0.3s ease;
+        }
+        .btn-luxury:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 0 15px rgba(203, 213, 225, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* カンペ（スクリプト）用のハイライト装飾 */
+        .script-highlight {
+            color: #fbbf24; /* ゴールド系 */
+            font-weight: bold;
+            background: linear-gradient(transparent 60%, rgba(251, 191, 36, 0.2) 60%);
+            padding: 0 4px;
+        }
+
+        /* === シミュレーターのコア演出 === */
+        /* 背景のテストパターン（これを通して歪みを見る） */
+        .vision-grid {
+            background-image: 
+                linear-gradient(#94a3b8 1px, transparent 1px), 
+                linear-gradient(90deg, #94a3b8 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: center;
+        }
+
+        /* 歪み（赤）エリアのトランジション設定 */
+        .distortion-layer {
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            /* スマホで十分なブラー効果を担保 */
+            backdrop-filter: blur(8px) contrast(1.2); 
+            -webkit-backdrop-filter: blur(8px) contrast(1.2);
+        }
+
+        /* 歪みパターン（波打つような視覚効果をCSSグラデーションで擬似的に追加） */
+        .distortion-pattern {
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(220, 38, 38, 0.3),
+                rgba(220, 38, 38, 0.3) 10px,
+                rgba(220, 38, 38, 0.1) 10px,
+                rgba(220, 38, 38, 0.1) 20px
+            );
+        }
+
+        /* クリア（青）エリアのトランジション設定 */
+        .clear-aura {
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        /* 状態切り替え用クラス */
+        /* スタンダード状態（歪みが大きい） */
+        .is-standard .dist-left { width: 35%; opacity: 1; }
+        .is-standard .dist-right { width: 35%; opacity: 1; }
+        .is-standard .dist-bottom { height: 40%; opacity: 1; }
+        .is-standard .clear-aura { opacity: 0; }
+
+        /* プレミアム状態（歪みが消え、クリアになる） */
+        .is-premium .dist-left { width: 0%; opacity: 0; }
+        .is-premium .dist-right { width: 0%; opacity: 0; }
+        .is-premium .dist-bottom { height: 0%; opacity: 0; }
+        .is-premium .clear-aura { opacity: 1; }
+        
+        /* アニメーション用ユーティリティ */
+        .fade-in { animation: fadeIn 0.8s forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <header class="w-full border-b border-charcoal-700 bg-charcoal-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center gap-2">
+            <h1 class="text-xl md:text-2xl font-serif text-silver-light tracking-widest uppercase">
+                VisionGrade <span class="text-silver-dark text-sm ml-2">Simulator</span>
+            </h1>
+            <p class="text-xs md:text-sm text-silver-dark">接客支援ツール：遠近両用レンズ グレード比較</p>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col gap-8 md:gap-12">
+        
+        <!-- ==========================================
+             Step 1: お客様の「お悩み」選択 (プログレッシブ・ディクロージャー) 
+             ========================================== -->
+        <section id="step1-section" class="flex flex-col gap-8 fade-in">
+            <div class="text-center flex flex-col gap-3">
+                <h2 class="text-2xl md:text-3xl font-serif text-silver-light">お客様は今、何とおっしゃいましたか？</h2>
+                <p class="text-silver-dark text-sm md:text-base">お客様の反応に合わせて、最適なシミュレーションとトークを展開します。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <!-- 選択肢A -->
+                <button onclick="app.startSimulation('A')" class="btn-luxury p-6 md:p-8 rounded-xl flex flex-col gap-4 text-left group">
+                    <div class="flex items-center justify-between w-full">
+                        <span class="text-silver-dark font-mono text-sm">Case 01</span>
+                        <svg class="w-6 h-6 text-silver-dark group-hover:text-silver-light transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <p class="text-lg md:text-xl font-bold text-silver-light leading-snug">
+                        「遠近両用は足元がフワフワして、<br class="hidden md:block">酔うって聞いたんだけど…」
+                    </p>
+                </button>
+
+                <!-- 選択肢B -->
+                <button onclick="app.startSimulation('B')" class="btn-luxury p-6 md:p-8 rounded-xl flex flex-col gap-4 text-left group">
+                    <div class="flex items-center justify-between w-full">
+                        <span class="text-silver-dark font-mono text-sm">Case 02</span>
+                        <svg class="w-6 h-6 text-silver-dark group-hover:text-silver-light transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <p class="text-lg md:text-xl font-bold text-silver-light leading-snug">
+                        「どうせどれも同じでしょ？<br class="hidden md:block">一番安いのでいいよ。」
+                    </p>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             Step 2: シミュレーション＆トークエリア (初期非表示)
+             文字と画像領域を完全に分離し、スマホでの視認性を担保
+             ========================================== -->
+        <section id="step2-section" class="hidden flex-col gap-8 md:gap-12 fade-in">
+            
+            <!-- 上部: 接客トーク（導入編） -->
+            <div class="glass-panel p-5 md:p-8 flex flex-col gap-3 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-sapphire"></div>
+                <span class="text-xs font-mono text-sapphire tracking-wider">STAFF SCRIPT - 導入</span>
+                <p id="talk-intro" class="text-base md:text-lg text-silver-light leading-relaxed">
+                    <!-- JSで動的にテキストを挿入 -->
+                </p>
+            </div>
+
+            <!-- 中部: シミュレーター本体 (文字被り絶対回避ブロック) -->
+            <div class="flex flex-col gap-6 w-full">
+                
+                <!-- レンズ切り替えスイッチ (ハイエンド家電風) -->
+                <div class="flex justify-center">
+                    <div class="bg-charcoal-800 p-1 rounded-full flex border border-charcoal-700 shadow-inner">
+                        <button id="btn-standard" onclick="app.switchLens('standard')" class="relative px-6 py-3 rounded-full text-sm md:text-base font-bold transition-all duration-300 bg-charcoal-700 text-silver-light shadow-md border border-charcoal-700 w-40 text-center">
+                            スタンダード
+                        </button>
+                        <button id="btn-premium" onclick="app.switchLens('premium')" class="relative px-6 py-3 rounded-full text-sm md:text-base font-bold transition-all duration-300 text-silver-dark w-40 text-center">
+                            プレミアム
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 視界ディスプレイ (16:9アスペクト比維持、画像と文字を重ねない独立領域) -->
+                <div class="relative w-full aspect-[4/3] md:aspect-video rounded-xl overflow-hidden border-2 border-charcoal-700 shadow-2xl is-standard" id="vision-display">
+                    
+                    <!-- 背景（日常の景色を模したテストパターン） -->
+                    <div class="absolute inset-0 bg-silver-light vision-grid flex flex-col items-center justify-center p-6 text-charcoal-900">
+                        <div class="bg-white/80 backdrop-blur-sm p-6 rounded shadow-sm text-center max-w-sm">
+                            <h3 class="font-serif text-xl md:text-2xl font-bold mb-4 border-b border-gray-300 pb-2">視界テスト</h3>
+                            <p class="text-sm md:text-base leading-relaxed text-gray-700">
+                                遠近両用レンズは、1枚のレンズの中に遠くを見る度数から、近くを見る度数までが配置されています。<br>
+                                <span class="font-bold text-black mt-2 inline-block">中心部はハッキリ見えますが…</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 歪みレイヤー (スタンダード時に展開、プレミアムで縮小) -->
+                    <!-- 左側の歪み -->
+                    <div class="distortion-layer dist-left absolute top-0 left-0 bottom-0 bg-alert/20 distortion-pattern origin-left border-r border-alert/30"></div>
+                    <!-- 右側の歪み -->
+                    <div class="distortion-layer dist-right absolute top-0 right-0 bottom-0 bg-alert/20 distortion-pattern origin-right border-l border-alert/30"></div>
+                    <!-- 下部の歪み (足元) -->
+                    <div class="distortion-layer dist-bottom absolute bottom-0 left-0 right-0 bg-alert/20 distortion-pattern origin-bottom border-t border-alert/30"></div>
+
+                    <!-- プレミアム・オーラ (プレミアム時にフェードイン) -->
+                    <div class="clear-aura absolute inset-0 bg-sapphire/10 shadow-[inset_0_0_40px_rgba(15,82,186,0.3)] pointer-events-none"></div>
+
+                    <!-- 状態表示ラベル -->
+                    <div class="absolute top-4 left-4 bg-charcoal-900/80 backdrop-blur border border-charcoal-700 text-xs text-silver-light px-3 py-1 rounded-full font-mono uppercase tracking-wider" id="lens-label">
+                        Standard Lens
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下部: 接客トーク（解説・クロージング編） -->
+            <div class="glass-panel p-5 md:p-8 flex flex-col gap-3 relative overflow-hidden mb-12">
+                <div class="absolute top-0 left-0 w-1 h-full bg-alert" id="talk-closing-accent"></div>
+                <span class="text-xs font-mono text-silver-dark tracking-wider" id="talk-closing-label">STAFF SCRIPT - スタンダード解説</span>
+                <p id="talk-closing" class="text-base md:text-lg text-silver-light leading-relaxed">
+                    <!-- JSで動的にテキストを挿入 -->
+                </p>
+                <!-- リセットボタン (やり直し用) -->
+                <div class="mt-6 pt-4 border-t border-charcoal-700 text-right">
+                    <button onclick="app.reset()" class="text-sm text-silver-dark hover:text-silver-light underline underline-offset-4 transition-colors">
+                        別のお悩みからやり直す
+                    </button>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        /**
+         * アプリケーションのコアロジック
+         * 状態管理とDOM更新をカプセル化し、堅牢に動作させます。
+         */
+        const app = (() => {
+            // --- 状態管理 ---
+            const state = {
+                concernType: null, // 'A' or 'B'
+                currentLens: 'standard' // 'standard' or 'premium'
+            };
+
+            // --- トークスクリプト（カンペ）データ ---
+            // ※手抜き厳禁ルールに基づき、選択肢・レンズ状態ごとに綿密なスクリプトを用意
+            const scripts = {
+                A: {
+                    intro: "そのお話、実はお客様からよく伺うんです。実は『フワフワして酔う』原因のほとんどは、<span class='script-highlight'>レンズの周辺部分にある『歪み』</span>なんです。百聞は一見に如かず、一度こちらのモニターをご覧ください。",
+                    standard: "これが一番お求めやすいスタンダードレンズの見え方です。画面の<span class='text-red-400 font-bold'>赤い部分</span>にご注目ください。足元を見たり、横目で見ようとすると、このように景色が歪んでボヤけてしまいます。これが<span class='script-highlight'>『フワフワする』正体</span>です。",
+                    premium: "ですが、プレミアムレンズに変えると…いかがでしょうか？赤い歪みがスッと消え、<span class='script-highlight text-blue-400'>クリアな視界が画面いっぱいに広がりました</span>よね。視線を動かしても歪みが少ないため、<span class='script-highlight'>初めての方でもすぐに慣れて、安全に歩けます。</span>"
+                },
+                B: {
+                    intro: "お値段が違うと何が変わるのか、パッと見では分かりにくいですよね。ズバリ結論から申し上げますと、お値段の違いは<span class='script-highlight'>『スッキリ見える視野の広さ』</span>の違いなんです。こちらの画面をご覧ください。",
+                    standard: "一番お求めやすいスタンダードレンズですと、ハッキリ見えるのは真ん中のクリアな部分だけです。横や下の方、<span class='text-red-400 font-bold'>赤いエリアは歪んでボヤけてしまいます</span>。",
+                    premium: "一方、プレミアムレンズをお選びいただくと…ご覧の通り、赤い歪みが外に押し出され、<span class='script-highlight text-blue-400'>クリアな視界が劇的に広がります</span>。お買い物中の値札を見たり、運転でサイドミラーを見たりする際、この<span class='script-highlight'>『視野の広さ』が圧倒的な快適さを生む</span>んです。"
+                }
+            };
+
+            // --- DOM要素のキャッシュ ---
+            const els = {
+                step1: document.getElementById('step1-section'),
+                step2: document.getElementById('step2-section'),
+                talkIntro: document.getElementById('talk-intro'),
+                talkClosing: document.getElementById('talk-closing'),
+                talkClosingLabel: document.getElementById('talk-closing-label'),
+                talkClosingAccent: document.getElementById('talk-closing-accent'),
+                visionDisplay: document.getElementById('vision-display'),
+                btnStandard: document.getElementById('btn-standard'),
+                btnPremium: document.getElementById('btn-premium'),
+                lensLabel: document.getElementById('lens-label')
+            };
+
+            // --- メソッド ---
+            
+            // 1. シミュレーションの開始 (プログレッシブ・ディクロージャーの展開)
+            const startSimulation = (type) => {
+                state.concernType = type;
+                state.currentLens = 'standard'; // 初期値は必ずスタンダード
+
+                // UIの切り替え
+                els.step1.classList.add('hidden');
+                els.step2.classList.remove('hidden');
+
+                // 導入トークのセット
+                els.talkIntro.innerHTML = scripts[type].intro;
+
+                // ビューとトークの初期化
+                updateLensView();
+                
+                // スクロールを少し下げてシミュレータを見やすくする
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            // 2. レンズの切り替えアクション
+            const switchLens = (lensType) => {
+                if (state.currentLens === lensType) return; // 変更なしならスキップ
+                state.currentLens = lensType;
+                updateLensView();
+            };
+
+            // 3. ビューとトークの更新ロジック (CSSクラスとテキストの出し分け)
+            const updateLensView = () => {
+                const isPremium = state.currentLens === 'premium';
+
+                // -- シミュレーターのCSS切り替え --
+                if (isPremium) {
+                    els.visionDisplay.classList.remove('is-standard');
+                    els.visionDisplay.classList.add('is-premium');
+                    els.lensLabel.textContent = 'Premium Lens';
+                    els.lensLabel.classList.replace('text-silver-light', 'text-sapphire');
+                    els.lensLabel.classList.replace('bg-charcoal-900/80', 'bg-white/90');
+                } else {
+                    els.visionDisplay.classList.remove('is-premium');
+                    els.visionDisplay.classList.add('is-standard');
+                    els.lensLabel.textContent = 'Standard Lens';
+                    els.lensLabel.classList.replace('text-sapphire', 'text-silver-light');
+                    els.lensLabel.classList.replace('bg-white/90', 'bg-charcoal-900/80');
+                }
+
+                // -- ボタンスタイルの切り替え --
+                const activeClasses = ['bg-charcoal-700', 'text-silver-light', 'shadow-md', 'border', 'border-charcoal-700'];
+                const inactiveClasses = ['text-silver-dark', 'border-transparent'];
+
+                if (isPremium) {
+                    els.btnPremium.classList.add(...activeClasses);
+                    els.btnPremium.classList.remove(...inactiveClasses);
+                    els.btnStandard.classList.remove(...activeClasses);
+                    els.btnStandard.classList.add(...inactiveClasses, 'border-transparent');
+                } else {
+                    els.btnStandard.classList.add(...activeClasses);
+                    els.btnStandard.classList.remove(...inactiveClasses);
+                    els.btnPremium.classList.remove(...activeClasses);
+                    els.btnPremium.classList.add(...inactiveClasses, 'border-transparent');
+                }
+
+                // -- クロージングトークの切り替え --
+                // 選択されたレンズに応じて、カンペのラベル色とテキストを変更
+                els.talkClosing.innerHTML = scripts[state.concernType][state.currentLens];
+                
+                if (isPremium) {
+                    els.talkClosingLabel.textContent = 'STAFF SCRIPT - プレミアム提案';
+                    els.talkClosingLabel.classList.replace('text-silver-dark', 'text-sapphire');
+                    els.talkClosingAccent.classList.replace('bg-alert', 'bg-sapphire');
+                } else {
+                    els.talkClosingLabel.textContent = 'STAFF SCRIPT - スタンダード解説';
+                    els.talkClosingLabel.classList.replace('text-sapphire', 'text-silver-dark');
+                    els.talkClosingAccent.classList.replace('bg-sapphire', 'bg-alert');
+                }
+            };
+
+            // 4. 最初からやり直す
+            const reset = () => {
+                state.concernType = null;
+                els.step2.classList.add('hidden');
+                els.step1.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            // パブリックAPIを公開
+            return {
+                startSimulation,
+                switchLens,
+                reset
+            };
+        })();
+    </script>
+</body>
+</html>
